@@ -47,18 +47,19 @@ class SmithingScene extends Phaser.Scene {
   }
 
   preload() {
-    // [FIX] Use explicit relative paths with cache busting
-    // This assumes files are in 'public/assets/' folder
-    const timestamp = Date.now();
+    // [CHANGED] Use GitHub Raw URLs
+    const baseUrl = 'https://raw.githubusercontent.com/cryingdev/lockharts-forge/main/assets/';
+    const timestamp = Date.now(); // Cache busting
+
+    // Important for loading external assets into WebGL textures
+    this.load.crossOrigin = 'anonymous';
     
-    this.load.setPath('assets/');
-    
-    this.load.image('bg', `forge_bg.png?v=${timestamp}`);
-    this.load.image('anvil', `anvil.png?v=${timestamp}`);
-    this.load.image('hammer', `hammer.png?v=${timestamp}`);
-    this.load.image('ingot_hot', `ingot_hot.png?v=${timestamp}`);
-    this.load.image('cursor', `cursor_pointer.png?v=${timestamp}`);
-    this.load.image('spark', `particle_spark.png?v=${timestamp}`);
+    this.load.image('bg', `${baseUrl}forge_bg.png?v=${timestamp}`);
+    this.load.image('anvil', `${baseUrl}anvil.png?v=${timestamp}`);
+    this.load.image('hammer', `${baseUrl}hammer.png?v=${timestamp}`);
+    this.load.image('ingot_hot', `${baseUrl}ingot_hot.png?v=${timestamp}`);
+    this.load.image('cursor', `${baseUrl}cursor_pointer.png?v=${timestamp}`);
+    this.load.image('spark', `${baseUrl}particle_spark.png?v=${timestamp}`);
 
     // Debug: Log errors if files are truly missing
     this.load.on('loaderror', (fileObj: any) => {
@@ -70,10 +71,13 @@ class SmithingScene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.centerX = width / 2;
     this.centerY = height / 2;
-    this.barY = height - 80;
+    this.barY = height - 20;
 
     // --- 1. Background ---
-    if (this.textures.exists('bg')) {
+    // Helper to check if texture exists (loaded successfully)
+    const hasTexture = (key: string) => this.textures.exists(key);
+
+    if (hasTexture('bg')) {
       const bg = this.add.image(this.centerX, this.centerY, 'bg');
       // Cover logic
       const scaleX = width / bg.width;
@@ -83,7 +87,11 @@ class SmithingScene extends Phaser.Scene {
       bg.setTint(0x888888); // Darken the background slightly
     } else {
       // [FALLBACK] Draw Dark Rectangle if image fails
-      this.add.rectangle(this.centerX, this.centerY, width, height, 0x1c1917);
+      this.ensureTexture('fallback_bg', (g) => {
+          g.fillStyle(0x1c1917, 1);
+          g.fillRect(0, 0, width, height);
+      });
+      this.add.image(this.centerX, this.centerY, 'fallback_bg');
     }
 
     // Ambient Glow (Always present)
@@ -95,8 +103,8 @@ class SmithingScene extends Phaser.Scene {
     // --- 2. The Forge (Visuals) ---
     
     // Anvil
-    if (this.textures.exists('anvil')) {
-      const anvil = this.add.image(this.centerX, this.centerY + 50, 'anvil');
+    if (hasTexture('anvil')) {
+      const anvil = this.add.image(this.centerX - 50, this.centerY + 150, 'anvil');
       anvil.setScale(0.8);
     } else {
       // [FALLBACK] Draw Anvil Shapes
@@ -106,9 +114,10 @@ class SmithingScene extends Phaser.Scene {
     }
 
     // Hot Ingot
-    if (this.textures.exists('ingot_hot')) {
-      const ingot = this.add.image(this.centerX, this.centerY - 20, 'ingot_hot');
-      ingot.setScale(0.25);
+    if (hasTexture('ingot_hot')) {
+      const ingot = this.add.image(this.centerX - 10, this.centerY + 65, 'ingot_hot');
+      // Adjust scale assuming 500px source image to fit 120px width
+      ingot.setScale(0.30); 
       this.addInotGlow(ingot);
     } else {
       // [FALLBACK] Draw Ingot Shape
@@ -117,10 +126,10 @@ class SmithingScene extends Phaser.Scene {
     }
 
     // Hammer
-    if (this.textures.exists('hammer')) {
-      this.hammer = this.add.image(this.centerX + 120, this.centerY - 50, 'hammer');
+    if (hasTexture('hammer')) {
+      this.hammer = this.add.image(this.centerX + 120, this.centerY + 100, 'hammer');
       this.hammer.setOrigin(0.5, 1); 
-      this.hammer.setScale(0.6);
+      this.hammer.setScale(0.5);
       this.hammer.setRotation(0.5);
     } else {
       // [FALLBACK] Draw Hammer Shape
@@ -139,9 +148,9 @@ class SmithingScene extends Phaser.Scene {
     this.add.rectangle(this.centerX, this.barY, 4, 30, 0x86efac);
 
     // Cursor
-    if (this.textures.exists('cursor')) {
-      this.cursor = this.add.image(this.centerX, this.barY, 'cursor');
-      this.cursor.setScale(0.8);
+    if (hasTexture('cursor')) {
+      this.cursor = this.add.image(this.centerX, this.barY - 28, 'cursor');
+      this.cursor.setScale(1.0);
     } else {
       // [FALLBACK] Draw Cursor Shape
       this.cursor = this.add.rectangle(this.centerX, this.barY, 10, 30, 0xffffff);
@@ -158,6 +167,16 @@ class SmithingScene extends Phaser.Scene {
     // --- Input ---
     this.input.keyboard?.on('keydown-SPACE', this.handleHit, this);
     this.input.on('pointerdown', this.handleHit, this);
+  }
+
+  // Helper to ensure a texture exists, creating a graphic fallback if not
+  ensureTexture(key: string, drawFn: (graphics: Phaser.GameObjects.Graphics) => void) {
+      if (!this.textures.exists(key)) {
+          const g = this.make.graphics({ x: 0, y: 0 });
+          drawFn(g);
+          g.generateTexture(key, 1, 1); // Size doesn't matter much if we're just filling, but ideally accurate
+          g.destroy();
+      }
   }
 
   addInotGlow(target: Phaser.GameObjects.GameObject) {
@@ -243,12 +262,10 @@ class SmithingScene extends Phaser.Scene {
     let texture = 'spark';
     // Fallback if spark image didn't load
     if (!this.textures.exists('spark')) {
-        if (!this.textures.exists('fallback_spark')) {
-            const g = this.make.graphics({x:0, y:0});
+        this.ensureTexture('fallback_spark', (g) => {
             g.fillStyle(0xffffff, 1);
             g.fillCircle(4,4,4);
-            g.generateTexture('fallback_spark', 8, 8);
-        }
+        });
         texture = 'fallback_spark';
     }
 
