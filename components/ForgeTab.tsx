@@ -3,14 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../gameData';
 import { EquipmentCategory, EquipmentItem } from '../types';
 import SmithingMinigame from './SmithingMinigame';
-import { Hammer, Shield, Sword, ChevronDown, ChevronRight, Info, ChevronLeft, Lock } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronDown, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box } from 'lucide-react';
+import { useGame } from '../context/GameContext';
+import { ITEMS } from '../constants';
 
 const ForgeTab = () => {
+  const { state, actions } = useGame();
+  
   // UI State
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [expandedSubCat, setExpandedSubCat] = useState<string | null>('SWORD');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+  
+  // Tooltip State
+  const [hoveredItem, setHoveredItem] = useState<EquipmentItem | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   
   // Game Logic State
   const [isCrafting, setIsCrafting] = useState(false);
@@ -37,9 +45,42 @@ const ForgeTab = () => {
   };
 
   const handleMinigameComplete = (score: number) => {
-    console.log(`Crafted ${selectedItem?.name} with score: ${score}`);
+    // Pass the score (quality) to the crafting action
+    if (selectedItem) {
+        console.log(`Crafted ${selectedItem.name} with score: ${score}`);
+        actions.craftItem(selectedItem, score);
+    }
     stopCrafting();
-    // Future: Add item to inventory here via Context
+  };
+  
+  // Mouse handlers for tooltip
+  const handleMouseEnter = (item: EquipmentItem, e: React.MouseEvent) => {
+      setHoveredItem(item);
+      setTooltipPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+      if (hoveredItem) {
+          setTooltipPos({ x: e.clientX, y: e.clientY });
+      }
+  };
+
+  const handleMouseLeave = () => {
+      setHoveredItem(null);
+  };
+
+  // Helper to check resources
+  const getInventoryCount = (id: string) => {
+      return state.inventory.find(i => i.id === id)?.quantity || 0;
+  };
+
+  const getResourceName = (id: string) => {
+      const itemDef = Object.values(ITEMS).find(i => i.id === id);
+      return itemDef ? itemDef.name : id;
+  };
+
+  const canAfford = (item: EquipmentItem) => {
+      return item.requirements.every(req => getInventoryCount(req.id) >= req.count);
   };
 
   // Filter Data
@@ -83,10 +124,24 @@ const ForgeTab = () => {
                   {/* Action Button */}
                   <button 
                     onClick={startCrafting}
-                    className="px-12 py-4 bg-amber-700 hover:bg-amber-600 text-amber-50 rounded-lg font-bold text-lg shadow-lg hover:shadow-amber-900/50 transition-all transform hover:-translate-y-1 flex items-center gap-3 border border-amber-500"
+                    disabled={!canAfford(selectedItem)}
+                    className={`px-12 py-4 rounded-lg font-bold text-lg shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-3 border ${
+                        canAfford(selectedItem) 
+                        ? 'bg-amber-700 hover:bg-amber-600 text-amber-50 border-amber-500 hover:shadow-amber-900/50' 
+                        : 'bg-stone-800 text-stone-500 border-stone-700 cursor-not-allowed opacity-70'
+                    }`}
                   >
-                    <Hammer className="w-6 h-6" />
-                    Start Forging
+                    {canAfford(selectedItem) ? (
+                        <>
+                            <Hammer className="w-6 h-6" />
+                            Start Forging
+                        </>
+                    ) : (
+                        <>
+                            <Lock className="w-6 h-6" />
+                            Missing Resources
+                        </>
+                    )}
                   </button>
                 </div>
               ) : (
@@ -169,15 +224,24 @@ const ForgeTab = () => {
                       <div className="p-3 bg-stone-900/50 border-t border-stone-700/50 grid grid-cols-2 gap-3">
                           {items.map(item => {
                           const isSelected = selectedItem?.id === item.id;
+                          const recipeId = item.id;
+                          // Check how many of this *type* of item we have. 
+                          // Since crafted items have unique IDs, we filter by name or base ID.
+                          // For simplified count, we can check items with same name.
+                          const count = state.inventory.filter(i => i.name === item.name).length;
+                          
                           return (
                               <button
-                              key={item.id}
-                              onClick={() => setSelectedItem(item)}
-                              className={`relative flex flex-col items-center p-3 rounded-lg border-2 transition-all group text-left ${
-                                  isSelected 
-                                  ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' 
-                                  : 'bg-stone-800 border-stone-700 hover:border-stone-500 hover:bg-stone-750'
-                              }`}
+                                key={item.id}
+                                onClick={() => setSelectedItem(item)}
+                                onMouseEnter={(e) => handleMouseEnter(item, e)}
+                                onMouseMove={handleMouseMove}
+                                onMouseLeave={handleMouseLeave}
+                                className={`relative flex flex-col items-center p-3 rounded-lg border-2 transition-all group text-left ${
+                                    isSelected 
+                                    ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' 
+                                    : 'bg-stone-800 border-stone-700 hover:border-stone-500 hover:bg-stone-750'
+                                }`}
                               >
                               {/* Icon */}
                               <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{item.icon}</div>
@@ -193,6 +257,13 @@ const ForgeTab = () => {
                                   {item.tier}
                                   </div>
                               </div>
+                              
+                              {/* Owned Count */}
+                              {count > 0 && (
+                                  <div className="absolute top-1 left-1 bg-stone-950/80 px-1.5 rounded border border-stone-700 text-[9px] font-mono text-stone-400 flex items-center gap-0.5">
+                                      <Box className="w-2 h-2" /> {count}
+                                  </div>
+                              )}
                               </button>
                           );
                           })}
@@ -233,6 +304,36 @@ const ForgeTab = () => {
               onClose={stopCrafting}
             />
         </div>
+      )}
+
+      {/* ===========================================================================
+          TOOLTIP (Fixed Position)
+      =========================================================================== */}
+      {hoveredItem && (
+          <div 
+              className="fixed z-[60] pointer-events-none w-64 bg-stone-950/95 border border-stone-700 rounded-lg shadow-2xl backdrop-blur-sm p-4 animate-in fade-in duration-150"
+              style={{ top: tooltipPos.y + 10, left: tooltipPos.x - 270 }} // Position to the left of cursor
+          >
+              <h4 className="font-bold text-stone-200 border-b border-stone-800 pb-2 mb-2 flex justify-between">
+                  Requirements
+                  <span className="text-xs font-normal text-stone-500 mt-0.5">Tier {hoveredItem.tier}</span>
+              </h4>
+              <div className="space-y-2">
+                  {hoveredItem.requirements.map((req, idx) => {
+                      const currentCount = getInventoryCount(req.id);
+                      const hasEnough = currentCount >= req.count;
+                      return (
+                          <div key={idx} className="flex justify-between items-center text-sm">
+                              <span className="text-stone-400">{getResourceName(req.id)}</span>
+                              <div className={`flex items-center gap-1 font-mono ${hasEnough ? 'text-emerald-400' : 'text-red-400'}`}>
+                                  <span>{currentCount}/{req.count}</span>
+                                  {hasEnough ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
+                              </div>
+                          </div>
+                      );
+                  })}
+              </div>
+          </div>
       )}
 
     </div>

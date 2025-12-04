@@ -6,6 +6,15 @@ export interface SmithingSceneData {
 }
 
 export default class SmithingScene extends Phaser.Scene {
+  // Explicitly declare properties to fix TS errors
+  add!: Phaser.GameObjects.GameObjectFactory;
+  make!: Phaser.GameObjects.GameObjectCreator;
+  scale!: Phaser.Scale.ScaleManager;
+  tweens!: Phaser.Tweens.TweenManager;
+  time!: Phaser.Time.Clock;
+  cameras!: Phaser.Cameras.Scene2D.CameraManager;
+  input!: Phaser.Input.InputPlugin;
+
   private cursor!: Phaser.GameObjects.Rectangle;
   private targetZone!: Phaser.GameObjects.Rectangle;
   private progressBar!: Phaser.GameObjects.Rectangle;

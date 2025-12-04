@@ -1,4 +1,6 @@
+
 import { GameState, InventoryItem, TimeOfDay } from './types';
+import { NAMED_MERCENARIES } from './data/mercenaries';
 
 export const ITEMS = {
   IRON_ORE: { id: 'iron_ore', name: 'Iron Ore', type: 'RESOURCE', description: 'Raw iron from the earth.', baseValue: 2 },
@@ -11,6 +13,14 @@ export const ITEMS = {
   SCRAP_METAL: { id: 'scrap', name: 'Scrap Metal', type: 'RESOURCE', description: 'Salvaged from rubble.', baseValue: 1 },
 } as const;
 
+// Items available in the buying market
+export const MARKET_CATALOG = [
+  { id: 'charcoal', price: 100 },
+  { id: 'iron_ore', price: 25 },
+  { id: 'copper_ore', price: 20 },
+  { id: 'wood', price: 15 },
+];
+
 export const INITIAL_INVENTORY: InventoryItem[] = [
   { ...ITEMS.ANVIL, type: 'TOOL', quantity: 1 },
   { ...ITEMS.HAMMER, type: 'TOOL', quantity: 1 },
@@ -21,7 +31,7 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
 
 export const INITIAL_STATE: GameState = {
   stats: {
-    gold: 0,
+    gold: 1000, 
     energy: 100,
     maxEnergy: 100,
     day: 1,
@@ -29,13 +39,19 @@ export const INITIAL_STATE: GameState = {
   },
   inventory: INITIAL_INVENTORY,
   forge: {
-    hasFurnace: false,
+    hasFurnace: true, // Enabled for testing/gameplay loop
     anvilLevel: 1,
     rubbleCleared: 0,
     isShopOpen: false,
   },
   activeEvent: null,
   logs: ['You stand amidst the ruins of Lockhart\'s Forge.', 'It is quiet, but the anvil still stands.'],
+  knownMercenaries: [...NAMED_MERCENARIES], // Start with all named mercenaries known
+  
+  // Shop State
+  activeCustomer: null,
+  shopQueue: [],
+  visitorsToday: [],
 };
 
 export const GAME_CONFIG = {

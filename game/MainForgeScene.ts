@@ -1,4 +1,3 @@
-
 import Phaser from 'phaser';
 
 export interface MainForgeData {
@@ -8,6 +7,11 @@ export interface MainForgeData {
 }
 
 export default class MainForgeScene extends Phaser.Scene {
+  // Explicitly declare properties to fix TS errors
+  add!: Phaser.GameObjects.GameObjectFactory;
+  scale!: Phaser.Scale.ScaleManager;
+  tweens!: Phaser.Tweens.TweenManager;
+
   private onInteract?: (type: 'RUBBLE' | 'ANVIL' | 'FURNACE' | 'EMPTY_SLOT') => void;
   private rubbleCleared: number = 0;
   private hasFurnace: boolean = false;

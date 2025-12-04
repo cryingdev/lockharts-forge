@@ -1,10 +1,17 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
-import { Coins, Zap, Calendar, Sun, Moon, Sunset, BedDouble } from 'lucide-react';
+import { Coins, Zap, Calendar, Sun, Moon, Sunset, BedDouble, Store, Users } from 'lucide-react';
 
-const Header = () => {
+interface HeaderProps {
+    activeTab: string;
+    onTabChange: (tab: any) => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   const { state, actions } = useGame();
   const { gold, energy, maxEnergy, day, time } = state.stats;
+  const { isShopOpen } = state.forge;
+  const { shopQueue } = state;
 
   const getTimeIcon = () => {
     switch (time) {
@@ -13,6 +20,14 @@ const Header = () => {
       case 'Evening': return <Moon className="w-5 h-5 text-indigo-400" />;
       default: return <Sun className="w-5 h-5" />;
     }
+  };
+
+  const handleShopClick = () => {
+      if (activeTab === 'SHOP') {
+          actions.toggleShop();
+      } else {
+          onTabChange('SHOP');
+      }
   };
 
   return (
@@ -33,6 +48,31 @@ const Header = () => {
         {/* Right: Resources & Actions */}
         <div className="flex items-center space-x-4">
           
+          {/* Shop Toggle / Status */}
+          <button
+             onClick={handleShopClick}
+             className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
+                 isShopOpen 
+                 ? 'bg-emerald-900/50 border-emerald-500 text-emerald-100 hover:bg-emerald-800' 
+                 : 'bg-stone-800 border-stone-600 text-stone-400 hover:bg-stone-700'
+             }`}
+          >
+              <Store className={`w-4 h-4 ${isShopOpen ? 'text-emerald-400' : 'text-stone-500'}`} />
+              <div className="flex flex-col items-start leading-none">
+                  <span className="text-[10px] uppercase font-bold tracking-wider">Shop</span>
+                  <span className={`text-xs font-bold ${isShopOpen ? 'text-emerald-400' : 'text-stone-500'}`}>
+                      {isShopOpen ? 'OPEN' : 'CLOSED'}
+                  </span>
+              </div>
+              
+              {/* Queue Badge */}
+              {shopQueue.length > 0 && (
+                  <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border border-stone-900 shadow-sm animate-in zoom-in">
+                      {shopQueue.length}
+                  </div>
+              )}
+          </button>
+
           {/* Energy Bar */}
           <div className="hidden sm:flex flex-col w-32">
             <div className="flex justify-between text-[10px] mb-1 text-slate-300 uppercase tracking-wider font-bold">

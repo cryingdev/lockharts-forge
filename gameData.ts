@@ -25,6 +25,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'A basic blade, heavy and dull.',
     subCategoryId: 'SWORD',
     baseValue: 15,
+    requirements: [
+      { id: 'iron_ore', count: 3 },
+      { id: 'charcoal', count: 1 }
+    ],
+    baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
   },
   {
     id: 'sword_t2',
@@ -34,6 +39,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'A reliable weapon for a city guard.',
     subCategoryId: 'SWORD',
     baseValue: 45,
+    requirements: [
+      { id: 'iron_ore', count: 5 },
+      { id: 'charcoal', count: 2 }
+    ],
+    baseStats: { physicalAttack: 25, physicalDefense: 2, magicalAttack: 0, magicalDefense: 0 }
   },
   {
     id: 'sword_t3',
@@ -43,6 +53,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Finely balanced and dangerously sharp.',
     subCategoryId: 'SWORD',
     baseValue: 120,
+    requirements: [
+      { id: 'iron_ore', count: 10 },
+      { id: 'charcoal', count: 5 },
+      { id: 'copper_ore', count: 2 }
+    ],
+    baseStats: { physicalAttack: 60, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 }
   },
   // Axes
   {
@@ -53,6 +69,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'More tool than weapon, but it hurts.',
     subCategoryId: 'AXE',
     baseValue: 12,
+    requirements: [
+      { id: 'iron_ore', count: 2 },
+      { id: 'wood', count: 2 }
+    ],
+    baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
   },
   {
     id: 'axe_t2',
@@ -62,6 +83,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Double-headed destruction.',
     subCategoryId: 'AXE',
     baseValue: 50,
+    requirements: [
+      { id: 'iron_ore', count: 6 },
+      { id: 'wood', count: 3 },
+      { id: 'charcoal', count: 2 }
+    ],
+    baseStats: { physicalAttack: 30, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
   },
   // Helmets
   {
@@ -72,6 +99,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Better than nothing. Barely.',
     subCategoryId: 'HELMET',
     baseValue: 10,
+    requirements: [
+      { id: 'iron_ore', count: 3 }
+    ],
+    baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 }
   },
   {
     id: 'helm_t2',
@@ -81,6 +112,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Standard issue protection.',
     subCategoryId: 'HELMET',
     baseValue: 35,
+    requirements: [
+      { id: 'iron_ore', count: 5 },
+      { id: 'charcoal', count: 1 }
+    ],
+    baseStats: { physicalAttack: 0, physicalDefense: 15, magicalAttack: 0, magicalDefense: 0 }
   },
   // Chestplates
   {
@@ -91,5 +127,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Heavy links of iron.',
     subCategoryId: 'CHESTPLATE',
     baseValue: 60,
+    requirements: [
+      { id: 'iron_ore', count: 8 },
+      { id: 'charcoal', count: 2 }
+    ],
+    baseStats: { physicalAttack: 0, physicalDefense: 25, magicalAttack: 0, magicalDefense: 2 }
   },
 ];

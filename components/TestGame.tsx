@@ -10,6 +10,10 @@ const TestGame: React.FC = () => {
 
     // Define the Scene inline for simplicity in this test component
     class MainScene extends Phaser.Scene {
+      // Explicitly declare properties to fix TS errors
+      add!: Phaser.GameObjects.GameObjectFactory;
+      scale!: Phaser.Scale.ScaleManager;
+
       private rect!: Phaser.GameObjects.Rectangle;
 
       constructor() {

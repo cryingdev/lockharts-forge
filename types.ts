@@ -1,5 +1,7 @@
+import { Equipment, EquipmentStats } from './models/Equipment';
+import { Mercenary } from './models/Mercenary';
 
-export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT';
+export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT';
 
 export interface ItemDefinition {
   id: string;
@@ -12,6 +14,7 @@ export interface ItemDefinition {
 
 export interface InventoryItem extends ItemDefinition {
   quantity: number;
+  equipmentData?: Equipment; // Stores the unique instance data for equipment
 }
 
 export enum TimeOfDay {
@@ -48,12 +51,32 @@ export interface GameEvent {
   }[];
 }
 
+export interface ShopRequest {
+    type: 'RESOURCE' | 'EQUIPMENT';
+    requestedId: string;
+    price: number;
+    dialogue: string;
+}
+
+export interface ShopCustomer {
+    id: string; // unique transaction id
+    mercenary: Mercenary;
+    request: ShopRequest;
+    entryTime: number; 
+}
+
 export interface GameState {
   stats: PlayerStats;
   inventory: InventoryItem[];
   forge: ForgeStatus;
   activeEvent: GameEvent | null;
   logs: string[]; // For showing history of actions
+  knownMercenaries: Mercenary[]; // Tracked regulars and named NPCs
+  
+  // Shop System State
+  activeCustomer: ShopCustomer | null; // The person currently at the counter
+  shopQueue: ShopCustomer[]; // People waiting in line
+  visitorsToday: string[]; // List of Mercenary IDs who have visited today
 }
 
 export interface GameContextType {
@@ -64,6 +87,16 @@ export interface GameContextType {
     rest: () => void; // Advance time/Restore energy
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
+    craftItem: (item: EquipmentItem, quality: number) => void;
+    buyItems: (items: { id: string; count: number }[], totalCost: number) => void;
+    sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => void;
+    toggleShop: () => void;
+    addMercenary: (merc: Mercenary) => void;
+    
+    // Shop Specific Actions
+    enqueueCustomer: (customer: ShopCustomer) => void;
+    nextCustomer: () => void;
+    dismissCustomer: () => void;
   };
 }
 
@@ -85,4 +118,6 @@ export interface EquipmentItem {
   description: string;
   subCategoryId: string;
   baseValue: number;
+  requirements: { id: string; count: number }[];
+  baseStats?: EquipmentStats; // Baseline stats for calculation
 }
