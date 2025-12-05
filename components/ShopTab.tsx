@@ -65,7 +65,22 @@ const ShopTab = () => {
             <img 
                 src={getAssetUrl('shop_interior.png')} 
                 alt="Shop Interior" 
-                className="w-full object-cover opacity-60"
+                className="
+                            absolute top-0
+                            opacity-60
+                            
+                            /* [1] 가로가 더 긴 화면 (기본/PC/가로모드) */
+                            /* 너비를 꽉 채우고, 높이는 비율대로 (아래가 잘림) */
+                            w-full h-auto left-0
+
+                            /* [2] 세로가 더 긴 화면 (모바일/세로모드) */
+                            /* 높이를 꽉 채우고, 너비는 비율대로 (오른쪽이 잘림) */
+                            portrait:h-full portrait:w-auto portrait:max-w-none
+                            
+                            /* [3] 세로 모드일 때 중앙 정렬 보정 (선택사항) */
+                            /* 이걸 안 하면 왼쪽 벽만 보입니다. 중앙을 보여주려면 추가하세요. */
+                            portrait:left-1/2 portrait:-translate-x-1/2
+                        "
                 onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #292524, #1c1917)';
@@ -86,108 +101,99 @@ const ShopTab = () => {
             </div>
         )}
 
-        {/* Layer 1: Character (Behind Counter) */}
-        {/* Changed justify-center to justify-end to anchor character to bottom */}
-        <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
-            {isShopOpen && (
-                <>
-                   {activeCustomer ? (
-                       <div className="relative flex justify-center items-end w-full animate-in fade-in slide-in-from-right duration-500">
-                           
-                           {/* Wrapper for absolute elements relative to character center */}
-                           {/* Added translate-y-12 to lower the character behind the counter */}
-                           <div className="relative h-[85vh] w-auto flex justify-center translate-y-12">
-                               {/* NPC Info Card - Adjusted position for larger sprite */}
-                               <div className="absolute top-20 -right-56 w-48 bg-stone-900/90 border border-stone-700 p-3 rounded-lg backdrop-blur-sm shadow-xl text-xs z-50">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="font-bold text-amber-500">{activeCustomer.mercenary.job}</span>
-                                        <span className="text-stone-500">Lv.{activeCustomer.mercenary.level}</span>
-                                    </div>
-                                    <div className="space-y-1 mb-2">
-                                        <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
-                                            <div className="bg-red-500 h-full" style={{ width: `${(activeCustomer.mercenary.currentHp / activeCustomer.mercenary.maxHp) * 100}%` }}></div>
-                                        </div>
-                                        <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
-                                            <div className="bg-blue-500 h-full" style={{ width: `${(activeCustomer.mercenary.currentMp / activeCustomer.mercenary.maxMp) * 100}%` }}></div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-pink-400 font-bold">
-                                        <Heart className="w-3 h-3 fill-pink-400" />
-                                        <span>{activeCustomer.mercenary.affinity}</span>
-                                    </div>
-                               </div>
-
-                               {/* Request Bubble - Adjusted position for larger sprite */}
-                               <div 
-                                    className="absolute top-10 -left-64 w-64 h-32 flex items-center justify-center z-50 animate-in zoom-in delay-200 duration-300"
-                                    style={{
-                                        backgroundImage: `url(${getAssetUrl('bubble_thought.png')})`,
-                                        backgroundSize: 'contain',
-                                        backgroundRepeat: 'no-repeat',
-                                        backgroundPosition: 'center'
-                                    }}
-                               >
-                                   <div className="pb-6 pl-2 flex items-center gap-3">
-                                       <div className="bg-amber-100/80 p-1.5 rounded-lg backdrop-blur-sm">
-                                            <PackageOpen className="w-6 h-6 text-amber-700" />
-                                       </div>
-                                       <div className="leading-tight">
-                                           <div className="font-bold text-stone-800 text-sm line-clamp-1 w-24">{getItemName(activeCustomer.request.requestedId)}</div>
-                                           <div className="text-xs font-bold text-emerald-600 flex items-center gap-0.5">
-                                               <Coins className="w-3 h-3" />
-                                               {activeCustomer.request.price} G
-                                           </div>
-                                       </div>
-                                   </div>
-                               </div>
-
-                               {/* Character Sprite - Increased Height and Object Bottom */}
-                               <img 
-                                   src={activeCustomer.mercenary.sprite ? getAssetUrl(activeCustomer.mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
-                                   alt="Adventurer"
-                                   className="h-full object-contain object-bottom filter drop-shadow-2xl"
-                               />
-                           </div>
-                       </div>
-                   ) : (
-                       <div className="text-center animate-in fade-in zoom-in mb-32">
-                           <div className="w-24 h-24 bg-black/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
-                               <Store className="w-10 h-10 text-stone-500" />
-                           </div>
-                           <h3 className="text-xl font-bold text-stone-400">Waiting for customers...</h3>
-                           <p className="text-stone-500 text-sm mt-1">They come and go as they please.</p>
-                       </div>
-                   )}
-                </>
-            )}
-
-             {/* Layer 1.5: The Shop Counter (Desk) */}
-            {/* This overlays the bottom part of the character to make them look like they are standing behind it */}
-            <div className="absolute bottom-0 w-full z-30 flex items-end justify-center pointer-events-none">
-                
-                {/* Visual Representation */}
-                {!counterImgError ? (
-                    <img 
-                        src={getAssetUrl('shop_counter.png')}
-                        alt="Shop Counter"
-                        className="w-full h-full object-cover object-top filter drop-shadow-[0_-10px_20px_rgba(0,0,0,0.5)]"
-                        onError={() => setCounterImgError(true)}
-                    />
-                ) : (
-                    /* CSS Fallback */
-                    <div className="w-full h-full bg-[#3f2e22] border-t-[6px] border-[#5d4037] shadow-[0_-10px_20px_rgba(0,0,0,0.5)] relative overflow-hidden">
-                        {/* Wood Grain Texture Simulation */}
-                        <div className="absolute inset-0 opacity-10" style={{ 
-                            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 12px)' 
-                        }}></div>
+        {/* ★★★ [UI Layer] Customer Info & Request Bubble ★★★ */}
+        {/* 캐릭터 Wrapper 밖으로 빼내어 화면 기준으로 고정시켰습니다. */}
+        {isShopOpen && activeCustomer && (
+            <>
+                {/* 1. Request Bubble (화면 왼쪽 고정) */}
+                <div 
+                    className="absolute top-[15%] left-10 z-50 animate-in slide-in-from-left-10 fade-in duration-500"
+                >
+                     <div 
+                        className="w-64 h-32 flex items-center justify-center"
+                        style={{ backgroundImage: `url(${getAssetUrl('bubble_thought.png')})`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
+                    >
+                        <div className="pb-6 pl-2 flex items-center gap-3">
+                            <div className="bg-amber-100/80 p-1.5 rounded-lg backdrop-blur-sm">
+                                <PackageOpen className="w-6 h-6 text-amber-700" />
+                            </div>
+                            <div className="leading-tight">
+                                <div className="font-bold text-stone-800 text-sm line-clamp-1 w-24">{getItemName(activeCustomer.request.requestedId)}</div>
+                                <div className="text-xs font-bold text-emerald-600 flex items-center gap-0.5">
+                                    <Coins className="w-3 h-3" />
+                                    {activeCustomer.request.price} G
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                )}
-                    
-                {/* Decorative Elements on Counter (Overlay) */}
-                {isShopOpen && activeCustomer && (
-                    <div className="absolute top-0 right-20 w-32 h-20 bg-amber-900/20 blur-xl rounded-full pointer-events-none"></div>
-                )}
-            </div>
+                </div>
+
+                {/* 2. NPC Info Card (화면 오른쪽 고정) */}
+                <div className="absolute top-[15%] right-10 z-50 animate-in slide-in-from-right-10 fade-in duration-500">
+                    <div className="w-48 bg-stone-900/90 border border-stone-700 p-3 rounded-lg backdrop-blur-sm shadow-xl text-xs">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="font-bold text-amber-500">{activeCustomer.mercenary.job}</span>
+                            <span className="text-stone-500">Lv.{activeCustomer.mercenary.level}</span>
+                        </div>
+                        <div className="space-y-1 mb-2">
+                            <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                                <div className="bg-red-500 h-full" style={{ width: `${(activeCustomer.mercenary.currentHp / activeCustomer.mercenary.maxHp) * 100}%` }}></div>
+                            </div>
+                            <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                                <div className="bg-blue-500 h-full" style={{ width: `${(activeCustomer.mercenary.currentMp / activeCustomer.mercenary.maxMp) * 100}%` }}></div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-pink-400 font-bold">
+                            <Heart className="w-3 h-3 fill-pink-400" />
+                            <span>{activeCustomer.mercenary.affinity}</span>
+                        </div>
+                    </div>
+                </div>
+            </>
+        )}
+
+        {/* Layer 1: Character Only (UI elements removed) */}
+        <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
+            {isShopOpen && activeCustomer && (
+               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-200 ease-out">
+                   <div className="relative h-[85vh] w-auto flex justify-center translate-y-12">
+                       {/* Character Sprite - Pure Image */}
+                       <img 
+                           src={activeCustomer.mercenary.sprite ? getAssetUrl(activeCustomer.mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
+                           alt="Adventurer"
+                           className="h-full object-contain object-bottom filter drop-shadow-2xl"
+                       />
+                   </div>
+               </div>
+            )}
+        </div>
+
+        {/* Layer 1.5: The Shop Counter (Desk) */}
+        {/* This overlays the bottom part of the character to make them look like they are standing behind it */}
+        <div className="absolute bottom-0 w-full z-30 flex items-end justify-center pointer-events-none">
+            
+            {/* Visual Representation */}
+            {!counterImgError ? (
+                <img 
+                    src={getAssetUrl('shop_counter.png')}
+                    alt="Shop Counter"
+                    className="w-full h-full object-cover object-top filter drop-shadow-[0_-10px_20px_rgba(0,0,0,0.5)]"
+                    onError={() => setCounterImgError(true)}
+                />
+            ) : (
+                /* CSS Fallback */
+                <div className="w-full h-full bg-[#3f2e22] border-t-[6px] border-[#5d4037] shadow-[0_-10px_20px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                    {/* Wood Grain Texture Simulation */}
+                    <div className="absolute inset-0 opacity-10" style={{ 
+                        backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 12px)' 
+                    }}></div>
+                </div>
+            )}
+                
+            {/* Decorative Elements on Counter (Overlay) */}
+            {isShopOpen && activeCustomer && (
+                <div className="absolute top-0 right-20 w-32 h-20 bg-amber-900/20 blur-xl rounded-full pointer-events-none"></div>
+            )}
         </div>
 
         {/* Layer 2: Dialogue UI (Bottom) */}
@@ -209,6 +215,20 @@ const ShopTab = () => {
                     }
                 ]}
             />
+        )}
+
+        {/* ★★★ [NEW] Waiting State Message ★★★ */}
+        {/* 캐릭터 레이어에서 분리하여 독립적으로 배치. 화면 정중앙에 위치함. */}
+        {isShopOpen && !activeCustomer && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none pb-20">
+                <div className="text-center animate-in fade-in zoom-in duration-500">
+                    <div className="w-24 h-24 bg-black/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 backdrop-blur-sm">
+                        <Store className="w-10 h-10 text-stone-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-stone-400">Waiting for customers...</h3>
+                    <p className="text-stone-500 text-sm mt-1">They come and go as they please.</p>
+                </div>
+            </div>
         )}
 
         {/* Layer 3: Modal & Overlay Group */}

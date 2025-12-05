@@ -1,7 +1,8 @@
+
 import React, { useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
-import { generateMercenary } from '../utils/mercenaryGenerator';
 import { generateShopRequest } from '../utils/shopUtils';
+import { calculateMaxHp, calculateMaxMp } from '../models/Stats';
 
 /**
  * ShopManager
@@ -26,41 +27,37 @@ const ShopManager = () => {
         }
 
         const scheduleNextArrival = () => {
-            // Random interval between 10s (10000ms) and 60s (60000ms)
-            const interval = Math.random() * 50000 + 10000;
+            // Random interval between 5s (5000ms) and 30s (30000ms)
+            const interval = Math.random() * 30000 + 5000;
             
             arrivalTimerRef.current = setTimeout(() => {
-                // Attempt to generate a customer
-                
-                // We generate a candidate. The generator prefers known regulars but falls back to randoms.
-                // We need to ensure we don't pick someone who has already visited today.
-                // Note: generateMercenary logic handles selecting regulars who haven't visited,
-                // but if it falls back to a NEW mercenary (random), we should check that ID too (though random IDs are unique).
-                
-                let mercCandidate = generateMercenary(state.knownMercenaries, state.stats.day);
-                
-                // Double check against visitorsToday to be safe, especially for Named ones
-                if (visitorsToday.includes(mercCandidate.id)) {
-                     // Try to find a valid replacement from known list
-                     const validRegulars = state.knownMercenaries.filter(m => !visitorsToday.includes(m.id));
-                     if (validRegulars.length > 0) {
-                         mercCandidate = validRegulars[Math.floor(Math.random() * validRegulars.length)];
-                     } else {
-                         // Everyone known has visited, and generator gave us a duplicate (rare if generator logic is good, but possible)
-                         // Force a random one if we can't find a regular?
-                         // For now, if everyone visited, we might just skip this turn or generate a purely random nameless one.
-                         // Let's assume generateMercenary is robust enough, but if we catch a dupe, we skip.
-                         // Ideally generateMercenary returns a unique random if all named are exhausted.
-                    
-                         // If still duplicate, skip arrival
-                         if (visitorsToday.includes(mercCandidate.id)) {
-                             scheduleNextArrival();
-                             return;
-                         }
-                     }
+                // STRICT MODE: Only allow mercenaries from the 'knownMercenaries' list (Tavern list).
+                // Filter out anyone who has already visited today.
+                const validCandidates = state.knownMercenaries.filter(m => !visitorsToday.includes(m.id));
+
+                if (validCandidates.length === 0) {
+                    // Everyone has visited today. No one comes.
+                    // Reschedule check just in case new mercenaries are added via Tavern later in the day.
+                    scheduleNextArrival();
+                    return;
                 }
 
-                const customer = generateShopRequest(mercCandidate);
+                // Pick a random candidate from the valid list
+                const selectedMerc = validCandidates[Math.floor(Math.random() * validCandidates.length)];
+
+                // Refresh their stats for the visit (Simulate them coming fresh)
+                const maxHp = calculateMaxHp(selectedMerc.stats, selectedMerc.level);
+                const maxMp = calculateMaxMp(selectedMerc.stats, selectedMerc.level);
+                
+                const visitingMerc = {
+                    ...selectedMerc,
+                    currentHp: maxHp,
+                    currentMp: maxMp,
+                    maxHp,
+                    maxMp
+                };
+
+                const customer = generateShopRequest(visitingMerc);
                 actions.enqueueCustomer(customer);
                 
                 scheduleNextArrival();
@@ -95,10 +92,10 @@ const ShopManager = () => {
             return;
         }
 
-        // Customer waits 60 seconds then leaves
+        // Customer waits 30 seconds then leaves
         patienceTimerRef.current = setTimeout(() => {
             actions.dismissCustomer();
-        }, 60000);
+        }, 30000);
 
         return () => {
             if (patienceTimerRef.current) clearTimeout(patienceTimerRef.current);

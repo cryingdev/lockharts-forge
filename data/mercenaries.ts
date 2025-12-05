@@ -43,7 +43,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 0,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_novice_01.png',
+    sprite: 'pip_the_green.png',
     icon: '🌱'
   },
   {
@@ -60,7 +60,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 5,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_novice_02.png',
+    sprite: 'tily_footloose.png',
     icon: '🌾'
   },
 
@@ -79,7 +79,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 5,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_warrior_01.png',
+    sprite: 'iron_garret.png',
     icon: '🛡️'
   },
   {
@@ -96,7 +96,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 0,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_warrior_02.png',
+    sprite: 'brunhilde.png',
     icon: '🐻'
   },
 
@@ -115,7 +115,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 10,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_mage_01.png',
+    sprite: 'elara_of_the_flame.png',
     icon: '🔥'
   },
   {
@@ -132,7 +132,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 0,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_mage_02.png',
+    sprite: 'xan_the_whisperer.png',
     icon: '🔮'
   },
 
@@ -151,7 +151,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 0,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_rogue_01.png',
+    sprite: 'sly_vargo.png',
     icon: '🗡️'
   },
   {
@@ -168,7 +168,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 0,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_rogue_02.png',
+    sprite: 'nyx_shadowstep.png',
     icon: '🌑'
   },
 
@@ -187,7 +187,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 20,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_cleric_01.png',
+    sprite: 'sister_aria.png',
     icon: '✨'
   },
   {
@@ -204,7 +204,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 15,
     visitCount: 0,
     isUnique: true,
-    sprite: 'adventurer_cleric_02.png',
+    sprite: 'father_benedict.png',
     icon: '📜'
   }
 ];

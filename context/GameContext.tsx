@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useMemo } from 'react';
 import { GameState, GameContextType, TimeOfDay, InventoryItem, GameEvent, EquipmentItem, ShopCustomer } from '../types';
 import { INITIAL_STATE, GAME_CONFIG, ITEMS } from '../constants';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
@@ -404,7 +404,8 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 const GameProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(gameReducer, INITIAL_STATE);
 
-  const actions = {
+  // Use useMemo to ensure actions object reference remains stable unless necessary
+  const actions = useMemo(() => ({
     cleanRubble: () => dispatch({ type: 'CLEAN_RUBBLE' }),
     repairItem: () => dispatch({ type: 'REPAIR_WORK' }),
     rest: () => dispatch({ type: 'ADVANCE_TIME' }),
@@ -420,11 +421,14 @@ const GameProvider = ({ children }: { children: ReactNode }) => {
     toggleShop: () => dispatch({ type: 'TOGGLE_SHOP' }),
     addMercenary: (merc: Mercenary) => dispatch({ type: 'ADD_KNOWN_MERCENARY', payload: merc }),
     
+    // Generic Item Consumption Helper
+    consumeItem: (id: string, count: number) => dispatch({ type: 'PAY_COST', payload: { items: [{ id, count }] } }),
+
     // Shop Actions
     enqueueCustomer: (customer: ShopCustomer) => dispatch({ type: 'ENQUEUE_CUSTOMER', payload: customer }),
     nextCustomer: () => dispatch({ type: 'NEXT_CUSTOMER' }),
     dismissCustomer: () => dispatch({ type: 'DISMISS_CUSTOMER' }),
-  };
+  }), []);
 
   return (
     <GameContext.Provider value={{ state, actions }}>

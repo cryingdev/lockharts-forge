@@ -2,5 +2,5 @@
   "name": "Lockhart's Forge",
   "description": "A casual simulation game about rebuilding a ruined forge. Manage resources, craft items, and interact with wandering merchants.",
   "requestFramePermissions": [],
-  "version": "0.1.13"
+  "version": "0.1.21"
 }

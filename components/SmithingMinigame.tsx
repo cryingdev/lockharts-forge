@@ -1,7 +1,10 @@
+
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { X, Hammer, Flame } from 'lucide-react';
 import { getAssetUrl } from '../utils';
+import { useGame } from '../context/GameContext';
+import { ITEMS } from '../constants';
 
 // --- Types & Props ---
 interface SmithingMinigameProps {
@@ -98,7 +101,9 @@ class SmithingScene extends Phaser.Scene {
     this.load.image('ingot_warm', getAssetUrl('ingot_warm.png'));
     this.load.image('ingot_normal', getAssetUrl('ingot_normal.png'));
 
-    this.load.image('spark', getAssetUrl('particle_spark.png'));
+    // Spark Variations
+    this.load.image('spark_perfect', getAssetUrl('particle_spark1.png'));
+    this.load.image('spark_normal', getAssetUrl('particle_spark2.png'));
 
     this.load.on('loaderror', (fileObj: any) => {
         console.warn(`[Phaser] Failed to load asset: ${fileObj.key} from ${fileObj.src}`);
@@ -224,6 +229,14 @@ class SmithingScene extends Phaser.Scene {
     this.randomizeTargetPos();
   }
 
+  // --- External Methods (Called by React) ---
+  public heatUp() {
+      if (this.isFinished) return;
+      this.temperature = Math.min(100, this.temperature + 30);
+      this.updateTempText();
+      this.createSparks(20, 0xff5500, 1.2, 'spark_normal');
+  }
+
   randomizeTargetPos() {
       if (!this.ingotBounds) return;
       
@@ -296,9 +309,11 @@ class SmithingScene extends Phaser.Scene {
       this.approachRing.lineStyle(3, ringColor, 1);
       this.approachRing.strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
 
-      // Check for Miss (Ring too small)
+      // Check for Timeout (Ring too small)
       if (this.currentRadius < this.targetRadius - 15) {
-          this.triggerMiss();
+          // REMOVED: triggerMiss(); 
+          // Just reset without penalty or visual feedback
+          this.combo = 0; // Reset combo silently
           this.resetRing();
       }
   }
@@ -313,7 +328,7 @@ class SmithingScene extends Phaser.Scene {
       if (this.score >= this.targetScore) return;
 
       this.temperature = Math.max(0, this.temperature - (this.coolingRate * (delta / 1000)));
-      this.tempText.setText(`TEMP: ${Math.floor(this.temperature)}%`);
+      this.updateTempText();
 
       let newStage: 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'NORMAL';
       if (this.temperature > 75) newStage = 'AURA';
@@ -324,6 +339,14 @@ class SmithingScene extends Phaser.Scene {
           this.currentTempStage = newStage;
           this.updateIngotVisuals(newStage);
       }
+  }
+  
+  updateTempText() {
+       this.tempText.setText(`TEMP: ${Math.floor(this.temperature)}%`);
+       // Change color based on heat
+       if (this.temperature < 20) this.tempText.setColor('#ef4444'); // Red
+       else if (this.temperature > 75) this.tempText.setColor('#fbbf24'); // Amber
+       else this.tempText.setColor('#ffffff');
   }
 
   updateIngotVisuals(stage: 'AURA' | 'HOT' | 'WARM' | 'NORMAL') {
@@ -451,7 +474,8 @@ class SmithingScene extends Phaser.Scene {
     this.score += points;
     this.combo++;
     this.cameras.main.shake(100, 0.02);
-    this.createSparks(30, 0xffaa00, 1.5);
+    // Use spark_perfect for perfect hits
+    this.createSparks(30, 0xffaa00, 1.5, 'spark_perfect');
     
     let text = 'PERFECT!';
     if (mult > 1) text += ' (MAX HEAT)';
@@ -465,7 +489,8 @@ class SmithingScene extends Phaser.Scene {
     this.score += points;
     this.combo = 0; 
     this.cameras.main.shake(50, 0.005);
-    this.createSparks(10, 0xffffff, 1.0);
+    // Use spark_normal for good hits
+    this.createSparks(10, 0xffffff, 1.0, 'spark_normal');
     this.showFeedback('GOOD', 0xe5e5e5, 1.0);
   }
 
@@ -476,14 +501,16 @@ class SmithingScene extends Phaser.Scene {
     this.showFeedback('MISS', 0xef4444, 1.2);
   }
 
-  createSparks(count: number, color: number, speedScale: number) {
-    let texture = 'spark';
-    if (!this.textures.exists('spark')) {
-        this.ensureTexture('fallback_spark', (g) => {
+  createSparks(count: number, color: number, speedScale: number, textureKey: string) {
+    let texture = textureKey;
+    
+    // Check if specific texture exists, otherwise create fallback
+    if (!this.textures.exists(texture)) {
+        this.ensureTexture(texture + '_fallback', (g) => {
             g.fillStyle(0xffffff, 1);
             g.fillCircle(4,4,4);
         });
-        texture = 'fallback_spark';
+        texture = texture + '_fallback';
     }
 
     const emitter = this.add.particles(this.hitX, this.hitY, texture, {
@@ -547,8 +574,11 @@ class SmithingScene extends Phaser.Scene {
 
 // --- React Component ---
 const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose, difficulty = 1 }) => {
+  const { state, actions } = useGame();
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const charcoalCount = state.inventory.find(i => i.id === ITEMS.CHARCOAL.id)?.quantity || 0;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -575,6 +605,16 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     };
   }, [onComplete, difficulty]);
 
+  const handleAddCharcoal = () => {
+      if (charcoalCount > 0 && gameRef.current) {
+          const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
+          if (scene) {
+              actions.consumeItem(ITEMS.CHARCOAL.id, 1);
+              scene.heatUp();
+          }
+      }
+  };
+
   return (
     <div className="w-full h-full flex flex-col bg-stone-950 animate-in fade-in duration-300">
         <div className="w-full h-16 shrink-0 bg-stone-900 border-b border-stone-800 flex items-center justify-between px-6 z-10 shadow-md">
@@ -599,6 +639,19 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
         <div className="flex-1 w-full relative bg-stone-950 flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #78350f 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
             <div ref={containerRef} className="w-full h-full max-w-5xl max-h-[80vh] aspect-[4/3] shadow-2xl shadow-black rounded-lg overflow-hidden border border-stone-800" />
+            
+            {/* Charcoal Button Overlay */}
+            <div className="absolute bottom-6 right-6 z-20">
+                <button 
+                    onClick={handleAddCharcoal}
+                    disabled={charcoalCount <= 0}
+                    className="flex flex-col items-center justify-center w-24 h-24 rounded-full bg-stone-900 border-4 border-stone-700 hover:border-amber-500 hover:bg-stone-800 shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group active:scale-95"
+                >
+                    <Flame className="w-8 h-8 text-amber-500 mb-1 group-hover:animate-pulse" />
+                    <span className="text-[10px] font-bold text-stone-300 uppercase">Add Heat</span>
+                    <span className="text-xs text-stone-500 font-mono">x{charcoalCount}</span>
+                </button>
+            </div>
         </div>
         
         <div className="w-full py-3 bg-stone-900 border-t border-stone-800 flex justify-center items-center gap-2 text-stone-500 text-xs font-mono uppercase tracking-widest">

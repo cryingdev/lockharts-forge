@@ -1,5 +1,5 @@
 
-import { EquipmentCategory, EquipmentSubCategory, EquipmentItem } from './types';
+import { EquipmentCategory, EquipmentSubCategory, EquipmentItem } from '../types';
 
 export const EQUIPMENT_CATEGORIES: { id: EquipmentCategory; name: string }[] = [
   { id: 'WEAPON', name: 'Weapons' },
@@ -15,8 +15,21 @@ export const EQUIPMENT_SUBCATEGORIES: EquipmentSubCategory[] = [
   { id: 'CHESTPLATE', name: 'Chestplates', categoryId: 'ARMOR' },
 ];
 
+export const MARKET_CATALOG = [
+  { id: 'charcoal', price: 25 },
+  { id: 'iron_ore', price: 100 },
+  { id: 'copper_ore', price: 80 },
+  { id: 'wood', price: 50 },
+  { id: 'scroll_t2', price: 1000 },
+];
+
+// Market Prices for Reference:
+// Iron Ore: 100 G
+// Copper Ore: 80 G
+// Wood: 50 G
+
 export const EQUIPMENT_ITEMS: EquipmentItem[] = [
-  // Swords
+  // --- SWORDS ---
   {
     id: 'sword_01_t1',
     name: 'Rusty Iron Sword',
@@ -24,7 +37,8 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     icon: '🗡️',
     description: 'A basic blade, heavy and dull.',
     subCategoryId: 'SWORD',
-    baseValue: 400,
+    // Cost: 3 Iron (300) -> Sell: 450
+    baseValue: 450,
     requirements: [
       { id: 'iron_ore', count: 3 }
     ],
@@ -37,7 +51,8 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     icon: '⚔️',
     description: 'A reliable weapon for a city guard.',
     subCategoryId: 'SWORD',
-    baseValue: 500,
+    // Cost: 5 Iron (500) -> Sell: 750
+    baseValue: 750,
     requirements: [
       { id: 'iron_ore', count: 5 }
     ],
@@ -50,14 +65,16 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     icon: '⚜️',
     description: 'Finely balanced and dangerously sharp.',
     subCategoryId: 'SWORD',
-    baseValue: 700,
+    // Cost: 5 Iron (500) + 2 Copper (160) = 660 -> Sell: 1000
+    baseValue: 1000,
     requirements: [
       { id: 'iron_ore', count: 5 },
       { id: 'copper_ore', count: 2 }
     ],
     baseStats: { physicalAttack: 60, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 }
   },
-  // Axes
+
+  // --- AXES ---
   {
     id: 'axe_01_t1',
     name: 'Woodcutter\'s Axe',
@@ -65,7 +82,8 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     icon: '🪓',
     description: 'More tool than weapon, but it hurts.',
     subCategoryId: 'AXE',
-    baseValue: 400,
+    // Cost: 3 Iron (300) + 2 Wood (100) = 400 -> Sell: 600
+    baseValue: 600,
     requirements: [
       { id: 'iron_ore', count: 3 },
       { id: 'wood', count: 2 }
@@ -79,14 +97,16 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     icon: '☠️',
     description: 'Double-headed destruction.',
     subCategoryId: 'AXE',
-    baseValue: 950,
+    // Cost: 6 Iron (600) + 3 Wood (150) = 750 -> Sell: 1150
+    baseValue: 1150,
     requirements: [
       { id: 'iron_ore', count: 6 },
       { id: 'wood', count: 3 },
     ],
     baseStats: { physicalAttack: 30, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
   },
-  // Helmets
+
+  // --- HELMETS ---
   {
     id: 'helm_01_t1',
     name: 'Iron Pot Helm',
@@ -94,7 +114,8 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     icon: '🥣',
     description: 'Better than nothing. Barely.',
     subCategoryId: 'HELMET',
-    baseValue: 400,
+    // Cost: 3 Iron (300) -> Sell: 450
+    baseValue: 450,
     requirements: [
       { id: 'iron_ore', count: 3 }
     ],
@@ -107,13 +128,15 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     icon: '🪖',
     description: 'Standard issue protection.',
     subCategoryId: 'HELMET',
-    baseValue: 600,
+    // Cost: 5 Iron (500) -> Sell: 750
+    baseValue: 750,
     requirements: [
       { id: 'iron_ore', count: 5 }
     ],
     baseStats: { physicalAttack: 0, physicalDefense: 15, magicalAttack: 0, magicalDefense: 0 }
   },
-  // Chestplates
+
+  // --- CHESTPLATES ---
   {
     id: 'chest_01_t1',
     name: 'Chainmail Shirt',
@@ -121,7 +144,8 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     icon: '👕',
     description: 'Heavy links of iron.',
     subCategoryId: 'CHESTPLATE',
-    baseValue: 1050,
+    // Cost: 8 Iron (800) -> Sell: 1200
+    baseValue: 1200,
     requirements: [
       { id: 'iron_ore', count: 8 }
     ],

@@ -11,15 +11,10 @@ export const ITEMS = {
   ANVIL: { id: 'anvil', name: 'Old Anvil', type: 'TOOL', description: 'Heavy and reliable.', baseValue: 0 },
   FURNACE: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', description: 'Required for smelting.', baseValue: 500 },
   SCRAP_METAL: { id: 'scrap', name: 'Scrap Metal', type: 'RESOURCE', description: 'Salvaged from rubble.', baseValue: 1 },
+  
+  // New Items
+  SCROLL_T2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', description: 'Magical parchment that enhances equipment quality.', baseValue: 250 },
 } as const;
-
-// Items available in the buying market
-export const MARKET_CATALOG = [
-  { id: 'charcoal', price: 100 },
-  { id: 'iron_ore', price: 25 },
-  { id: 'copper_ore', price: 20 },
-  { id: 'wood', price: 15 },
-];
 
 export const INITIAL_INVENTORY: InventoryItem[] = [
   { ...ITEMS.ANVIL, type: 'TOOL', quantity: 1 },

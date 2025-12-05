@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import Header from './components/Header';
@@ -8,7 +9,8 @@ import ShopTab from './components/ShopTab';
 import TavernTab from './components/TavernTab';
 import ShopManager from './components/ShopManager';
 import { Store, Anvil, Package, ShoppingBag, Plus, Minus, Trash2, AlertCircle, ShoppingCart, Coins, Beer } from 'lucide-react';
-import { MARKET_CATALOG, ITEMS } from './constants';
+import { ITEMS } from './constants';
+import { MARKET_CATALOG } from './data/gameData';
 
 const MarketTab = () => {
   const { state, actions } = useGame();

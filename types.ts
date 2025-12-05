@@ -1,7 +1,7 @@
 import { Equipment, EquipmentStats } from './models/Equipment';
 import { Mercenary } from './models/Mercenary';
 
-export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT';
+export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT' | 'SCROLL';
 
 export interface ItemDefinition {
   id: string;
@@ -92,6 +92,7 @@ export interface GameContextType {
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => void;
     toggleShop: () => void;
     addMercenary: (merc: Mercenary) => void;
+    consumeItem: (id: string, count: number) => void;
     
     // Shop Specific Actions
     enqueueCustomer: (customer: ShopCustomer) => void;
