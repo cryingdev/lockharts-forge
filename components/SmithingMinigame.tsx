@@ -32,8 +32,8 @@ class SmithingScene extends Phaser.Scene {
   private comboText!: Phaser.GameObjects.Text;
   private hammer!: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle | Phaser.GameObjects.Container;
   private ingot!: Phaser.GameObjects.Image;
-  private debugRing!: Phaser.GameObjects.Graphics;
   private infoText!: Phaser.GameObjects.Text;
+  private ambientGlow!: Phaser.GameObjects.Arc;
 
   // Game Configuration
   private centerX: number = 0;
@@ -60,6 +60,10 @@ class SmithingScene extends Phaser.Scene {
   private hitCooldown: number = 200; // ms
   private onComplete?: (score: number) => void;
   private isFinished: boolean = false;
+  
+  // Flow Control
+  private isPlaying: boolean = false;
+  private isReadyToStart: boolean = false;
 
   // Temperature System
   private temperature: number = 0; // Starts Cold
@@ -85,6 +89,8 @@ class SmithingScene extends Phaser.Scene {
     this.combo = 0;
     this.temperature = 0; // START AT 0
     this.isFinished = false;
+    this.isPlaying = false;
+    this.isReadyToStart = false;
     this.currentTempStage = 'COLD';
   }
 
@@ -148,8 +154,7 @@ class SmithingScene extends Phaser.Scene {
     }
 
     // Ambient Glow (Starts off, turns on with heat)
-    const glow = this.add.circle(this.centerX, height, 400, 0xea580c, 0); // Alpha 0 initially
-    glow.setName('ambientGlow');
+    this.ambientGlow = this.add.circle(this.centerX, height, 400, 0xea580c, 0); // Alpha 0 initially
 
     // --- 2. The Forge ---
     
@@ -179,17 +184,11 @@ class SmithingScene extends Phaser.Scene {
 
     // --- 3. Ring Mechanic Visuals ---
     
-    // Debug Visual for Aim Range
-    this.debugRing = this.add.graphics();
-
     // Target Ring (Dynamic Position)
     this.targetRing = this.add.graphics();
     
     // Approach Ring (Dynamic Size)
     this.approachRing = this.add.graphics();
-
-    // Don't draw rings yet if cold
-    // this.drawTargetRing();
 
     // Hammer (On top of rings)
     if (hasTexture('hammer')) {
@@ -220,7 +219,7 @@ class SmithingScene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0);
     
     // Info Text (Tutorial)
-    this.infoText = this.add.text(this.centerX, this.centerY - 100, 'FORGE IS COLD\nADD FUEL TO START', {
+    this.infoText = this.add.text(this.centerX, this.centerY - 100, 'FORGE IS COLD\nADD FUEL TO HEAT', {
         fontFamily: 'monospace', fontSize: '24px', color: '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 4
     }).setOrigin(0.5);
     
@@ -229,12 +228,12 @@ class SmithingScene extends Phaser.Scene {
     });
 
     // --- Input ---
-    this.input.keyboard?.on('keydown-SPACE', this.handleHit, this);
+    this.input.keyboard?.on('keydown-SPACE', this.handleInput, this);
     
     // Handle Click - Explicitly checking pointer button 0 (Left Click)
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         if (pointer.button === 0) {
-            this.handleHit();
+            this.handleInput();
         }
     }, this);
 
@@ -251,12 +250,13 @@ class SmithingScene extends Phaser.Scene {
       this.createSparks(20, 0xff5500, 1.2, 'spark_normal');
       
       // Update Ambient Glow
-      const glow = this.children.getByName('ambientGlow') as Phaser.GameObjects.Arc;
-      if (glow) glow.setAlpha(0.2);
+      if (this.ambientGlow) this.ambientGlow.setAlpha(0.2);
 
-      // Remove tutorial text if heated
-      if (this.temperature > 20 && this.infoText.visible) {
-          this.infoText.setVisible(false);
+      // Transition to Ready State if not playing
+      if (!this.isPlaying && this.temperature > 0) {
+          this.isReadyToStart = true;
+          this.infoText.setText('CLICK TO START');
+          this.infoText.setColor('#fbbf24'); // Amber
       }
   }
 
@@ -281,11 +281,6 @@ class SmithingScene extends Phaser.Scene {
       // Stroke outline
       this.targetRing.lineStyle(4, 0xffaa00, 0.8);
       this.targetRing.strokeCircle(this.hitX, this.hitY, this.targetRadius);
-
-      // Debug: Show actual aim tolerance area
-      this.debugRing.clear();
-      this.debugRing.lineStyle(1, 0x3b82f6, 0.3); // Faint Blue
-      this.debugRing.strokeCircle(this.hitX, this.hitY, this.targetRadius + 60);
   }
 
   ensureTexture(key: string, drawFn: (graphics: Phaser.GameObjects.Graphics) => void, width?: number, height?: number) {
@@ -304,13 +299,20 @@ class SmithingScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.isFinished) return;
 
-    // 1. Ring Mechanic (Only works if not cold)
-    if (this.currentTempStage !== 'COLD') {
+    // 1. Ring Mechanic (Only works if playing and not cold)
+    if (this.isPlaying && this.currentTempStage !== 'COLD') {
         this.handleRingLogic(delta);
     }
 
     // 2. Temperature Logic
     this.handleTemperature(delta);
+
+    // If waiting to start and it gets cold again, revert prompt
+    if (!this.isPlaying && this.isReadyToStart && this.currentTempStage === 'COLD') {
+        this.isReadyToStart = false;
+        this.infoText.setText('FORGE IS COLD\nADD FUEL TO HEAT');
+        this.infoText.setColor('#3b82f6');
+    }
   }
 
   handleRingLogic(delta: number) {
@@ -339,9 +341,8 @@ class SmithingScene extends Phaser.Scene {
 
       // Check for Timeout (Ring too small)
       if (this.currentRadius < this.targetRadius - 15) {
-          // REMOVED: triggerMiss(); 
-          // Just reset without penalty or visual feedback
-          this.combo = 0; // Reset combo silently
+          // Silent miss / Reset
+          this.combo = 0; 
           this.resetRing();
       }
   }
@@ -371,11 +372,18 @@ class SmithingScene extends Phaser.Scene {
           this.updateIngotVisuals(newStage);
           
           if (newStage === 'COLD') {
-             this.infoText.setVisible(true);
+             // If game was playing and it got cold, show warning or pause?
+             // Currently handled by ring logic pausing.
+             // We can re-show info text if paused.
+             if (!this.isPlaying) {
+                 this.infoText.setVisible(true);
+             } else {
+                 this.showFeedback("TOO COLD!", 0x3b82f6, 1.0);
+             }
+             
              this.targetRing.clear();
              this.approachRing.clear();
-             const glow = this.children.getByName('ambientGlow') as Phaser.GameObjects.Arc;
-             if (glow) glow.setAlpha(0);
+             if (this.ambientGlow) this.ambientGlow.setAlpha(0);
           }
       }
   }
@@ -428,8 +436,25 @@ class SmithingScene extends Phaser.Scene {
       }
   }
 
-  handleHit() {
+  handleInput() {
     if (this.isFinished) return;
+
+    // --- PHASE 1: START GAME CHECK ---
+    if (!this.isPlaying) {
+        if (this.isReadyToStart) {
+            // START THE GAME
+            this.isPlaying = true;
+            this.infoText.setVisible(false);
+            this.resetRing();
+            this.cameras.main.flash(200, 255, 255, 255);
+        } else {
+            // Not ready (too cold)
+            this.triggerTooCold();
+        }
+        return;
+    }
+
+    // --- PHASE 2: GAMEPLAY ---
     
     const now = this.time.now;
     if (now - this.lastHitTime < this.hitCooldown) return;

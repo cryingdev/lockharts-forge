@@ -126,7 +126,8 @@ export const INITIAL_STATE: GameState = {
 export const GAME_CONFIG = {
     ENERGY_COST: {
         REPAIR: 15,
-        OPEN_SHOP: 30,
+        OPEN_SHOP: 15, // Reduced from 30
+        CRAFT: 20 // Added craft cost
     },
     // Time Durations in Milliseconds
     TIME_DURATION: {

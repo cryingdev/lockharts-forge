@@ -299,6 +299,14 @@ const gameReducer = (state: GameState, action: Action): GameState => {
     case 'CRAFT_ITEM': {
         const { item, quality } = action.payload;
         
+        // Safety check for energy
+        if (state.stats.energy < GAME_CONFIG.ENERGY_COST.CRAFT) {
+             return {
+                ...state,
+                logs: [`Too exhausted to craft. Need ${GAME_CONFIG.ENERGY_COST.CRAFT} energy.`, ...state.logs]
+            };
+        }
+
         const hasResources = item.requirements.every(req => {
             const invItem = state.inventory.find(i => i.id === req.id);
             return invItem && invItem.quantity >= req.count;
@@ -336,8 +344,12 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 
         return {
             ...state,
+            stats: {
+                ...state.stats,
+                energy: state.stats.energy - GAME_CONFIG.ENERGY_COST.CRAFT
+            },
             inventory: newInventory,
-            logs: [`Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})!`, ...state.logs]
+            logs: [`Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})! Energy -${GAME_CONFIG.ENERGY_COST.CRAFT}`, ...state.logs]
         };
     }
 
@@ -479,7 +491,7 @@ const gameReducer = (state: GameState, action: Action): GameState => {
   }
 };
 
-const GameProvider = ({ children }: { children: ReactNode }) => {
+const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, INITIAL_STATE);
 
   // --- Auto-Advance Time Logic ---

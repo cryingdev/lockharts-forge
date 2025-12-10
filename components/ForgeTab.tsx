@@ -1,11 +1,11 @@
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../data/gameData';
 import { EquipmentCategory, EquipmentItem } from '../types';
 import SmithingMinigame from './SmithingMinigame';
-import { Hammer, Shield, Sword, ChevronDown, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap } from 'lucide-react';
 import { useGame } from '../context/GameContext';
-import { MATERIALS } from '../constants';
+import { MATERIALS, GAME_CONFIG } from '../constants';
 
 interface ForgeTabProps {
     onNavigate: (tab: any) => void;
@@ -20,23 +20,100 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
   // UI State
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
-  const [expandedSubCat, setExpandedSubCat] = useState<string | null>('SWORD');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   
+  // Accordion & Favorites State
+  // Changed to string | null to enforce single-expand behavior
+  const [expandedSubCat, setExpandedSubCat] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
   // Tooltip State
   const [hoveredItem, setHoveredItem] = useState<EquipmentItem | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   
+  // Helper to check resources
+  const getInventoryCount = useCallback((id: string) => {
+      return inventory.find(i => i.id === id)?.quantity || 0;
+  }, [inventory]);
+
+  const getResourceName = (id: string) => {
+      const itemDef = Object.values(MATERIALS).find(i => i.id === id);
+      return itemDef ? itemDef.name : id;
+  };
+
+  // CHECKS
+  const charcoalCount = getInventoryCount('charcoal');
+  const hasFuel = charcoalCount > 0;
+  const hasEnergy = stats.energy >= GAME_CONFIG.ENERGY_COST.CRAFT;
+
+  const canAffordResources = useCallback((item: EquipmentItem) => {
+      return item.requirements.every(req => getInventoryCount(req.id) >= req.count);
+  }, [getInventoryCount]);
+
+  // Filter Items directly based on Category and Tier
+  const visibleItems = useMemo(() => {
+      return EQUIPMENT_ITEMS.filter(item => {
+          // 1. Check Tier
+          if (item.tier > stats.tierLevel) return false;
+
+          // 2. Check Category (Map subCategory to main Category)
+          const subCatDef = EQUIPMENT_SUBCATEGORIES.find(sc => sc.id === item.subCategoryId);
+          return subCatDef?.categoryId === activeCategory;
+      });
+  }, [activeCategory, stats.tierLevel]);
+
+  // Get Favorites from visible items
+  const favoriteItems = useMemo(() => {
+      return visibleItems.filter(item => favorites.includes(item.id));
+  }, [visibleItems, favorites]);
+
+  // Group Items by SubCategory
+  const groupedItems = useMemo(() => {
+      const groups: Record<string, EquipmentItem[]> = {};
+      visibleItems.forEach(item => {
+          if (!groups[item.subCategoryId]) groups[item.subCategoryId] = [];
+          groups[item.subCategoryId].push(item);
+      });
+      return groups;
+  }, [visibleItems]);
+
+  // Get visible subcategories that actually have items
+  const visibleSubCats = useMemo(() => {
+      return EQUIPMENT_SUBCATEGORIES.filter(sc => 
+          sc.categoryId === activeCategory && groupedItems[sc.id] && groupedItems[sc.id].length > 0
+      );
+  }, [activeCategory, groupedItems]);
+
+  // Initialize expanded state when category changes
+  useEffect(() => {
+      // Priority: Favorites -> First available subcategory
+      if (favoriteItems.length > 0) {
+          setExpandedSubCat('FAVORITES');
+      } else if (visibleSubCats.length > 0) {
+          setExpandedSubCat(visibleSubCats[0].id);
+      } else {
+          setExpandedSubCat(null);
+      }
+  }, [activeCategory, visibleSubCats, favoriteItems.length]); // Depend on favoriteItems.length to auto-open if first fav added
+
   // Handlers - Memoized to prevent prop changes in children
   const handleCategoryChange = useCallback((cat: EquipmentCategory) => {
     setActiveCategory(cat);
-    setExpandedSubCat(null); // Close subcats on switch
     setSelectedItem(null);   // Deselect item
   }, []);
 
   const toggleSubCategory = useCallback((subCatId: string) => {
-    setExpandedSubCat(prev => prev === subCatId ? null : subCatId);
+      setExpandedSubCat(prev => (prev === subCatId ? null : subCatId));
+  }, []);
+
+  const toggleFavorite = useCallback((e: React.MouseEvent, itemId: string) => {
+      e.stopPropagation(); // Prevent item selection
+      setFavorites(prev => 
+          prev.includes(itemId)
+              ? prev.filter(id => id !== itemId)
+              : [...prev, itemId]
+      );
   }, []);
 
   const startCrafting = useCallback(() => {
@@ -75,34 +152,74 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       setHoveredItem(null);
   }, []);
 
-  // Helper to check resources
-  const getInventoryCount = useCallback((id: string) => {
-      return inventory.find(i => i.id === id)?.quantity || 0;
-  }, [inventory]);
+  // Render Helper for Item Card
+  const renderItemCard = (item: EquipmentItem) => {
+      const isSelected = selectedItem?.id === item.id;
+      const isFav = favorites.includes(item.id);
+      const count = inventory.filter(i => i.name === item.name).length;
 
-  const getResourceName = (id: string) => {
-      const itemDef = Object.values(MATERIALS).find(i => i.id === id);
-      return itemDef ? itemDef.name : id;
+      return (
+        <div 
+            key={item.id}
+            onClick={() => setSelectedItem(item)}
+            onMouseEnter={(e) => handleMouseEnter(item, e)}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className={`relative flex flex-col items-center rounded-lg border transition-all cursor-pointer group text-left h-[130px] overflow-hidden ${
+                isSelected 
+                ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' 
+                : 'bg-stone-800 border-stone-700 hover:border-stone-500 hover:bg-stone-750'
+            }`}
+        >
+            {/* Top Row: Tier & Favorite */}
+            <div className="w-full flex justify-between items-start p-2 z-10">
+                 {/* Tier Text (Simplified) */}
+                <span className={`text-[10px] font-bold tracking-wider font-mono ${isSelected ? 'text-amber-400' : 'text-stone-600'}`}>
+                    TIER {item.tier}
+                </span>
+
+                {/* Favorite Button */}
+                <button 
+                    onClick={(e) => toggleFavorite(e, item.id)}
+                    className="p-1 rounded-full hover:bg-stone-700 transition-colors -mt-1 -mr-1"
+                >
+                    <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-red-500 text-red-500' : 'text-stone-600 hover:text-stone-400'}`} />
+                </button>
+            </div>
+
+            {/* Icon (Centered) */}
+            <div className="flex-1 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform -mt-2">
+                {item.icon}
+            </div>
+            
+            {/* Bottom Info (Fixed Layout) */}
+            <div className="w-full text-center pb-2 px-1 flex flex-col items-center gap-1">
+                {/* Name - Fixed height to prevent jumping */}
+                <div className={`text-xs font-bold leading-tight truncate w-full ${isSelected ? 'text-amber-200' : 'text-stone-300'}`}>
+                    {item.name}
+                </div>
+                
+                {/* Count Badge - Fixed height spacer */}
+                <div className="h-5 flex items-center justify-center w-full">
+                    {count > 0 ? (
+                        <div className="inline-flex items-center gap-0.5 bg-stone-950/50 px-2 py-0.5 rounded text-[10px] font-mono text-stone-500 border border-stone-800/50">
+                            <Box className="w-2.5 h-2.5" /> {count}
+                        </div>
+                    ) : (
+                        // Transparent Spacer to keep name position fixed
+                        <div className="h-[18px]"></div>
+                    )}
+                </div>
+            </div>
+        </div>
+      );
   };
-
-  // FUEL CHECK
-  const charcoalCount = getInventoryCount('charcoal');
-  const hasFuel = charcoalCount > 0;
-
-  const canAffordResources = useCallback((item: EquipmentItem) => {
-      return item.requirements.every(req => getInventoryCount(req.id) >= req.count);
-  }, [getInventoryCount]);
-
-  // Filter Data
-  const currentSubCategories = useMemo(() => 
-    EQUIPMENT_SUBCATEGORIES.filter(sc => sc.categoryId === activeCategory), 
-  [activeCategory]);
 
   // Wrap the entire visual output in useMemo
   const content = useMemo(() => {
     
     // Derived state for selected item button logic
-    const canCraft = selectedItem && canAffordResources(selectedItem) && hasFuel;
+    const canCraft = selectedItem && canAffordResources(selectedItem) && hasFuel && hasEnergy;
 
     return (
         <div className="relative h-full w-full bg-stone-950 overflow-hidden">
@@ -157,22 +274,31 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                         <div className="w-48 h-48 bg-stone-900 rounded-full border-4 border-amber-600 flex items-center justify-center shadow-[0_0_40px_rgba(217,119,6,0.2)] mb-8 group-hover:shadow-[0_0_60px_rgba(217,119,6,0.4)] transition-shadow">
                             <span className="text-8xl filter drop-shadow-lg">{selectedItem.icon}</span>
                         </div>
-                        <div className="absolute -bottom-2 right-4 bg-stone-800 text-stone-300 px-3 py-1 rounded-full text-xs font-bold border border-stone-600">
-                            TIER {selectedItem.tier}
-                        </div>
                     </div>
 
                     <h2 className="text-3xl font-bold text-amber-500 mb-2 font-serif tracking-wide">{selectedItem.name}</h2>
                     <p className="text-stone-400 text-center max-w-md mb-6 italic">"{selectedItem.description}"</p>
 
-                    {/* Fuel Indicator */}
-                    <div className={`mb-6 flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm ${
-                        hasFuel 
-                        ? 'bg-amber-900/20 border-amber-700/50 text-amber-500' 
-                        : 'bg-red-900/20 border-red-700/50 text-red-500 animate-pulse'
-                    }`}>
-                        <Flame className="w-4 h-4" />
-                        <span>Available Fuel: {charcoalCount}</span>
+                    {/* Indicators: Fuel & Energy */}
+                    <div className="flex items-center gap-3 mb-6">
+                        {/* Fuel */}
+                        <div className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm ${
+                            hasFuel 
+                            ? 'bg-amber-900/20 border-amber-700/50 text-amber-500' 
+                            : 'bg-red-900/20 border-red-700/50 text-red-500 animate-pulse'
+                        }`}>
+                            <Flame className="w-4 h-4" />
+                            <span>Fuel: {charcoalCount}</span>
+                        </div>
+                        {/* Energy */}
+                         <div className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm ${
+                            hasEnergy 
+                            ? 'bg-blue-900/20 border-blue-700/50 text-blue-400' 
+                            : 'bg-red-900/20 border-red-700/50 text-red-500 animate-pulse'
+                        }`}>
+                            <Zap className="w-4 h-4" />
+                            <span>Energy: -{GAME_CONFIG.ENERGY_COST.CRAFT}</span>
+                        </div>
                     </div>
 
                     {/* Action Button */}
@@ -189,6 +315,11 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             <>
                                 <Flame className="w-6 h-6 text-red-500" />
                                 Need Charcoal
+                            </>
+                        ) : !hasEnergy ? (
+                             <>
+                                <Zap className="w-6 h-6 text-red-500" />
+                                Need Energy
                             </>
                         ) : !canAffordResources(selectedItem) ? (
                             <>
@@ -261,86 +392,76 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                 </button>
                 </div>
 
-                {/* Content List */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
-                {currentSubCategories.map(subCat => {
-                    const isOpen = expandedSubCat === subCat.id;
-                    // Filter items based on Subcategory AND Player Tier
-                    const items = EQUIPMENT_ITEMS.filter(i => 
-                        i.subCategoryId === subCat.id && 
-                        i.tier <= stats.tierLevel
-                    );
-
-                    // If no items are available for this subcat (due to tier lock), skip rendering
-                    if (items.length === 0) return null;
-
-                    return (
-                    <div key={subCat.id} className="bg-stone-800/50 rounded-lg overflow-hidden border border-stone-700/50">
-                        {/* Accordion Header */}
-                        <button 
-                        onClick={() => toggleSubCategory(subCat.id)}
-                        className={`w-full flex items-center justify-between p-4 transition-colors ${isOpen ? 'bg-stone-800 text-amber-100' : 'text-stone-400 hover:bg-stone-800 hover:text-stone-200'}`}
-                        >
-                        <span className="font-bold">{subCat.name}</span>
-                        {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                        </button>
-
-                        {/* Item Grid */}
-                        {isOpen && (
-                        <div className="p-3 bg-stone-900/50 border-t border-stone-700/50 grid grid-cols-2 gap-3">
-                            {items.map(item => {
-                            const isSelected = selectedItem?.id === item.id;
-                            const count = inventory.filter(i => i.name === item.name).length;
-                            
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => setSelectedItem(item)}
-                                    onMouseEnter={(e) => handleMouseEnter(item, e)}
-                                    onMouseMove={handleMouseMove}
-                                    onMouseLeave={handleMouseLeave}
-                                    className={`relative flex flex-col items-center p-3 rounded-lg border-2 transition-all group text-left ${
-                                        isSelected 
-                                        ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' 
-                                        : 'bg-stone-800 border-stone-700 hover:border-stone-500 hover:bg-stone-750'
-                                    }`}
-                                >
-                                {/* Icon */}
-                                <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{item.icon}</div>
-                                
-                                {/* Name */}
-                                <div className={`text-xs font-bold mb-1 line-clamp-1 w-full text-center ${isSelected ? 'text-amber-200' : 'text-stone-300'}`}>
-                                    {item.name}
+                {/* Content List - Accordion */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+                    {/* === SPECIAL GROUP: FAVORITES === */}
+                    {favoriteItems.length > 0 && (
+                        <div className="border border-amber-800/50 rounded-lg overflow-hidden mb-4 shadow-lg shadow-amber-900/10">
+                            <button 
+                                onClick={() => toggleSubCategory('FAVORITES')}
+                                className="w-full bg-gradient-to-r from-stone-800 to-stone-900 p-3 flex items-center justify-between hover:bg-stone-750 transition-colors border-l-4 border-amber-500"
+                            >
+                                <div className="flex items-center gap-2">
+                                    {expandedSubCat === 'FAVORITES' ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-stone-500" />}
+                                    <span className="font-bold text-sm text-amber-400 flex items-center gap-1.5">
+                                        <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                                        FAVORITES
+                                    </span>
                                 </div>
-
-                                {/* Info Badge */}
-                                <div className="absolute top-1 right-1">
-                                    <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold border ${isSelected ? 'bg-amber-600 text-white border-amber-400' : 'bg-stone-700 text-stone-400 border-stone-600'}`}>
-                                    {item.tier}
-                                    </div>
+                                <span className="text-xs bg-amber-900/30 text-amber-500 border border-amber-800/50 px-2 py-0.5 rounded font-mono">
+                                    {favoriteItems.length}
+                                </span>
+                            </button>
+                            {expandedSubCat === 'FAVORITES' && (
+                                <div className="bg-stone-900/50 p-2 grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-200">
+                                    {favoriteItems.map(item => renderItemCard(item))}
                                 </div>
-                                
-                                {/* Owned Count */}
-                                {count > 0 && (
-                                    <div className="absolute top-1 left-1 bg-stone-950/80 px-1.5 rounded border border-stone-700 text-[9px] font-mono text-stone-400 flex items-center gap-0.5">
-                                        <Box className="w-2 h-2" /> {count}
-                                    </div>
-                                )}
-                                </button>
-                            );
-                            })}
+                            )}
                         </div>
-                        )}
-                    </div>
-                    );
-                })}
+                    )}
+
+                    {/* === STANDARD GROUPS === */}
+                    {visibleSubCats.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-stone-600 italic opacity-50">
+                            <Lock className="w-8 h-8 mb-2" />
+                            <p>No recipes available for this tier.</p>
+                        </div>
+                    ) : (
+                        visibleSubCats.map(subCat => {
+                            const isExpanded = expandedSubCat === subCat.id;
+                            const items = groupedItems[subCat.id] || [];
+
+                            return (
+                                <div key={subCat.id} className="border border-stone-800 rounded-lg overflow-hidden">
+                                    {/* Accordion Header */}
+                                    <button 
+                                        onClick={() => toggleSubCategory(subCat.id)}
+                                        className="w-full bg-stone-800 p-3 flex items-center justify-between hover:bg-stone-750 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {isExpanded ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-stone-500" />}
+                                            <span className={`font-bold text-sm ${isExpanded ? 'text-amber-100' : 'text-stone-400'}`}>{subCat.name}</span>
+                                        </div>
+                                        <span className="text-xs bg-stone-900 px-2 py-0.5 rounded text-stone-500 font-mono">{items.length}</span>
+                                    </button>
+
+                                    {/* Accordion Content */}
+                                    {isExpanded && (
+                                        <div className="bg-stone-900/50 p-2 grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-200">
+                                            {items.map(item => renderItemCard(item))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
 
                 {/* Footer */}
                 <div className="p-4 border-t border-stone-800 bg-stone-900 shrink-0">
                 <div className="flex items-start gap-2 text-xs text-stone-500">
                     <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                    <p>Select a recipe to view requirements. Ensure you have enough <span className="text-amber-500 font-bold">Charcoal</span> to heat the forge.</p>
+                    <p>Select a recipe to view requirements. Ensure you have enough <span className="text-amber-500 font-bold">Charcoal</span> and <span className="text-blue-400 font-bold">Energy</span>.</p>
                 </div>
                 </div>
             </div>
@@ -402,9 +523,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
         </div>
     );
   }, [
-      activeCategory, expandedSubCat, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, charcoalCount, hasFuel, stats.tierLevel,
-      handleCategoryChange, toggleSubCategory, startCrafting, stopCrafting, handleMinigameComplete, 
-      handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, currentSubCategories, getInventoryCount, onNavigate
+      activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, charcoalCount, hasFuel, hasEnergy, stats.tierLevel, expandedSubCat, favorites, favoriteItems,
+      handleCategoryChange, startCrafting, stopCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite,
+      handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats
   ]);
 
   return content;

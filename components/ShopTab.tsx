@@ -65,22 +65,7 @@ const ShopTab = () => {
             <img 
                 src={getAssetUrl('shop_interior.png')} 
                 alt="Shop Interior" 
-                className="
-                            absolute top-0
-                            opacity-60
-                            
-                            /* [1] 가로가 더 긴 화면 (기본/PC/가로모드) */
-                            /* 너비를 꽉 채우고, 높이는 비율대로 (아래가 잘림) */
-                            w-full h-auto left-0
-
-                            /* [2] 세로가 더 긴 화면 (모바일/세로모드) */
-                            /* 높이를 꽉 채우고, 너비는 비율대로 (오른쪽이 잘림) */
-                            portrait:h-full portrait:w-auto portrait:max-w-none
-                            
-                            /* [3] 세로 모드일 때 중앙 정렬 보정 (선택사항) */
-                            /* 이걸 안 하면 왼쪽 벽만 보입니다. 중앙을 보여주려면 추가하세요. */
-                            portrait:left-1/2 portrait:-translate-x-1/2
-                        "
+                className="absolute top-0 opacity-60 w-full h-auto left-0 portrait:h-full portrait:w-auto portrait:max-w-none portrait:left-1/2 portrait:-translate-x-1/2"
                 onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #292524, #1c1917)';

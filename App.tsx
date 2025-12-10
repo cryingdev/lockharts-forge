@@ -58,7 +58,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const calculateTotal = () => {
     return Object.entries(cart).reduce((total, [id, count]) => {
       const item = MARKET_CATALOG.find(i => i.id === id);
-      return total + (item ? item.price * count : 0);
+      const quantity = count as number;
+      return total + (item ? item.price * quantity : 0);
     }, 0);
   };
 
@@ -256,7 +257,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                               
                               <div className="flex items-center gap-3">
                                   <div className="text-amber-500 font-bold font-mono">
-                                      {marketItem.price * count}
+                                      {marketItem.price * (count as number)}
                                   </div>
                                   <div className="flex items-center gap-1">
                                       {/* Only allow quantity adjustment for non-key items */}
