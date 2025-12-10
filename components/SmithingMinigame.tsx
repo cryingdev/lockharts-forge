@@ -4,7 +4,7 @@ import Phaser from 'phaser';
 import { X, Hammer, Flame } from 'lucide-react';
 import { getAssetUrl } from '../utils';
 import { useGame } from '../context/GameContext';
-import { ITEMS } from '../constants';
+import { MATERIALS } from '../constants';
 
 // --- Types & Props ---
 interface SmithingMinigameProps {
@@ -33,6 +33,7 @@ class SmithingScene extends Phaser.Scene {
   private hammer!: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle | Phaser.GameObjects.Container;
   private ingot!: Phaser.GameObjects.Image;
   private debugRing!: Phaser.GameObjects.Graphics;
+  private infoText!: Phaser.GameObjects.Text;
 
   // Game Configuration
   private centerX: number = 0;
@@ -61,9 +62,9 @@ class SmithingScene extends Phaser.Scene {
   private isFinished: boolean = false;
 
   // Temperature System
-  private temperature: number = 100;
+  private temperature: number = 0; // Starts Cold
   private coolingRate: number = 2; // Degrees lost per second
-  private currentTempStage: 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'AURA';
+  private currentTempStage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'COLD';
   private tempText!: Phaser.GameObjects.Text;
 
   constructor() {
@@ -82,9 +83,9 @@ class SmithingScene extends Phaser.Scene {
     
     this.score = 0;
     this.combo = 0;
-    this.temperature = 100;
+    this.temperature = 0; // START AT 0
     this.isFinished = false;
-    this.currentTempStage = 'AURA';
+    this.currentTempStage = 'COLD';
   }
 
   preload() {
@@ -100,6 +101,7 @@ class SmithingScene extends Phaser.Scene {
     this.load.image('ingot_hot', getAssetUrl('ingot_hot.png'));
     this.load.image('ingot_warm', getAssetUrl('ingot_warm.png'));
     this.load.image('ingot_normal', getAssetUrl('ingot_normal.png'));
+    this.load.image('ingot_cold', getAssetUrl('ingot_normal.png')); // Fallback/Tinted
 
     // Spark Variations
     this.load.image('spark_perfect', getAssetUrl('particle_spark1.png'));
@@ -145,11 +147,9 @@ class SmithingScene extends Phaser.Scene {
       this.add.image(this.centerX, this.centerY, 'fallback_bg');
     }
 
-    // Ambient Glow
-    const glow = this.add.circle(this.centerX, height, 400, 0xea580c, 0.2);
-    this.tweens.add({
-      targets: glow, alpha: 0.1, scale: 1.1, yoyo: true, repeat: -1, duration: 3000, ease: 'Sine.easeInOut'
-    });
+    // Ambient Glow (Starts off, turns on with heat)
+    const glow = this.add.circle(this.centerX, height, 400, 0xea580c, 0); // Alpha 0 initially
+    glow.setName('ambientGlow');
 
     // --- 2. The Forge ---
     
@@ -162,9 +162,9 @@ class SmithingScene extends Phaser.Scene {
       this.add.rectangle(this.centerX, this.centerY + 10, 240, 40, 0x57534e).setOrigin(0.5);
     }
 
-    // Ingot (Initial State: Aura)
+    // Ingot (Initial State: Cold)
     if (hasTexture('ingot_hot_aura')) {
-      this.ingot = this.add.image(this.centerX - 20, this.centerY + 60, 'ingot_hot_aura');
+      this.ingot = this.add.image(this.centerX - 20, this.centerY + 60, 'ingot_hot_aura'); // Placeholder
       this.ingot.setScale(0.35); 
     } else {
       this.ensureTexture('ingot_fallback', (g) => {
@@ -173,6 +173,9 @@ class SmithingScene extends Phaser.Scene {
       }, 120, 25);
       this.ingot = this.add.image(this.centerX, this.centerY + 60, 'ingot_fallback');
     }
+    
+    // Force initial visual state
+    this.updateIngotVisuals('COLD');
 
     // --- 3. Ring Mechanic Visuals ---
     
@@ -185,7 +188,8 @@ class SmithingScene extends Phaser.Scene {
     // Approach Ring (Dynamic Size)
     this.approachRing = this.add.graphics();
 
-    this.drawTargetRing();
+    // Don't draw rings yet if cold
+    // this.drawTargetRing();
 
     // Hammer (On top of rings)
     if (hasTexture('hammer')) {
@@ -207,13 +211,22 @@ class SmithingScene extends Phaser.Scene {
     this.progressBar = this.add.rectangle(this.centerX - 150, 40, 0, 12, 0xeab308).setOrigin(0, 0.5);
 
     // Temp Indicator
-    this.tempText = this.add.text(this.centerX + 180, 40, 'TEMP: 100%', {
+    this.tempText = this.add.text(this.centerX + 180, 40, 'TEMP: 0%', {
         fontFamily: 'monospace', fontSize: '14px', color: '#fff'
     }).setOrigin(0, 0.5);
 
     this.comboText = this.add.text(this.centerX, this.centerY - 150, '', {
       fontFamily: 'Impact', fontSize: '42px', color: '#fcd34d', stroke: '#000', strokeThickness: 4
     }).setOrigin(0.5).setAlpha(0);
+    
+    // Info Text (Tutorial)
+    this.infoText = this.add.text(this.centerX, this.centerY - 100, 'FORGE IS COLD\nADD FUEL TO START', {
+        fontFamily: 'monospace', fontSize: '24px', color: '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 4
+    }).setOrigin(0.5);
+    
+    this.tweens.add({
+        targets: this.infoText, alpha: 0.5, yoyo: true, repeat: -1, duration: 800
+    });
 
     // --- Input ---
     this.input.keyboard?.on('keydown-SPACE', this.handleHit, this);
@@ -232,9 +245,19 @@ class SmithingScene extends Phaser.Scene {
   // --- External Methods (Called by React) ---
   public heatUp() {
       if (this.isFinished) return;
-      this.temperature = Math.min(100, this.temperature + 30);
+      // Boost heat significantly
+      this.temperature = Math.min(100, this.temperature + 40);
       this.updateTempText();
       this.createSparks(20, 0xff5500, 1.2, 'spark_normal');
+      
+      // Update Ambient Glow
+      const glow = this.children.getByName('ambientGlow') as Phaser.GameObjects.Arc;
+      if (glow) glow.setAlpha(0.2);
+
+      // Remove tutorial text if heated
+      if (this.temperature > 20 && this.infoText.visible) {
+          this.infoText.setVisible(false);
+      }
   }
 
   randomizeTargetPos() {
@@ -249,6 +272,9 @@ class SmithingScene extends Phaser.Scene {
   drawTargetRing() {
       if (!this.targetRing) return;
       this.targetRing.clear();
+      
+      if (this.currentTempStage === 'COLD') return;
+
       // Fill with semi-transparent GOLD
       this.targetRing.fillStyle(0xffaa00, 0.2);
       this.targetRing.fillCircle(this.hitX, this.hitY, this.targetRadius);
@@ -278,8 +304,10 @@ class SmithingScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.isFinished) return;
 
-    // 1. Ring Mechanic
-    this.handleRingLogic(delta);
+    // 1. Ring Mechanic (Only works if not cold)
+    if (this.currentTempStage !== 'COLD') {
+        this.handleRingLogic(delta);
+    }
 
     // 2. Temperature Logic
     this.handleTemperature(delta);
@@ -330,26 +358,37 @@ class SmithingScene extends Phaser.Scene {
       this.temperature = Math.max(0, this.temperature - (this.coolingRate * (delta / 1000)));
       this.updateTempText();
 
-      let newStage: 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'NORMAL';
-      if (this.temperature > 75) newStage = 'AURA';
+      let newStage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'NORMAL';
+      
+      if (this.temperature <= 0) newStage = 'COLD';
+      else if (this.temperature > 75) newStage = 'AURA';
       else if (this.temperature > 40) newStage = 'HOT';
       else if (this.temperature > 15) newStage = 'WARM';
-      
+      else newStage = 'NORMAL'; // Very low heat but not 0
+
       if (newStage !== this.currentTempStage) {
           this.currentTempStage = newStage;
           this.updateIngotVisuals(newStage);
+          
+          if (newStage === 'COLD') {
+             this.infoText.setVisible(true);
+             this.targetRing.clear();
+             this.approachRing.clear();
+             const glow = this.children.getByName('ambientGlow') as Phaser.GameObjects.Arc;
+             if (glow) glow.setAlpha(0);
+          }
       }
   }
   
   updateTempText() {
        this.tempText.setText(`TEMP: ${Math.floor(this.temperature)}%`);
        // Change color based on heat
-       if (this.temperature < 20) this.tempText.setColor('#ef4444'); // Red
+       if (this.temperature < 20) this.tempText.setColor('#3b82f6'); // Blue
        else if (this.temperature > 75) this.tempText.setColor('#fbbf24'); // Amber
        else this.tempText.setColor('#ffffff');
   }
 
-  updateIngotVisuals(stage: 'AURA' | 'HOT' | 'WARM' | 'NORMAL') {
+  updateIngotVisuals(stage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL') {
       const hasTex = (key: string) => this.textures.exists(key);
 
       switch (stage) {
@@ -357,37 +396,34 @@ class SmithingScene extends Phaser.Scene {
               if (hasTex('ingot_hot_aura')) {
                   this.ingot.setTexture('ingot_hot_aura');
                   this.ingot.clearTint();
-              } else {
-                  this.ingot.setTexture('ingot_fallback'); 
-                  this.ingot.setTint(0xffffff); 
               }
               break;
           case 'HOT':
               if (hasTex('ingot_hot')) {
                    this.ingot.setTexture('ingot_hot');
                    this.ingot.clearTint();
-              } else {
-                   this.ingot.setTexture('ingot_fallback');
-                   this.ingot.setTint(0xffaa00); 
               }
               break;
           case 'WARM':
               if (hasTex('ingot_warm')) {
                    this.ingot.setTexture('ingot_warm');
                    this.ingot.clearTint();
-              } else {
-                   this.ingot.setTexture('ingot_fallback');
-                   this.ingot.setTint(0xff0000); 
               }
               break;
           case 'NORMAL':
               if (hasTex('ingot_normal')) {
                    this.ingot.setTexture('ingot_normal');
                    this.ingot.clearTint();
-              } else {
-                   this.ingot.setTexture('ingot_fallback');
-                   this.ingot.setTint(0x555555); 
               }
+              break;
+          case 'COLD':
+              // Use normal texture but darkened heavily
+              if (hasTex('ingot_normal')) {
+                  this.ingot.setTexture('ingot_normal');
+              } else {
+                  this.ingot.setTexture('ingot_fallback');
+              }
+              this.ingot.setTint(0x334155); // Dark Slate Blue
               break;
       }
   }
@@ -412,6 +448,11 @@ class SmithingScene extends Phaser.Scene {
         });
     }
 
+    if (this.currentTempStage === 'COLD') {
+        this.triggerTooCold();
+        return;
+    }
+    
     if (this.currentTempStage === 'NORMAL') {
         this.triggerTooCold();
         return;
@@ -459,7 +500,7 @@ class SmithingScene extends Phaser.Scene {
 
   triggerTooCold() {
       this.cameras.main.shake(50, 0.005);
-      this.showFeedback("TOO COLD!", 0x9ca3af, 1.0);
+      this.showFeedback("TOO COLD!", 0x3b82f6, 1.0); // Blue text
   }
 
   triggerAimFail() {
@@ -578,7 +619,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const charcoalCount = state.inventory.find(i => i.id === ITEMS.CHARCOAL.id)?.quantity || 0;
+  const charcoalCount = state.inventory.find(i => i.id === MATERIALS.CHARCOAL.id)?.quantity || 0;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -609,7 +650,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       if (charcoalCount > 0 && gameRef.current) {
           const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
           if (scene) {
-              actions.consumeItem(ITEMS.CHARCOAL.id, 1);
+              actions.consumeItem(MATERIALS.CHARCOAL.id, 1);
               scene.heatUp();
           }
       }
@@ -645,7 +686,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
                 <button 
                     onClick={handleAddCharcoal}
                     disabled={charcoalCount <= 0}
-                    className="flex flex-col items-center justify-center w-24 h-24 rounded-full bg-stone-900 border-4 border-stone-700 hover:border-amber-500 hover:bg-stone-800 shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group active:scale-95"
+                    className={`flex flex-col items-center justify-center w-24 h-24 rounded-full bg-stone-900 border-4 border-stone-700 hover:border-amber-500 hover:bg-stone-800 shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group active:scale-95 ${charcoalCount > 0 ? 'animate-pulse' : ''}`}
                 >
                     <Flame className="w-8 h-8 text-amber-500 mb-1 group-hover:animate-pulse" />
                     <span className="text-[10px] font-bold text-stone-300 uppercase">Add Heat</span>
@@ -656,7 +697,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
         
         <div className="w-full py-3 bg-stone-900 border-t border-stone-800 flex justify-center items-center gap-2 text-stone-500 text-xs font-mono uppercase tracking-widest">
             <Hammer className="w-3 h-3" />
-            <span>Aim Cursor & Strike when Rings Match!</span>
+            <span>Heat the Forge, then Aim & Strike!</span>
         </div>
     </div>
   );

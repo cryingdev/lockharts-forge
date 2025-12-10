@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
 
 export interface MainForgeData {
-  rubbleCleared: number;
   hasFurnace: boolean;
-  onInteract: (type: 'RUBBLE' | 'ANVIL' | 'FURNACE' | 'EMPTY_SLOT') => void;
+  onInteract: (type: 'ANVIL' | 'FURNACE' | 'EMPTY_SLOT') => void;
 }
 
 export default class MainForgeScene extends Phaser.Scene {
@@ -12,8 +11,7 @@ export default class MainForgeScene extends Phaser.Scene {
   scale!: Phaser.Scale.ScaleManager;
   tweens!: Phaser.Tweens.TweenManager;
 
-  private onInteract?: (type: 'RUBBLE' | 'ANVIL' | 'FURNACE' | 'EMPTY_SLOT') => void;
-  private rubbleCleared: number = 0;
+  private onInteract?: (type: 'ANVIL' | 'FURNACE' | 'EMPTY_SLOT') => void;
   private hasFurnace: boolean = false;
 
   constructor() {
@@ -21,7 +19,6 @@ export default class MainForgeScene extends Phaser.Scene {
   }
 
   init(data: MainForgeData) {
-    this.rubbleCleared = data.rubbleCleared;
     this.hasFurnace = data.hasFurnace;
     this.onInteract = data.onInteract;
   }
@@ -50,13 +47,6 @@ export default class MainForgeScene extends Phaser.Scene {
 
     // --- 3. The Furnace Slot ---
     this.createFurnaceSlot(centerX + 120, centerY + 20);
-
-    // --- 4. Rubble Piles ---
-    // We draw rubble based on how much is uncleared (Max 10)
-    const rubbleRemaining = 10 - this.rubbleCleared;
-    if (rubbleRemaining > 0) {
-      this.createRubble(rubbleRemaining, width, height);
-    }
 
     // --- 5. Dust Particles (Atmosphere) ---
     this.createDust();
@@ -118,44 +108,6 @@ export default class MainForgeScene extends Phaser.Scene {
       outline.setInteractive();
       outline.on('pointerdown', () => this.onInteract?.('EMPTY_SLOT'));
     }
-  }
-
-  private createRubble(count: number, width: number, height: number) {
-    // Create random piles overlaying the floor
-    for (let i = 0; i < count; i++) {
-      const rx = Phaser.Math.Between(50, width - 50);
-      const ry = Phaser.Math.Between(height / 2 + 50, height - 50);
-      
-      const rock = this.add.polygon(rx, ry, [
-        0, 0, 
-        20, -10, 
-        40, 0, 
-        30, 20, 
-        -10, 15
-      ], 0x292524);
-      
-      rock.setStrokeStyle(1, 0x1c1917);
-      rock.setRotation(Math.random() * 6);
-      
-      // Interaction
-      rock.setInteractive(new Phaser.Geom.Polygon(rock.geom.points), Phaser.Geom.Polygon.Contains);
-      rock.on('pointerdown', () => {
-        // Visual feedback
-        this.tweens.add({
-          targets: rock,
-          alpha: 0,
-          scale: 0,
-          duration: 200
-        });
-        this.onInteract?.('RUBBLE');
-      });
-    }
-
-    const label = this.add.text(width/2, height - 30, 'RUBBLE DETECTED', {
-      fontFamily: 'monospace', fontSize: '12px', color: '#ef4444'
-    }).setOrigin(0.5);
-    
-    this.tweens.add({ targets: label, alpha: 0.5, yoyo: true, repeat: -1, duration: 1000 });
   }
 
   private createDust() {

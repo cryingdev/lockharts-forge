@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DialogueBox from './DialogueBox';
 import { Store, Coins, PackageOpen, Heart, Users } from 'lucide-react';
-import { EQUIPMENT_ITEMS } from '../gameData';
-import { ITEMS } from '../constants';
+import { EQUIPMENT_ITEMS } from '../data/gameData';
+import { MATERIALS } from '../constants';
 import { getAssetUrl } from '../utils';
 
 const ShopTab = () => {
@@ -15,7 +15,7 @@ const ShopTab = () => {
   const getItemName = (id: string) => {
     const eq = EQUIPMENT_ITEMS.find(e => e.id === id);
     if (eq) return eq.name;
-    const res = Object.values(ITEMS).find(i => i.id === id);
+    const res = Object.values(MATERIALS).find(i => i.id === id);
     return res ? res.name : id;
   };
 

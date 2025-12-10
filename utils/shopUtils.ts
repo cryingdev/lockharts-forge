@@ -1,7 +1,7 @@
 
 import { Mercenary } from '../models/Mercenary';
 import { ShopCustomer } from '../types';
-import { EQUIPMENT_ITEMS } from '../gameData';
+import { EQUIPMENT_ITEMS } from '../data/gameData';
 import { JobClass } from '../models/JobClass';
 
 // Define what kind of equipment each job is interested in

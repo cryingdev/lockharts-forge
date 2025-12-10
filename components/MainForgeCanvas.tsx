@@ -15,13 +15,9 @@ const MainForgeCanvas = () => {
     if (!containerRef.current) return;
 
     const sceneData: MainForgeData = {
-      rubbleCleared: state.forge.rubbleCleared,
       hasFurnace: state.forge.hasFurnace,
       onInteract: (type) => {
         switch(type) {
-          case 'RUBBLE':
-            actions.cleanRubble();
-            break;
           case 'ANVIL':
             actions.repairItem();
             break;
@@ -69,7 +65,7 @@ const MainForgeCanvas = () => {
         // For this architecture, we will destroy to prevent memory leaks on tab switch.
     };
 
-  }, [state.forge.rubbleCleared, state.forge.hasFurnace]); 
+  }, [state.forge.hasFurnace]); 
   
   // Separate cleanup effect
   useEffect(() => {

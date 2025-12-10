@@ -1,16 +1,16 @@
 
-import React, { createContext, useContext, useReducer, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useMemo, useEffect } from 'react';
 import { GameState, GameContextType, TimeOfDay, InventoryItem, GameEvent, EquipmentItem, ShopCustomer } from '../types';
-import { INITIAL_STATE, GAME_CONFIG, ITEMS } from '../constants';
+import { INITIAL_STATE, GAME_CONFIG, MATERIALS } from '../constants';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { Mercenary } from '../models/Mercenary';
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 type Action =
-  | { type: 'CLEAN_RUBBLE' }
   | { type: 'REPAIR_WORK' }
-  | { type: 'ADVANCE_TIME' }
+  | { type: 'ADVANCE_TIME' } // Incremental time step (Auto)
+  | { type: 'SLEEP' }        // Skip to next day (Manual)
   | { type: 'TRIGGER_EVENT'; payload: GameEvent }
   | { type: 'CLOSE_EVENT' }
   | { type: 'ACQUIRE_ITEM'; payload: { id: string; quantity: number } }
@@ -23,7 +23,8 @@ type Action =
   | { type: 'ADD_KNOWN_MERCENARY'; payload: Mercenary }
   | { type: 'ENQUEUE_CUSTOMER'; payload: ShopCustomer }
   | { type: 'NEXT_CUSTOMER' }
-  | { type: 'DISMISS_CUSTOMER' };
+  | { type: 'DISMISS_CUSTOMER' }
+  | { type: 'SET_CRAFTING'; payload: boolean };
 
 const generateEquipment = (recipe: EquipmentItem, quality: number): Equipment => {
     // 1. Determine Rarity
@@ -70,24 +71,6 @@ const generateEquipment = (recipe: EquipmentItem, quality: number): Equipment =>
 
 const gameReducer = (state: GameState, action: Action): GameState => {
   switch (action.type) {
-    case 'CLEAN_RUBBLE': {
-      if (state.stats.energy < GAME_CONFIG.ENERGY_COST.CLEAN) return state;
-      if (state.forge.rubbleCleared >= GAME_CONFIG.RUBBLE_MAX) return state;
-
-      const existingScrap = state.inventory.find(i => i.id === ITEMS.SCRAP_METAL.id);
-      const newInventory = existingScrap
-        ? state.inventory.map(i => i.id === ITEMS.SCRAP_METAL.id ? { ...i, quantity: i.quantity + 2 } : i)
-        : [...state.inventory, { ...ITEMS.SCRAP_METAL, type: 'RESOURCE', quantity: 2 } as InventoryItem];
-
-      return {
-        ...state,
-        stats: { ...state.stats, energy: state.stats.energy - GAME_CONFIG.ENERGY_COST.CLEAN },
-        inventory: newInventory,
-        forge: { ...state.forge, rubbleCleared: state.forge.rubbleCleared + 1 },
-        logs: [`Cleared some rubble. Found Scrap Metal x2. Energy -${GAME_CONFIG.ENERGY_COST.CLEAN}.`, ...state.logs],
-      };
-    }
-
     case 'REPAIR_WORK': {
       if (state.stats.energy < GAME_CONFIG.ENERGY_COST.REPAIR) return state;
       
@@ -103,18 +86,42 @@ const gameReducer = (state: GameState, action: Action): GameState => {
     }
 
     case 'ADVANCE_TIME': {
+      // Natural time progression (Triggered by Timer)
       let nextTime = state.stats.time;
       let nextDay = state.stats.day;
       let energyRefill = 0;
       let resetDailyShop = false;
+      let logMsg = '';
+      let shouldDefer = false;
 
-      if (state.stats.time === TimeOfDay.MORNING) nextTime = TimeOfDay.AFTERNOON;
-      else if (state.stats.time === TimeOfDay.AFTERNOON) nextTime = TimeOfDay.EVENING;
+      if (state.stats.time === TimeOfDay.MORNING) {
+          nextTime = TimeOfDay.AFTERNOON;
+          logMsg = `The sun climbs high. It is now ${nextTime}.`;
+      }
+      else if (state.stats.time === TimeOfDay.AFTERNOON) {
+          nextTime = TimeOfDay.EVENING;
+          logMsg = `The sun sets. It is now ${nextTime}.`;
+      }
       else {
-        nextTime = TimeOfDay.MORNING;
-        nextDay += 1;
-        energyRefill = state.stats.maxEnergy; // Full restore on sleep
-        resetDailyShop = true;
+          // Evening -> Next Day
+          // CHECK: Is player busy crafting?
+          if (state.isCrafting) {
+              shouldDefer = true;
+          } else {
+            nextTime = TimeOfDay.MORNING;
+            nextDay += 1;
+            energyRefill = state.stats.maxEnergy; // New Day Energy
+            resetDailyShop = true;
+            logMsg = `Day ${nextDay} begins.`;
+          }
+      }
+
+      if (shouldDefer) {
+          return {
+              ...state,
+              pendingDayAdvance: true,
+              logs: ["It's getting late, but you are busy working...", ...state.logs]
+          };
       }
 
       return {
@@ -125,15 +132,65 @@ const gameReducer = (state: GameState, action: Action): GameState => {
           day: nextDay,
           energy: energyRefill > 0 ? energyRefill : state.stats.energy,
         },
-        // Reset shop visitors on a new day. 
-        // Also clear queue/active customer if it's night (shop closes effectively)
+        // Reset shop state on day change
+        forge: resetDailyShop ? { ...state.forge, isShopOpen: false } : state.forge,
         visitorsToday: resetDailyShop ? [] : state.visitorsToday,
         activeCustomer: resetDailyShop ? null : state.activeCustomer,
         shopQueue: resetDailyShop ? [] : state.shopQueue,
-        logs: energyRefill > 0 
-          ? [`You slept through the night. Day ${nextDay} begins.`, ...state.logs]
-          : [`Time passes... It is now ${nextTime}.`, ...state.logs]
+        logs: [logMsg, ...state.logs]
       };
+    }
+
+    case 'SLEEP': {
+        // Force skip to next day (Triggered by Rest Button)
+        const nextDay = state.stats.day + 1;
+        
+        return {
+            ...state,
+            stats: {
+                ...state.stats,
+                day: nextDay,
+                time: TimeOfDay.MORNING,
+                energy: state.stats.maxEnergy, // Full restore
+            },
+            forge: { ...state.forge, isShopOpen: false }, // Close shop
+            visitorsToday: [],
+            activeCustomer: null,
+            shopQueue: [],
+            isCrafting: false, // Force reset
+            pendingDayAdvance: false,
+            logs: [`You slept through the rest of the day. Day ${nextDay} begins.`, ...state.logs]
+        };
+    }
+
+    case 'SET_CRAFTING': {
+        const isCrafting = action.payload;
+        
+        // If stopping crafting AND we have a pending day advance, trigger the day change now.
+        if (!isCrafting && state.pendingDayAdvance) {
+            const nextDay = state.stats.day + 1;
+            return {
+                ...state,
+                isCrafting: false,
+                pendingDayAdvance: false,
+                stats: {
+                    ...state.stats,
+                    day: nextDay,
+                    time: TimeOfDay.MORNING,
+                    energy: state.stats.maxEnergy,
+                },
+                forge: { ...state.forge, isShopOpen: false },
+                visitorsToday: [],
+                activeCustomer: null,
+                shopQueue: [],
+                logs: [`You finished your work late. Day ${nextDay} begins.`, ...state.logs]
+            };
+        }
+
+        return {
+            ...state,
+            isCrafting
+        };
     }
 
     case 'TRIGGER_EVENT':
@@ -144,7 +201,7 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 
     case 'ACQUIRE_ITEM': {
       const { id, quantity } = action.payload;
-      const itemDef = Object.values(ITEMS).find(i => i.id === id);
+      const itemDef = Object.values(MATERIALS).find(i => i.id === id);
       if (!itemDef) return state;
 
       const existingItem = state.inventory.find(i => i.id === id);
@@ -191,8 +248,28 @@ const gameReducer = (state: GameState, action: Action): GameState => {
         if (newGold < 0) return state; 
 
         let newInventory = [...state.inventory];
+        let newTierLevel = state.stats.tierLevel;
+        let newForgeState = { ...state.forge };
+        let logUpdates: string[] = [`Bought supplies for ${totalCost} Gold.`];
+
         items.forEach(buyItem => {
-             const itemDef = Object.values(ITEMS).find(i => i.id === buyItem.id);
+             // CHECK FOR TIER UPGRADE SCROLL
+             if (buyItem.id === 'scroll_t2') {
+                 newTierLevel = Math.max(newTierLevel, 2);
+                 logUpdates.unshift('Upgrade Complete: Market Tier 2 Unlocked!');
+                 return; // Don't add scroll to inventory, consume immediately
+             }
+
+             // CHECK FOR FURNACE
+             if (buyItem.id === 'furnace') {
+                 newForgeState.hasFurnace = true;
+                 // Automatically unlock Tier 1 when furnace is bought
+                 if (newTierLevel === 0) newTierLevel = 1; 
+                 logUpdates.unshift('Furnace acquired! You can now start forging.');
+                 return; // Don't add to inventory as item, it's a key upgrade
+             }
+
+             const itemDef = Object.values(MATERIALS).find(i => i.id === buyItem.id);
              if (itemDef) {
                  const existingItem = newInventory.find(i => i.id === buyItem.id);
                  if (existingItem) {
@@ -205,9 +282,10 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 
         return {
             ...state,
-            stats: { ...state.stats, gold: newGold },
+            stats: { ...state.stats, gold: newGold, tierLevel: newTierLevel },
+            forge: newForgeState,
             inventory: newInventory,
-            logs: [`Bought supplies from the market for ${totalCost} Gold.`, ...state.logs]
+            logs: [...logUpdates, ...state.logs]
         };
     }
 
@@ -404,11 +482,28 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 const GameProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(gameReducer, INITIAL_STATE);
 
+  // --- Auto-Advance Time Logic ---
+  useEffect(() => {
+      let timer: ReturnType<typeof setTimeout>;
+
+      // Determine duration based on current time
+      let duration = GAME_CONFIG.TIME_DURATION.MORNING; // Default
+      if (state.stats.time === TimeOfDay.AFTERNOON) duration = GAME_CONFIG.TIME_DURATION.AFTERNOON;
+      if (state.stats.time === TimeOfDay.EVENING) duration = GAME_CONFIG.TIME_DURATION.EVENING;
+
+      // Start Timer
+      timer = setTimeout(() => {
+          dispatch({ type: 'ADVANCE_TIME' });
+      }, duration);
+
+      return () => clearTimeout(timer);
+  }, [state.stats.time, state.stats.day]); // Re-run whenever time or day changes
+
   // Use useMemo to ensure actions object reference remains stable unless necessary
   const actions = useMemo(() => ({
-    cleanRubble: () => dispatch({ type: 'CLEAN_RUBBLE' }),
     repairItem: () => dispatch({ type: 'REPAIR_WORK' }),
-    rest: () => dispatch({ type: 'ADVANCE_TIME' }),
+    // Rest Button now triggers Sleep (Skip to Next Day) instead of just advancing 1 step
+    rest: () => dispatch({ type: 'SLEEP' }), 
     handleEventOption: (action: () => void) => {
       action();
       dispatch({ type: 'CLOSE_EVENT' });
@@ -428,6 +523,9 @@ const GameProvider = ({ children }: { children: ReactNode }) => {
     enqueueCustomer: (customer: ShopCustomer) => dispatch({ type: 'ENQUEUE_CUSTOMER', payload: customer }),
     nextCustomer: () => dispatch({ type: 'NEXT_CUSTOMER' }),
     dismissCustomer: () => dispatch({ type: 'DISMISS_CUSTOMER' }),
+
+    // Logic Control
+    setCrafting: (isCrafting: boolean) => dispatch({ type: 'SET_CRAFTING', payload: isCrafting }),
   }), []);
 
   return (

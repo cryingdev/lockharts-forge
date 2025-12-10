@@ -1,3 +1,4 @@
+
 import { Equipment, EquipmentStats } from './models/Equipment';
 import { Mercenary } from './models/Mercenary';
 
@@ -29,12 +30,12 @@ export interface PlayerStats {
   maxEnergy: number;
   day: number;
   time: TimeOfDay;
+  tierLevel: number; // Current crafting/market tier access
 }
 
 export interface ForgeStatus {
   hasFurnace: boolean;
   anvilLevel: number;
-  rubbleCleared: number; // 0 to 10 (fully cleared)
   isShopOpen: boolean;
 }
 
@@ -77,12 +78,15 @@ export interface GameState {
   activeCustomer: ShopCustomer | null; // The person currently at the counter
   shopQueue: ShopCustomer[]; // People waiting in line
   visitorsToday: string[]; // List of Mercenary IDs who have visited today
+
+  // Game Logic Control
+  isCrafting: boolean; // Is the player currently in the minigame?
+  pendingDayAdvance: boolean; // Is the day waiting to end after crafting?
 }
 
 export interface GameContextType {
   state: GameState;
   actions: {
-    cleanRubble: () => void;
     repairItem: () => void; // Placeholder for Cold Forging
     rest: () => void; // Advance time/Restore energy
     handleEventOption: (action: () => void) => void;
@@ -98,6 +102,9 @@ export interface GameContextType {
     enqueueCustomer: (customer: ShopCustomer) => void;
     nextCustomer: () => void;
     dismissCustomer: () => void;
+
+    // Logic Control
+    setCrafting: (isCrafting: boolean) => void;
   };
 }
 
