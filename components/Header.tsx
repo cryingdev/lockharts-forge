@@ -1,12 +1,50 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
-import { Coins, Zap, Calendar, BedDouble, Store, Users } from 'lucide-react';
+import { Coins, Zap, Calendar, BedDouble, Store, BookOpen } from 'lucide-react';
 
 interface HeaderProps {
     activeTab: string;
     onTabChange: (tab: any) => void;
 }
+
+// Internal component for the Typewriter Ticker
+const LogTicker = ({ message }: { message: string }) => {
+  const [displayedText, setDisplayedText] = useState('');
+
+  useEffect(() => {
+    // Reset when message changes
+    setDisplayedText('');
+    
+    if (!message) return;
+
+    let index = 0;
+    const speed = 20; // ms per char (Fast typing)
+
+    const timer = setInterval(() => {
+      if (index < message.length) {
+        setDisplayedText(prev => message.slice(0, index + 1));
+        index++;
+      } else {
+        clearInterval(timer);
+      }
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [message]);
+
+  if (!message) return null;
+
+  return (
+    <div className="hidden md:flex items-center ml-3 px-3 py-1.5 bg-slate-900/50 rounded-lg border border-slate-800/50 max-w-sm lg:max-w-md overflow-hidden animate-in fade-in slide-in-from-left-2">
+        <span className="text-amber-500 mr-2 text-[10px] shrink-0">▶</span>
+        <span className="text-xs font-mono text-slate-400 whitespace-nowrap truncate min-w-0">
+            {displayedText}
+            <span className="animate-pulse text-amber-500 font-bold ml-0.5">_</span>
+        </span>
+    </div>
+  );
+};
 
 const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   const { state, actions } = useGame();
@@ -26,14 +64,27 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     <header className="w-full bg-slate-900 border-b border-slate-700 p-3 shadow-lg shrink-0 z-20">
       <div className="max-w-6xl mx-auto flex justify-between items-center text-slate-100">
         
-        {/* Left: Day Indicator */}
-        <div className="flex items-center space-x-3 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-          <Calendar className="w-4 h-4 text-slate-400" />
-          <span className="font-bold text-sm tracking-wide">Day {day}</span>
+        {/* Left: Day Indicator & Journal & Ticker */}
+        <div className="flex items-center space-x-3 flex-1 min-w-0 mr-4">
+             <div className="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 shrink-0">
+                <Calendar className="w-4 h-4 text-slate-400" />
+                <span className="font-bold text-sm tracking-wide">Day {day}</span>
+            </div>
+
+            <button 
+                onClick={actions.toggleJournal}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 p-1.5 rounded-lg border border-slate-700 transition-colors shrink-0"
+                title="Open Journal"
+            >
+                <BookOpen className="w-4 h-4" />
+            </button>
+
+            {/* Log Ticker (Desktop Only) */}
+            <LogTicker message={state.logs[0] || ''} />
         </div>
 
         {/* Right: Resources & Actions */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 shrink-0">
           
           {/* Shop Toggle / Status */}
           <button

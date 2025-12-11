@@ -79,4 +79,5 @@ export const MATERIALS = {
     ANVIL: { id: 'anvil', name: 'Old Anvil', type: 'TOOL', description: 'Heavy and reliable.', baseValue: 0 },
     FURNACE: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', description: 'Required for smelting.', baseValue: 500 },
     SCROLL_T2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', description: 'Enhances equipment quality.', baseValue: 1250 },
+    SCROLL_T3: { id: 'scroll_t3', name: 'Upgrade Scroll (Tier 3)', type: 'SCROLL', description: 'Unlock expert craftsmanship.', baseValue: 2500 },
 } as const;

@@ -169,6 +169,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                 if (marketItem.id === 'scroll_t2') {
                     if (currentTier >= 2) return null;
                 } 
+                else if (marketItem.id === 'scroll_t3') {
+                    if (currentTier >= 3) return null;
+                    if (currentTier < 2) return null; // Show only at Tier 2
+                }
                 // 3. Regular Item Logic:
                 else if (hasFurnace && itemTier > currentTier) {
                     return null;
@@ -185,7 +189,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                         className={`flex flex-col items-center p-3 rounded-lg border transition-all text-center group relative overflow-hidden h-[150px] justify-between bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750`}
                     >
                         {/* Owned Badge */}
-                        {marketItem.id !== 'furnace' && marketItem.id !== 'scroll_t2' && (
+                        {marketItem.id !== 'furnace' && !marketItem.id.startsWith('scroll') && (
                             <div className="absolute top-2 right-2 bg-stone-950/80 backdrop-blur-sm border border-stone-700 px-2 py-0.5 rounded text-[10px] text-stone-400 font-mono flex items-center gap-1 z-10">
                                 <Package className="w-3 h-3" />
                                 <span>{ownedCount}</span>
@@ -212,13 +216,13 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                   marketItem.id === 'copper_ore' ? '🔶' : 
                                   marketItem.id === 'tin_ore' ? '⚪' : 
                                   marketItem.id === 'oak_log' ? '🪵' : 
-                                  marketItem.id === 'scroll_t2' ? '📜' : 
+                                  marketItem.id.startsWith('scroll') ? '📜' : 
                                   marketItem.id === 'furnace' ? '🔥' : '📦'}
                              </div>
                         </div>
                         
                         <div className="flex flex-col items-center w-full">
-                            <span className={`font-bold text-sm line-clamp-1 leading-tight px-1 ${marketItem.id === 'scroll_t2' || marketItem.id === 'furnace' ? 'text-amber-400' : 'text-stone-200'}`}>
+                            <span className={`font-bold text-sm line-clamp-1 leading-tight px-1 ${marketItem.id.startsWith('scroll') || marketItem.id === 'furnace' ? 'text-amber-400' : 'text-stone-200'}`}>
                                 {itemName}
                             </span>
                             <span className="text-[10px] text-stone-500 mt-0.5">{itemType}</span>

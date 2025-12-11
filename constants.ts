@@ -41,9 +41,14 @@ export const INITIAL_STATE: GameState = {
     // Game Logic State
     isCrafting: false,
     showSleepModal: false,
+    showJournal: false,
     
     // Progression
     craftingMastery: {},
+
+    // Minigame Persistence
+    forgeTemperature: 0,
+    lastForgeTime: 0,
 };
 
 export const GAME_CONFIG = {

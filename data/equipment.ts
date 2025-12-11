@@ -1,3 +1,4 @@
+
 import { EquipmentCategory, EquipmentSubCategory, EquipmentItem } from '../types';
 
 export const EQUIPMENT_CATEGORIES: { id: EquipmentCategory; name: string }[] = [
@@ -165,6 +166,23 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
   // 재료: Iron, Silver, Hard Leather, Coal
   // =================================================================
 
+  // [DAGGER] Iron Dirk
+  // Cost: ~260 / Value: 550
+  {
+    id: 'dagger_iron_t2',
+    name: 'Iron Dirk',
+    tier: 2,
+    icon: '🔪',
+    description: 'Heavy, armor-piercing point.',
+    subCategoryId: 'DAGGER',
+    baseValue: 550,
+    requirements: [
+      { id: 'iron_ore', count: 2 },
+      { id: 'leather_strips', count: 1 }
+    ],
+    baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+  },
+
   // [SWORD] Iron Longsword
   // Cost: ~400 / Value: 750
   {
@@ -183,6 +201,23 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 25, physicalDefense: 2, magicalAttack: 0, magicalDefense: 0 }
   },
 
+  // [MACE] Flanged Mace
+  // Cost: ~350 / Value: 700
+  {
+    id: 'mace_iron_t2',
+    name: 'Flanged Mace',
+    tier: 2,
+    icon: '🔨',
+    description: 'Designed to crush plate armor.',
+    subCategoryId: 'MACE',
+    baseValue: 700,
+    requirements: [
+      { id: 'iron_ore', count: 3 },
+      { id: 'oak_log', count: 1 }
+    ],
+    baseStats: { physicalAttack: 22, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+  },
+
   // [AXE] Iron Battle Axe
   // Cost: ~400 / Value: 800
   {
@@ -198,6 +233,23 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'oak_log', count: 2 }
     ],
     baseStats: { physicalAttack: 32, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+  },
+
+  // [STAFF] Silver Rod
+  // Cost: ~650 / Value: 1400
+  {
+    id: 'staff_silver_t2',
+    name: 'Silver Rod',
+    tier: 2,
+    icon: '🦯',
+    description: 'Excellent conductor for mana.',
+    subCategoryId: 'STAFF',
+    baseValue: 1400,
+    requirements: [
+      { id: 'silver_ore', count: 2 },
+      { id: 'oak_log', count: 1 }
+    ],
+    baseStats: { physicalAttack: 8, physicalDefense: 0, magicalAttack: 20, magicalDefense: 5 }
   },
 
   // [SWORD] Silver Rapier (특수: 마법 저항/공격)
@@ -232,6 +284,24 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'wool_cloth', count: 1 }
     ],
     baseStats: { physicalAttack: 0, physicalDefense: 14, magicalAttack: 0, magicalDefense: 2 }
+  },
+
+  // [SHIELD] Iron Heater Shield
+  // Cost: ~300 / Value: 650
+  {
+    id: 'shield_iron_t2',
+    name: 'Iron Heater Shield',
+    tier: 2,
+    icon: '🛡️',
+    description: 'Provides excellent protection for knights.',
+    subCategoryId: 'SHIELD',
+    baseValue: 650,
+    requirements: [
+      { id: 'iron_ore', count: 2 },
+      { id: 'oak_log', count: 2 },
+      { id: 'leather_strips', count: 1 }
+    ],
+    baseStats: { physicalAttack: 0, physicalDefense: 18, magicalAttack: 0, magicalDefense: 0 }
   },
 
   // [HELMET] Iron Great Helm

@@ -1,3 +1,4 @@
+
 export const MARKET_CATALOG = [
   // --- KEY ITEMS ---
   { id: 'furnace', price: 500 },
@@ -18,6 +19,7 @@ export const MARKET_CATALOG = [
 
   // --- SPECIAL ---
   { id: 'scroll_t2', price: 1000 },
+  { id: 'scroll_t3', price: 2500 },
 ];
 
 // Market Prices for Reference:

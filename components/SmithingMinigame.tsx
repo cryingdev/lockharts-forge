@@ -59,6 +59,7 @@ class SmithingScene extends Phaser.Scene {
   private lastHitTime: number = 0;
   private hitCooldown: number = 200; // ms
   private onComplete?: (score: number) => void;
+  private onStatusUpdate?: (temp: number) => void; // Callback to save temp
   private isFinished: boolean = false;
   
   // Flow Control
@@ -75,8 +76,9 @@ class SmithingScene extends Phaser.Scene {
     super('SmithingScene');
   }
 
-  init(data: { onComplete: (score: number) => void, difficulty: number }) {
+  init(data: { onComplete: (score: number) => void, difficulty: number, initialTemp: number, onStatusUpdate: (temp: number) => void }) {
     this.onComplete = data.onComplete;
+    this.onStatusUpdate = data.onStatusUpdate;
     
     // Difficulty adjusts shrink duration (Shorter = Faster/Harder)
     const baseDuration = 2000;
@@ -87,10 +89,17 @@ class SmithingScene extends Phaser.Scene {
     
     this.score = 0;
     this.combo = 0;
-    this.temperature = 0; // START AT 0
+    this.temperature = data.initialTemp || 0; // Initialize with residual heat
     this.isFinished = false;
     this.isPlaying = false;
-    this.isReadyToStart = false;
+    
+    // Auto-ready if already hot enough from residual heat
+    if (this.temperature > 0) {
+        this.isReadyToStart = true;
+    } else {
+        this.isReadyToStart = false;
+    }
+    
     this.currentTempStage = 'COLD';
   }
 
@@ -154,7 +163,9 @@ class SmithingScene extends Phaser.Scene {
     }
 
     // Ambient Glow (Starts off, turns on with heat)
-    this.ambientGlow = this.add.circle(this.centerX, height, 400, 0xea580c, 0); // Alpha 0 initially
+    // Initial alpha depends on starting temp
+    const startGlow = Math.min(0.2, (this.temperature / 100) * 0.2);
+    this.ambientGlow = this.add.circle(this.centerX, height, 400, 0xea580c, startGlow); 
 
     // --- 2. The Forge ---
     
@@ -167,7 +178,7 @@ class SmithingScene extends Phaser.Scene {
       this.add.rectangle(this.centerX, this.centerY + 10, 240, 40, 0x57534e).setOrigin(0.5);
     }
 
-    // Ingot (Initial State: Cold)
+    // Ingot (Initial State: Depends on Temp)
     if (hasTexture('ingot_hot_aura')) {
       this.ingot = this.add.image(this.centerX - 20, this.centerY + 60, 'ingot_hot_aura'); // Placeholder
       this.ingot.setScale(0.35); 
@@ -179,8 +190,9 @@ class SmithingScene extends Phaser.Scene {
       this.ingot = this.add.image(this.centerX, this.centerY + 60, 'ingot_fallback');
     }
     
-    // Force initial visual state
-    this.updateIngotVisuals('COLD');
+    // Force initial visual state based on Residual Heat
+    this.updateTempStage();
+    this.updateIngotVisuals(this.currentTempStage);
 
     // --- 3. Ring Mechanic Visuals ---
     
@@ -213,14 +225,19 @@ class SmithingScene extends Phaser.Scene {
     this.tempText = this.add.text(this.centerX + 180, 40, 'TEMP: 0%', {
         fontFamily: 'monospace', fontSize: '14px', color: '#fff'
     }).setOrigin(0, 0.5);
+    this.updateTempText(); // Set initial text
 
     this.comboText = this.add.text(this.centerX, this.centerY - 150, '', {
       fontFamily: 'Impact', fontSize: '42px', color: '#fcd34d', stroke: '#000', strokeThickness: 4
     }).setOrigin(0.5).setAlpha(0);
     
     // Info Text (Tutorial)
-    this.infoText = this.add.text(this.centerX, this.centerY - 100, 'FORGE IS COLD\nADD FUEL TO HEAT', {
-        fontFamily: 'monospace', fontSize: '24px', color: '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 4
+    // Initial text depends on whether we have residual heat
+    const initialMsg = this.isReadyToStart ? 'CLICK TO START' : 'FORGE IS COLD\nADD FUEL TO HEAT';
+    const initialColor = this.isReadyToStart ? '#fbbf24' : '#3b82f6';
+
+    this.infoText = this.add.text(this.centerX, this.centerY - 100, initialMsg, {
+        fontFamily: 'monospace', fontSize: '24px', color: initialColor, align: 'center', stroke: '#000', strokeThickness: 4
     }).setOrigin(0.5);
     
     this.tweens.add({
@@ -258,6 +275,11 @@ class SmithingScene extends Phaser.Scene {
           this.infoText.setText('CLICK TO START');
           this.infoText.setColor('#fbbf24'); // Amber
       }
+  }
+
+  // Called when unmounting/closing to save state
+  public getTemperature() {
+      return this.temperature;
   }
 
   randomizeTargetPos() {
@@ -359,22 +381,13 @@ class SmithingScene extends Phaser.Scene {
       this.temperature = Math.max(0, this.temperature - (this.coolingRate * (delta / 1000)));
       this.updateTempText();
 
-      let newStage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'NORMAL';
-      
-      if (this.temperature <= 0) newStage = 'COLD';
-      else if (this.temperature > 75) newStage = 'AURA';
-      else if (this.temperature > 40) newStage = 'HOT';
-      else if (this.temperature > 15) newStage = 'WARM';
-      else newStage = 'NORMAL'; // Very low heat but not 0
+      const prevStage = this.currentTempStage;
+      this.updateTempStage();
 
-      if (newStage !== this.currentTempStage) {
-          this.currentTempStage = newStage;
-          this.updateIngotVisuals(newStage);
+      if (this.currentTempStage !== prevStage) {
+          this.updateIngotVisuals(this.currentTempStage);
           
-          if (newStage === 'COLD') {
-             // If game was playing and it got cold, show warning or pause?
-             // Currently handled by ring logic pausing.
-             // We can re-show info text if paused.
+          if (this.currentTempStage === 'COLD') {
              if (!this.isPlaying) {
                  this.infoText.setVisible(true);
              } else {
@@ -386,6 +399,14 @@ class SmithingScene extends Phaser.Scene {
              if (this.ambientGlow) this.ambientGlow.setAlpha(0);
           }
       }
+  }
+
+  updateTempStage() {
+      if (this.temperature <= 0) this.currentTempStage = 'COLD';
+      else if (this.temperature > 75) this.currentTempStage = 'AURA';
+      else if (this.temperature > 40) this.currentTempStage = 'HOT';
+      else if (this.temperature > 15) this.currentTempStage = 'WARM';
+      else this.currentTempStage = 'NORMAL';
   }
   
   updateTempText() {
@@ -619,6 +640,12 @@ class SmithingScene extends Phaser.Scene {
 
   winGame() {
     this.isFinished = true;
+    
+    // Save state before finishing visual
+    if (this.onStatusUpdate) {
+        this.onStatusUpdate(this.temperature);
+    }
+
     const bg = this.add.rectangle(this.centerX, this.centerY, 1000, 1000, 0x000000, 0.8);
     bg.setAlpha(0);
     this.tweens.add({ targets: bg, alpha: 1, duration: 500 });
@@ -646,6 +673,13 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
 
   const charcoalCount = state.inventory.find(i => i.id === MATERIALS.CHARCOAL.id)?.quantity || 0;
 
+  // Calculate residual temperature
+  // Cooling Rate Estimate: ~5 degrees per second while offline/idle
+  const GLOBAL_COOLING_RATE_PER_SEC = 5; 
+  const timeDiffSec = (Date.now() - (state.lastForgeTime || 0)) / 1000;
+  const coolingAmount = timeDiffSec * GLOBAL_COOLING_RATE_PER_SEC;
+  const initialTemp = Math.max(0, (state.forgeTemperature || 0) - coolingAmount);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -663,11 +697,31 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
 
     const game = new Phaser.Game(config);
     gameRef.current = game;
-    game.scene.start('SmithingScene', { onComplete, difficulty });
+    
+    // Pass callback to update status
+    game.scene.start('SmithingScene', { 
+        onComplete, 
+        difficulty, 
+        initialTemp,
+        onStatusUpdate: (temp: number) => {
+            actions.updateForgeStatus(temp);
+        }
+    });
 
     return () => {
-      game.destroy(true);
-      gameRef.current = null;
+        // Attempt to capture state on unmount if possible, though React cleanup might be too late for Phaser scene data access sometimes.
+        // Better handled inside Phaser scene logic (winGame, or explicit save method)
+        // If user Cancels via X button, we should grab temp.
+        if (gameRef.current) {
+             const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
+             if (scene && !scene.scene.isPaused) {
+                 const currentTemp = scene.getTemperature();
+                 // We can't use 'actions' here reliably if component unmounts, but we can try.
+                 // Actually, it's safer to have the Cancel button trigger the save explicitly.
+             }
+             game.destroy(true);
+             gameRef.current = null;
+        }
     };
   }, [onComplete, difficulty]);
 
@@ -679,6 +733,17 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
               scene.heatUp();
           }
       }
+  };
+
+  const handleManualClose = () => {
+      // Save temperature before closing
+      if (gameRef.current) {
+          const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
+          if (scene) {
+             actions.updateForgeStatus(scene.getTemperature());
+          }
+      }
+      onClose();
   };
 
   return (
@@ -694,7 +759,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
                 </div>
             </div>
             <button 
-                onClick={onClose}
+                onClick={handleManualClose}
                 className="flex items-center gap-2 px-4 py-2 bg-stone-800 hover:bg-red-900/20 text-stone-400 hover:text-red-400 rounded border border-stone-700 hover:border-red-800 transition-all"
             >
                 <X className="w-4 h-4" />

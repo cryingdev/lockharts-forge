@@ -25,7 +25,9 @@ type Action =
   | { type: 'ENQUEUE_CUSTOMER'; payload: ShopCustomer }
   | { type: 'NEXT_CUSTOMER' }
   | { type: 'DISMISS_CUSTOMER' }
-  | { type: 'SET_CRAFTING'; payload: boolean };
+  | { type: 'SET_CRAFTING'; payload: boolean }
+  | { type: 'UPDATE_FORGE_STATUS'; payload: { temp: number } }
+  | { type: 'TOGGLE_JOURNAL' };
 
 const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number): Equipment => {
     // 1. Determine Mastery Bonus
@@ -130,7 +132,10 @@ const gameReducer = (state: GameState, action: Action): GameState => {
             shopQueue: [],
             isCrafting: false,
             showSleepModal: false, // Close modal
-            logs: [`Day ${nextDay} begins. You feel refreshed.`, ...state.logs]
+            logs: [`Day ${nextDay} begins. You feel refreshed.`, ...state.logs],
+            // Reset forge temp overnight
+            forgeTemperature: 0,
+            lastForgeTime: Date.now(),
         };
     }
 
@@ -139,6 +144,21 @@ const gameReducer = (state: GameState, action: Action): GameState => {
         return {
             ...state,
             isCrafting
+        };
+    }
+
+    case 'UPDATE_FORGE_STATUS': {
+        return {
+            ...state,
+            forgeTemperature: action.payload.temp,
+            lastForgeTime: Date.now()
+        };
+    }
+
+    case 'TOGGLE_JOURNAL': {
+        return {
+            ...state,
+            showJournal: !state.showJournal
         };
     }
 
@@ -205,6 +225,12 @@ const gameReducer = (state: GameState, action: Action): GameState => {
              if (buyItem.id === 'scroll_t2') {
                  newTierLevel = Math.max(newTierLevel, 2);
                  logUpdates.unshift('Upgrade Complete: Market Tier 2 Unlocked!');
+                 return; 
+             }
+
+             if (buyItem.id === 'scroll_t3') {
+                 newTierLevel = Math.max(newTierLevel, 3);
+                 logUpdates.unshift('Upgrade Complete: Market Tier 3 Unlocked!');
                  return; 
              }
 
@@ -463,6 +489,8 @@ const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     dismissCustomer: () => dispatch({ type: 'DISMISS_CUSTOMER' }),
 
     setCrafting: (isCrafting: boolean) => dispatch({ type: 'SET_CRAFTING', payload: isCrafting }),
+    updateForgeStatus: (temp: number) => dispatch({ type: 'UPDATE_FORGE_STATUS', payload: { temp } }),
+    toggleJournal: () => dispatch({ type: 'TOGGLE_JOURNAL' }),
   }), []);
 
   return (

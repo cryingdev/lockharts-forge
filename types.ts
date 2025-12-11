@@ -75,9 +75,14 @@ export interface GameState {
   // Game Logic Control
   isCrafting: boolean; // Is the player currently in the minigame?
   showSleepModal: boolean; // Should the End of Day modal be visible?
+  showJournal: boolean; // Toggle for the Log/Journal Modal
   
   // Progression
   craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count
+
+  // Minigame Persistence
+  forgeTemperature: number; // Residual heat from last session
+  lastForgeTime: number; // Timestamp of last minigame interaction
 }
 
 export interface GameContextType {
@@ -102,6 +107,8 @@ export interface GameContextType {
 
     // Logic Control
     setCrafting: (isCrafting: boolean) => void;
+    updateForgeStatus: (temp: number) => void; // Save residual heat
+    toggleJournal: () => void; // Open/Close Journal
   };
 }
 
