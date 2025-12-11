@@ -42,7 +42,7 @@ const InventoryDisplay = () => {
                 <div className="p-3 overflow-y-auto flex-1 font-mono text-xs space-y-3">
                     {state.logs.map((log, i) => (
                         <div key={i} className="text-stone-400 border-l-2 border-stone-800 pl-3">
-                            <span className="text-stone-600 block text-[10px] mb-0.5">Day {state.stats.day} • {state.stats.time}</span>
+                            <span className="text-stone-600 block text-[10px] mb-0.5">Day {state.stats.day}</span>
                             {log}
                         </div>
                     ))}

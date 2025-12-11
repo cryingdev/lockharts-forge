@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { Store, ShoppingCart, ShoppingBag, Minus, Trash2, AlertCircle, Package, Flame, ChevronRight, Box } from 'lucide-react';
-import { MATERIALS } from '../constants';
+import { MATERIALS } from '../data/materials';
 import { MARKET_CATALOG } from '../data/gameData';
 import { getAssetUrl } from '../utils';
 

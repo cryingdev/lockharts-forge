@@ -18,18 +18,11 @@ export interface InventoryItem extends ItemDefinition {
   equipmentData?: Equipment; // Stores the unique instance data for equipment
 }
 
-export enum TimeOfDay {
-  MORNING = 'Morning',
-  AFTERNOON = 'Afternoon',
-  EVENING = 'Evening',
-}
-
 export interface PlayerStats {
   gold: number;
   energy: number;
   maxEnergy: number;
   day: number;
-  time: TimeOfDay;
   tierLevel: number; // Current crafting/market tier access
 }
 
@@ -81,7 +74,7 @@ export interface GameState {
 
   // Game Logic Control
   isCrafting: boolean; // Is the player currently in the minigame?
-  pendingDayAdvance: boolean; // Is the day waiting to end after crafting?
+  showSleepModal: boolean; // Should the End of Day modal be visible?
   
   // Progression
   craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count
@@ -91,7 +84,8 @@ export interface GameContextType {
   state: GameState;
   actions: {
     repairItem: () => void; // Placeholder for Cold Forging
-    rest: () => void; // Advance time/Restore energy
+    rest: () => void; // Trigger Sleep Modal (Manual)
+    confirmSleep: () => void; // Actually proceed to next day (From Modal)
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
     craftItem: (item: EquipmentItem, quality: number) => void;

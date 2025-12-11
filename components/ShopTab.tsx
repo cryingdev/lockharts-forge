@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DialogueBox from './DialogueBox';
 import { Store, Coins, PackageOpen, Heart, Users } from 'lucide-react';
-import { EQUIPMENT_ITEMS } from '../data/gameData';
-import { MATERIALS } from '../constants';
+import { EQUIPMENT_ITEMS } from '../data/equipment';
+import { MATERIALS } from '../data/materials';
 import { getAssetUrl } from '../utils';
 
 const ShopTab = () => {

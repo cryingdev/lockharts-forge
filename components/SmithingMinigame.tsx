@@ -4,7 +4,7 @@ import Phaser from 'phaser';
 import { X, Hammer, Flame } from 'lucide-react';
 import { getAssetUrl } from '../utils';
 import { useGame } from '../context/GameContext';
-import { MATERIALS } from '../constants';
+import { MATERIALS } from '../data/materials';
 
 // --- Types & Props ---
 interface SmithingMinigameProps {
