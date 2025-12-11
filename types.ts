@@ -82,6 +82,9 @@ export interface GameState {
   // Game Logic Control
   isCrafting: boolean; // Is the player currently in the minigame?
   pendingDayAdvance: boolean; // Is the day waiting to end after crafting?
+  
+  // Progression
+  craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count
 }
 
 export interface GameContextType {

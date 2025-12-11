@@ -3,9 +3,9 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../data/gameData';
 import { EquipmentCategory, EquipmentItem } from '../types';
 import SmithingMinigame from './SmithingMinigame';
-import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award } from 'lucide-react';
 import { useGame } from '../context/GameContext';
-import { MATERIALS, GAME_CONFIG } from '../constants';
+import { MATERIALS, GAME_CONFIG, MASTERY_THRESHOLDS } from '../constants';
 
 interface ForgeTabProps {
     onNavigate: (tab: any) => void;
@@ -15,7 +15,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   
   // Destructure only what we need for this component to minimize re-render impact
-  const { inventory, stats, isCrafting } = state;
+  const { inventory, stats, isCrafting, craftingMastery } = state;
   const { hasFurnace } = state.forge;
 
   // UI State
@@ -45,7 +45,18 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   // CHECKS
   const charcoalCount = getInventoryCount('charcoal');
   const hasFuel = charcoalCount > 0;
-  const hasEnergy = stats.energy >= GAME_CONFIG.ENERGY_COST.CRAFT;
+  
+  // Determine energy cost dynamically based on mastery of SELECTED item
+  const requiredEnergy = useMemo(() => {
+      if (!selectedItem) return GAME_CONFIG.ENERGY_COST.CRAFT;
+      const count = craftingMastery[selectedItem.id] || 0;
+      if (count >= MASTERY_THRESHOLDS.ARTISAN) {
+          return GAME_CONFIG.ENERGY_COST.CRAFT - MASTERY_THRESHOLDS.ARTISAN_BONUS.energyDiscount;
+      }
+      return GAME_CONFIG.ENERGY_COST.CRAFT;
+  }, [selectedItem, craftingMastery]);
+
+  const hasEnergy = stats.energy >= requiredEnergy;
 
   const canAffordResources = useCallback((item: EquipmentItem) => {
       return item.requirements.every(req => getInventoryCount(req.id) >= req.count);
@@ -152,11 +163,27 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       setHoveredItem(null);
   }, []);
 
+  // Mastery Helper
+  const getMasteryLevel = (count: number) => {
+      if (count >= MASTERY_THRESHOLDS.ARTISAN) return 2;
+      if (count >= MASTERY_THRESHOLDS.ADEPT) return 1;
+      return 0;
+  };
+
+  const getMasteryIcon = (level: number) => {
+      if (level === 2) return <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />; // Gold
+      if (level === 1) return <Star className="w-3 h-3 text-stone-300 fill-stone-300" />; // Silver
+      return <Star className="w-3 h-3 text-amber-700/50" />; // None
+  };
+
   // Render Helper for Item Card
   const renderItemCard = (item: EquipmentItem) => {
       const isSelected = selectedItem?.id === item.id;
       const isFav = favorites.includes(item.id);
       const count = inventory.filter(i => i.name === item.name).length;
+      
+      const masteryCount = craftingMastery[item.id] || 0;
+      const masteryLevel = getMasteryLevel(masteryCount);
 
       return (
         <div 
@@ -171,20 +198,28 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                 : 'bg-stone-800 border-stone-700 hover:border-stone-500 hover:bg-stone-750'
             }`}
         >
-            {/* Top Row: Tier & Favorite */}
+            {/* Top Row: Tier & Mastery/Favorite */}
             <div className="w-full flex justify-between items-start p-2 z-10">
-                 {/* Tier Text (Simplified) */}
-                <span className={`text-[10px] font-bold tracking-wider font-mono ${isSelected ? 'text-amber-400' : 'text-stone-600'}`}>
+                 <span className={`text-[10px] font-bold tracking-wider font-mono ${isSelected ? 'text-amber-400' : 'text-stone-600'}`}>
                     TIER {item.tier}
                 </span>
 
-                {/* Favorite Button */}
-                <button 
-                    onClick={(e) => toggleFavorite(e, item.id)}
-                    className="p-1 rounded-full hover:bg-stone-700 transition-colors -mt-1 -mr-1"
-                >
-                    <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-red-500 text-red-500' : 'text-stone-600 hover:text-stone-400'}`} />
-                </button>
+                <div className="flex items-center gap-1 -mt-1 -mr-1">
+                    {/* Mastery Icon */}
+                    {masteryCount > 0 && (
+                        <div className="p-1" title={`Mastery Level ${masteryLevel} (${masteryCount})`}>
+                            {getMasteryIcon(masteryLevel)}
+                        </div>
+                    )}
+                    
+                    {/* Favorite Button */}
+                    <button 
+                        onClick={(e) => toggleFavorite(e, item.id)}
+                        className="p-1 rounded-full hover:bg-stone-700 transition-colors"
+                    >
+                        <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-red-500 text-red-500' : 'text-stone-600 hover:text-stone-400'}`} />
+                    </button>
+                </div>
             </div>
 
             {/* Icon (Centered) */}
@@ -194,19 +229,18 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             
             {/* Bottom Info (Fixed Layout) */}
             <div className="w-full text-center pb-2 px-1 flex flex-col items-center gap-1">
-                {/* Name - Fixed height to prevent jumping */}
+                {/* Name */}
                 <div className={`text-xs font-bold leading-tight truncate w-full ${isSelected ? 'text-amber-200' : 'text-stone-300'}`}>
                     {item.name}
                 </div>
                 
-                {/* Count Badge - Fixed height spacer */}
+                {/* Count Badge */}
                 <div className="h-5 flex items-center justify-center w-full">
                     {count > 0 ? (
                         <div className="inline-flex items-center gap-0.5 bg-stone-950/50 px-2 py-0.5 rounded text-[10px] font-mono text-stone-500 border border-stone-800/50">
                             <Box className="w-2.5 h-2.5" /> {count}
                         </div>
                     ) : (
-                        // Transparent Spacer to keep name position fixed
                         <div className="h-[18px]"></div>
                     )}
                 </div>
@@ -220,6 +254,37 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     
     // Derived state for selected item button logic
     const canCraft = selectedItem && canAffordResources(selectedItem) && hasFuel && hasEnergy;
+    
+    // Mastery Info for Selected Item
+    let masteryInfo = null;
+    if (selectedItem) {
+        const count = craftingMastery[selectedItem.id] || 0;
+        const level = getMasteryLevel(count);
+        let nextThreshold = MASTERY_THRESHOLDS.ADEPT;
+        let progress = 0;
+        let label = "Novice";
+        let color = "text-stone-500";
+        let benefits = "Base Stats";
+
+        if (level === 0) {
+            nextThreshold = MASTERY_THRESHOLDS.ADEPT;
+            progress = (count / MASTERY_THRESHOLDS.ADEPT) * 100;
+        } else if (level === 1) {
+            label = "Adept";
+            color = "text-stone-300"; // Silver
+            nextThreshold = MASTERY_THRESHOLDS.ARTISAN;
+            progress = ((count - MASTERY_THRESHOLDS.ADEPT) / (MASTERY_THRESHOLDS.ARTISAN - MASTERY_THRESHOLDS.ADEPT)) * 100;
+            benefits = "Value +10%, Stats +10%";
+        } else {
+            label = "Artisan";
+            color = "text-yellow-400"; // Gold
+            nextThreshold = count; // Maxed
+            progress = 100;
+            benefits = "Value +25%, Stats +20%, Cost -5 Energy";
+        }
+        
+        masteryInfo = { count, level, nextThreshold, progress, label, color, benefits };
+    }
 
     return (
         <div className="relative h-full w-full bg-stone-950 overflow-hidden">
@@ -268,7 +333,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                 </div>
 
                 {selectedItem ? (
-                    <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300">
+                    <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg">
                     {/* Selected Item Preview */}
                     <div className="relative group">
                         <div className="w-48 h-48 bg-stone-900 rounded-full border-4 border-amber-600 flex items-center justify-center shadow-[0_0_40px_rgba(217,119,6,0.2)] mb-8 group-hover:shadow-[0_0_60px_rgba(217,119,6,0.4)] transition-shadow">
@@ -278,6 +343,33 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
                     <h2 className="text-3xl font-bold text-amber-500 mb-2 font-serif tracking-wide">{selectedItem.name}</h2>
                     <p className="text-stone-400 text-center max-w-md mb-6 italic">"{selectedItem.description}"</p>
+
+                    {/* Mastery Bar */}
+                    {masteryInfo && (
+                        <div className="w-full bg-stone-900/50 p-3 rounded-lg border border-stone-800 mb-6">
+                            <div className="flex justify-between items-center mb-1 text-xs uppercase font-bold tracking-wider">
+                                <span className="text-stone-500 flex items-center gap-1">
+                                    <Award className="w-3 h-3" /> Mastery
+                                </span>
+                                <span className={masteryInfo.color}>{masteryInfo.label}</span>
+                            </div>
+                            
+                            {/* Progress Bar */}
+                            <div className="w-full h-2 bg-stone-800 rounded-full overflow-hidden mb-1.5">
+                                <div 
+                                    className={`h-full transition-all duration-500 ${masteryInfo.level === 2 ? 'bg-yellow-500' : 'bg-amber-600'}`} 
+                                    style={{ width: `${masteryInfo.progress}%` }}
+                                ></div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-stone-500">
+                                    {masteryInfo.level < 2 ? `${masteryInfo.count} / ${masteryInfo.nextThreshold} Crafted` : 'Max Level'}
+                                </span>
+                                <span className="text-emerald-500">{masteryInfo.benefits}</span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Indicators: Fuel & Energy */}
                     <div className="flex items-center gap-3 mb-6">
@@ -297,7 +389,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             : 'bg-red-900/20 border-red-700/50 text-red-500 animate-pulse'
                         }`}>
                             <Zap className="w-4 h-4" />
-                            <span>Energy: -{GAME_CONFIG.ENERGY_COST.CRAFT}</span>
+                            <span>Energy: -{requiredEnergy}</span>
                         </div>
                     </div>
 
@@ -523,7 +615,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
         </div>
     );
   }, [
-      activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, charcoalCount, hasFuel, hasEnergy, stats.tierLevel, expandedSubCat, favorites, favoriteItems,
+      activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, charcoalCount, hasFuel, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, favoriteItems, craftingMastery,
       handleCategoryChange, startCrafting, stopCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite,
       handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats
   ]);

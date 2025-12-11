@@ -121,18 +121,30 @@ export const INITIAL_STATE: GameState = {
     // Game Logic State
     isCrafting: false,
     pendingDayAdvance: false,
+    
+    // Progression
+    craftingMastery: {},
 };
 
 export const GAME_CONFIG = {
     ENERGY_COST: {
         REPAIR: 15,
-        OPEN_SHOP: 15, // Reduced from 30
-        CRAFT: 20 // Added craft cost
+        OPEN_SHOP: 15, 
+        CRAFT: 20
     },
     // Time Durations in Milliseconds
     TIME_DURATION: {
-        MORNING: 2 * 60 * 1000, // 2 minutes
-        AFTERNOON: 2 * 60 * 1000, // 2 minutes
-        EVENING: 2 * 60 * 1000, // 2 minutes (Updated)
+        MORNING: 2 * 60 * 1000, 
+        AFTERNOON: 2 * 60 * 1000, 
+        EVENING: 2 * 60 * 1000, 
     }
+};
+
+export const MASTERY_THRESHOLDS = {
+    NOVICE: 0,
+    ADEPT: 10,
+    ARTISAN: 30,
+    // Bonuses
+    ADEPT_BONUS: { price: 1.1, stats: 1.1, prefix: 'Fine' },
+    ARTISAN_BONUS: { price: 1.25, stats: 1.2, prefix: 'Masterwork', energyDiscount: 5 }
 };

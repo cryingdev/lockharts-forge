@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useEffect } from 'react';
 import { GameState, GameContextType, TimeOfDay, InventoryItem, GameEvent, EquipmentItem, ShopCustomer } from '../types';
-import { INITIAL_STATE, GAME_CONFIG, MATERIALS } from '../constants';
+import { INITIAL_STATE, GAME_CONFIG, MATERIALS, MASTERY_THRESHOLDS } from '../constants';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { Mercenary } from '../models/Mercenary';
 
@@ -26,38 +26,57 @@ type Action =
   | { type: 'DISMISS_CUSTOMER' }
   | { type: 'SET_CRAFTING'; payload: boolean };
 
-const generateEquipment = (recipe: EquipmentItem, quality: number): Equipment => {
-    // 1. Determine Rarity
+const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number): Equipment => {
+    // 1. Determine Mastery Bonus
+    let statMultiplier = 1.0;
+    let priceMultiplier = 1.0;
+    let namePrefix = '';
+
+    if (masteryCount >= MASTERY_THRESHOLDS.ARTISAN) {
+        statMultiplier = MASTERY_THRESHOLDS.ARTISAN_BONUS.stats;
+        priceMultiplier = MASTERY_THRESHOLDS.ARTISAN_BONUS.price;
+        namePrefix = MASTERY_THRESHOLDS.ARTISAN_BONUS.prefix;
+    } else if (masteryCount >= MASTERY_THRESHOLDS.ADEPT) {
+        statMultiplier = MASTERY_THRESHOLDS.ADEPT_BONUS.stats;
+        priceMultiplier = MASTERY_THRESHOLDS.ADEPT_BONUS.price;
+        namePrefix = MASTERY_THRESHOLDS.ADEPT_BONUS.prefix;
+    }
+
+    // 2. Determine Rarity
     let rarity = EquipmentRarity.COMMON;
     if (quality >= 100) rarity = EquipmentRarity.LEGENDARY;
     else if (quality >= 90) rarity = EquipmentRarity.EPIC;
     else if (quality >= 75) rarity = EquipmentRarity.RARE;
     else if (quality >= 50) rarity = EquipmentRarity.UNCOMMON;
 
-    // 2. Determine Stats Multiplier based on quality
-    const multiplier = 0.5 + (quality / 100) * 0.7; // Range: 0.5 to 1.2
+    // 3. Determine Stats Multiplier based on quality AND mastery
+    const qualityMultiplier = 0.5 + (quality / 100) * 0.7; // Range: 0.5 to 1.2
+    const finalMultiplier = qualityMultiplier * statMultiplier;
 
     const base = recipe.baseStats || { physicalAttack: 0, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 };
     const stats: EquipmentStats = {
-        physicalAttack: Math.round(base.physicalAttack * multiplier),
-        physicalDefense: Math.round(base.physicalDefense * multiplier),
-        magicalAttack: Math.round(base.magicalAttack * multiplier),
-        magicalDefense: Math.round(base.magicalDefense * multiplier),
+        physicalAttack: Math.round(base.physicalAttack * finalMultiplier),
+        physicalDefense: Math.round(base.physicalDefense * finalMultiplier),
+        magicalAttack: Math.round(base.magicalAttack * finalMultiplier),
+        magicalDefense: Math.round(base.magicalDefense * finalMultiplier),
     };
 
-    // 3. Determine Type (Mapping)
+    // 4. Determine Type (Mapping)
     let type = EquipmentType.SWORD;
     if (recipe.subCategoryId === 'SWORD') type = EquipmentType.SWORD;
     else if (recipe.subCategoryId === 'AXE') type = EquipmentType.AXE;
     else if (recipe.subCategoryId === 'HELMET') type = EquipmentType.HELMET;
     else if (recipe.subCategoryId === 'CHESTPLATE') type = EquipmentType.CHESTPLATE;
 
-    // 4. Price Calculation
-    const price = Math.round(recipe.baseValue * multiplier);
+    // 5. Price Calculation
+    const price = Math.round((recipe.baseValue * qualityMultiplier) * priceMultiplier);
+    
+    // 6. Final Name
+    const finalName = namePrefix ? `${namePrefix} ${recipe.name}` : recipe.name;
 
     return {
         id: `${recipe.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        name: recipe.name,
+        name: finalName,
         type: type,
         quality: quality,
         rarity: rarity,
@@ -299,11 +318,19 @@ const gameReducer = (state: GameState, action: Action): GameState => {
     case 'CRAFT_ITEM': {
         const { item, quality } = action.payload;
         
+        // Calculate Energy Cost with Mastery Discount
+        const masteryCount = state.craftingMastery[item.id] || 0;
+        let energyCost = GAME_CONFIG.ENERGY_COST.CRAFT;
+        
+        if (masteryCount >= MASTERY_THRESHOLDS.ARTISAN) {
+            energyCost -= MASTERY_THRESHOLDS.ARTISAN_BONUS.energyDiscount;
+        }
+
         // Safety check for energy
-        if (state.stats.energy < GAME_CONFIG.ENERGY_COST.CRAFT) {
+        if (state.stats.energy < energyCost) {
              return {
                 ...state,
-                logs: [`Too exhausted to craft. Need ${GAME_CONFIG.ENERGY_COST.CRAFT} energy.`, ...state.logs]
+                logs: [`Too exhausted to craft. Need ${energyCost} energy.`, ...state.logs]
             };
         }
 
@@ -329,7 +356,8 @@ const gameReducer = (state: GameState, action: Action): GameState => {
             }).filter(i => i.quantity > 0);
         });
 
-        const equipment = generateEquipment(item, quality);
+        // Generate Equipment with Mastery Logic
+        const equipment = generateEquipment(item, quality, masteryCount);
 
         newInventory.push({
             id: equipment.id, 
@@ -342,14 +370,19 @@ const gameReducer = (state: GameState, action: Action): GameState => {
             equipmentData: equipment
         });
 
+        // Increment Mastery
+        const newMastery = { ...state.craftingMastery };
+        newMastery[item.id] = (masteryCount || 0) + 1;
+
         return {
             ...state,
             stats: {
                 ...state.stats,
-                energy: state.stats.energy - GAME_CONFIG.ENERGY_COST.CRAFT
+                energy: state.stats.energy - energyCost
             },
             inventory: newInventory,
-            logs: [`Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})! Energy -${GAME_CONFIG.ENERGY_COST.CRAFT}`, ...state.logs]
+            craftingMastery: newMastery,
+            logs: [`Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})! Energy -${energyCost}`, ...state.logs]
         };
     }
 
@@ -422,13 +455,6 @@ const gameReducer = (state: GameState, action: Action): GameState => {
     }
 
     case 'TOGGLE_SHOP':
-        // REMOVED FURNACE CHECK FOR TESTING
-        // if (!state.forge.hasFurnace) {
-        //     return {
-        //         ...state,
-        //         logs: ['You need a working furnace to open the shop!', ...state.logs]
-        //     };
-        // }
         if (state.stats.energy < GAME_CONFIG.ENERGY_COST.OPEN_SHOP && !state.forge.isShopOpen) {
             return {
                 ...state,
