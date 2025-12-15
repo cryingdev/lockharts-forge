@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
-import { useGame } from '../context/GameContext';
-import DialogueBox from './DialogueBox';
+import { useGame } from '../../../context/GameContext';
+import DialogueBox from '../../DialogueBox';
 import { Store, Coins, PackageOpen, Heart, Users } from 'lucide-react';
-import { EQUIPMENT_ITEMS } from '../data/equipment';
-import { MATERIALS } from '../data/materials';
-import { getAssetUrl } from '../utils';
+import { EQUIPMENT_ITEMS } from '../../../data/equipment';
+import { MATERIALS } from '../../../data/materials';
+import { getAssetUrl } from '../../../utils';
 
 const ShopTab = () => {
   const { state, actions } = useGame();
@@ -27,7 +28,6 @@ const ShopTab = () => {
       if (request.type === 'RESOURCE') {
           actions.sellItem(request.requestedId, 1, request.price, undefined, mercenary);
       } else {
-          // Find an inventory item that matches the requested equipment ID (prefix match for unique IDs)
           const matchingItem = state.inventory.find(i => 
               i.equipmentData && i.id.startsWith(request.requestedId)
           );
@@ -35,7 +35,6 @@ const ShopTab = () => {
               actions.sellItem(matchingItem.id, 1, request.price, matchingItem.id, mercenary);
           }
       }
-      // Note: dismissal handled in reducer for successful sale
   };
 
   const handleRefuse = () => {
@@ -87,7 +86,6 @@ const ShopTab = () => {
         )}
 
         {/* ★★★ [UI Layer] Customer Info & Request Bubble ★★★ */}
-        {/* 캐릭터 Wrapper 밖으로 빼내어 화면 기준으로 고정시켰습니다. */}
         {isShopOpen && activeCustomer && (
             <>
                 {/* 1. Request Bubble (화면 왼쪽 고정) */}
@@ -154,10 +152,8 @@ const ShopTab = () => {
         </div>
 
         {/* Layer 1.5: The Shop Counter (Desk) */}
-        {/* This overlays the bottom part of the character to make them look like they are standing behind it */}
         <div className="absolute bottom-0 w-full z-30 flex items-end justify-center pointer-events-none">
             
-            {/* Visual Representation */}
             {!counterImgError ? (
                 <img 
                     src={getAssetUrl('shop_counter.png')}
@@ -166,16 +162,13 @@ const ShopTab = () => {
                     onError={() => setCounterImgError(true)}
                 />
             ) : (
-                /* CSS Fallback */
                 <div className="w-full h-full bg-[#3f2e22] border-t-[6px] border-[#5d4037] shadow-[0_-10px_20px_rgba(0,0,0,0.5)] relative overflow-hidden">
-                    {/* Wood Grain Texture Simulation */}
                     <div className="absolute inset-0 opacity-10" style={{ 
                         backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 12px)' 
                     }}></div>
                 </div>
             )}
                 
-            {/* Decorative Elements on Counter (Overlay) */}
             {isShopOpen && activeCustomer && (
                 <div className="absolute top-0 right-20 w-32 h-20 bg-amber-900/20 blur-xl rounded-full pointer-events-none"></div>
             )}
@@ -203,7 +196,6 @@ const ShopTab = () => {
         )}
 
         {/* ★★★ [NEW] Waiting State Message ★★★ */}
-        {/* 캐릭터 레이어에서 분리하여 독립적으로 배치. 화면 정중앙에 위치함. */}
         {isShopOpen && !activeCustomer && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none pb-20">
                 <div className="text-center animate-in fade-in zoom-in duration-500">
@@ -218,11 +210,8 @@ const ShopTab = () => {
 
         {/* Layer 3: Modal & Overlay Group */}
         {!isShopOpen && (
-            // [전체 래퍼] 화면 전체를 덮고 내용물을 중앙 정렬 (z-50)
             <div className="absolute inset-0 z-50 flex items-center justify-center">   
-                {/* [배경 딤 처리] animate-in으로 나타날 때만 효과 (사라질 땐 뚝 끊김) */}
                 <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-500"></div>
-                {/* [모달 본문] relative를 줘서 배경 위에 뜨게 함 */}
                 <div className="relative text-center animate-in zoom-in fade-in duration-300 p-8 bg-stone-900/90 rounded-2xl border border-stone-700 shadow-2xl backdrop-blur-md mb-20">
                     <Store className="w-16 h-16 text-stone-600 mx-auto mb-4" />
                     <h2 className="text-3xl font-bold text-stone-300 mb-2 font-serif">The Shop is Closed</h2>

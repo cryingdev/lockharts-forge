@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { useGame } from '../context/GameContext';
+import { useGame } from '../../context/GameContext';
 import { X, BookOpen, Scroll } from 'lucide-react';
 
 const JournalModal = () => {

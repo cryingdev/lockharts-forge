@@ -3,6 +3,7 @@ import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
+import { Expedition } from '../models/Dungeon';
 
 export interface PlayerStats {
   gold: number;
@@ -17,6 +18,21 @@ export interface ForgeStatus {
   hasFurnace: boolean;
   anvilLevel: number;
   isShopOpen: boolean;
+}
+
+export interface DungeonResult {
+    dungeonName: string;
+    rewards: { id: string; name: string; count: number }[];
+    mercenaryResults: {
+        id: string;
+        name: string;
+        job: string;
+        levelBefore: number;
+        levelAfter: number;
+        xpGained: number;
+        currentXp: number;
+        xpToNext: number;
+    }[];
 }
 
 export interface GameState {
@@ -43,4 +59,9 @@ export interface GameState {
   // Minigame Persistence
   forgeTemperature: number; // Residual heat from last session
   lastForgeTime: number; // Timestamp of last minigame interaction
+
+  // Dungeon System
+  activeExpeditions: Expedition[];
+  dungeonClearCounts: Record<string, number>; // Key: Dungeon ID, Value: Count
+  dungeonResult: DungeonResult | null; // Populated when claim is clicked to show modal
 }

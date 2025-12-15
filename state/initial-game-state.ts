@@ -2,6 +2,7 @@
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { MATERIALS } from '../data/materials';
+import { DUNGEON_CONFIG } from '../config/dungeon-config';
 
 const createInitialInventory = (): InventoryItem[] => [
     { ...MATERIALS.ANVIL, type: 'TOOL', quantity: 1 },
@@ -30,7 +31,12 @@ export const createInitialGameState = (): GameState => ({
     },
     activeEvent: null,
     logs: ['You stand amidst the ruins of Lockhart\'s Forge.', 'The furnace is cold and broken. You need to buy a new one.'],
-    knownMercenaries: [...NAMED_MERCENARIES],
+    knownMercenaries: [...NAMED_MERCENARIES].map(m => ({
+        ...m,
+        expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, // Ensure initials have energy
+        currentXp: 0,
+        xpToNextLevel: m.level * 100
+    })),
 
     // Shop State
     activeCustomer: null,
@@ -48,4 +54,9 @@ export const createInitialGameState = (): GameState => ({
     // Minigame Persistence
     forgeTemperature: 0,
     lastForgeTime: 0,
+
+    // Dungeon System
+    activeExpeditions: [],
+    dungeonClearCounts: {},
+    dungeonResult: null
 });

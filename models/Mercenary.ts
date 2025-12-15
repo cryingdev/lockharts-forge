@@ -30,4 +30,11 @@ export interface Mercenary {
   // State
   lastVisitDay?: number;
   isHired?: boolean; // True if actively hired by player
+  
+  // Dungeon System
+  expeditionEnergy: number; // 0 to 100
+  
+  // Progression
+  currentXp: number;
+  xpToNextLevel: number;
 }

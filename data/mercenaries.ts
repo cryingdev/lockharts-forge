@@ -1,6 +1,7 @@
 import { Mercenary } from '../models/Mercenary';
 import { JobClass } from '../models/JobClass';
 import { calculateMaxHp, calculateMaxMp } from '../models/Stats';
+import { DUNGEON_CONFIG } from '../config/dungeon-config';
 
 // Helper to create stats
 const stats = (s: number, v: number, d: number, i: number, l: number) => ({
@@ -44,7 +45,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'pip_the_green.png',
-    icon: '🌱'
+    icon: '🌱',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 100
   },
   {
     id: 'tilly_footloose',
@@ -61,7 +65,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'tily_footloose.png',
-    icon: '🌾'
+    icon: '🌾',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 200
   },
 
   // FIGHTERS
@@ -80,7 +87,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'iron_garret.png',
-    icon: '🛡️'
+    icon: '🛡️',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 700
   },
   {
     id: 'brunhilde_bear',
@@ -97,7 +107,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'brunhilde.png',
-    icon: '🐻'
+    icon: '🐻',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 800
   },
 
   // MAGES
@@ -116,7 +129,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'elara_of_the_flame.png',
-    icon: '🔥'
+    icon: '🔥',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 500
   },
   {
     id: 'xan_void',
@@ -133,7 +149,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'xan_the_whisperer.png',
-    icon: '🔮'
+    icon: '🔮',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 600
   },
 
   // ROGUES
@@ -152,7 +171,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'sly_vargo.png',
-    icon: '🗡️'
+    icon: '🗡️',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 400
   },
   {
     id: 'nyx_shadow',
@@ -169,7 +191,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'nyx_shadowstep.png',
-    icon: '🌑'
+    icon: '🌑',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 600
   },
 
   // CLERICS
@@ -188,7 +213,10 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'sister_aria.png',
-    icon: '✨'
+    icon: '✨',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 600
   },
   {
     id: 'father_benedict',
@@ -205,6 +233,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'father_benedict.png',
-    icon: '📜'
+    icon: '📜',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 700
   }
 ];

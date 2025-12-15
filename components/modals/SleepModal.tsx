@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { useGame } from '../context/GameContext';
+import { useGame } from '../../context/GameContext';
 import { Moon, BedDouble, ChevronRight, Coins, TrendingUp, TrendingDown, Users } from 'lucide-react';
-import { calculateDailyWage } from '../config/contract-config';
+import { calculateDailyWage } from '../../config/contract-config';
 
 const SleepModal = () => {
   const { state, actions } = useGame();

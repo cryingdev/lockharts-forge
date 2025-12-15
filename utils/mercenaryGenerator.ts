@@ -1,8 +1,10 @@
+
 import { Mercenary, Gender } from '../models/Mercenary';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { JobClass, JOB_STAT_WEIGHTS } from '../models/JobClass';
 import { calculateMaxHp, calculateMaxMp, BaseStats } from '../models/Stats';
 import { generateFullName } from './nameGenerator';
+import { DUNGEON_CONFIG } from '../config/dungeon-config';
 
 const generateRandomStats = (job: JobClass, level: number): BaseStats => {
     const weights = JOB_STAT_WEIGHTS[job];
@@ -29,6 +31,8 @@ const generateRandomStats = (job: JobClass, level: number): BaseStats => {
 
     return stats;
 };
+
+const getXpRequirement = (level: number) => level * 100;
 
 // Exported for debug/manual creation
 export const createRandomMercenary = (currentDay: number): Mercenary => {
@@ -57,7 +61,10 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
         visitCount: 1,
         isUnique: false,
         lastVisitDay: currentDay,
-        icon: '👤'
+        icon: '👤',
+        expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+        currentXp: 0,
+        xpToNextLevel: getXpRequirement(level)
     };
 };
 
@@ -67,7 +74,14 @@ export const getUnmetNamedMercenary = (knownMercenaries: Mercenary[]): Mercenary
     );
     
     if (unknownNamed.length > 0) {
-        return unknownNamed[Math.floor(Math.random() * unknownNamed.length)];
+        // Need to add default energy to named ones since it's missing in static data
+        const merc = unknownNamed[Math.floor(Math.random() * unknownNamed.length)];
+        return {
+            ...merc,
+            expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+            currentXp: 0,
+            xpToNextLevel: getXpRequirement(merc.level)
+        };
     }
     return null;
 };
@@ -88,7 +102,11 @@ export const generateMercenary = (knownMercenaries: Mercenary[], currentDay: num
                 currentHp: maxHp,
                 currentMp: maxMp,
                 maxHp,
-                maxMp
+                maxMp,
+                // Ensure existing mercs get energy if they somehow don't have it (migration safety)
+                expeditionEnergy: regular.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+                currentXp: regular.currentXp ?? 0,
+                xpToNextLevel: regular.xpToNextLevel ?? getXpRequirement(regular.level)
             }; 
         }
     }

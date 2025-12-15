@@ -37,5 +37,11 @@ export interface GameContextType {
     // Contracts
     hireMercenary: (mercenaryId: string, cost: number) => void;
     fireMercenary: (mercenaryId: string) => void;
+
+    // Dungeon Actions
+    startExpedition: (dungeonId: string, partyIds: string[]) => void;
+    completeExpedition: (expeditionId: string) => void; // Transition ACTIVE -> COMPLETED
+    claimExpedition: (expeditionId: string) => void;
+    dismissDungeonResult: () => void; // Close modal
   };
 }

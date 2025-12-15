@@ -1,8 +1,8 @@
 
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
-import MainForgeScene, { MainForgeData } from '../game/MainForgeScene';
-import { useGame } from '../context/GameContext';
+import MainForgeScene, { MainForgeData } from '../../../game/MainForgeScene';
+import { useGame } from '../../../context/GameContext';
 
 const MainForgeCanvas = () => {
   const { state, actions } = useGame();

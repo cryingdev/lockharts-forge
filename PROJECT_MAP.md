@@ -48,21 +48,33 @@ utils.ts            (legacy/general helpers, to be split later)
 
 components/
   DialogueBox.tsx
-  EventModal.tsx
-  ForgeTab.tsx
   Header.tsx
   IntroScreen.tsx   (Wraps IntroScene)
   InventoryDisplay.tsx
-  JournalModal.tsx
-  MainForgeCanvas.tsx
   MainGameLayout.tsx (The main gameplay UI wrapper)
-  MarketTab.tsx
-  ShopManager.tsx
-  ShopTab.tsx
-  SleepModal.tsx
-  SmithingMinigame.tsx
-  TavernTab.tsx
   TitleScreen.tsx   (New Game / Menu)
+  
+  modals/
+    ConfirmationModal.tsx
+    DungeonResultModal.tsx
+    EventModal.tsx
+    JournalModal.tsx
+    SettingsModal.tsx
+    SleepModal.tsx
+
+  tabs/
+    Dungeon/
+      DungeonTab.tsx
+    Forge/
+      ForgeTab.tsx
+      MainForgeCanvas.tsx
+      SmithingMinigame.tsx
+    Market/
+      MarketTab.tsx
+    Shop/
+      ShopTab.tsx
+    Tavern/
+      TavernTab.tsx
 
 config/
   contract-config.ts (Hiring rules & costs)
@@ -91,6 +103,12 @@ models/
   JobClass.ts
   Mercenary.ts
   Stats.ts
+
+services/
+  dungeon/
+    dungeon-service.ts
+  shop/
+    shop-service.ts
 
 state/
   initial-game-state.ts
@@ -142,6 +160,19 @@ vite.config.ts
   - Embedding or controlling Phaser scenes via components like `SmithingMinigame` and `MainForgeCanvas`
 - **Notes**:
   - `MainGameLayout.tsx` now contains what was previously in `App.tsx` (the game UI loop).
+  - **Tabs** are organized in `components/tabs/` by feature.
+  - **Modals** are organized in `components/modals/`.
+
+### Services Layer (Headless Logic)
+
+- **Location**: `services/`
+- **Responsibilities**:
+  - Encapsulating background game loops and timers that operate independently of specific UI tabs.
+  - `shop-service.ts`: Manages customer generation intervals, queues, and patience timers.
+  - `dungeon-service.ts`: Monitors active expeditions and triggers completion when timers expire.
+- **Notes**:
+  - Implemented as React Custom Hooks (`useShopService`, `useDungeonService`).
+  - Mounted once in `MainGameLayout` to ensure they run continuously during gameplay.
 
 ### Configuration Layer
 
@@ -207,14 +238,13 @@ vite.config.ts
 
 ## Folder Responsibilities (Current)
 
-- `components/`  
-  Feature-level React components:
-  - Game Screens (`IntroScreen`, `TitleScreen`, `MainGameLayout`)
-  - Forge UI (`ForgeTab`, `MainForgeCanvas`, `SmithingMinigame`)
-  - Shop & market (`ShopTab`, `MarketTab`, `ShopManager`)
-  - Tavern (`TavernTab`)
-  - Overlays/modals (`SleepModal`, `JournalModal`, `EventModal`, `DialogueBox`)
-  - UI layout (`Header`, `InventoryDisplay`)
+- `components/`
+  - Core layouts and screens (`MainGameLayout`, `TitleScreen`).
+  - `tabs/`: Organized functional tabs (`Forge`, `Shop`, `Market`, `Tavern`, `Dungeon`).
+  - `modals/`: Overlay dialogs (`SleepModal`, `EventModal`, `JournalModal`, `DungeonResultModal`, `ConfirmationModal`, `SettingsModal`).
+
+- `services/`
+  - Domain-specific logic hooks (`shop-service`, `dungeon-service`). Replaces previous Manager components.
 
 - `config/`
   - `contract-config.ts` – Hiring costs and affinity thresholds.

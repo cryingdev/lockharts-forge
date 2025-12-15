@@ -1,13 +1,17 @@
 
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useEffect } from 'react';
-import { GameState, GameContextType, InventoryItem, GameEvent, EquipmentItem, ShopCustomer } from '../types/index';
+import { GameState, GameContextType, InventoryItem, GameEvent, EquipmentItem, ShopCustomer, DungeonResult } from '../types/index';
 import { GAME_CONFIG } from '../config/game-config';
 import { MASTERY_THRESHOLDS } from '../config/mastery-config';
 import { CONTRACT_CONFIG, calculateDailyWage } from '../config/contract-config';
+import { DUNGEON_CONFIG } from '../config/dungeon-config';
+import { DUNGEONS } from '../data/dungeons';
 import { createInitialGameState } from '../state/initial-game-state';
 import { MATERIALS } from '../data/materials';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { Mercenary } from '../models/Mercenary';
+import { Expedition } from '../models/Dungeon';
+import { calculateMaxHp, calculateMaxMp } from '../models/Stats';
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -34,7 +38,11 @@ type Action =
   | { type: 'UPDATE_FORGE_STATUS'; payload: { temp: number } }
   | { type: 'TOGGLE_JOURNAL' }
   | { type: 'HIRE_MERCENARY'; payload: { mercenaryId: string; cost: number } }
-  | { type: 'FIRE_MERCENARY'; payload: { mercenaryId: string } };
+  | { type: 'FIRE_MERCENARY'; payload: { mercenaryId: string } }
+  | { type: 'START_EXPEDITION'; payload: { dungeonId: string; partyIds: string[] } }
+  | { type: 'COMPLETE_EXPEDITION'; payload: { expeditionId: string } }
+  | { type: 'CLAIM_EXPEDITION'; payload: { expeditionId: string } }
+  | { type: 'DISMISS_DUNGEON_RESULT' };
 
 const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number): Equipment => {
     // 1. Determine Mastery Bonus
@@ -138,6 +146,25 @@ const gameReducer = (state: GameState, action: Action): GameState => {
         const nextDay = state.stats.day + 1;
         const newGold = state.stats.gold - totalWages;
 
+        // --- Mercenary Energy Recovery ---
+        // Mercenaries currently on expedition do NOT recover energy
+        const activeMercIds = new Set<string>();
+        state.activeExpeditions.forEach(exp => {
+            if (exp.status === 'ACTIVE') {
+                 exp.partyIds.forEach(id => activeMercIds.add(id));
+            }
+        });
+
+        const updatedMercenaries = state.knownMercenaries.map(merc => {
+            if (merc.isHired && !activeMercIds.has(merc.id)) {
+                return {
+                    ...merc,
+                    expeditionEnergy: Math.min(DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, (merc.expeditionEnergy || 0) + DUNGEON_CONFIG.DAILY_ENERGY_RECOVERY)
+                };
+            }
+            return merc;
+        });
+
         let logMsg = `Day ${nextDay} begins. You feel refreshed.`;
         if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. Balance: ${newGold} G.`;
         if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G).`;
@@ -151,6 +178,7 @@ const gameReducer = (state: GameState, action: Action): GameState => {
                 energy: state.stats.maxEnergy,
                 incomeToday: 0,
             },
+            knownMercenaries: updatedMercenaries,
             forge: { ...state.forge, isShopOpen: false },
             visitorsToday: [],
             activeCustomer: null,
@@ -413,7 +441,10 @@ const gameReducer = (state: GameState, action: Action): GameState => {
                     ...customer,
                     affinity: 2,
                     visitCount: 1,
-                    lastVisitDay: state.stats.day
+                    lastVisitDay: state.stats.day,
+                    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+                    currentXp: 0,
+                    xpToNextLevel: 100
                 };
                 newKnownMercenaries.push(newMerc);
                 logMessage = `Sold ${itemName} to ${customer.name}. (New Contact)`;
@@ -456,9 +487,16 @@ const gameReducer = (state: GameState, action: Action): GameState => {
     case 'ADD_KNOWN_MERCENARY': {
         const merc = action.payload;
         if (state.knownMercenaries.some(m => m.id === merc.id)) return state;
+        // Ensure new merc has energy and XP
+        const mercWithData = { 
+            ...merc, 
+            expeditionEnergy: merc.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+            currentXp: merc.currentXp ?? 0,
+            xpToNextLevel: merc.xpToNextLevel ?? (merc.level * 100)
+        };
         return {
             ...state,
-            knownMercenaries: [...state.knownMercenaries, merc],
+            knownMercenaries: [...state.knownMercenaries, mercWithData],
             logs: [`${merc.name} is now a regular at the tavern.`, ...state.logs]
         };
     }
@@ -519,6 +557,183 @@ const gameReducer = (state: GameState, action: Action): GameState => {
         };
     }
 
+    case 'START_EXPEDITION': {
+        const { dungeonId, partyIds } = action.payload;
+        const dungeon = DUNGEONS.find(d => d.id === dungeonId);
+        if (!dungeon) return state;
+
+        // Deduct Energy from Mercenaries
+        const updatedMercenaries = state.knownMercenaries.map(merc => {
+            if (partyIds.includes(merc.id)) {
+                return {
+                    ...merc,
+                    expeditionEnergy: Math.max(0, (merc.expeditionEnergy || 0) - dungeon.energyCost)
+                };
+            }
+            return merc;
+        });
+
+        // Create Expedition Entry
+        const newExpedition: Expedition = {
+            id: `exp_${Date.now()}`,
+            dungeonId: dungeon.id,
+            partyIds: partyIds,
+            startTime: Date.now(),
+            endTime: Date.now() + (dungeon.durationMinutes * 60 * 1000), // * 60 for minutes
+            status: 'ACTIVE'
+        };
+
+        return {
+            ...state,
+            knownMercenaries: updatedMercenaries,
+            activeExpeditions: [...state.activeExpeditions, newExpedition],
+            logs: [`Expedition sent to ${dungeon.name}.`, ...state.logs]
+        };
+    }
+
+    case 'COMPLETE_EXPEDITION': {
+        const { expeditionId } = action.payload;
+        const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
+        
+        // Safety check: only complete if currently active
+        if (!expedition || expedition.status !== 'ACTIVE') return state;
+
+        const dungeon = DUNGEONS.find(d => d.id === expedition.dungeonId);
+        const dungeonName = dungeon ? dungeon.name : 'Unknown';
+
+        // Update status to COMPLETED
+        const updatedExpeditions = state.activeExpeditions.map(exp => {
+            if (exp.id === expeditionId) {
+                return { ...exp, status: 'COMPLETED' as const };
+            }
+            return exp;
+        });
+
+        return {
+            ...state,
+            activeExpeditions: updatedExpeditions,
+            logs: [`Expedition to ${dungeonName} is ready for return.`, ...state.logs]
+        };
+    }
+
+    case 'CLAIM_EXPEDITION': {
+        const { expeditionId } = action.payload;
+        const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
+        if (!expedition) return state;
+
+        const dungeon = DUNGEONS.find(d => d.id === expedition.dungeonId);
+        if (!dungeon) return state;
+
+        // 1. Generate Rewards (Items)
+        const gainedItems: { id: string, count: number, name: string }[] = [];
+        let newInventory = [...state.inventory];
+
+        dungeon.rewards.forEach(reward => {
+             if (Math.random() <= reward.chance) {
+                 const quantity = Math.floor(Math.random() * (reward.maxQuantity - reward.minQuantity + 1)) + reward.minQuantity;
+                 if (quantity > 0) {
+                     const materialDef = Object.values(MATERIALS).find(m => m.id === reward.itemId);
+                     if (materialDef) {
+                         const existingItem = newInventory.find(i => i.id === reward.itemId);
+                         if (existingItem) {
+                             newInventory = newInventory.map(i => i.id === reward.itemId ? { ...i, quantity: i.quantity + quantity } : i);
+                         } else {
+                             newInventory.push({ ...materialDef, quantity } as InventoryItem);
+                         }
+                         gainedItems.push({ id: reward.itemId, count: quantity, name: materialDef.name });
+                     }
+                 }
+             }
+        });
+
+        // 2. XP & Level Up
+        const mercenaryResults: DungeonResult['mercenaryResults'] = [];
+        let newKnownMercenaries = [...state.knownMercenaries];
+
+        newKnownMercenaries = newKnownMercenaries.map(merc => {
+            if (expedition.partyIds.includes(merc.id)) {
+                let xpToAdd = dungeon.baseXp || 50;
+                let currentXp = merc.currentXp || 0;
+                let xpToNext = merc.xpToNextLevel || (merc.level * 100);
+                let level = merc.level;
+                const levelBefore = level;
+
+                currentXp += xpToAdd;
+
+                // Level Up Logic
+                while (currentXp >= xpToNext) {
+                    currentXp -= xpToNext;
+                    level++;
+                    xpToNext = level * 100; // Curve: Level * 100
+                }
+
+                // Recalculate Stats if Leveled Up
+                let stats = { ...merc.stats };
+                let maxHp = merc.maxHp;
+                let maxMp = merc.maxMp;
+                let currentHp = merc.currentHp;
+                
+                if (level > levelBefore) {
+                    maxHp = calculateMaxHp(stats, level);
+                    maxMp = calculateMaxMp(stats, level);
+                    currentHp = maxHp; // Full heal on level up?
+                }
+
+                mercenaryResults.push({
+                    id: merc.id,
+                    name: merc.name,
+                    job: merc.job,
+                    levelBefore,
+                    levelAfter: level,
+                    xpGained: xpToAdd,
+                    currentXp: currentXp,
+                    xpToNext: xpToNext
+                });
+
+                return {
+                    ...merc,
+                    level,
+                    currentXp,
+                    xpToNextLevel: xpToNext,
+                    maxHp,
+                    maxMp,
+                    currentHp
+                };
+            }
+            return merc;
+        });
+
+        // 3. Update Clear Count & Remove Expedition
+        const newClearCounts = { ...state.dungeonClearCounts };
+        newClearCounts[dungeon.id] = (newClearCounts[dungeon.id] || 0) + 1;
+        const remainingExpeditions = state.activeExpeditions.filter(e => e.id !== expeditionId);
+
+        // 4. Build Result Object for Modal
+        const resultData: DungeonResult = {
+            dungeonName: dungeon.name,
+            rewards: gainedItems,
+            mercenaryResults
+        };
+
+        const logStr = gainedItems.length > 0 
+            ? `Returned from ${dungeon.name}. Gained: ${gainedItems.map(i => `${i.name} x${i.count}`).join(', ')}`
+            : `Returned from ${dungeon.name}. No loot found.`;
+
+        return {
+            ...state,
+            inventory: newInventory,
+            knownMercenaries: newKnownMercenaries,
+            activeExpeditions: remainingExpeditions,
+            dungeonClearCounts: newClearCounts,
+            dungeonResult: resultData, // Triggers Modal
+            logs: [logStr, ...state.logs]
+        };
+    }
+
+    case 'DISMISS_DUNGEON_RESULT': {
+        return { ...state, dungeonResult: null };
+    }
+
     default:
       return state;
   }
@@ -561,6 +776,12 @@ const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
 
     hireMercenary: (mercenaryId: string, cost: number) => dispatch({ type: 'HIRE_MERCENARY', payload: { mercenaryId, cost } }),
     fireMercenary: (mercenaryId: string) => dispatch({ type: 'FIRE_MERCENARY', payload: { mercenaryId } }),
+
+    startExpedition: (dungeonId: string, partyIds: string[]) => dispatch({ type: 'START_EXPEDITION', payload: { dungeonId, partyIds } }),
+    completeExpedition: (expeditionId: string) => dispatch({ type: 'COMPLETE_EXPEDITION', payload: { expeditionId } }),
+    claimExpedition: (expeditionId: string) => dispatch({ type: 'CLAIM_EXPEDITION', payload: { expeditionId } }),
+    dismissDungeonResult: () => dispatch({ type: 'DISMISS_DUNGEON_RESULT' }),
+
   }), []);
 
   return (

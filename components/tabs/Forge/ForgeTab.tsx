@@ -1,13 +1,13 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../data/equipment';
-import { EquipmentCategory, EquipmentItem } from '../types/index';
+import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
+import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award } from 'lucide-react';
-import { useGame } from '../context/GameContext';
-import { GAME_CONFIG } from '../config/game-config';
-import { MASTERY_THRESHOLDS } from '../config/mastery-config';
-import { MATERIALS } from '../data/materials';
+import { useGame } from '../../../context/GameContext';
+import { GAME_CONFIG } from '../../../config/game-config';
+import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
+import { MATERIALS } from '../../../data/materials';
 
 interface ForgeTabProps {
     onNavigate: (tab: any) => void;
@@ -16,24 +16,19 @@ interface ForgeTabProps {
 const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   
-  // Destructure only what we need for this component to minimize re-render impact
   const { inventory, stats, isCrafting, craftingMastery } = state;
   const { hasFurnace } = state.forge;
 
-  // UI State
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   
-  // Accordion & Favorites State
   const [expandedSubCat, setExpandedSubCat] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  // Tooltip State
   const [hoveredItem, setHoveredItem] = useState<EquipmentItem | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   
-  // Helper to check resources
   const getInventoryCount = useCallback((id: string) => {
       return inventory.find(i => i.id === id)?.quantity || 0;
   }, [inventory]);
@@ -43,7 +38,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       return itemDef ? itemDef.name : id;
   };
 
-  // --- Calculate Residual Heat ---
   const GLOBAL_COOLING_RATE_PER_SEC = 5; 
   const timeDiffSec = (Date.now() - (state.lastForgeTime || 0)) / 1000;
   const coolingAmount = timeDiffSec * GLOBAL_COOLING_RATE_PER_SEC;
@@ -53,10 +47,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const charcoalCount = getInventoryCount('charcoal');
   const hasFuel = charcoalCount > 0;
   
-  // Can enter forge if we have fuel OR if the forge is already hot
   const canEnterForge = hasFuel || hasHeat;
   
-  // Determine energy cost dynamically based on mastery of SELECTED item
   const requiredEnergy = useMemo(() => {
       if (!selectedItem) return GAME_CONFIG.ENERGY_COST.CRAFT;
       const count = craftingMastery[selectedItem.id] || 0;
@@ -72,24 +64,18 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       return item.requirements.every(req => getInventoryCount(req.id) >= req.count);
   }, [getInventoryCount]);
 
-  // Filter Items directly based on Category and Tier
   const visibleItems = useMemo(() => {
       return EQUIPMENT_ITEMS.filter(item => {
-          // 1. Check Tier
           if (item.tier > stats.tierLevel) return false;
-
-          // 2. Check Category (Map subCategory to main Category)
           const subCatDef = EQUIPMENT_SUBCATEGORIES.find(sc => sc.id === item.subCategoryId);
           return subCatDef?.categoryId === activeCategory;
       });
   }, [activeCategory, stats.tierLevel]);
 
-  // Get Favorites from visible items
   const favoriteItems = useMemo(() => {
       return visibleItems.filter(item => favorites.includes(item.id));
   }, [visibleItems, favorites]);
 
-  // Group Items by SubCategory
   const groupedItems = useMemo(() => {
       const groups: Record<string, EquipmentItem[]> = {};
       visibleItems.forEach(item => {
@@ -99,14 +85,12 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       return groups;
   }, [visibleItems]);
 
-  // Get visible subcategories that actually have items
   const visibleSubCats = useMemo(() => {
       return EQUIPMENT_SUBCATEGORIES.filter(sc => 
           sc.categoryId === activeCategory && groupedItems[sc.id] && groupedItems[sc.id].length > 0
       );
   }, [activeCategory, groupedItems]);
 
-  // Initialize expanded state when category changes
   useEffect(() => {
       if (favoriteItems.length > 0) {
           setExpandedSubCat('FAVORITES');
@@ -145,7 +129,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       if (selectedItem) {
           actions.cancelCrafting(selectedItem);
       } else {
-          actions.setCrafting(false); // Fallback
+          actions.setCrafting(false); 
       }
       setIsPanelOpen(true);
   }, [actions, selectedItem]);
@@ -157,7 +141,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     setIsPanelOpen(true);
   }, [selectedItem, actions]);
   
-  // Mouse handlers for tooltip
   const handleMouseEnter = useCallback((item: EquipmentItem, e: React.MouseEvent) => {
       setHoveredItem(item);
       setTooltipPos({ x: e.clientX, y: e.clientY });
@@ -173,7 +156,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       setHoveredItem(null);
   }, []);
 
-  // Mastery Helper
   const getMasteryLevel = (count: number) => {
       if (count >= MASTERY_THRESHOLDS.ARTISAN) return 2;
       if (count >= MASTERY_THRESHOLDS.ADEPT) return 1;
@@ -181,12 +163,11 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   };
 
   const getMasteryIcon = (level: number) => {
-      if (level === 2) return <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />; // Gold
-      if (level === 1) return <Star className="w-3 h-3 text-stone-300 fill-stone-300" />; // Silver
-      return <Star className="w-3 h-3 text-amber-700/50" />; // None
+      if (level === 2) return <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />;
+      if (level === 1) return <Star className="w-3 h-3 text-stone-300 fill-stone-300" />;
+      return <Star className="w-3 h-3 text-amber-700/50" />;
   };
 
-  // Render Helper for Item Card
   const renderItemCard = (item: EquipmentItem) => {
       const isSelected = selectedItem?.id === item.id;
       const isFav = favorites.includes(item.id);
@@ -253,10 +234,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
   const content = useMemo(() => {
     
-    // Derived state for selected item button logic
     const canCraft = selectedItem && canAffordResources(selectedItem) && canEnterForge && hasEnergy;
     
-    // Mastery Info for Selected Item
     let masteryInfo = null;
     if (selectedItem) {
         const count = craftingMastery[selectedItem.id] || 0;
@@ -272,14 +251,14 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             progress = (count / MASTERY_THRESHOLDS.ADEPT) * 100;
         } else if (level === 1) {
             label = "Adept";
-            color = "text-stone-300"; // Silver
+            color = "text-stone-300";
             nextThreshold = MASTERY_THRESHOLDS.ARTISAN;
             progress = ((count - MASTERY_THRESHOLDS.ADEPT) / (MASTERY_THRESHOLDS.ARTISAN - MASTERY_THRESHOLDS.ADEPT)) * 100;
             benefits = "Value +10%, Stats +10%";
         } else {
             label = "Artisan";
-            color = "text-yellow-400"; // Gold
-            nextThreshold = count; // Maxed
+            color = "text-yellow-400";
+            nextThreshold = count;
             progress = 100;
             benefits = "Value +25%, Stats +20%, Cost -5 Energy";
         }
@@ -315,7 +294,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
         <div className={`absolute inset-0 z-0 flex w-full h-full ${!hasFurnace ? 'blur-sm pointer-events-none' : ''}`}>
             
-            {/* --- Left Panel: Preview Area --- */}
             <div className={`h-full relative flex flex-col transition-all duration-500 ease-in-out ${isPanelOpen ? 'w-[60%]' : 'w-full'}`}>
             <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-stone-925 relative overflow-hidden">
                 
@@ -334,7 +312,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     <h2 className="text-3xl font-bold text-amber-500 mb-2 font-serif tracking-wide">{selectedItem.name}</h2>
                     <p className="text-stone-400 text-center max-w-md mb-6 italic">"{selectedItem.description}"</p>
 
-                    {/* Mastery Bar */}
                     {masteryInfo && (
                         <div className="w-full bg-stone-900/50 p-3 rounded-lg border border-stone-800 mb-6">
                             <div className="flex justify-between items-center mb-1 text-xs uppercase font-bold tracking-wider">
@@ -359,7 +336,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     )}
 
                     <div className="flex items-center gap-3 mb-6">
-                        {/* Energy Indicator Only (Fuel removed) */}
                          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm ${
                             hasEnergy 
                             ? 'bg-blue-900/20 border-blue-700/50 text-blue-400' 
@@ -414,7 +390,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             </div>
             </div>
 
-            {/* --- Right Panel: Recipe Selector --- */}
             <div 
             className={`h-full bg-stone-900 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out relative ${
                 isPanelOpen ? 'w-[40%] translate-x-0' : 'w-0 translate-x-full border-none'
@@ -546,8 +521,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     <span className="text-xs font-normal text-stone-500 mt-0.5">Tier {hoveredItem.tier}</span>
                 </h4>
                 <div className="space-y-2">
-                    {/* Fuel/Heat line removed as per user request */}
-
                     {hoveredItem.requirements.map((req, idx) => {
                         const currentCount = getInventoryCount(req.id);
                         const hasEnough = currentCount >= req.count;

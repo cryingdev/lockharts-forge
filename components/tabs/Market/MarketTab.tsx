@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { useGame } from '../context/GameContext';
+import { useGame } from '../../../context/GameContext';
 import { Store, ShoppingCart, ShoppingBag, Minus, Trash2, AlertCircle, Package, Flame, ChevronRight, Box } from 'lucide-react';
-import { MATERIALS } from '../data/materials';
-import { MARKET_CATALOG } from '../data/market/index';
-import { getAssetUrl } from '../utils';
+import { MATERIALS } from '../../../data/materials';
+import { MARKET_CATALOG } from '../../../data/market/index';
+import { getAssetUrl } from '../../../utils';
 
 interface MarketTabProps {
     onNavigate: (tab: any) => void;
@@ -13,12 +13,10 @@ interface MarketTabProps {
 const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   
-  // Cart State: { [itemId]: quantity }
   const [cart, setCart] = useState<Record<string, number>>({});
   const [showError, setShowError] = useState(false);
   const [showFurnaceSuccess, setShowFurnaceSuccess] = useState(false);
 
-  // Check furnace status from previous render to detect purchase
   const hasFurnace = state.forge.hasFurnace;
 
   const addToCart = (itemId: string) => {
@@ -65,13 +63,11 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
       return;
     }
 
-    // Check if Furnace is in the cart
     const buyingFurnace = cart['furnace'] && cart['furnace'] > 0;
 
-    // Convert cart map to array for action
     const itemsToBuy = Object.entries(cart).map(([id, count]) => ({ id, count }));
     actions.buyItems(itemsToBuy, total);
-    setCart({}); // Clear cart
+    setCart({}); 
 
     if (buyingFurnace) {
         setShowFurnaceSuccess(true);
@@ -88,7 +84,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   return (
     <div className="h-full flex flex-col md:flex-row bg-stone-925 p-4 gap-4 relative">
       
-      {/* Error Popup */}
       {showError && (
         <div className="absolute top-10 left-1/2 -translate-x-1/2 z-50 bg-red-900/90 border border-red-500 text-red-100 px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
            <AlertCircle className="w-6 h-6" />
@@ -99,7 +94,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Furnace Success Modal */}
       {showFurnaceSuccess && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-stone-950/80 backdrop-blur-sm animate-in fade-in duration-300">
               <div className="bg-stone-900 border-2 border-amber-600 rounded-xl p-8 max-w-sm w-full shadow-2xl text-center animate-in zoom-in-95 duration-300">
@@ -139,9 +133,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
          <div className="p-4 grid grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto flex-1 min-h-0 content-start">
             {MARKET_CATALOG.map((marketItem: any) => {
                 
-                // --- VISIBILITY LOGIC ---
-
-                // 1. Furnace Gating:
                 if (!hasFurnace) {
                     if (marketItem.id !== 'furnace') return null;
                 } else {
@@ -165,30 +156,26 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     itemTier = def.tier || 1;
                 }
 
-                // 2. Upgrade Scroll Logic:
                 if (marketItem.id === 'scroll_t2') {
                     if (currentTier >= 2) return null;
                 } 
                 else if (marketItem.id === 'scroll_t3') {
                     if (currentTier >= 3) return null;
-                    if (currentTier < 2) return null; // Show only at Tier 2
+                    if (currentTier < 2) return null; 
                 }
-                // 3. Regular Item Logic:
                 else if (hasFurnace && itemTier > currentTier) {
                     return null;
                 }
 
-                // Get owned count
                 const ownedCount = getOwnedCount(marketItem.id);
 
                 return (
                     <button 
                         key={marketItem.id}
                         onClick={() => addToCart(marketItem.id)}
-                        disabled={marketItem.id === 'furnace' && cart['furnace'] > 0} // Prevent double adding furnace
+                        disabled={marketItem.id === 'furnace' && cart['furnace'] > 0} 
                         className={`flex flex-col items-center p-3 rounded-lg border transition-all text-center group relative overflow-hidden h-[150px] justify-between bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750`}
                     >
-                        {/* Owned Badge */}
                         {marketItem.id !== 'furnace' && !marketItem.id.startsWith('scroll') && (
                             <div className="absolute top-2 right-2 bg-stone-950/80 backdrop-blur-sm border border-stone-700 px-2 py-0.5 rounded text-[10px] text-stone-400 font-mono flex items-center gap-1 z-10">
                                 <Package className="w-3 h-3" />
@@ -196,7 +183,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                             </div>
                         )}
 
-                        {/* Image / Icon Area */}
                         <div className="w-16 h-16 mt-2 mb-2 relative flex items-center justify-center group-hover:scale-110 transition-transform">
                              <img 
                                 src={getAssetUrl(`${marketItem.id}.png`)}
@@ -209,7 +195,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                 }}
                              />
                              
-                             {/* Fallback Icon (Hidden unless image fails) */}
                              <div className="fallback-icon hidden text-3xl">
                                  {marketItem.id === 'charcoal' ? '⚫' : 
                                   marketItem.id === 'iron_ore' ? '🪨' : 
@@ -232,7 +217,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                             {marketItem.price} G
                         </div>
                         
-                        {/* Furnace Highlight */}
                         {marketItem.id === 'furnace' && (
                             <div className="absolute inset-0 border-2 border-amber-500/50 rounded-lg pointer-events-none animate-pulse"></div>
                         )}
@@ -285,7 +269,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                       {marketItem.price * (count as number)}
                                   </div>
                                   <div className="flex items-center gap-1">
-                                      {/* Only allow quantity adjustment for non-key items */}
                                       {id !== 'furnace' && (
                                         <>
                                             <button onClick={() => removeFromCart(id)} className="p-1 hover:bg-stone-800 rounded text-stone-400">

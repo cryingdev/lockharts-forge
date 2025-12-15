@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 
 export interface SmithingSceneData {
@@ -42,17 +43,20 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   preload() {
-    // Generate a simple circular texture for sparks
-    const graphics = this.make.graphics({ x: 0, y: 0 });
-    graphics.fillStyle(0xffaa00, 1);
-    graphics.fillCircle(4, 4, 4);
-    graphics.generateTexture('spark', 8, 8);
+    // Assets loading if any (moved texture gen to create)
   }
 
   create() {
     const { width, height } = this.scale;
     this.centerX = width / 2;
     this.centerY = height / 2;
+
+    // Generate a simple circular texture for sparks in create (safe context)
+    const graphics = this.make.graphics({ x: 0, y: 0 });
+    graphics.fillStyle(0xffaa00, 1);
+    graphics.fillCircle(4, 4, 4);
+    graphics.generateTexture('spark', 8, 8);
+    graphics.destroy();
 
     // --- Visuals: The Forge ---
     // Background (Darker part of the modal)

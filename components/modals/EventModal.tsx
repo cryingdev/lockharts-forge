@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { useGame } from '../context/GameContext';
+import { useGame } from '../../context/GameContext';
 import { User, XCircle, CheckCircle } from 'lucide-react';
 
 const EventModal = () => {

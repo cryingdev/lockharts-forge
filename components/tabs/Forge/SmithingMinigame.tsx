@@ -2,9 +2,9 @@
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { X, Hammer, Flame, Wind } from 'lucide-react';
-import { getAssetUrl } from '../utils';
-import { useGame } from '../context/GameContext';
-import { MATERIALS } from '../data/materials';
+import { getAssetUrl } from '../../../utils';
+import { useGame } from '../../../context/GameContext';
+import { MATERIALS } from '../../../data/materials';
 
 // --- Types & Props ---
 interface SmithingMinigameProps {
@@ -442,11 +442,10 @@ class SmithingScene extends Phaser.Scene {
           const g = this.make.graphics({ x: 0, y: 0 });
           drawFn(g);
           
-          if (width && height && width > 0 && height > 0) {
-              g.generateTexture(key, width, height);
-          } else {
-              g.generateTexture(key);
-          }
+          const w = width && width > 0 ? Math.floor(width) : 32;
+          const h = height && height > 0 ? Math.floor(height) : 32;
+
+          g.generateTexture(key, w, h);
           g.destroy();
       }
   }

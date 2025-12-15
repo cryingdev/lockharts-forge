@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
-import { Coins, Zap, Calendar, BedDouble, Store, BookOpen } from 'lucide-react';
+import { Coins, Zap, Calendar, BedDouble, Store, BookOpen, Settings } from 'lucide-react';
 
 interface HeaderProps {
     activeTab: string;
     onTabChange: (tab: any) => void;
+    onSettingsClick: () => void;
 }
 
 // Internal component for the Typewriter Ticker
+// Simplified to just render text, container styling moved to parent button
 const LogTicker = ({ message }: { message: string }) => {
   const [displayedText, setDisplayedText] = useState('');
 
@@ -36,9 +38,9 @@ const LogTicker = ({ message }: { message: string }) => {
   if (!message) return null;
 
   return (
-    <div className="hidden md:flex items-center ml-3 px-3 py-1.5 bg-slate-900/50 rounded-lg border border-slate-800/50 max-w-sm lg:max-w-md overflow-hidden animate-in fade-in slide-in-from-left-2">
+    <div className="flex items-center min-w-0 w-full overflow-hidden">
         <span className="text-amber-500 mr-2 text-[10px] shrink-0">▶</span>
-        <span className="text-xs font-mono text-slate-400 whitespace-nowrap truncate min-w-0">
+        <span className="text-xs font-mono text-slate-400 whitespace-nowrap truncate w-full text-left">
             {displayedText}
             <span className="animate-pulse text-amber-500 font-bold ml-0.5">_</span>
         </span>
@@ -46,7 +48,7 @@ const LogTicker = ({ message }: { message: string }) => {
   );
 };
 
-const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick }) => {
   const { state, actions } = useGame();
   const { gold, energy, maxEnergy, day } = state.stats;
   const { isShopOpen } = state.forge;
@@ -62,25 +64,33 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
 
   return (
     <header className="w-full bg-slate-900 border-b border-slate-700 p-3 shadow-lg shrink-0 z-20">
-      <div className="max-w-6xl mx-auto flex justify-between items-center text-slate-100">
+      <div className="max-w-7xl mx-auto flex justify-between items-center text-slate-100 gap-4">
         
-        {/* Left: Day Indicator & Journal & Ticker */}
-        <div className="flex items-center space-x-3 flex-1 min-w-0 mr-4">
+        {/* Left: Day Indicator & Unified Journal Log */}
+        <div className="flex items-center flex-1 min-w-0 gap-3">
              <div className="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 shrink-0">
                 <Calendar className="w-4 h-4 text-slate-400" />
                 <span className="font-bold text-sm tracking-wide">Day {day}</span>
             </div>
 
+            {/* Unified Journal Button & Ticker */}
             <button 
                 onClick={actions.toggleJournal}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 p-1.5 rounded-lg border border-slate-700 transition-colors shrink-0"
-                title="Open Journal"
+                className="flex-1 flex items-center gap-3 px-3 py-1.5 bg-slate-900/50 hover:bg-slate-800 rounded-lg border border-slate-800/50 hover:border-slate-600 transition-all group min-w-0 text-left"
+                title="Open Journal / View Logs"
             >
-                <BookOpen className="w-4 h-4" />
+                <BookOpen className="w-4 h-4 text-slate-500 group-hover:text-amber-400 shrink-0 transition-colors" />
+                
+                {/* Ticker Text (Hidden on small mobile screens to save space, visible on MD+) */}
+                <div className="hidden md:block flex-1 min-w-0">
+                    <LogTicker message={state.logs[0] || ''} />
+                </div>
+                
+                {/* Mobile Fallback Label (optional, currently just icon on mobile) */}
+                <span className="md:hidden text-xs text-slate-500 font-mono truncate">
+                    {state.logs[0] ? 'New Log...' : 'Journal'}
+                </span>
             </button>
-
-            {/* Log Ticker (Desktop Only) */}
-            <LogTicker message={state.logs[0] || ''} />
         </div>
 
         {/* Right: Resources & Actions */}
@@ -139,6 +149,15 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
           >
             <BedDouble className="w-4 h-4" />
             <span className="text-sm font-bold hidden sm:inline">Rest</span>
+          </button>
+
+          {/* Settings Button */}
+          <button
+            onClick={onSettingsClick}
+            className="p-2 text-stone-400 hover:text-stone-200 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-lg transition-all"
+            title="System Menu"
+          >
+            <Settings className="w-5 h-5" />
           </button>
         </div>
       </div>

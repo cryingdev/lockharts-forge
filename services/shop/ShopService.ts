@@ -1,17 +1,17 @@
 
-import React, { useEffect, useRef } from 'react';
-import { useGame } from '../context/GameContext';
-import { generateShopRequest } from '../utils/shopUtils';
-import { calculateMaxHp, calculateMaxMp } from '../models/Stats';
+import { useEffect, useRef } from 'react';
+import { useGame } from '../../context/GameContext';
+import { generateShopRequest } from '../../utils/shopUtils';
+import { calculateMaxHp, calculateMaxMp } from '../../models/Stats';
 
 /**
- * ShopManager
- * This invisible component handles the background logic for the shop:
- * 1. Generating customers at random intervals (10s - 60s).
+ * useShopService
+ * Handles the background logic for the shop:
+ * 1. Generating customers at random intervals (5s - 30s).
  * 2. Managing the queue.
- * 3. Handling customer patience timeouts (60s).
+ * 3. Handling customer patience timeouts (30s).
  */
-const ShopManager = () => {
+export const useShopService = () => {
     const { state, actions } = useGame();
     const { isShopOpen } = state.forge;
     const { activeCustomer, shopQueue, visitorsToday } = state;
@@ -69,7 +69,7 @@ const ShopManager = () => {
         return () => {
             if (arrivalTimerRef.current) clearTimeout(arrivalTimerRef.current);
         };
-    }, [isShopOpen, visitorsToday, state.knownMercenaries]);
+    }, [isShopOpen, visitorsToday, state.knownMercenaries, actions]);
 
     // --- 2. Queue Processing Logic ---
     useEffect(() => {
@@ -83,7 +83,7 @@ const ShopManager = () => {
             }, 1000);
             return () => clearTimeout(t);
         }
-    }, [isShopOpen, activeCustomer, shopQueue]);
+    }, [isShopOpen, activeCustomer, shopQueue, actions]);
 
     // --- 3. Patience Timer Logic ---
     useEffect(() => {
@@ -100,9 +100,5 @@ const ShopManager = () => {
         return () => {
             if (patienceTimerRef.current) clearTimeout(patienceTimerRef.current);
         };
-    }, [activeCustomer]);
-
-    return null; // Invisible component
+    }, [activeCustomer, actions]);
 };
-
-export default ShopManager;

@@ -1,7 +1,7 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.25
+> **Version**: 0.1.26
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries. The project combines a React-based UI management system with Phaser 3 minigames for immersive crafting mechanics.
@@ -15,13 +15,16 @@
 *   **Icons**: Lucide React
 *   **State Management**: React Context API (`GameContext`)
 
-## 🔄 Recent Updates (v0.1.25)
+## 🔄 Recent Updates (v0.1.26)
 
-*   **Smithing Minigame Polish**:
-    *   Fixed visual glitches where target rings persisted after game completion ("Ghost Hitbox" fix).
-    *   Improved ambient temperature feedback: The forge glow now persists and scales dynamically based on heat, providing better visual feedback during downtime.
-    *   Refined start/stop logic to ensure a smoother gameplay loop.
-*   **Version Synchronization**: Aligned metadata and UI version display.
+*   **UI / UX Improvements**:
+    *   **Tavern Interface**: Improved readability by stacking HP/MP bars and grouping wage information closer to stats.
+    *   **Confirmation Modals**: Replaced native browser alerts with custom `ConfirmationModal` for dangerous actions (e.g., firing a mercenary).
+    *   **Header Redesign**: Unified the Journal button and Log Ticker into a single interactive element. The ticker now expands to fill available space.
+*   **System Menu**:
+    *   Added a **Settings/System Menu** (accessible via the Gear icon in the header).
+    *   Moved the "Return to Title" (Quit) function to the Settings menu to declutter the main tab bar.
+    *   Added placeholders for future Save/Load and Audio settings.
 
 ## 🌟 Key Features
 
