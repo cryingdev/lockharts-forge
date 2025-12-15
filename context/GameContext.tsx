@@ -33,7 +33,8 @@ type Action =
   | { type: 'SET_CRAFTING'; payload: boolean }
   | { type: 'UPDATE_FORGE_STATUS'; payload: { temp: number } }
   | { type: 'TOGGLE_JOURNAL' }
-  | { type: 'HIRE_MERCENARY'; payload: { mercenaryId: string; cost: number } };
+  | { type: 'HIRE_MERCENARY'; payload: { mercenaryId: string; cost: number } }
+  | { type: 'FIRE_MERCENARY'; payload: { mercenaryId: string } };
 
 const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number): Equipment => {
     // 1. Determine Mastery Bonus
@@ -503,6 +504,21 @@ const gameReducer = (state: GameState, action: Action): GameState => {
         };
     }
 
+    case 'FIRE_MERCENARY': {
+        const { mercenaryId } = action.payload;
+        const updatedMercenaries = state.knownMercenaries.map(m => {
+            if (m.id === mercenaryId) return { ...m, isHired: false };
+            return m;
+        });
+        const firedMerc = updatedMercenaries.find(m => m.id === mercenaryId);
+        const name = firedMerc ? firedMerc.name : 'Mercenary';
+        return {
+            ...state,
+            knownMercenaries: updatedMercenaries,
+            logs: [`Contract terminated. ${name} is no longer in your service.`, ...state.logs]
+        };
+    }
+
     default:
       return state;
   }
@@ -544,6 +560,7 @@ const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     toggleJournal: () => dispatch({ type: 'TOGGLE_JOURNAL' }),
 
     hireMercenary: (mercenaryId: string, cost: number) => dispatch({ type: 'HIRE_MERCENARY', payload: { mercenaryId, cost } }),
+    fireMercenary: (mercenaryId: string) => dispatch({ type: 'FIRE_MERCENARY', payload: { mercenaryId } }),
   }), []);
 
   return (

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
 import { createRandomMercenary, getUnmetNamedMercenary } from '../utils/mercenaryGenerator';
-import { Heart, PlusCircle, Coins, CheckCircle, Lock, CalendarClock } from 'lucide-react';
+import { Heart, PlusCircle, Coins, CheckCircle, Lock, CalendarClock, XCircle } from 'lucide-react';
 import { CONTRACT_CONFIG, calculateHiringCost, calculateDailyWage } from '../config/contract-config';
 
 const TavernTab = () => {
@@ -24,6 +24,13 @@ const TavernTab = () => {
 
     const handleHire = (mercId: string, cost: number) => {
         actions.hireMercenary(mercId, cost);
+    };
+
+    const handleFire = (mercId: string) => {
+        // Simple confirm for now
+        if (window.confirm("Are you sure you want to terminate this contract?")) {
+            actions.fireMercenary(mercId);
+        }
     };
 
     return (
@@ -110,18 +117,24 @@ const TavernTab = () => {
                                 </div>
                             </div>
 
-                            {/* Wage Info */}
-                            {!isHired && (
-                                <div className="bg-stone-900/40 p-2 rounded flex justify-between items-center text-xs border border-stone-800">
-                                    <span className="text-stone-500 flex items-center gap-1"><CalendarClock className="w-3 h-3"/> Daily Wage</span>
-                                    <span className="font-mono text-stone-300 font-bold">{dailyWage} G</span>
-                                </div>
-                            )}
+                            {/* Wage Info - Always visible now */}
+                            <div className="bg-stone-900/40 p-2 rounded flex justify-between items-center text-xs border border-stone-800">
+                                <span className="text-stone-500 flex items-center gap-1"><CalendarClock className="w-3 h-3"/> Daily Wage</span>
+                                <span className="font-mono text-stone-300 font-bold">{dailyWage} G</span>
+                            </div>
 
                             {/* Action Area */}
-                            {!isHired && (
-                                <div className="mt-2 border-t border-stone-700 pt-3">
-                                    {hasAffinity ? (
+                            <div className="mt-2 border-t border-stone-700 pt-3">
+                                {isHired ? (
+                                    <button 
+                                        onClick={() => handleFire(merc.id)}
+                                        className="w-full py-2 rounded font-bold text-sm flex items-center justify-center gap-2 transition-all bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 hover:border-red-500"
+                                    >
+                                        <XCircle className="w-4 h-4" />
+                                        <span>Terminate Contract</span>
+                                    </button>
+                                ) : (
+                                    hasAffinity ? (
                                         <button 
                                             onClick={() => handleHire(merc.id, hiringCost)}
                                             disabled={!canAfford}
@@ -144,9 +157,9 @@ const TavernTab = () => {
                                             </div>
                                             <span className="text-[10px] font-mono">Need {CONTRACT_CONFIG.HIRE_AFFINITY_THRESHOLD} Affinity</span>
                                         </div>
-                                    )}
-                                </div>
-                            )}
+                                    )
+                                )}
+                            </div>
                         </div>
                     );
                 })}

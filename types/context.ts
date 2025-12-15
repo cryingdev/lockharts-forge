@@ -36,5 +36,6 @@ export interface GameContextType {
 
     // Contracts
     hireMercenary: (mercenaryId: string, cost: number) => void;
+    fireMercenary: (mercenaryId: string) => void;
   };
 }
