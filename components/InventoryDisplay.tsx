@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Package, Sword, Shield, Coins, Trash2, Info } from 'lucide-react';
-import { InventoryItem } from '../types';
+import { Package, Sword, Shield, Coins, Info } from 'lucide-react';
+import { InventoryItem } from '../types/index';
 import { getAssetUrl } from '../utils';
 
-const InventoryDisplay = () => {
+export const InventoryDisplay = () => {
     const { state, actions } = useGame();
     const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
@@ -71,14 +71,6 @@ const InventoryDisplay = () => {
                                 const isSelected = currentSelectedItem?.id === item.id;
                                 let iconDisplay = <span className="text-2xl">{item.icon || '📦'}</span>;
                                 
-                                // Try to use asset image if available
-                                if (item.id) {
-                                     // Quick heuristic: if it has an equipmentData, use the item ID directly.
-                                     // If it's a resource, use ID.
-                                     // The MarketTab logic uses a safer image check, here we can try to use item.icon first or fallback.
-                                     // Actually, let's try to load the image based on ID like in Market.
-                                }
-
                                 return (
                                     <button
                                         key={item.id}
@@ -219,5 +211,3 @@ const InventoryDisplay = () => {
         </div>
     );
 };
-
-export default InventoryDisplay;

@@ -1,5 +1,5 @@
 
-import { EquipmentCategory, EquipmentSubCategory, EquipmentItem } from '../types';
+import { EquipmentCategory, EquipmentSubCategory, EquipmentItem } from '../types/index';
 
 export const EQUIPMENT_CATEGORIES: { id: EquipmentCategory; name: string }[] = [
   { id: 'WEAPON', name: 'Weapons' },

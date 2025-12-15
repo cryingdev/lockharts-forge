@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { X, Hammer, Flame } from 'lucide-react';
@@ -25,6 +24,8 @@ class SmithingScene extends Phaser.Scene {
   input!: Phaser.Input.InputPlugin;
   load!: Phaser.Loader.LoaderPlugin;
   textures!: Phaser.Textures.TextureManager;
+  scene!: Phaser.Scenes.ScenePlugin;
+  sys!: Phaser.Scenes.Systems;
 
   private targetRing!: Phaser.GameObjects.Graphics;
   private approachRing!: Phaser.GameObjects.Graphics;
@@ -714,7 +715,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
         // If user Cancels via X button, we should grab temp.
         if (gameRef.current) {
              const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
-             if (scene && !scene.scene.isPaused) {
+             if (scene && scene.sys.isActive()) {
                  const currentTemp = scene.getTemperature();
                  // We can't use 'actions' here reliably if component unmounts, but we can try.
                  // Actually, it's safer to have the Cancel button trigger the save explicitly.

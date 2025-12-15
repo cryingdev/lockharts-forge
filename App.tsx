@@ -4,7 +4,7 @@ import { GameProvider } from './context/GameContext';
 import Header from './components/Header';
 import EventModal from './components/EventModal';
 import SleepModal from './components/SleepModal';
-import InventoryDisplay from './components/InventoryDisplay';
+import { InventoryDisplay } from './components/InventoryDisplay';
 import JournalModal from './components/JournalModal';
 import ForgeTab from './components/ForgeTab'; 
 import ShopTab from './components/ShopTab';

@@ -1,20 +1,112 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+# Lockhart's Forge
 
-This contains everything you need to run your app locally.
+> **Version**: 0.1.0
+> **Status**: Alpha / Active Development
 
-View your app in AI Studio: https://ai.studio/apps/drive/1nXDh6GNutZZ9TvhgVjl9SCbjk-6YtPzR
+**Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries. The project combines a React-based UI management system with Phaser 3 minigames for immersive crafting mechanics.
 
-## Run Locally
+## 🛠 Tech Stack
 
-**Prerequisites:**  Node.js
+*   **Core Framework**: React 19 (TypeScript)
+*   **Game Engine**: Phaser 3.80+ (Used for the Smithing Minigame and Forge Visualization)
+*   **Build Tool**: Vite
+*   **Styling**: Tailwind CSS
+*   **Icons**: Lucide React
+*   **State Management**: React Context API (`GameContext`)
 
+## 🌟 Key Features (v0.1.0)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 1. The Forge (Crafting System)
+*   **Smithing Minigame**: A rhythm and timing-based minigame built in Phaser.
+    *   **Mechanics**: Manage heat temperature, maintain fuel (Charcoal), and strike the anvil when the target ring aligns.
+    *   **Visuals**: Dynamic particle effects (sparks), heating glow, and hammer animations.
+    *   **Mastery System**: Tracks crafting counts per item. Higher mastery grants stat bonuses (Fine/Masterwork) and reduces energy costs.
+*   **Recipe System**: 
+    *   Organized by Categories (Weapons, Armor) and Subcategories (Swords, Axes, Helmets, etc.).
+    *   **Tier 1**: Copper/Bronze equipment.
+    *   **Tier 2**: Iron/Silver equipment.
+    *   **Tier 3**: Gold/Ironwood (Magical) equipment.
+    *   **Tier 4**: Mithril (Legendary) equipment.
+
+### 2. Economy & Management
+*   **Inventory System**: View resources, tools, and crafted equipment. Includes "Quick Sell" functionality.
+*   **Marketplace**: 
+    *   Purchase raw materials (Ores, Wood, Leather).
+    *   Buy upgrade scrolls to unlock higher equipment Tiers.
+    *   **Cart System**: Bulk purchasing logic.
+*   **The Shop (Sales)**:
+    *   Open/Close shop toggle.
+    *   **NPC Queue**: Mercenaries physically enter the shop (visualized) and form a queue.
+    *   **Haggling**: Sell items to specific customer requests or dismiss them.
+
+### 3. NPC & Tavern System
+*   **Procedural Mercenaries**: NPCs are generated with:
+    *   **Jobs**: Novice, Fighter, Mage, Rogue, Cleric.
+    *   **Stats**: Strength, Vitality, Dexterity, Intelligence, Luck.
+    *   **Vitals**: HP/MP calculation based on stats.
+*   **Affinity System**: Successful trades increase affinity with specific NPCs.
+*   **Tavern**: View known mercenaries and scout for new customers.
+
+### 4. Game Loop
+*   **Energy System**: Actions (Crafting, Repairs, Opening Shop) cost Energy.
+*   **Day/Night Cycle**: Player must "Rest" to restore energy and advance the day.
+*   **Events**: Dynamic event modal system for random encounters.
+
+## 📂 Project Structure
+
+```text
+/
+├── components/         # React UI Components
+│   ├── SmithingMinigame.tsx  # Phaser integration for crafting
+│   ├── ForgeTab.tsx          # Recipe selection UI
+│   ├── ShopTab.tsx           # Sales interface
+│   └── ...
+├── context/            # Global State (GameContext)
+├── data/               # Static Game Data
+│   ├── equipment.ts    # Weapon/Armor definitions
+│   ├── materials.ts    # Resource definitions
+│   ├── mercenaries.ts  # Named NPC presets
+│   └── ...
+├── game/               # Phaser Scene Logic
+│   └── SmithingScene.ts # Logic for the minigame
+├── models/             # TypeScript Interfaces & Models
+│   ├── Equipment.ts
+│   ├── Mercenary.ts
+│   └── ...
+├── types/              # Type Definitions
+├── utils/              # Helper functions (Assets, Generators)
+├── App.tsx             # Main Layout & Tab Navigation
+└── index.tsx           # Entry Point
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+*   Node.js (v18+ recommended)
+*   npm or yarn
+
+### Installation
+
+1.  Clone the repository.
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+### Running Development Server
+
+```bash
+npm run dev
+```
+Access the game at `http://localhost:5173` (default Vite port).
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+## 📜 License
+
+Private / Proprietary (Lockhart's Forge Team)

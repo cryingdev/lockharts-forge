@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useEffect } from 'react';
-import { GameState, GameContextType, InventoryItem, GameEvent, EquipmentItem, ShopCustomer } from '../types';
+import { GameState, GameContextType, InventoryItem, GameEvent, EquipmentItem, ShopCustomer } from '../types/index';
 import { INITIAL_STATE, GAME_CONFIG, MASTERY_THRESHOLDS } from '../constants';
 import { MATERIALS } from '../data/materials';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';

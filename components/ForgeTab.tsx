@@ -1,6 +1,7 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../data/equipment';
-import { EquipmentCategory, EquipmentItem } from '../types';
+import { EquipmentCategory, EquipmentItem } from '../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award } from 'lucide-react';
 import { useGame } from '../context/GameContext';

@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import { generateShopRequest } from '../utils/shopUtils';
 import { calculateMaxHp, calculateMaxMp } from '../models/Stats';
+import { ShopCustomer } from '../types/index';
 
 /**
  * ShopManager
