@@ -1,7 +1,9 @@
 
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useEffect } from 'react';
 import { GameState, GameContextType, InventoryItem, GameEvent, EquipmentItem, ShopCustomer } from '../types/index';
-import { INITIAL_STATE, GAME_CONFIG, MASTERY_THRESHOLDS } from '../constants';
+import { GAME_CONFIG } from '../config/game-config';
+import { MASTERY_THRESHOLDS } from '../config/mastery-config';
+import { createInitialGameState } from '../state/initial-game-state';
 import { MATERIALS } from '../data/materials';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { Mercenary } from '../models/Mercenary';
@@ -462,7 +464,7 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 };
 
 const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
-  const [state, dispatch] = useReducer(gameReducer, INITIAL_STATE);
+  const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
 
   // Removed automatic time progression useEffect
 

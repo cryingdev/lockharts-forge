@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { Store, ShoppingCart, ShoppingBag, Minus, Trash2, AlertCircle, Package, Flame, ChevronRight, Box } from 'lucide-react';
 import { MATERIALS } from '../data/materials';
-import { MARKET_CATALOG } from '../data/gameData';
+import { MARKET_CATALOG } from '../data/market/index';
 import { getAssetUrl } from '../utils';
 
 interface MarketTabProps {

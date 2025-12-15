@@ -1,6 +1,6 @@
 
 import { Mercenary } from '../models/Mercenary';
-import { ShopCustomer } from '../types';
+import { ShopCustomer } from '../types/index';
 import { EQUIPMENT_ITEMS } from '../data/equipment';
 import { JobClass } from '../models/JobClass';
 

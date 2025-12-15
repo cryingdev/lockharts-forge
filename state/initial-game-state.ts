@@ -1,11 +1,9 @@
 
-import { GameState, InventoryItem } from './types/index';
-import { NAMED_MERCENARIES } from './data/mercenaries';
-import { MATERIALS } from './data/materials';
+import { GameState, InventoryItem } from '../types/index';
+import { NAMED_MERCENARIES } from '../data/mercenaries';
+import { MATERIALS } from '../data/materials';
 
-export { MATERIALS }; // Re-export if needed, but mainly used for INITIAL_INVENTORY below
-
-export const INITIAL_INVENTORY: InventoryItem[] = [
+const createInitialInventory = (): InventoryItem[] => [
     { ...MATERIALS.ANVIL, type: 'TOOL', quantity: 1 },
     { ...MATERIALS.HAMMER, type: 'TOOL', quantity: 1 },
     // Starter Materials
@@ -15,7 +13,7 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     { ...MATERIALS.OAK_LOG, quantity: 1 },
 ];
 
-export const INITIAL_STATE: GameState = {
+export const createInitialGameState = (): GameState => ({
     stats: {
         gold: 1000,
         energy: 100,
@@ -23,7 +21,7 @@ export const INITIAL_STATE: GameState = {
         day: 1,
         tierLevel: 0, // Starts at 0, requires Furnace to reach Tier 1
     },
-    inventory: INITIAL_INVENTORY,
+    inventory: createInitialInventory(),
     forge: {
         hasFurnace: false, // Starts without furnace
         anvilLevel: 1,
@@ -49,21 +47,4 @@ export const INITIAL_STATE: GameState = {
     // Minigame Persistence
     forgeTemperature: 0,
     lastForgeTime: 0,
-};
-
-export const GAME_CONFIG = {
-    ENERGY_COST: {
-        REPAIR: 15,
-        OPEN_SHOP: 15, 
-        CRAFT: 20
-    }
-};
-
-export const MASTERY_THRESHOLDS = {
-    NOVICE: 0,
-    ADEPT: 10,
-    ARTISAN: 30,
-    // Bonuses
-    ADEPT_BONUS: { price: 1.1, stats: 1.1, prefix: 'Fine' },
-    ARTISAN_BONUS: { price: 1.25, stats: 1.2, prefix: 'Masterwork', energyDiscount: 5 }
-};
+});

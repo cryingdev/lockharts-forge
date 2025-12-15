@@ -5,7 +5,8 @@ import { EquipmentCategory, EquipmentItem } from '../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award } from 'lucide-react';
 import { useGame } from '../context/GameContext';
-import { GAME_CONFIG, MASTERY_THRESHOLDS } from '../constants';
+import { GAME_CONFIG } from '../config/game-config';
+import { MASTERY_THRESHOLDS } from '../config/mastery-config';
 import { MATERIALS } from '../data/materials';
 
 interface ForgeTabProps {
