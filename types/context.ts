@@ -1,3 +1,4 @@
+
 import { GameState } from './game-state';
 import { EquipmentItem } from './inventory';
 import { ShopCustomer } from './shop';
@@ -11,7 +12,12 @@ export interface GameContextType {
     confirmSleep: () => void; // Actually proceed to next day (From Modal)
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
-    craftItem: (item: EquipmentItem, quality: number) => void;
+    
+    // Crafting Lifecycle
+    startCrafting: (item: EquipmentItem) => void; // Deducts resources
+    cancelCrafting: (item: EquipmentItem) => void; // Refunds resources
+    finishCrafting: (item: EquipmentItem, quality: number) => void; // Generates Item
+    
     buyItems: (items: { id: string; count: number }[], totalCost: number) => void;
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => void;
     toggleShop: () => void;
@@ -27,5 +33,8 @@ export interface GameContextType {
     setCrafting: (isCrafting: boolean) => void;
     updateForgeStatus: (temp: number) => void; // Save residual heat
     toggleJournal: () => void; // Open/Close Journal
+
+    // Contracts
+    hireMercenary: (mercenaryId: string, cost: number) => void;
   };
 }

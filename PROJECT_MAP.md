@@ -42,7 +42,7 @@ Narrative role of systems:
 ## Current File & Folder Structure (High-Level)
 
 ```txt
-App.tsx
+App.tsx             (View Manager: Intro -> Title -> Game)
 index.tsx
 utils.ts            (legacy/general helpers, to be split later)
 
@@ -51,17 +51,21 @@ components/
   EventModal.tsx
   ForgeTab.tsx
   Header.tsx
+  IntroScreen.tsx   (Wraps IntroScene)
   InventoryDisplay.tsx
   JournalModal.tsx
   MainForgeCanvas.tsx
+  MainGameLayout.tsx (The main gameplay UI wrapper)
   MarketTab.tsx
   ShopManager.tsx
   ShopTab.tsx
   SleepModal.tsx
   SmithingMinigame.tsx
   TavernTab.tsx
+  TitleScreen.tsx   (New Game / Menu)
 
 config/
+  contract-config.ts (Hiring rules & costs)
   game-config.ts
   mastery-config.ts
 
@@ -78,6 +82,7 @@ data/
   nameData.ts
 
 game/
+  IntroScene.ts     (Phaser intro animation)
   MainForgeScene.ts
   SmithingScene.ts
 
@@ -120,8 +125,8 @@ vite.config.ts
   - Mounts the React application onto the DOM
 
 - `App.tsx`  
-  - High-level application flow controller  
-  - Hosts the main layout and top-level tabs (Forge, Shop, Tavern, etc.)
+  - High-level View Controller.
+  - Manages transitions between `IntroScreen`, `TitleScreen`, and `MainGameLayout`.
 
 ---
 
@@ -136,8 +141,7 @@ vite.config.ts
   - Reading and updating game state through `GameContext`
   - Embedding or controlling Phaser scenes via components like `SmithingMinigame` and `MainForgeCanvas`
 - **Notes**:
-  - UI logic and game rules are not yet strictly separated.
-  - Some files (e.g. `utils.ts`, `utils/` helpers) may mix presentation and game logic.
+  - `MainGameLayout.tsx` now contains what was previously in `App.tsx` (the game UI loop).
 
 ### Configuration Layer
 
@@ -151,12 +155,12 @@ vite.config.ts
 - **Location**: `game/`
 - **Responsibilities**:
   - Phaser Scene implementations:
-    - `MainForgeScene.ts`
-    - `SmithingScene.ts`
-  - Timing, animation, and interactive visuals for the forge and smithing minigame
+    - `IntroScene.ts` - Cinematic intro.
+    - `MainForgeScene.ts` - Visuals for the main forge tab.
+    - `SmithingScene.ts` - The crafting minigame.
+  - Timing, animation, and interactive visuals.
 - **Notes**:
-  - Scenes are typically controlled/embedded via React components such as `MainForgeCanvas.tsx` and `SmithingMinigame.tsx`.
-  - Scenes do **not** own the long-term `GameContext` state.
+  - Scenes are typically controlled/embedded via React components.
 
 ### State & Context Layer
 
@@ -170,7 +174,7 @@ vite.config.ts
   - `types/` and `models/`:
     - Define TypeScript types (`game-state.ts`, `inventory.ts`, etc.) and domain models (`Equipment.ts`, `Mercenary.ts`).
 - **Notes**:
-  - `GameContext` effectively defines the in-memory “GameState”.
+  - `GameContext` is now mounted only when the player enters the Game View, ensuring a fresh state on "New Game".
 
 ### Data Layer
 
@@ -205,6 +209,7 @@ vite.config.ts
 
 - `components/`  
   Feature-level React components:
+  - Game Screens (`IntroScreen`, `TitleScreen`, `MainGameLayout`)
   - Forge UI (`ForgeTab`, `MainForgeCanvas`, `SmithingMinigame`)
   - Shop & market (`ShopTab`, `MarketTab`, `ShopManager`)
   - Tavern (`TavernTab`)
@@ -212,6 +217,7 @@ vite.config.ts
   - UI layout (`Header`, `InventoryDisplay`)
 
 - `config/`
+  - `contract-config.ts` – Hiring costs and affinity thresholds.
   - `game-config.ts` – Global game constants (energy costs).
   - `mastery-config.ts` – Logic constants for smithing mastery.
 
@@ -224,7 +230,7 @@ vite.config.ts
   - `market/` - Market catalog definitions
 
 - `game/`  
-  - Phaser Scene implementations (forge/smithing scenes)
+  - Phaser Scene implementations (intro, forge, smithing)
 
 - `models/`  
   - Domain models for entities (equipment, mercenaries, stats)
@@ -251,9 +257,8 @@ vite.config.ts
 
 ## Known Couplings & Intentional Trade-offs
 
-- React components directly control aspects of Phaser scene lifecycle via `MainForgeCanvas` and `SmithingMinigame`.
-- Some domain logic is mixed into UI/utility code for faster iteration.
-- A single `GameContext` currently acts as the primary in-memory state container.
+- React components directly control aspects of Phaser scene lifecycle.
+- `MainGameLayout` contains all game tabs to avoid complex routing, acting as a tab switcher.
 
 These trade-offs are **intentional for early development and vibe-coding speed**.
 
@@ -262,31 +267,8 @@ These trade-offs are **intentional for early development and vibe-coding speed**
 ## Non-Goals (Current)
 
 - No ECS (Entity Component System) architecture
-- No direct player-controlled combat (player acts as blacksmith, not adventurer)
 - No multiplayer or networking
-- No dedicated save/load system or UI yet  
-  - Save/load is a **future goal**, but not implemented in the current structure.
-
----
-
-## Naming & Classification Rules (Current)
-
-- React components: `PascalCase.tsx`
-  - e.g. `ForgeTab.tsx`, `SmithingMinigame.tsx`
-- Other TypeScript files: `kebab-case.ts` is preferred, but legacy names exist
-- Concerns should ideally not be mixed:
-  - State vs Data vs UI vs Utility
-
----
-
-## Recommended Read Order for AI Assistants
-
-1. `README.md` – overall project summary and feature description  
-2. `PROJECT_MAP.md` – this file (structural overview)  
-3. `context/GameContext.tsx` – understand main game state and actions  
-4. `config/` & `data/` – understand game rules and available content
-5. `components/` – see how UI and game state are connected  
-6. `game/` – see how Phaser scenes are used for minigames  
+- Save/Load system UI exists but is non-functional in `TitleScreen`.
 
 ---
 

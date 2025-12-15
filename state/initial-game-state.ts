@@ -20,6 +20,7 @@ export const createInitialGameState = (): GameState => ({
         maxEnergy: 100,
         day: 1,
         tierLevel: 0, // Starts at 0, requires Furnace to reach Tier 1
+        incomeToday: 0,
     },
     inventory: createInitialInventory(),
     forge: {

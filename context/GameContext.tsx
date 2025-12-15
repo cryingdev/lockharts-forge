@@ -3,6 +3,7 @@ import React, { createContext, useContext, useReducer, ReactNode, useMemo, useEf
 import { GameState, GameContextType, InventoryItem, GameEvent, EquipmentItem, ShopCustomer } from '../types/index';
 import { GAME_CONFIG } from '../config/game-config';
 import { MASTERY_THRESHOLDS } from '../config/mastery-config';
+import { CONTRACT_CONFIG, calculateDailyWage } from '../config/contract-config';
 import { createInitialGameState } from '../state/initial-game-state';
 import { MATERIALS } from '../data/materials';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
@@ -12,15 +13,17 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 
 type Action =
   | { type: 'REPAIR_WORK' }
-  | { type: 'SLEEP' }        // Trigger Sleep Modal (Manual)
-  | { type: 'CONFIRM_SLEEP' } // Actually proceed (From Modal)
+  | { type: 'SLEEP' }        
+  | { type: 'CONFIRM_SLEEP' } 
   | { type: 'TRIGGER_EVENT'; payload: GameEvent }
   | { type: 'CLOSE_EVENT' }
   | { type: 'ACQUIRE_ITEM'; payload: { id: string; quantity: number } }
   | { type: 'PAY_COST'; payload: { gold?: number; items?: { id: string; count: number }[] } }
   | { type: 'BUY_MARKET_ITEMS'; payload: { items: { id: string; count: number }[]; totalCost: number } }
   | { type: 'INSTALL_FURNACE' }
-  | { type: 'CRAFT_ITEM'; payload: { item: EquipmentItem; quality: number } }
+  | { type: 'START_CRAFTING'; payload: { item: EquipmentItem } }
+  | { type: 'CANCEL_CRAFTING'; payload: { item: EquipmentItem } }
+  | { type: 'FINISH_CRAFTING'; payload: { item: EquipmentItem; quality: number } }
   | { type: 'SELL_ITEM'; payload: { itemId: string; count: number; price: number; equipmentInstanceId?: string; customer?: Mercenary } }
   | { type: 'TOGGLE_SHOP' }
   | { type: 'ADD_KNOWN_MERCENARY'; payload: Mercenary }
@@ -29,7 +32,8 @@ type Action =
   | { type: 'DISMISS_CUSTOMER' }
   | { type: 'SET_CRAFTING'; payload: boolean }
   | { type: 'UPDATE_FORGE_STATUS'; payload: { temp: number } }
-  | { type: 'TOGGLE_JOURNAL' };
+  | { type: 'TOGGLE_JOURNAL' }
+  | { type: 'HIRE_MERCENARY'; payload: { mercenaryId: string; cost: number } };
 
 const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number): Equipment => {
     // 1. Determine Mastery Bonus
@@ -93,60 +97,73 @@ const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount:
     };
 };
 
+const getEnergyCost = (item: EquipmentItem, masteryCount: number) => {
+    let energyCost = GAME_CONFIG.ENERGY_COST.CRAFT;
+    if (masteryCount >= MASTERY_THRESHOLDS.ARTISAN) {
+        energyCost -= MASTERY_THRESHOLDS.ARTISAN_BONUS.energyDiscount;
+    }
+    return energyCost;
+};
+
 const gameReducer = (state: GameState, action: Action): GameState => {
   switch (action.type) {
     case 'REPAIR_WORK': {
       if (state.stats.energy < GAME_CONFIG.ENERGY_COST.REPAIR) return state;
       
+      const earn = 15;
       return {
         ...state,
         stats: { 
           ...state.stats, 
           energy: state.stats.energy - GAME_CONFIG.ENERGY_COST.REPAIR,
-          gold: state.stats.gold + 15
+          gold: state.stats.gold + earn,
+          incomeToday: state.stats.incomeToday + earn,
         },
-        logs: [`Performed cold repairs for a neighbor. Gold +15. Energy -${GAME_CONFIG.ENERGY_COST.REPAIR}.`, ...state.logs],
+        logs: [`Performed cold repairs for a neighbor. Gold +${earn}. Energy -${GAME_CONFIG.ENERGY_COST.REPAIR}.`, ...state.logs],
       };
     }
 
     case 'SLEEP': {
-        // User clicked "Rest" manually.
-        // Triggers the confirmation modal instead of instantly resting.
-        return {
-            ...state,
-            showSleepModal: true
-        };
+        return { ...state, showSleepModal: true };
     }
 
     case 'CONFIRM_SLEEP': {
-        // Triggered by the End of Day Modal
+        const hiredMercs = state.knownMercenaries.filter(m => m.isHired);
+        let totalWages = 0;
+        hiredMercs.forEach(merc => {
+            totalWages += calculateDailyWage(merc.level, merc.job);
+        });
+
         const nextDay = state.stats.day + 1;
+        const newGold = state.stats.gold - totalWages;
+
+        let logMsg = `Day ${nextDay} begins. You feel refreshed.`;
+        if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. Balance: ${newGold} G.`;
+        if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G).`;
+
         return {
             ...state,
             stats: {
                 ...state.stats,
                 day: nextDay,
+                gold: newGold,
                 energy: state.stats.maxEnergy,
+                incomeToday: 0,
             },
             forge: { ...state.forge, isShopOpen: false },
             visitorsToday: [],
             activeCustomer: null,
             shopQueue: [],
             isCrafting: false,
-            showSleepModal: false, // Close modal
-            logs: [`Day ${nextDay} begins. You feel refreshed.`, ...state.logs],
-            // Reset forge temp overnight
+            showSleepModal: false,
+            logs: [logMsg, ...state.logs],
             forgeTemperature: 0,
             lastForgeTime: Date.now(),
         };
     }
 
     case 'SET_CRAFTING': {
-        const isCrafting = action.payload;
-        return {
-            ...state,
-            isCrafting
-        };
+        return { ...state, isCrafting: action.payload };
     }
 
     case 'UPDATE_FORGE_STATUS': {
@@ -158,10 +175,7 @@ const gameReducer = (state: GameState, action: Action): GameState => {
     }
 
     case 'TOGGLE_JOURNAL': {
-        return {
-            ...state,
-            showJournal: !state.showJournal
-        };
+        return { ...state, showJournal: !state.showJournal };
     }
 
     case 'TRIGGER_EVENT':
@@ -193,7 +207,6 @@ const gameReducer = (state: GameState, action: Action): GameState => {
         let newInventory = [...state.inventory];
 
         if (gold) newGold -= gold;
-        
         if (items) {
             items.forEach(costItem => {
                 newInventory = newInventory.map(invItem => {
@@ -204,7 +217,6 @@ const gameReducer = (state: GameState, action: Action): GameState => {
                 }).filter(i => i.quantity > 0);
             });
         }
-
         return {
             ...state,
             stats: { ...state.stats, gold: newGold },
@@ -229,20 +241,17 @@ const gameReducer = (state: GameState, action: Action): GameState => {
                  logUpdates.unshift('Upgrade Complete: Market Tier 2 Unlocked!');
                  return; 
              }
-
              if (buyItem.id === 'scroll_t3') {
                  newTierLevel = Math.max(newTierLevel, 3);
                  logUpdates.unshift('Upgrade Complete: Market Tier 3 Unlocked!');
                  return; 
              }
-
              if (buyItem.id === 'furnace') {
                  newForgeState.hasFurnace = true;
                  if (newTierLevel === 0) newTierLevel = 1; 
                  logUpdates.unshift('Furnace acquired! You can now start forging.');
                  return; 
              }
-
              const itemDef = Object.values(MATERIALS).find(i => i.id === buyItem.id);
              if (itemDef) {
                  const existingItem = newInventory.find(i => i.id === buyItem.id);
@@ -270,36 +279,22 @@ const gameReducer = (state: GameState, action: Action): GameState => {
         logs: ['The Furnace has been installed! The forge comes alive.', ...state.logs]
       };
     
-    case 'CRAFT_ITEM': {
-        const { item, quality } = action.payload;
-        
-        // Calculate Energy Cost with Mastery Discount
+    // --- CRAFTING ACTIONS ---
+    case 'START_CRAFTING': {
+        const { item } = action.payload;
         const masteryCount = state.craftingMastery[item.id] || 0;
-        let energyCost = GAME_CONFIG.ENERGY_COST.CRAFT;
-        
-        if (masteryCount >= MASTERY_THRESHOLDS.ARTISAN) {
-            energyCost -= MASTERY_THRESHOLDS.ARTISAN_BONUS.energyDiscount;
-        }
+        const energyCost = getEnergyCost(item, masteryCount);
 
-        if (state.stats.energy < energyCost) {
-             return {
-                ...state,
-                logs: [`Too exhausted to craft. Need ${energyCost} energy.`, ...state.logs]
-            };
-        }
+        if (state.stats.energy < energyCost) return state;
 
+        // Check Resources
         const hasResources = item.requirements.every(req => {
             const invItem = state.inventory.find(i => i.id === req.id);
             return invItem && invItem.quantity >= req.count;
         });
+        if (!hasResources) return state;
 
-        if (!hasResources) {
-            return {
-                ...state,
-                logs: [`Failed to craft ${item.name}. Missing resources.`, ...state.logs]
-            };
-        }
-
+        // Deduct Resources
         let newInventory = [...state.inventory];
         item.requirements.forEach(req => {
             newInventory = newInventory.map(invItem => {
@@ -310,8 +305,50 @@ const gameReducer = (state: GameState, action: Action): GameState => {
             }).filter(i => i.quantity > 0);
         });
 
-        const equipment = generateEquipment(item, quality, masteryCount);
+        return {
+            ...state,
+            isCrafting: true,
+            stats: { ...state.stats, energy: state.stats.energy - energyCost },
+            inventory: newInventory,
+        };
+    }
 
+    case 'CANCEL_CRAFTING': {
+        const { item } = action.payload;
+        // Refund logic
+        const masteryCount = state.craftingMastery[item.id] || 0;
+        const energyCost = getEnergyCost(item, masteryCount);
+
+        // Refund Resources
+        let newInventory = [...state.inventory];
+        item.requirements.forEach(req => {
+            const existing = newInventory.find(i => i.id === req.id);
+            if (existing) {
+                newInventory = newInventory.map(i => i.id === req.id ? { ...i, quantity: i.quantity + req.count } : i);
+            } else {
+                const itemDef = Object.values(MATERIALS).find(m => m.id === req.id);
+                if (itemDef) {
+                    newInventory.push({ ...itemDef, quantity: req.count } as InventoryItem);
+                }
+            }
+        });
+
+        return {
+            ...state,
+            isCrafting: false,
+            stats: { ...state.stats, energy: state.stats.energy + energyCost },
+            inventory: newInventory,
+            logs: [`Cancelled work on ${item.name}. Materials restored.`, ...state.logs]
+        };
+    }
+
+    case 'FINISH_CRAFTING': {
+        const { item, quality } = action.payload;
+        const masteryCount = state.craftingMastery[item.id] || 0;
+
+        const equipment = generateEquipment(item, quality, masteryCount);
+        const newInventory = [...state.inventory];
+        
         newInventory.push({
             id: equipment.id, 
             name: equipment.name,
@@ -328,13 +365,10 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 
         return {
             ...state,
-            stats: {
-                ...state.stats,
-                energy: state.stats.energy - energyCost
-            },
+            isCrafting: false,
             inventory: newInventory,
             craftingMastery: newMastery,
-            logs: [`Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})! Energy -${energyCost}`, ...state.logs]
+            logs: [`Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})!`, ...state.logs]
         };
     }
 
@@ -394,7 +428,11 @@ const gameReducer = (state: GameState, action: Action): GameState => {
         return {
             ...state,
             inventory: newInventory,
-            stats: { ...state.stats, gold: state.stats.gold + price },
+            stats: { 
+                ...state.stats, 
+                gold: state.stats.gold + price,
+                incomeToday: state.stats.incomeToday + price,
+            },
             knownMercenaries: newKnownMercenaries,
             activeCustomer: newActiveCustomer,
             logs: [logMessage, ...state.logs]
@@ -403,18 +441,13 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 
     case 'TOGGLE_SHOP':
         if (state.stats.energy < GAME_CONFIG.ENERGY_COST.OPEN_SHOP && !state.forge.isShopOpen) {
-            return {
-                ...state,
-                logs: ['Not enough energy to prepare the shop.', ...state.logs]
-            };
+            return { ...state, logs: ['Not enough energy to prepare the shop.', ...state.logs] };
         }
-
         const willOpen = !state.forge.isShopOpen;
-        const energyCost = willOpen ? GAME_CONFIG.ENERGY_COST.OPEN_SHOP : 0;
-
+        const shopCost = willOpen ? GAME_CONFIG.ENERGY_COST.OPEN_SHOP : 0;
         return {
             ...state,
-            stats: { ...state.stats, energy: state.stats.energy - energyCost },
+            stats: { ...state.stats, energy: state.stats.energy - shopCost },
             forge: { ...state.forge, isShopOpen: willOpen },
             logs: [willOpen ? 'Shop is now OPEN.' : 'Shop is now CLOSED.', ...state.logs]
         };
@@ -422,7 +455,6 @@ const gameReducer = (state: GameState, action: Action): GameState => {
     case 'ADD_KNOWN_MERCENARY': {
         const merc = action.payload;
         if (state.knownMercenaries.some(m => m.id === merc.id)) return state;
-
         return {
             ...state,
             knownMercenaries: [...state.knownMercenaries, merc],
@@ -443,11 +475,7 @@ const gameReducer = (state: GameState, action: Action): GameState => {
     case 'NEXT_CUSTOMER': {
         if (state.shopQueue.length === 0) return state;
         const [next, ...remaining] = state.shopQueue;
-        return {
-            ...state,
-            shopQueue: remaining,
-            activeCustomer: next
-        };
+        return { ...state, shopQueue: remaining, activeCustomer: next };
     }
 
     case 'DISMISS_CUSTOMER': {
@@ -455,6 +483,23 @@ const gameReducer = (state: GameState, action: Action): GameState => {
             ...state,
             activeCustomer: null,
             logs: state.activeCustomer ? [`${state.activeCustomer.mercenary.name} left the shop.`] : state.logs
+        };
+    }
+
+    case 'HIRE_MERCENARY': {
+        const { mercenaryId, cost } = action.payload;
+        if (state.stats.gold < cost) return state;
+        const updatedMercenaries = state.knownMercenaries.map(m => {
+            if (m.id === mercenaryId) return { ...m, isHired: true };
+            return m;
+        });
+        const hiredMerc = updatedMercenaries.find(m => m.id === mercenaryId);
+        const name = hiredMerc ? hiredMerc.name : 'Mercenary';
+        return {
+            ...state,
+            stats: { ...state.stats, gold: state.stats.gold - cost },
+            knownMercenaries: updatedMercenaries,
+            logs: [`Contract signed! ${name} has joined your service. -${cost} G`, ...state.logs]
         };
     }
 
@@ -466,8 +511,6 @@ const gameReducer = (state: GameState, action: Action): GameState => {
 const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
 
-  // Removed automatic time progression useEffect
-
   const actions = useMemo(() => ({
     repairItem: () => dispatch({ type: 'REPAIR_WORK' }),
     rest: () => dispatch({ type: 'SLEEP' }), 
@@ -477,7 +520,13 @@ const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
       dispatch({ type: 'CLOSE_EVENT' });
     },
     closeEvent: () => dispatch({ type: 'CLOSE_EVENT' }),
-    craftItem: (item: EquipmentItem, quality: number) => dispatch({ type: 'CRAFT_ITEM', payload: { item, quality } }),
+    
+    // New Split Crafting Flow
+    startCrafting: (item: EquipmentItem) => dispatch({ type: 'START_CRAFTING', payload: { item } }),
+    cancelCrafting: (item: EquipmentItem) => dispatch({ type: 'CANCEL_CRAFTING', payload: { item } }),
+    finishCrafting: (item: EquipmentItem, quality: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality } }),
+    craftItem: (item: EquipmentItem, quality: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality } }), // Backwards compatibility if needed, but better to migrate
+
     buyItems: (items: { id: string; count: number }[], totalCost: number) => dispatch({ type: 'BUY_MARKET_ITEMS', payload: { items, totalCost } }),
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => 
         dispatch({ type: 'SELL_ITEM', payload: { itemId, count, price, equipmentInstanceId, customer } }),
@@ -493,6 +542,8 @@ const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     setCrafting: (isCrafting: boolean) => dispatch({ type: 'SET_CRAFTING', payload: isCrafting }),
     updateForgeStatus: (temp: number) => dispatch({ type: 'UPDATE_FORGE_STATUS', payload: { temp } }),
     toggleJournal: () => dispatch({ type: 'TOGGLE_JOURNAL' }),
+
+    hireMercenary: (mercenaryId: string, cost: number) => dispatch({ type: 'HIRE_MERCENARY', payload: { mercenaryId, cost } }),
   }), []);
 
   return (

@@ -1,3 +1,4 @@
+
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
@@ -9,6 +10,7 @@ export interface PlayerStats {
   maxEnergy: number;
   day: number;
   tierLevel: number; // Current crafting/market tier access
+  incomeToday: number; // Track gold earned during the current day
 }
 
 export interface ForgeStatus {

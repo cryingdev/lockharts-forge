@@ -1,3 +1,4 @@
+
 import { BaseStats } from './Stats';
 import { JobClass } from './JobClass';
 
@@ -28,4 +29,5 @@ export interface Mercenary {
   
   // State
   lastVisitDay?: number;
+  isHired?: boolean; // True if actively hired by player
 }

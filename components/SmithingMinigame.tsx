@@ -1,6 +1,7 @@
+
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
-import { X, Hammer, Flame } from 'lucide-react';
+import { X, Hammer, Flame, Wind } from 'lucide-react';
 import { getAssetUrl } from '../utils';
 import { useGame } from '../context/GameContext';
 import { MATERIALS } from '../data/materials';
@@ -8,7 +9,7 @@ import { MATERIALS } from '../data/materials';
 // --- Types & Props ---
 interface SmithingMinigameProps {
   onComplete: (score: number) => void;
-  onClose: () => void;
+  onClose: () => void; // This will now handle the "Cancel" logic (refund)
   difficulty?: number; // 1 (Easy) to 5 (Hard)
 }
 
@@ -71,7 +72,15 @@ class SmithingScene extends Phaser.Scene {
   private temperature: number = 0; // Starts Cold
   private coolingRate: number = 2; // Degrees lost per second
   private currentTempStage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'COLD';
-  private tempText!: Phaser.GameObjects.Text;
+  
+  // New Temperature Visuals
+  private tempBar!: Phaser.GameObjects.Rectangle;
+  private tempBarBg!: Phaser.GameObjects.Rectangle;
+  private tempValueText!: Phaser.GameObjects.Text;
+  
+  // Bellows
+  private bellowsContainer!: Phaser.GameObjects.Container;
+  private isPumping: boolean = false;
 
   constructor() {
     super('SmithingScene');
@@ -122,6 +131,7 @@ class SmithingScene extends Phaser.Scene {
     // Spark Variations
     this.load.image('spark_perfect', getAssetUrl('particle_spark1.png'));
     this.load.image('spark_normal', getAssetUrl('particle_spark2.png'));
+    this.load.image('particle_smoke', getAssetUrl('particle_smoke.png')); // Optional smoke
 
     this.load.on('loaderror', (fileObj: any) => {
         console.warn(`[Phaser] Failed to load asset: ${fileObj.key} from ${fileObj.src}`);
@@ -147,6 +157,10 @@ class SmithingScene extends Phaser.Scene {
 
     // --- 1. Background ---
     const hasTexture = (key: string) => this.textures.exists(key);
+    
+    // Ensure dimensions are valid for fallback texture generation
+    const w = Math.floor(width) || 800;
+    const h = Math.floor(height) || 600;
 
     if (hasTexture('bg')) {
       const bg = this.add.image(this.centerX, this.centerY, 'bg');
@@ -158,16 +172,10 @@ class SmithingScene extends Phaser.Scene {
     } else {
       this.ensureTexture('fallback_bg', (g) => {
           g.fillStyle(0x1c1917, 1);
-          g.fillRect(0, 0, width, height);
-      }, width, height);
+          g.fillRect(0, 0, w, h);
+      }, w, h);
       this.add.image(this.centerX, this.centerY, 'fallback_bg');
     }
-
-    // Ambient Glow (Starts off, turns on with heat)
-    // Initial alpha depends on starting temp
-    const startGlow = Math.min(0.2, (this.temperature / 100) * 0.2);
-    this.ambientGlow = this.add.circle(this.centerX, height, 400, 0xea580c, startGlow); 
-
     // --- 2. The Forge ---
     
     // Anvil
@@ -219,15 +227,57 @@ class SmithingScene extends Phaser.Scene {
     }
 
     // --- 4. UI: HUD ---
+    // Top Progress Bar
     this.add.rectangle(this.centerX, 40, 300, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e);
     this.progressBar = this.add.rectangle(this.centerX - 150, 40, 0, 12, 0xeab308).setOrigin(0, 0.5);
 
-    // Temp Indicator
-    this.tempText = this.add.text(this.centerX + 180, 40, 'TEMP: 0%', {
-        fontFamily: 'monospace', fontSize: '14px', color: '#fff'
-    }).setOrigin(0, 0.5);
-    this.updateTempText(); // Set initial text
+    // --- Thermometer (Right Side) ---
+    const termX = width - 60;
+    const termY = this.centerY - 50; // Centered vertically relative to gauge area
+    const termHeight = 250;
+    const termWidth = 24;
 
+    // Thermometer Background (Container)
+    this.tempBarBg = this.add.rectangle(termX, termY, termWidth + 8, termHeight + 8, 0x1c1917).setStrokeStyle(3, 0x57534e).setDepth(1);
+    // Dark inner background
+    this.add.rectangle(termX, termY, termWidth, termHeight, 0x292524).setDepth(1);
+    
+    // Thermometer Fill logic changed to ScaleY based approach to fix direction
+    const bottomEdgeY = termY + (termHeight / 2);
+    const topEdgeY = termY - (termHeight / 2);
+
+    // Initialize with full height but scaleY = 0
+    // Origin at (0.5, 1) means pivot is at bottom center.
+    // Increasing scaleY will make it grow UPWARDS from the bottom.
+    this.tempBar = this.add.rectangle(termX, bottomEdgeY, termWidth - 6, termHeight, 0x3b82f6);
+    this.tempBar.setOrigin(0.5, 1);
+    this.tempBar.scaleY = 0; 
+    this.tempBar.setDepth(2); // Ensure it is above background
+
+    // Ticks on Thermometer
+    for (let i = 1; i < 5; i++) {
+        const yPos = bottomEdgeY - (termHeight * (i/5));
+        this.add.rectangle(termX, yPos, termWidth + 4, 2, 0x000000, 0.5).setDepth(3);
+    }
+
+    // Labels
+    this.add.text(termX, topEdgeY - 15, 'HOT', { fontFamily: 'monospace', fontSize: '10px', color: '#ef4444' }).setOrigin(0.5).setDepth(4);
+    this.add.text(termX, bottomEdgeY + 15, 'COLD', { fontFamily: 'monospace', fontSize: '10px', color: '#3b82f6' }).setOrigin(0.5).setDepth(4);
+
+    // Current Temp Value (Fixed at top of gauge)
+    this.tempValueText = this.add.text(termX, topEdgeY - 35, '20°C', {
+        fontFamily: 'monospace', fontSize: '16px', color: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 3
+    }).setOrigin(0.5).setDepth(4);
+
+    // --- Bellows (Pump) ---
+    const bellowsX = termX;
+    const bellowsY = bottomEdgeY + 80; // Position relative to bottom of gauge
+    
+    this.createBellows(bellowsX, bellowsY);
+
+    this.updateTemperatureDisplay(); // Set initial visual state
+
+    // Combo Text
     this.comboText = this.add.text(this.centerX, this.centerY - 150, '', {
       fontFamily: 'Impact', fontSize: '42px', color: '#fcd34d', stroke: '#000', strokeThickness: 4
     }).setOrigin(0.5).setAlpha(0);
@@ -248,28 +298,105 @@ class SmithingScene extends Phaser.Scene {
     // --- Input ---
     this.input.keyboard?.on('keydown-SPACE', this.handleInput, this);
     
-    // Handle Click - Explicitly checking pointer button 0 (Left Click)
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    // Handle Click
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer, gameObjects: any[]) => {
         if (pointer.button === 0) {
-            this.handleInput();
+            // Check if clicked bellows
+            // We need to check if the clicked object is part of the bellows container
+            if (gameObjects.includes(this.bellowsContainer) || this.bellowsContainer.list.some(child => gameObjects.includes(child))) {
+                this.pumpBellows();
+            } else {
+                this.handleInput();
+            }
         }
     }, this);
 
-    // Initial Randomization
-    this.randomizeTargetPos();
+    // Ambient Glow (Starts off, alpha managed by temp display)
+    this.ambientGlow = this.add.circle(this.centerX, height, 400, 0xea580c, 0);
+    this.ambientGlow.setFillStyle(0xea580c, 0.25); // <-- 이게 핵심
+    this.ambientGlow.setAlpha(1);
+    this.ambientGlow.setDepth(999);
+    this.ambientGlow.setY(this.scale.height - 80);
+    // Don't draw the first ring yet; wait for player to Start.
+    // this.randomizeTargetPos(); 
+  }
+
+  createBellows(x: number, y: number) {
+      this.bellowsContainer = this.add.container(x, y);
+      
+      // Visuals for Bellows
+      // Top Plate
+      const topPlate = this.add.rectangle(0, -15, 60, 12, 0x78350f).setStrokeStyle(2, 0x451a03);
+      // Bottom Plate
+      const bottomPlate = this.add.rectangle(0, 15, 60, 12, 0x78350f).setStrokeStyle(2, 0x451a03);
+      // Leather Bag (Accordion style)
+      const bag = this.add.rectangle(0, 0, 56, 30, 0xa16207);
+      // Nozzle (Pointing left towards forge?) No, pointing somewhere logical. Let's say straight up towards gauge for abstraction.
+      const nozzle = this.add.rectangle(0, -30, 10, 15, 0x525252);
+      
+      // Handles
+      const handleTop = this.add.rectangle(0, -25, 20, 10, 0x78350f);
+      
+      this.bellowsContainer.add([nozzle, bag, topPlate, bottomPlate, handleTop]);
+      
+      // Interactive Zone
+      const hitArea = new Phaser.Geom.Rectangle(-35, -35, 70, 70);
+      this.bellowsContainer.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+      
+      // Label
+      this.add.text(x, y + 40, 'PUMP', { 
+          fontSize: '12px', color: '#a8a29e', fontFamily: 'monospace', fontStyle: 'bold'
+      }).setOrigin(0.5);
+  }
+
+  pumpBellows() {
+      if (this.isPumping) return;
+      this.isPumping = true;
+
+      // Visual Animation (Squash)
+      this.tweens.add({
+          targets: this.bellowsContainer,
+          scaleY: 0.7,
+          duration: 80,
+          yoyo: true,
+          onComplete: () => { this.isPumping = false; }
+      });
+
+      // Logic: Add Heat
+      // Works if there is at least a spark (temp > 0)
+      if (this.temperature > 0) {
+          const boost = 8; // Increased boost
+          this.temperature = Math.min(100, this.temperature + boost);
+          this.updateTemperatureDisplay();
+          
+          // FX
+          this.createSparks(8, 0xffaa00, 0.5, 'spark_normal'); 
+          
+          // If we pump it back up from low, allow starting
+          if (!this.isPlaying && this.temperature > 0 && !this.isReadyToStart) {
+              this.isReadyToStart = true;
+              this.infoText.setText('CLICK TO START');
+              this.infoText.setColor('#fbbf24');
+          }
+      } else {
+          // Feedback for "No fire to fan"
+          this.cameras.main.shake(30, 0.005);
+          const feedback = this.add.text(this.bellowsContainer.x, this.bellowsContainer.y - 50, 'NEED FUEL', {
+              fontSize: '14px', color: '#94a3b8', stroke: '#000', strokeThickness: 2, fontStyle: 'bold'
+          }).setOrigin(0.5);
+          this.tweens.add({ targets: feedback, y: feedback.y - 20, alpha: 0, duration: 800, onComplete: () => feedback.destroy() });
+      }
   }
 
   // --- External Methods (Called by React) ---
   public heatUp() {
       if (this.isFinished) return;
-      // Boost heat significantly
+      // Boost heat significantly (Charcoal)
       this.temperature = Math.min(100, this.temperature + 40);
-      this.updateTempText();
+      this.updateTemperatureDisplay();
       this.createSparks(20, 0xff5500, 1.2, 'spark_normal');
       
-      // Update Ambient Glow
-      if (this.ambientGlow) this.ambientGlow.setAlpha(0.2);
-
+      // Update Ambient Glow (handled in updateTemperatureDisplay now, but instant feedback is good)
       // Transition to Ready State if not playing
       if (!this.isPlaying && this.temperature > 0) {
           this.isReadyToStart = true;
@@ -296,6 +423,10 @@ class SmithingScene extends Phaser.Scene {
       if (!this.targetRing) return;
       this.targetRing.clear();
       
+      // Only draw if the game is actively playing.
+      // This prevents "leftover" rings from appearing before the user clicks Start.
+      if (!this.isPlaying) return;
+
       if (this.currentTempStage === 'COLD') return;
 
       // Fill with semi-transparent GOLD
@@ -310,7 +441,8 @@ class SmithingScene extends Phaser.Scene {
       if (!this.textures.exists(key)) {
           const g = this.make.graphics({ x: 0, y: 0 });
           drawFn(g);
-          if (width && height) {
+          
+          if (width && height && width > 0 && height > 0) {
               g.generateTexture(key, width, height);
           } else {
               g.generateTexture(key);
@@ -380,7 +512,7 @@ class SmithingScene extends Phaser.Scene {
       if (this.score >= this.targetScore) return;
 
       this.temperature = Math.max(0, this.temperature - (this.coolingRate * (delta / 1000)));
-      this.updateTempText();
+      this.updateTemperatureDisplay();
 
       const prevStage = this.currentTempStage;
       this.updateTempStage();
@@ -397,7 +529,7 @@ class SmithingScene extends Phaser.Scene {
              
              this.targetRing.clear();
              this.approachRing.clear();
-             if (this.ambientGlow) this.ambientGlow.setAlpha(0);
+             // Glow alpha handled in updateTemperatureDisplay now
           }
       }
   }
@@ -410,12 +542,70 @@ class SmithingScene extends Phaser.Scene {
       else this.currentTempStage = 'NORMAL';
   }
   
-  updateTempText() {
-       this.tempText.setText(`TEMP: ${Math.floor(this.temperature)}%`);
-       // Change color based on heat
-       if (this.temperature < 20) this.tempText.setColor('#3b82f6'); // Blue
-       else if (this.temperature > 75) this.tempText.setColor('#fbbf24'); // Amber
-       else this.tempText.setColor('#ffffff');
+  updateTemperatureDisplay() {
+       const maxTemp = 100;
+       const current = Phaser.Math.Clamp(this.temperature, 0, maxTemp);
+       const ratio = current / maxTemp;
+
+       // 1. Text Update: Map 0-100% to 20°C - 1500°C
+       const displayTemp = Math.floor(20 + (ratio * 1480));
+       this.tempValueText.setText(`${displayTemp}°C`);
+
+       // 2. Bar Height/Scale Update
+       // Use scaleY to grow upwards from bottom anchor (0.5, 1)
+       this.tempBar.scaleY = ratio;
+
+       // 3. Bar Color Update (Interpolate Blue -> Yellow -> Red)
+       const startColor = new Phaser.Display.Color(59, 130, 246); // Blue
+       const midColor = new Phaser.Display.Color(234, 179, 8);   // Yellow
+       const endColor = new Phaser.Display.Color(239, 68, 68);   // Red
+
+       let r, g, b;
+       
+       if (ratio < 0.5) {
+           // Blue to Yellow
+           const localRatio = ratio * 2;
+           const c = Phaser.Display.Color.Interpolate.ColorWithColor(startColor, midColor, 100, localRatio * 100);
+           r = c.r; g = c.g; b = c.b;
+       } else {
+           // Yellow to Red
+           const localRatio = (ratio - 0.5) * 2;
+           const c = Phaser.Display.Color.Interpolate.ColorWithColor(midColor, endColor, 100, localRatio * 100);
+           r = c.r; g = c.g; b = c.b;
+       }
+       
+       this.tempBar.setFillStyle(Phaser.Display.Color.GetColor(r, g, b));
+       
+       // Update text color based on temp for feedback
+      if (current < 20) this.tempValueText.setColor('#3b82f6');
+       else if (current > 75) this.tempValueText.setColor('#ef4444');
+       else this.tempValueText.setColor('#ffffff');
+
+      // 4. Update Ambient Glow Visibility + Size based on heat
+      if (this.ambientGlow) {
+        const glowA = ratio * 0.3;
+
+        // ✅ 알파는 fillAlpha로 (안 보이는 문제 방지)
+        this.ambientGlow.setFillStyle(0xea580c, glowA);
+        this.ambientGlow.setAlpha(1);
+
+        // ✅ 온도에 따라 크기(반경) 증가
+        const minR = 280;  // 차가울 때 반경
+        const maxR = 520;  // 뜨거울 때 반경
+
+        // 살짝 이징 주면 자연스러움(선택)
+        const eased = Phaser.Math.Easing.Quadratic.Out(ratio);
+        const targetR = Phaser.Math.Linear(minR, maxR, eased);
+
+        // 부드럽게 변화(선택) - 튀는 느낌 방지
+        const currentR = (this.ambientGlow as any).radius ?? minR;
+        const nextR = Phaser.Math.Linear(currentR, targetR, 0.08);
+
+        this.ambientGlow.setRadius(nextR);
+
+        // 바닥에 걸친 반원 느낌 유지(중심을 화면 아래 경계에 고정)
+        this.ambientGlow.setPosition(this.centerX, this.scale.height);
+      }
   }
 
   updateIngotVisuals(stage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL') {
@@ -467,7 +657,10 @@ class SmithingScene extends Phaser.Scene {
             // START THE GAME
             this.isPlaying = true;
             this.infoText.setVisible(false);
+            
+            // Generate the first ring immediately upon starting
             this.resetRing();
+            
             this.cameras.main.flash(200, 255, 255, 255);
         } else {
             // Not ready (too cold)
@@ -536,12 +729,14 @@ class SmithingScene extends Phaser.Scene {
       this.triggerMiss();
     }
     
-    this.resetRing();
-
+    // Update score logic
     this.progressBar.width = Phaser.Math.Clamp(this.score / this.targetScore * 300, 0, 300);
 
     if (this.score >= this.targetScore) {
       this.winGame();
+      // Do NOT resetRing here. We are done.
+    } else {
+      this.resetRing();
     }
   }
 
@@ -566,9 +761,6 @@ class SmithingScene extends Phaser.Scene {
     this.createSparks(30, 0xffaa00, 1.5, 'spark_perfect');
     
     let text = 'PERFECT!';
-    if (mult > 1) text += ' (MAX HEAT)';
-    else if (mult < 1) text += ' (WEAK)';
-    
     this.showFeedback(text, 0xffb300, 1.5);
   }
 
@@ -597,7 +789,7 @@ class SmithingScene extends Phaser.Scene {
         this.ensureTexture(texture + '_fallback', (g) => {
             g.fillStyle(0xffffff, 1);
             g.fillCircle(4,4,4);
-        });
+        }, 8, 8); // Explicitly pass 8x8 for fallback sparks
         texture = texture + '_fallback';
     }
 
@@ -641,6 +833,11 @@ class SmithingScene extends Phaser.Scene {
 
   winGame() {
     this.isFinished = true;
+    this.isPlaying = false; // Stop update loop logic
+    
+    // Clear any active rings immediately to prevent ghost visuals
+    if (this.targetRing) this.targetRing.clear();
+    if (this.approachRing) this.approachRing.clear();
     
     // Save state before finishing visual
     if (this.onStatusUpdate) {
@@ -744,7 +941,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
              actions.updateForgeStatus(scene.getTemperature());
           }
       }
-      onClose();
+      onClose(); // Call prop which handles Refund logic if not complete
   };
 
   return (
@@ -783,6 +980,9 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
                     <span className="text-[10px] font-bold text-stone-300 uppercase">Add Heat</span>
                     <span className="text-xs text-stone-500 font-mono">x{charcoalCount}</span>
                 </button>
+                <div className="text-[10px] text-stone-500 text-center mt-2 bg-stone-900/80 px-2 py-1 rounded">
+                    Use bellows (on right) to sustain heat
+                </div>
             </div>
         </div>
         
