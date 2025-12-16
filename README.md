@@ -1,7 +1,7 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.26
+> **Version**: 0.1.27
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries. The project combines a React-based UI management system with Phaser 3 minigames for immersive crafting mechanics.
@@ -15,16 +15,12 @@
 *   **Icons**: Lucide React
 *   **State Management**: React Context API (`GameContext`)
 
-## 🔄 Recent Updates (v0.1.26)
+## 🔄 Recent Updates (v0.1.27)
 
-*   **UI / UX Improvements**:
-    *   **Tavern Interface**: Improved readability by stacking HP/MP bars and grouping wage information closer to stats.
-    *   **Confirmation Modals**: Replaced native browser alerts with custom `ConfirmationModal` for dangerous actions (e.g., firing a mercenary).
-    *   **Header Redesign**: Unified the Journal button and Log Ticker into a single interactive element. The ticker now expands to fill available space.
-*   **System Menu**:
-    *   Added a **Settings/System Menu** (accessible via the Gear icon in the header).
-    *   Moved the "Return to Title" (Quit) function to the Settings menu to declutter the main tab bar.
-    *   Added placeholders for future Save/Load and Audio settings.
+*   **Cinematic Intro Overhaul**:
+    *   **Extended Narrative**: Expanded the opening sequence with a 3-act narrative structure, deepening the lore regarding "Fiasco" and the motivation for vengeance.
+    *   **Enhanced Visuals**: Implemented prolonged camera shake effects ("Earthquake") during the studio logo sequence for greater impact.
+    *   **Pacing Adjustments**: Refined fade-in/out timings and background transitions to create a more dramatic and immersive storytelling experience.
 
 ## 🌟 Key Features
 
@@ -80,6 +76,8 @@
 │   ├── mercenaries.ts  # Named NPC presets
 │   └── ...
 ├── game/               # Phaser Scene Logic
+│   ├── IntroScene.ts   # Cinematic intro & narrative
+│   ├── MainForgeScene.ts
 │   └── SmithingScene.ts # Logic for the minigame
 ├── models/             # TypeScript Interfaces & Models
 │   ├── Equipment.ts
