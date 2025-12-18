@@ -35,7 +35,8 @@ export const createInitialGameState = (): GameState => ({
         ...m,
         expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, // Ensure initials have energy
         currentXp: 0,
-        xpToNextLevel: m.level * 100
+        xpToNextLevel: m.level * 100,
+        status: 'VISITOR' // Default status
     })),
 
     // Shop State

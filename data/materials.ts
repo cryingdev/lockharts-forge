@@ -74,7 +74,13 @@ export const MATERIALS = {
         description: 'Warm to the touch. Glows faintly.', baseValue: 1500
     },
 
-    // --- 6. TOOLS & OTHERS ---
+    // --- 6. CONSUMABLES ---
+    ENERGY_POTION: {
+        id: 'energy_potion', name: 'Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1,
+        description: 'Restores 25 Energy.', baseValue: 50 
+    },
+
+    // --- 7. TOOLS & OTHERS ---
     HAMMER: { id: 'hammer', name: 'Blacksmith Hammer', type: 'TOOL', description: 'Your trusty tool.', baseValue: 0 },
     ANVIL: { id: 'anvil', name: 'Old Anvil', type: 'TOOL', description: 'Heavy and reliable.', baseValue: 0 },
     FURNACE: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', description: 'Required for smelting.', baseValue: 500 },

@@ -2,13 +2,38 @@
 import React, { useState } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { createRandomMercenary, getUnmetNamedMercenary } from '../../../utils/mercenaryGenerator';
-import { Heart, PlusCircle, Coins, Lock, CalendarClock, XCircle } from 'lucide-react';
+import { Heart, PlusCircle, Coins, Lock, CalendarClock, XCircle, Map } from 'lucide-react';
 import { CONTRACT_CONFIG, calculateHiringCost, calculateDailyWage } from '../../../config/contract-config';
 import ConfirmationModal from '../../modals/ConfirmationModal';
+import MercenaryDetailModal from '../../modals/MercenaryDetailModal';
+import { DUNGEONS } from '../../../data/dungeons';
+import { EquipmentSlotType } from '../../../types/inventory';
+
+// Component for the Battery Icon
+const EnergyBattery = ({ value }: { value: number }) => {
+    let color = 'bg-emerald-500';
+    if (value < 20) color = 'bg-red-500 animate-pulse';
+    else if (value < 50) color = 'bg-amber-500';
+
+    return (
+        <div className="flex items-center gap-1.5" title={`Energy: ${value}%`}>
+            <span className={`text-[10px] font-bold ${value < 20 ? 'text-red-400' : 'text-stone-500'}`}>
+                {value}%
+            </span>
+            <div className="relative flex items-center">
+                <div className="w-6 h-3 border border-stone-500 rounded-[2px] p-[1px] bg-stone-900 flex justify-start">
+                    <div className={`h-full ${color} rounded-[1px] transition-all duration-500`} style={{ width: `${value}%` }}></div>
+                </div>
+                <div className="w-0.5 h-1.5 bg-stone-500 rounded-r-[1px]"></div>
+            </div>
+        </div>
+    );
+};
 
 const TavernTab = () => {
     const { state, actions } = useGame();
     const { gold } = state.stats;
+    const activeExpeditionsList = state.activeExpeditions;
 
     // Local state for confirmation modal
     const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; mercId: string | null; mercName: string }>({
@@ -16,6 +41,9 @@ const TavernTab = () => {
         mercId: null,
         mercName: ''
     });
+
+    // Local state for detail modal
+    const [selectedMercId, setSelectedMercId] = useState<string | null>(null);
 
     const handleScout = () => {
         let newMerc = getUnmetNamedMercenary(state.knownMercenaries);
@@ -51,25 +79,26 @@ const TavernTab = () => {
         setConfirmModal({ isOpen: false, mercId: null, mercName: '' });
     };
 
-    // Component for the Battery Icon
-    const EnergyBattery = ({ value }: { value: number }) => {
-        let color = 'bg-emerald-500';
-        if (value < 20) color = 'bg-red-500 animate-pulse';
-        else if (value < 50) color = 'bg-amber-500';
+    const handleOpenDetail = (mercId: string) => {
+        setSelectedMercId(mercId);
+    };
 
-        return (
-            <div className="flex items-center gap-1.5" title={`Energy: ${value}%`}>
-                <span className={`text-[10px] font-bold ${value < 20 ? 'text-red-400' : 'text-stone-500'}`}>
-                    {value}%
-                </span>
-                <div className="relative flex items-center">
-                    <div className="w-6 h-3 border border-stone-500 rounded-[2px] p-[1px] bg-stone-900 flex justify-start">
-                        <div className={`h-full ${color} rounded-[1px] transition-all duration-500`} style={{ width: `${value}%` }}></div>
-                    </div>
-                    <div className="w-0.5 h-1.5 bg-stone-500 rounded-r-[1px]"></div>
-                </div>
-            </div>
-        );
+    const handleCloseDetail = () => {
+        setSelectedMercId(null);
+    };
+
+    const handleUnequipFromDetail = (mercId: string, slot: EquipmentSlotType) => {
+        actions.unequipItem(mercId, slot);
+    };
+
+    const selectedMercenary = state.knownMercenaries.find(m => m.id === selectedMercId) || null;
+
+    const getExpeditionName = (expId?: string) => {
+        if (!expId) return "Unknown";
+        const exp = activeExpeditionsList.find(e => e.id === expId);
+        if (!exp) return "Unknown";
+        const dungeon = DUNGEONS.find(d => d.id === exp.dungeonId);
+        return dungeon ? dungeon.name : "Unknown Location";
     };
 
     return (
@@ -94,27 +123,44 @@ const TavernTab = () => {
                     const dailyWage = calculateDailyWage(merc.level, merc.job);
                     const canAfford = gold >= hiringCost;
                     const hasAffinity = merc.affinity >= CONTRACT_CONFIG.HIRE_AFFINITY_THRESHOLD;
-                    const isHired = merc.isHired;
+                    const isHired = merc.status === 'HIRED' || merc.status === 'ON_EXPEDITION' || merc.status === 'INJURED';
                     const energy = merc.expeditionEnergy || 0;
+                    
+                    // Status Checks
+                    const isOnExpedition = merc.status === 'ON_EXPEDITION';
+                    const expeditionName = isOnExpedition ? getExpeditionName(merc.assignedExpeditionId) : "";
                     
                     // XP Calculation
                     const xpPercent = Math.min(100, (merc.currentXp / merc.xpToNextLevel) * 100);
 
                     return (
-                        <div key={merc.id} className={`bg-stone-800 border ${isHired ? 'border-amber-600/50' : 'border-stone-700'} p-3 rounded-xl flex flex-col gap-3 shadow-lg hover:border-stone-500 transition-colors relative overflow-hidden group`}>
+                        <div 
+                            key={merc.id} 
+                            onClick={() => isHired && handleOpenDetail(merc.id)} // Click card to open detail if hired
+                            className={`bg-stone-800 border ${isHired ? 'border-amber-600/50 cursor-pointer hover:border-amber-500' : 'border-stone-700'} p-3 rounded-xl flex flex-col gap-3 shadow-lg transition-all relative overflow-hidden group`}
+                        >
                             
                             {/* Top Right Status (Battery / Hired) */}
                             <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
                                 {isHired && (
                                     <div className="flex items-center gap-2 bg-stone-950/80 px-2 py-1 rounded-md border border-stone-800 backdrop-blur-sm">
-                                        <span className="text-[10px] text-amber-500 font-bold tracking-wider">HIRED</span>
+                                        {isOnExpedition ? (
+                                             <>
+                                                <Map className="w-3 h-3 text-blue-400 animate-pulse" />
+                                                <span className="text-[10px] text-blue-400 font-bold tracking-wider max-w-[80px] truncate" title={expeditionName}>
+                                                    {expeditionName}
+                                                </span>
+                                             </>
+                                        ) : (
+                                            <span className="text-[10px] text-amber-500 font-bold tracking-wider">HIRED</span>
+                                        )}
                                         <div className="w-px h-3 bg-stone-700"></div>
                                         <EnergyBattery value={energy} />
                                     </div>
                                 )}
                             </div>
 
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 pointer-events-none"> {/* Disable pointer events on content so card click works easier */}
                                 {/* Left Column: Avatar & Level & XP */}
                                 <div className="shrink-0 flex flex-col items-center gap-1.5">
                                      <div className={`w-14 h-14 bg-stone-900 rounded-full border-2 ${isHired ? 'border-amber-600' : 'border-stone-600'} flex items-center justify-center text-2xl shadow-inner`}>
@@ -177,15 +223,27 @@ const TavernTab = () => {
                                 </div>
                             </div>
 
-                            {/* Action Button Area */}
-                            <div className="mt-1">
+                            {/* Action Button Area (Interactivity restored via relative z-index) */}
+                            <div className="mt-1 relative z-20" onClick={(e) => e.stopPropagation()}>
                                 {isHired ? (
                                     <button 
-                                        onClick={(e) => initiateFire(e, merc.id, merc.name)}
-                                        className="w-full py-1.5 rounded font-bold text-xs flex items-center justify-center gap-2 transition-all bg-red-900/10 hover:bg-red-900/30 text-stone-500 hover:text-red-400 border border-stone-800 hover:border-red-800"
+                                        onClick={(e) => !isOnExpedition && initiateFire(e, merc.id, merc.name)}
+                                        disabled={isOnExpedition}
+                                        className={`w-full py-1.5 rounded font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                                            isOnExpedition
+                                            ? 'bg-stone-900 border border-stone-800 text-stone-600 cursor-not-allowed'
+                                            : 'bg-red-900/10 hover:bg-red-900/30 text-stone-500 hover:text-red-400 border border-stone-800 hover:border-red-800'
+                                        }`}
                                     >
-                                        <XCircle className="w-3.5 h-3.5" />
-                                        <span>Terminate Contract</span>
+                                        {isOnExpedition ? (
+                                            <>
+                                                <Map className="w-3.5 h-3.5" /> On Expedition
+                                            </>
+                                        ) : (
+                                            <>
+                                                <XCircle className="w-3.5 h-3.5" /> Terminate Contract
+                                            </>
+                                        )}
                                     </button>
                                 ) : (
                                     hasAffinity ? (
@@ -232,6 +290,16 @@ const TavernTab = () => {
                 onConfirm={confirmFire}
                 onCancel={cancelFire}
             />
+
+            {/* Mercenary Detail Modal */}
+            {selectedMercenary && (
+                <MercenaryDetailModal 
+                    key={selectedMercenary.id} // Ensure fresh mount for each mercenary
+                    mercenary={selectedMercenary}
+                    onClose={handleCloseDetail}
+                    onUnequip={handleUnequipFromDetail}
+                />
+            )}
         </div>
     );
 };

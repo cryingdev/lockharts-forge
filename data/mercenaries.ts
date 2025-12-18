@@ -1,12 +1,25 @@
+
 import { Mercenary } from '../models/Mercenary';
 import { JobClass } from '../models/JobClass';
 import { calculateMaxHp, calculateMaxMp } from '../models/Stats';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
+import { EquipmentSlotType } from '../types/inventory';
+import { Equipment } from '../models/Equipment';
 
 // Helper to create stats
 const stats = (s: number, v: number, d: number, i: number, l: number) => ({
   strength: s, vitality: v, dexterity: d, intelligence: i, luck: l
 });
+
+const defaultEquipment: Record<EquipmentSlotType, Equipment | null> = {
+    MAIN_HAND: null,
+    OFF_HAND: null,
+    HEAD: null,
+    BODY: null,
+    HANDS: null, // Added
+    FEET: null,
+    ACCESSORY: null
+};
 
 // --- NOVICES ---
 const pipStats = stats(4, 5, 6, 3, 15);
@@ -48,7 +61,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '🌱',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 100
+    xpToNextLevel: 100,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
   {
     id: 'tilly_footloose',
@@ -68,7 +83,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '🌾',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 200
+    xpToNextLevel: 200,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
 
   // FIGHTERS
@@ -90,7 +107,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '🛡️',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 700
+    xpToNextLevel: 700,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
   {
     id: 'brunhilde_bear',
@@ -110,7 +129,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '🐻',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 800
+    xpToNextLevel: 800,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
 
   // MAGES
@@ -132,7 +153,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '🔥',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 500
+    xpToNextLevel: 500,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
   {
     id: 'xan_void',
@@ -152,7 +175,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '🔮',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 600
+    xpToNextLevel: 600,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
 
   // ROGUES
@@ -174,7 +199,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '🗡️',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 400
+    xpToNextLevel: 400,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
   {
     id: 'nyx_shadow',
@@ -194,7 +221,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '🌑',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 600
+    xpToNextLevel: 600,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
 
   // CLERICS
@@ -216,7 +245,9 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '✨',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 600
+    xpToNextLevel: 600,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   },
   {
     id: 'father_benedict',
@@ -236,6 +267,8 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     icon: '📜',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
-    xpToNextLevel: 700
+    xpToNextLevel: 700,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
   }
 ];

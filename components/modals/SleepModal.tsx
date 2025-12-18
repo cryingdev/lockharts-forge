@@ -9,7 +9,11 @@ const SleepModal = () => {
   const { gold, incomeToday } = state.stats;
 
   const { totalWages, hiredCount } = useMemo(() => {
-      const hired = state.knownMercenaries.filter(m => m.isHired);
+      // Employees are those who are HIRED, ON_EXPEDITION, or INJURED.
+      // VISITOR and DEAD do not get paid.
+      const hired = state.knownMercenaries.filter(m => 
+        ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status)
+      );
       const wages = hired.reduce((acc, merc) => acc + calculateDailyWage(merc.level, merc.job), 0);
       return { totalWages: wages, hiredCount: hired.length };
   }, [state.knownMercenaries]);

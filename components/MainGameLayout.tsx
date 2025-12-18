@@ -5,14 +5,10 @@ import { InventoryDisplay } from './InventoryDisplay';
 import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 
-// Import Services
-import { useShopService } from '../services/shop/shop-service';
-import { useDungeonService } from '../services/dungeon/dungeon-service';
-
 // Import Tabs (New Structure)
 import ForgeTab from './tabs/Forge/ForgeTab';
 import ShopTab from './tabs/Shop/ShopTab';
-import TavernTab from './tabs/Tavern/TavernTab'; // Fixed Typo: Tarven -> Tavern
+import TavernTab from './tabs/Tavern/TavernTab';
 import MarketTab from './tabs/Market/MarketTab';
 import DungeonTab from './tabs/Dungeon/DungeonTab';
 
@@ -32,9 +28,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { state } = useGame();
   
-  // --- Initialize Game Services ---
-  useShopService();
-  useDungeonService();
+  // Services are now handled internally by GameContext side-effects
 
   // Calculate completed (waiting for claim) expeditions
   const completedExpeditionsCount = state.activeExpeditions.filter(
@@ -136,7 +130,6 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
 
         </div>
         
-        {/* Quit Button Removed - Moved to Settings Modal */}
       </div>
 
       {/* 3. Main Content Area */}

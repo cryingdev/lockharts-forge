@@ -9,6 +9,9 @@ export default class IntroScene extends Phaser.Scene {
   time!: Phaser.Time.Clock;
   load!: Phaser.Loader.LoaderPlugin;
   make!: Phaser.GameObjects.GameObjectCreator;
+  scale!: Phaser.Scale.ScaleManager;
+  textures!: Phaser.Textures.TextureManager;
+  game!: Phaser.Game;
 
   constructor() {
     super('IntroScene');
@@ -105,8 +108,8 @@ export default class IntroScene extends Phaser.Scene {
 
     // 5. Narrative Texts
     const narrativeText1 = this.createNarrativeText(centerX, centerY, "FIASCO,\nA MASTER OF DISASTER...", '#ef4444');
-    const narrativeText2 = this.createNarrativeText(centerX, centerY, "EVERTHING IS LOST WHAT WE LOVED...", '#ef4444');
-    const narrativeText3 = this.createNarrativeText(centerX, centerY, "BUT THE HAMMER IS STILL WHAT I HAVE.", '#ef4444');
+    const narrativeText2 = this.createNarrativeText(centerX, centerY, "EVERTHING WE LOVED IS LOST...", '#ef4444');
+    const narrativeText3 = this.createNarrativeText(centerX, centerY, "BUT THE HAMMER IS STILL HERE.", '#ef4444');
     // Text 2: The Despair (Slightly Higher)
     const textDespair = this.createNarrativeText(centerX, centerY - 40, "NEVER FORGET...", '#ef4444');
     

@@ -1,7 +1,7 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.27
+> **Version**: 0.1.28
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries. The project combines a React-based UI management system with Phaser 3 minigames for immersive crafting mechanics.
@@ -15,106 +15,33 @@
 *   **Icons**: Lucide React
 *   **State Management**: React Context API (`GameContext`)
 
-## 🔄 Recent Updates (v0.1.27)
+## 🔄 Recent Updates (v0.1.28)
 
-*   **Cinematic Intro Overhaul**:
-    *   **Extended Narrative**: Expanded the opening sequence with a 3-act narrative structure, deepening the lore regarding "Fiasco" and the motivation for vengeance.
-    *   **Enhanced Visuals**: Implemented prolonged camera shake effects ("Earthquake") during the studio logo sequence for greater impact.
-    *   **Pacing Adjustments**: Refined fade-in/out timings and background transitions to create a more dramatic and immersive storytelling experience.
+*   **Equipment UI Overhaul (Mercenary Detail)**:
+    *   **Drag & Drop Removal**: Removed complex DnD interactions in favor of a more stable click-based system.
+    *   **Inventory List View**: Replaced the item grid with a responsive list view (1 column on narrow, 2 columns on wide screens).
+    *   **Stat Preview System**: Selecting an item now shows a real-time "Diff" comparison on the mercenary's stats, highlighting increases (green) and decreases (red).
+    *   **Click-to-Equip**: Implemented a "Select then Equip" flow for better precision and intentionality.
+    *   **Smart Slot Logic**: Preview correctly handles 2-handed weapons, showing the removal of off-hand items in the stat calculation.
 
 ## 🌟 Key Features
 
 ### 1. The Forge (Crafting System)
 *   **Smithing Minigame**: A rhythm and timing-based minigame built in Phaser.
     *   **Mechanics**: Manage heat temperature, maintain fuel (Charcoal), and strike the anvil when the target ring aligns.
-    *   **Visuals**: Dynamic particle effects (sparks), heating glow, and hammer animations.
-    *   **Mastery System**: Tracks crafting counts per item. Higher mastery grants stat bonuses (Fine/Masterwork) and reduces energy costs.
-*   **Recipe System**: 
-    *   Organized by Categories (Weapons, Armor) and Subcategories (Swords, Axes, Helmets, etc.).
-    *   **Tier 1**: Copper/Bronze equipment.
-    *   **Tier 2**: Iron/Silver equipment.
-    *   **Tier 3**: Gold/Ironwood (Magical) equipment.
-    *   **Tier 4**: Mithril (Legendary) equipment.
+*   **Mastery System**: Tracks crafting counts. Higher mastery grants stat bonuses and reduces energy costs.
 
 ### 2. Economy & Management
 *   **Inventory System**: View resources, tools, and crafted equipment. Includes "Quick Sell" functionality.
-*   **Marketplace**: 
-    *   Purchase raw materials (Ores, Wood, Leather).
-    *   Buy upgrade scrolls to unlock higher equipment Tiers.
-    *   **Cart System**: Bulk purchasing logic.
-*   **The Shop (Sales)**:
-    *   Open/Close shop toggle.
-    *   **NPC Queue**: Mercenaries physically enter the shop (visualized) and form a queue.
-    *   **Haggling**: Sell items to specific customer requests or dismiss them.
+*   **The Shop (Sales)**: NPC Queue system where mercenaries visit and request specific gear.
 
 ### 3. NPC & Tavern System
-*   **Procedural Mercenaries**: NPCs are generated with:
-    *   **Jobs**: Novice, Fighter, Mage, Rogue, Cleric.
-    *   **Stats**: Strength, Vitality, Dexterity, Intelligence, Luck.
-    *   **Vitals**: HP/MP calculation based on stats.
-*   **Affinity System**: Successful trades increase affinity with specific NPCs.
-*   **Tavern**: View known mercenaries and scout for new customers.
-
-### 4. Game Loop
-*   **Energy System**: Actions (Crafting, Repairs, Opening Shop) cost Energy.
-*   **Day/Night Cycle**: Player must "Rest" to restore energy and advance the day.
-*   **Events**: Dynamic event modal system for random encounters.
+*   **Procedural Mercenaries**: NPCs with unique jobs, stats, and relationship levels.
+*   **Affinity System**: Successful trades and gifts increase affinity, unlocking hiring and better dialogues.
 
 ## 📂 Project Structure
 
-```text
-/
-├── components/         # React UI Components
-│   ├── SmithingMinigame.tsx  # Phaser integration for crafting
-│   ├── ForgeTab.tsx          # Recipe selection UI
-│   ├── ShopTab.tsx           # Sales interface
-│   └── ...
-├── context/            # Global State (GameContext)
-├── data/               # Static Game Data
-│   ├── equipment.ts    # Weapon/Armor definitions
-│   ├── materials.ts    # Resource definitions
-│   ├── mercenaries.ts  # Named NPC presets
-│   └── ...
-├── game/               # Phaser Scene Logic
-│   ├── IntroScene.ts   # Cinematic intro & narrative
-│   ├── MainForgeScene.ts
-│   └── SmithingScene.ts # Logic for the minigame
-├── models/             # TypeScript Interfaces & Models
-│   ├── Equipment.ts
-│   ├── Mercenary.ts
-│   └── ...
-├── types/              # Type Definitions
-├── utils/              # Helper functions (Assets, Generators)
-├── App.tsx             # Main Layout & Tab Navigation
-└── index.tsx           # Entry Point
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-*   Node.js (v18+ recommended)
-*   npm or yarn
-
-### Installation
-
-1.  Clone the repository.
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-
-### Running Development Server
-
-```bash
-npm run dev
-```
-Access the game at `http://localhost:5173` (default Vite port).
-
-### Building for Production
-
-```bash
-npm run build
-```
+(See PROJECT_MAP.md for detailed internal documentation)
 
 ## 📜 License
 

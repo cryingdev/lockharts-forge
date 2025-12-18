@@ -1,6 +1,9 @@
+
 import { Equipment, EquipmentStats } from '../models/Equipment';
 
-export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT' | 'SCROLL';
+export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT' | 'SCROLL' | 'CONSUMABLE';
+
+export type EquipmentSlotType = 'MAIN_HAND' | 'OFF_HAND' | 'HEAD' | 'BODY' | 'HANDS' | 'FEET' | 'ACCESSORY';
 
 export interface ItemDefinition {
   id: string;
@@ -34,4 +37,8 @@ export interface EquipmentItem {
   baseValue: number;
   requirements: { id: string; count: number }[];
   baseStats?: EquipmentStats; // Baseline stats for calculation
+  
+  // New Fields
+  slotType: EquipmentSlotType;
+  isTwoHanded?: boolean;
 }

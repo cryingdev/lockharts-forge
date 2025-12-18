@@ -15,7 +15,10 @@ const DungeonTab = () => {
     
     const selectedDungeon = DUNGEONS.find(d => d.id === selectedDungeonId) || DUNGEONS[0];
 
-    const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.isHired), [knownMercenaries]);
+    // Only mercenaries with status 'HIRED' can join new expeditions. 
+    // Those 'ON_EXPEDITION' are filtered out naturally by not being selectable or handled by busy check, 
+    // but semantically only HIRED are available.
+    const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
 
     const currentExpedition = activeExpeditions.find(e => e.dungeonId === selectedDungeon.id);
     
@@ -267,7 +270,7 @@ const DungeonTab = () => {
                                 </div>
                                 <div className="overflow-y-auto p-2 space-y-2 flex-1">
                                     {hiredMercs.length === 0 ? (
-                                        <div className="p-4 text-center text-stone-500 italic">No hired mercenaries. Visit the Tavern.</div>
+                                        <div className="p-4 text-center text-stone-500 italic">No available mercenaries.</div>
                                     ) : (
                                         hiredMercs.map(merc => {
                                             const isSelected = party.includes(merc.id);

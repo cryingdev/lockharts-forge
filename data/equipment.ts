@@ -16,6 +16,7 @@ export const EQUIPMENT_SUBCATEGORIES: EquipmentSubCategory[] = [
   // Armor
   { id: 'HELMET', name: 'Helmets', categoryId: 'ARMOR' },
   { id: 'CHESTPLATE', name: 'Chestplates', categoryId: 'ARMOR' },
+  { id: 'GLOVES', name: 'Gloves', categoryId: 'ARMOR' }, // Added
   { id: 'SHIELD', name: 'Shields', categoryId: 'ARMOR' },
   { id: 'BOOTS', name: 'Boots', categoryId: 'ARMOR' },
 ];
@@ -24,11 +25,9 @@ export const EQUIPMENT_SUBCATEGORIES: EquipmentSubCategory[] = [
 export const EQUIPMENT_ITEMS: EquipmentItem[] = [
   // =================================================================
   // TIER 1: BRONZE AGE & ROOKIE (초급)
-  // 재료: Copper, Tin, Oak, Leather, Wool
   // =================================================================
   
   // [DAGGER] Copper Dagger
-  // Cost: ~100 / Value: 200
   {
     id: 'dagger_copper_t1',
     name: 'Copper Dagger',
@@ -41,11 +40,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'copper_ore', count: 1 },
       { id: 'leather_strips', count: 1 }
     ],
-    baseStats: { physicalAttack: 6, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 6, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 
   // [SWORD] Bronze Shortsword
-  // Cost: ~230 / Value: 450
   {
     id: 'sword_bronze_t1',
     name: 'Bronze Shortsword',
@@ -59,11 +59,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'tin_ore', count: 1 },
       { id: 'oak_log', count: 1 }
     ],
-    baseStats: { physicalAttack: 14, physicalDefense: 1, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 14, physicalDefense: 1, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 
-  // [MACE] Wooden Club (Training Weapon)
-  // Cost: ~100 / Value: 180
+  // [MACE] Wooden Club
   {
     id: 'mace_wood_t1',
     name: 'Reinforced Club',
@@ -75,11 +76,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [
       { id: 'oak_log', count: 2 }
     ],
-    baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 
   // [AXE] Woodcutter's Axe
-  // Cost: ~200 / Value: 400
   {
     id: 'axe_01_t1',
     name: 'Woodcutter\'s Axe',
@@ -89,14 +91,15 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     subCategoryId: 'AXE',
     baseValue: 400,
     requirements: [
-      { id: 'copper_ore', count: 2 }, // Changed from Iron to Copper for Tier 1 consistency
+      { id: 'copper_ore', count: 2 },
       { id: 'oak_log', count: 2 }
     ],
-    baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 
-  // [STAFF] Oak Staff
-  // Cost: ~150 / Value: 300
+  // [STAFF] Apprentice Staff (Two Handed)
   {
     id: 'staff_oak_t1',
     name: 'Apprentice Staff',
@@ -107,13 +110,14 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseValue: 300,
     requirements: [
       { id: 'oak_log', count: 2 },
-      { id: 'copper_ore', count: 1 } // 도관 역할
+      { id: 'copper_ore', count: 1 }
     ],
-    baseStats: { physicalAttack: 5, physicalDefense: 0, magicalAttack: 8, magicalDefense: 2 }
+    baseStats: { physicalAttack: 5, physicalDefense: 0, magicalAttack: 8, magicalDefense: 2 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: true
   },
 
   // [CHEST] Leather Tunic
-  // Cost: ~225 / Value: 420
   {
     id: 'armor_leather_t1',
     name: 'Leather Tunic',
@@ -126,11 +130,27 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'leather_strips', count: 3 },
       { id: 'wool_cloth', count: 1 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 6, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 0, physicalDefense: 6, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'BODY'
+  },
+
+  // [GLOVES] Leather Gloves
+  {
+    id: 'gloves_leather_t1',
+    name: 'Leather Gloves',
+    tier: 1,
+    icon: '🧤',
+    description: 'Protects hands from blisters and minor cuts.',
+    subCategoryId: 'GLOVES',
+    baseValue: 250,
+    requirements: [
+      { id: 'leather_strips', count: 2 }
+    ],
+    baseStats: { physicalAttack: 0, physicalDefense: 3, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'HANDS'
   },
 
   // [SHIELD] Wooden Buckler
-  // Cost: ~150 / Value: 300
   {
     id: 'shield_wood_t1',
     name: 'Oak Buckler',
@@ -143,10 +163,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'oak_log', count: 2 },
       { id: 'leather_strips', count: 1 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 8, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 0, physicalDefense: 8, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'OFF_HAND'
   },
 
-  // [HELMET] Iron Pot Helm (Using Copper for T1)
+  // [HELMET] Copper Pot Helm
   {
     id: 'helm_01_t1',
     name: 'Copper Pot Helm',
@@ -158,16 +179,15 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [
       { id: 'copper_ore', count: 3 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'HEAD'
   },
 
   // =================================================================
   // TIER 2: IRON AGE & SOLDIER (중급)
-  // 재료: Iron, Silver, Hard Leather, Coal
   // =================================================================
 
   // [DAGGER] Iron Dirk
-  // Cost: ~260 / Value: 550
   {
     id: 'dagger_iron_t2',
     name: 'Iron Dirk',
@@ -180,11 +200,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'iron_ore', count: 2 },
       { id: 'leather_strips', count: 1 }
     ],
-    baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 
   // [SWORD] Iron Longsword
-  // Cost: ~400 / Value: 750
   {
     id: 'sword_iron_t2',
     name: 'Iron Longsword',
@@ -198,11 +219,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'oak_log', count: 1 },
       { id: 'leather_strips', count: 1 }
     ],
-    baseStats: { physicalAttack: 25, physicalDefense: 2, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 25, physicalDefense: 2, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 
   // [MACE] Flanged Mace
-  // Cost: ~350 / Value: 700
   {
     id: 'mace_iron_t2',
     name: 'Flanged Mace',
@@ -215,11 +237,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'iron_ore', count: 3 },
       { id: 'oak_log', count: 1 }
     ],
-    baseStats: { physicalAttack: 22, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 22, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 
-  // [AXE] Iron Battle Axe
-  // Cost: ~400 / Value: 800
+  // [AXE] Iron Battle Axe (Two Handed)
   {
     id: 'axe_iron_t2',
     name: 'Iron Battle Axe',
@@ -232,11 +255,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'iron_ore', count: 3 },
       { id: 'oak_log', count: 2 }
     ],
-    baseStats: { physicalAttack: 32, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 32, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: true
   },
 
-  // [STAFF] Silver Rod
-  // Cost: ~650 / Value: 1400
+  // [STAFF] Silver Rod (Two Handed)
   {
     id: 'staff_silver_t2',
     name: 'Silver Rod',
@@ -249,11 +273,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'silver_ore', count: 2 },
       { id: 'oak_log', count: 1 }
     ],
-    baseStats: { physicalAttack: 8, physicalDefense: 0, magicalAttack: 20, magicalDefense: 5 }
+    baseStats: { physicalAttack: 8, physicalDefense: 0, magicalAttack: 20, magicalDefense: 5 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: true
   },
 
-  // [SWORD] Silver Rapier (특수: 마법 저항/공격)
-  // Cost: ~950 / Value: 1800
+  // [SWORD] Silver Rapier
   {
     id: 'sword_silver_t2',
     name: 'Silver Rapier',
@@ -266,11 +291,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'silver_ore', count: 3 },
       { id: 'oak_log', count: 1 }
     ],
-    baseStats: { physicalAttack: 18, physicalDefense: 0, magicalAttack: 15, magicalDefense: 5 }
+    baseStats: { physicalAttack: 18, physicalDefense: 0, magicalAttack: 15, magicalDefense: 5 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 
   // [CHEST] Hard Leather Armor
-  // Cost: ~475 / Value: 950
   {
     id: 'armor_hard_leather_t2',
     name: 'Reinforced Leather',
@@ -283,11 +309,28 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'hard_leather', count: 4 },
       { id: 'wool_cloth', count: 1 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 14, magicalAttack: 0, magicalDefense: 2 }
+    baseStats: { physicalAttack: 0, physicalDefense: 14, magicalAttack: 0, magicalDefense: 2 },
+    slotType: 'BODY'
+  },
+
+  // [GLOVES] Iron Gauntlets
+  {
+    id: 'gloves_iron_t2',
+    name: 'Iron Gauntlets',
+    tier: 2,
+    icon: '🥊',
+    description: 'Heavy plated gloves for bashing and blocking.',
+    subCategoryId: 'GLOVES',
+    baseValue: 700,
+    requirements: [
+      { id: 'iron_ore', count: 2 },
+      { id: 'leather_strips', count: 2 }
+    ],
+    baseStats: { physicalAttack: 2, physicalDefense: 8, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'HANDS'
   },
 
   // [SHIELD] Iron Heater Shield
-  // Cost: ~300 / Value: 650
   {
     id: 'shield_iron_t2',
     name: 'Iron Heater Shield',
@@ -301,11 +344,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'oak_log', count: 2 },
       { id: 'leather_strips', count: 1 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 18, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 0, physicalDefense: 18, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'OFF_HAND'
   },
 
   // [HELMET] Iron Great Helm
-  // Cost: ~400 / Value: 850
   {
     id: 'helm_iron_t2',
     name: 'Iron Great Helm',
@@ -317,11 +360,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [
       { id: 'iron_ore', count: 4 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 12, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 0, physicalDefense: 12, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'HEAD'
   },
 
   // [BOOTS] Plated Boots
-  // Cost: ~300 / Value: 600
   {
     id: 'boots_iron_t2',
     name: 'Iron Plated Boots',
@@ -334,16 +377,15 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'iron_ore', count: 2 },
       { id: 'leather_strips', count: 2 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'FEET'
   },
 
   // =================================================================
   // TIER 3: VETERAN & MAGICAL (고급)
-  // 재료: Gold, Ironwood, Fire Essence, Mithril(Rare)
   // =================================================================
 
-  // [AXE] Gilded War Axe (장식용 + 전투용)
-  // Cost: ~1350 / Value: 3000
+  // [AXE] Gilded War Axe (Two Handed)
   {
     id: 'axe_gold_t3',
     name: 'Gilded War Axe',
@@ -357,11 +399,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'iron_ore', count: 2 },
       { id: 'ironwood_log', count: 1 }
     ],
-    baseStats: { physicalAttack: 38, physicalDefense: 0, magicalAttack: 5, magicalDefense: 0 }
+    baseStats: { physicalAttack: 38, physicalDefense: 0, magicalAttack: 5, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: true
   },
 
-  // [MACE] Ironwood Maul (재료 특성 활용: 매우 단단한 나무)
-  // Cost: ~450 (Ironwood) + ~200 (Iron) = 650 / Value: 1400
+  // [MACE] Ironwood Maul (Two Handed)
   {
     id: 'mace_ironwood_t3',
     name: 'Ironwood Maul',
@@ -374,11 +417,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
       { id: 'ironwood_log', count: 3 },
       { id: 'iron_ore', count: 2 }
     ],
-    baseStats: { physicalAttack: 45, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 }
+    baseStats: { physicalAttack: 45, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: true
   },
 
-  // [STAFF] Staff of Fire (속성 무기)
-  // Cost: ~1500(Essence) + ~150(Ironwood) = 1650 / Value: 3500
+  // [STAFF] Staff of Fire (Two Handed)
   {
     id: 'staff_fire_t3',
     name: 'Ignis Staff',
@@ -390,18 +434,36 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [
       { id: 'ironwood_log', count: 1 },
       { id: 'fire_essence', count: 1 },
-      { id: 'gold_ore', count: 1 } // 전도체
+      { id: 'gold_ore', count: 1 }
     ],
-    baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 40, magicalDefense: 10 }
+    baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 40, magicalDefense: 10 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: true
+  },
+
+  // [GLOVES] Spellweave Gloves
+  {
+    id: 'gloves_spell_t3',
+    name: 'Spellweave Gloves',
+    tier: 3,
+    icon: '🧤',
+    description: 'Enchanted fabric that guides mana flow.',
+    subCategoryId: 'GLOVES',
+    baseValue: 2000,
+    requirements: [
+      { id: 'wool_cloth', count: 3 },
+      { id: 'gold_ore', count: 1 },
+      { id: 'fire_essence', count: 1 }
+    ],
+    baseStats: { physicalAttack: 0, physicalDefense: 4, magicalAttack: 15, magicalDefense: 10 },
+    slotType: 'HANDS'
   },
 
   // =================================================================
   // TIER 4: LEGENDARY (전설)
-  // 재료: Mithril, Dragon Parts, etc.
   // =================================================================
 
   // [CHEST] Mithril Mail
-  // Cost: ~3000 (Mithril*3) + ... / Value: 7000
   {
     id: 'armor_mithril_t4',
     name: 'Mithril Chainmail',
@@ -412,13 +474,13 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseValue: 7000,
     requirements: [
       { id: 'mithril_ore', count: 3 },
-      { id: 'wool_cloth', count: 2 } // 안감
+      { id: 'wool_cloth', count: 2 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 40, magicalAttack: 0, magicalDefense: 15 }
+    baseStats: { physicalAttack: 0, physicalDefense: 40, magicalAttack: 0, magicalDefense: 15 },
+    slotType: 'BODY'
   },
   
   // [SWORD] Mithril Blade
-  // Cost: ~3000 / Value: 7500
   {
     id: 'sword_mithril_t4',
     name: 'Elven Mithril Blade',
@@ -429,8 +491,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseValue: 7500,
     requirements: [
       { id: 'mithril_ore', count: 3 },
-      { id: 'gold_ore', count: 1 } // 장식
+      { id: 'gold_ore', count: 1 }
     ],
-    baseStats: { physicalAttack: 55, physicalDefense: 5, magicalAttack: 10, magicalDefense: 5 }
+    baseStats: { physicalAttack: 55, physicalDefense: 5, magicalAttack: 10, magicalDefense: 5 },
+    slotType: 'MAIN_HAND',
+    isTwoHanded: false
   },
 ];

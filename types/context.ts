@@ -1,6 +1,6 @@
 
 import { GameState } from './game-state';
-import { EquipmentItem } from './inventory';
+import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
 
@@ -17,6 +17,7 @@ export interface GameContextType {
     startCrafting: (item: EquipmentItem) => void; // Deducts resources
     cancelCrafting: (item: EquipmentItem) => void; // Refunds resources
     finishCrafting: (item: EquipmentItem, quality: number) => void; // Generates Item
+    craftItem: (item: EquipmentItem, quality: number) => void; 
     
     buyItems: (items: { id: string; count: number }[], totalCost: number) => void;
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => void;
@@ -43,5 +44,12 @@ export interface GameContextType {
     completeExpedition: (expeditionId: string) => void; // Transition ACTIVE -> COMPLETED
     claimExpedition: (expeditionId: string) => void;
     dismissDungeonResult: () => void; // Close modal
+
+    // Equipment Actions
+    equipItem: (mercenaryId: string, inventoryItemId: string) => void;
+    unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => void;
+
+    // Item Actions
+    useItem: (itemId: string) => void;
   };
 }

@@ -202,7 +202,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                   marketItem.id === 'tin_ore' ? '⚪' : 
                                   marketItem.id === 'oak_log' ? '🪵' : 
                                   marketItem.id.startsWith('scroll') ? '📜' : 
-                                  marketItem.id === 'furnace' ? '🔥' : '📦'}
+                                  marketItem.id === 'furnace' ? '🔥' : 
+                                  marketItem.id === 'energy_potion' ? '🧪' : '📦'}
                              </div>
                         </div>
                         

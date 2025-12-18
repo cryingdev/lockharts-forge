@@ -5,6 +5,8 @@ import { JobClass, JOB_STAT_WEIGHTS } from '../models/JobClass';
 import { calculateMaxHp, calculateMaxMp, BaseStats } from '../models/Stats';
 import { generateFullName } from './nameGenerator';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
+import { EquipmentSlotType } from '../types/inventory';
+import { Equipment } from '../models/Equipment';
 
 const generateRandomStats = (job: JobClass, level: number): BaseStats => {
     const weights = JOB_STAT_WEIGHTS[job];
@@ -32,13 +34,60 @@ const generateRandomStats = (job: JobClass, level: number): BaseStats => {
     return stats;
 };
 
+// Legacy getter, kept for reference but logic moved to calculateLevelDataFromTotalXp
 const getXpRequirement = (level: number) => level * 100;
+
+const defaultEquipment: Record<EquipmentSlotType, Equipment | null> = {
+    MAIN_HAND: null,
+    OFF_HAND: null,
+    HEAD: null,
+    BODY: null,
+    HANDS: null,
+    FEET: null,
+    ACCESSORY: null
+};
+
+/**
+ * Calculates level, currentXp, and xpToNextLevel based on a Total Accumulated XP amount.
+ * Curve matches the game logic: Level N requires (N * 100) XP to reach N+1.
+ * 
+ * Lvl 1 -> 2: 100 XP (Accum: 100)
+ * Lvl 2 -> 3: 200 XP (Accum: 300)
+ * Lvl 3 -> 4: 300 XP (Accum: 600)
+ */
+const calculateLevelDataFromTotalXp = (totalXp: number) => {
+    let level = 1;
+    let xpToNext = 100; // Requirement for Lvl 1 -> 2
+    let remainingXp = totalXp;
+
+    while (remainingXp >= xpToNext) {
+        remainingXp -= xpToNext;
+        level++;
+        xpToNext = level * 100;
+    }
+
+    return {
+        level,
+        currentXp: remainingXp,
+        xpToNextLevel: xpToNext
+    };
+};
 
 // Exported for debug/manual creation
 export const createRandomMercenary = (currentDay: number): Mercenary => {
     const jobKeys = Object.values(JobClass);
     const job = jobKeys[Math.floor(Math.random() * jobKeys.length)];
-    const level = Math.floor(Math.random() * 5) + 1; // Level 1-5
+    
+    // GENERATION CHANGE:
+    // Instead of picking a random level (1-5), we pick random Total XP.
+    // Range: 0 to 2000 XP (Roughly Level 1 to Level 6)
+    // Weighted slightly towards lower values for realism
+    const randomFactor = Math.random(); 
+    // Uses a power curve to make lower levels more common than high levels
+    const totalXp = Math.floor(Math.pow(randomFactor, 2) * 2500); 
+
+    const { level, currentXp, xpToNextLevel } = calculateLevelDataFromTotalXp(totalXp);
+
     const stats = generateRandomStats(job, level);
     const maxHp = calculateMaxHp(stats, level);
     const maxMp = calculateMaxMp(stats, level);
@@ -63,8 +112,10 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
         lastVisitDay: currentDay,
         icon: '👤',
         expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
-        currentXp: 0,
-        xpToNextLevel: getXpRequirement(level)
+        currentXp: currentXp,
+        xpToNextLevel: xpToNextLevel,
+        status: 'VISITOR',
+        equipment: { ...defaultEquipment }
     };
 };
 
@@ -80,7 +131,9 @@ export const getUnmetNamedMercenary = (knownMercenaries: Mercenary[]): Mercenary
             ...merc,
             expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
             currentXp: 0,
-            xpToNextLevel: getXpRequirement(merc.level)
+            xpToNextLevel: getXpRequirement(merc.level),
+            status: 'VISITOR',
+            equipment: { ...defaultEquipment }
         };
     }
     return null;
@@ -106,7 +159,8 @@ export const generateMercenary = (knownMercenaries: Mercenary[], currentDay: num
                 // Ensure existing mercs get energy if they somehow don't have it (migration safety)
                 expeditionEnergy: regular.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
                 currentXp: regular.currentXp ?? 0,
-                xpToNextLevel: regular.xpToNextLevel ?? getXpRequirement(regular.level)
+                xpToNextLevel: regular.xpToNextLevel ?? getXpRequirement(regular.level),
+                equipment: regular.equipment || { ...defaultEquipment }
             }; 
         }
     }

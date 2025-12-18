@@ -3,6 +3,9 @@ export const MARKET_CATALOG = [
   // --- KEY ITEMS ---
   { id: 'furnace', price: 500 },
 
+  // --- CONSUMABLES ---
+  { id: 'energy_potion', price: 100 },
+
   // --- TIER 1 MATERIALS ---
   { id: 'charcoal', price: 25 },
   { id: 'copper_ore', price: 80 },

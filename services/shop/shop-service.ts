@@ -3,13 +3,14 @@ import { useEffect, useRef } from 'react';
 import { useGame } from '../../context/GameContext';
 import { generateShopRequest } from '../../utils/shopUtils';
 import { calculateMaxHp, calculateMaxMp } from '../../models/Stats';
+import { SHOP_CONFIG } from '../../config/shop-config';
 
 /**
  * useShopService
  * Handles the background logic for the shop:
- * 1. Generating customers at random intervals (5s - 30s).
+ * 1. Generating customers at random intervals (Configurable).
  * 2. Managing the queue.
- * 3. Handling customer patience timeouts (30s).
+ * 3. Handling customer patience timeouts.
  */
 export const useShopService = () => {
     const { state, actions } = useGame();
@@ -27,13 +28,17 @@ export const useShopService = () => {
         }
 
         const scheduleNextArrival = () => {
-            // Random interval between 5s (5000ms) and 30s (30000ms)
-            const interval = Math.random() * 30000 + 5000;
+            const interval = Math.random() * SHOP_CONFIG.ARRIVAL.VARIANCE_MS + SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS;
             
             arrivalTimerRef.current = setTimeout(() => {
                 // STRICT MODE: Only allow mercenaries from the 'knownMercenaries' list (Tavern list).
-                // Filter out anyone who has already visited today.
-                const validCandidates = state.knownMercenaries.filter(m => !visitorsToday.includes(m.id));
+                // Filter out:
+                // 1. Anyone who has already visited today.
+                // 2. Anyone currently busy (ON_EXPEDITION), injured, or dead.
+                const validCandidates = state.knownMercenaries.filter(m => 
+                    !visitorsToday.includes(m.id) && 
+                    !['ON_EXPEDITION', 'INJURED', 'DEAD'].includes(m.status)
+                );
 
                 if (validCandidates.length === 0) {
                     // Everyone has visited today. No one comes.
@@ -77,10 +82,9 @@ export const useShopService = () => {
 
         // If counter is empty and queue has people, call next
         if (!activeCustomer && shopQueue.length > 0) {
-            // Small delay for natural feel
             const t = setTimeout(() => {
                 actions.nextCustomer();
-            }, 1000);
+            }, SHOP_CONFIG.QUEUE_PROCESS_DELAY_MS);
             return () => clearTimeout(t);
         }
     }, [isShopOpen, activeCustomer, shopQueue, actions]);
@@ -92,10 +96,10 @@ export const useShopService = () => {
             return;
         }
 
-        // Customer waits 30 seconds then leaves
+        // Customer waits then leaves
         patienceTimerRef.current = setTimeout(() => {
             actions.dismissCustomer();
-        }, 30000);
+        }, SHOP_CONFIG.PATIENCE_MS);
 
         return () => {
             if (patienceTimerRef.current) clearTimeout(patienceTimerRef.current);
