@@ -3,20 +3,20 @@ import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
+import { PrimaryStats } from '../models/Stats';
 
 export interface GameContextType {
   state: GameState;
   actions: {
-    repairItem: () => void; // Placeholder for Cold Forging
-    rest: () => void; // Trigger Sleep Modal (Manual)
-    confirmSleep: () => void; // Actually proceed to next day (From Modal)
+    repairItem: () => void;
+    rest: () => void;
+    confirmSleep: () => void;
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
     
-    // Crafting Lifecycle
-    startCrafting: (item: EquipmentItem) => void; // Deducts resources
-    cancelCrafting: (item: EquipmentItem) => void; // Refunds resources
-    finishCrafting: (item: EquipmentItem, quality: number) => void; // Generates Item
+    startCrafting: (item: EquipmentItem) => void;
+    cancelCrafting: (item: EquipmentItem) => void;
+    finishCrafting: (item: EquipmentItem, quality: number) => void;
     craftItem: (item: EquipmentItem, quality: number) => void; 
     
     buyItems: (items: { id: string; count: number }[], totalCost: number) => void;
@@ -25,31 +25,26 @@ export interface GameContextType {
     addMercenary: (merc: Mercenary) => void;
     consumeItem: (id: string, count: number) => void;
     
-    // Shop Specific Actions
     enqueueCustomer: (customer: ShopCustomer) => void;
     nextCustomer: () => void;
     dismissCustomer: () => void;
 
-    // Logic Control
     setCrafting: (isCrafting: boolean) => void;
-    updateForgeStatus: (temp: number) => void; // Save residual heat
-    toggleJournal: () => void; // Open/Close Journal
+    updateForgeStatus: (temp: number) => void;
+    toggleJournal: () => void;
 
-    // Contracts
     hireMercenary: (mercenaryId: string, cost: number) => void;
     fireMercenary: (mercenaryId: string) => void;
 
-    // Dungeon Actions
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
-    completeExpedition: (expeditionId: string) => void; // Transition ACTIVE -> COMPLETED
+    completeExpedition: (expeditionId: string) => void;
     claimExpedition: (expeditionId: string) => void;
-    dismissDungeonResult: () => void; // Close modal
+    dismissDungeonResult: () => void;
 
-    // Equipment Actions
     equipItem: (mercenaryId: string, inventoryItemId: string) => void;
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => void;
 
-    // Item Actions
     useItem: (itemId: string) => void;
+    allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => void;
   };
 }

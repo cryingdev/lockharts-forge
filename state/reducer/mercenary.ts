@@ -2,10 +2,10 @@
 import { GameState } from '../../types/index';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
+import { PrimaryStats, mergePrimaryStats, calculateMaxHp, calculateMaxMp } from '../../models/Stats';
 
 export const handleAddKnownMercenary = (state: GameState, merc: Mercenary): GameState => {
     if (state.knownMercenaries.some(m => m.id === merc.id)) return state;
-    // Ensure new merc has energy and XP
     const mercWithData = { 
         ...merc, 
         expeditionEnergy: merc.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
@@ -49,5 +49,44 @@ export const handleFireMercenary = (state: GameState, payload: { mercenaryId: st
         ...state,
         knownMercenaries: updatedMercenaries,
         logs: [`Contract terminated. ${name} is no longer in your service.`, ...state.logs]
+    };
+};
+
+export const handleAllocateStat = (state: GameState, payload: { mercenaryId: string; stat: keyof PrimaryStats }): GameState => {
+    const { mercenaryId, stat } = payload;
+    const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
+    if (mercIndex === -1) return state;
+
+    const merc = state.knownMercenaries[mercIndex];
+    const totalAllocated = merc.allocatedStats.str + merc.allocatedStats.vit + merc.allocatedStats.dex + merc.allocatedStats.int + merc.allocatedStats.luk;
+    const totalPossible = (merc.level - 1) * 3;
+
+    if (totalAllocated >= totalPossible) return state;
+
+    const newAllocated = { ...merc.allocatedStats, [stat]: merc.allocatedStats[stat] + 1 };
+    const merged = mergePrimaryStats(merc.stats, newAllocated);
+    
+    // Vitals update
+    const newMaxHp = calculateMaxHp(merged, merc.level);
+    const newMaxMp = calculateMaxMp(merged, merc.level);
+    // Heal proportional to hp increase
+    const hpGain = newMaxHp - merc.maxHp;
+    const mpGain = newMaxMp - merc.maxMp;
+
+    const updatedMerc: Mercenary = {
+        ...merc,
+        allocatedStats: newAllocated,
+        maxHp: newMaxHp,
+        currentHp: merc.currentHp + (hpGain > 0 ? hpGain : 0),
+        maxMp: newMaxMp,
+        currentMp: merc.currentMp + (mpGain > 0 ? mpGain : 0)
+    };
+
+    const newKnownMercenaries = [...state.knownMercenaries];
+    newKnownMercenaries[mercIndex] = updatedMerc;
+
+    return {
+        ...state,
+        knownMercenaries: newKnownMercenaries
     };
 };

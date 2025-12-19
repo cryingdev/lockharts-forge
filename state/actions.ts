@@ -3,6 +3,7 @@ import { GameEvent } from '../types/events';
 import { EquipmentItem, EquipmentSlotType } from '../types/inventory';
 import { ShopCustomer } from '../types/shop';
 import { Mercenary } from '../models/Mercenary';
+import { PrimaryStats } from '../models/Stats';
 
 export type GameAction =
   | { type: 'REPAIR_WORK' }
@@ -32,8 +33,7 @@ export type GameAction =
   | { type: 'COMPLETE_EXPEDITION'; payload: { expeditionId: string } }
   | { type: 'CLAIM_EXPEDITION'; payload: { expeditionId: string } }
   | { type: 'DISMISS_DUNGEON_RESULT' }
-  // Equipment Actions
   | { type: 'EQUIP_ITEM'; payload: { mercenaryId: string; inventoryItemId: string } }
   | { type: 'UNEQUIP_ITEM'; payload: { mercenaryId: string; slot: EquipmentSlotType } }
-  // Item Usage
-  | { type: 'USE_ITEM'; payload: { itemId: string } };
+  | { type: 'USE_ITEM'; payload: { itemId: string } }
+  | { type: 'ALLOCATE_STAT'; payload: { mercenaryId: string; stat: keyof PrimaryStats } };

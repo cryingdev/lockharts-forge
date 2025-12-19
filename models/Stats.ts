@@ -1,59 +1,116 @@
 
 import { EquipmentStats } from './Equipment';
+import { DERIVED_CONFIG } from '../config/derived-stats-config';
 
-export interface BaseStats {
-  strength: number;    // Influences Physical Attack & HP
-  vitality: number;    // Influences Max HP & Defense
-  dexterity: number;   // Influences Crit & Accuracy
-  intelligence: number;// Influences Magic Attack & MP
-  luck: number;        // Influences Loot & Crit
+export interface PrimaryStats {
+  str: number;    // Strength
+  vit: number;    // Vitality
+  dex: number;    // Dexterity
+  int: number;    // Intelligence
+  luk: number;    // Luck
 }
 
 export interface DerivedStats {
   maxHp: number;
   maxMp: number;
+
   physicalAttack: number;
   physicalDefense: number;
+  physicalReduction: number; // 0 to 1
   magicalAttack: number;
   magicalDefense: number;
-  // New Stats
-  critRate: number;      // Percentage (0-100)
-  dropRateBonus: number; // Percentage increase (e.g. 10 = +10% drop rate)
+  magicalReduction: number;  // 0 to 1
+
+  critChance: number;     // %
+  critDamage: number;     // % (e.g. 150 = 1.5x)
+  accuracy: number;       // Accuracy value
+  evasion: number;        // Evasion value
+  speed: number;          // Action order/Turn gauge
 }
 
-const round = (n: number) => Math.round(n * 10) / 10; // Round to 1 decimal
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+/**
+ * Merges base character stats, level-up allocated stats, and optional temporary bonuses.
+ */
+export const mergePrimaryStats = (
+  base: PrimaryStats,
+  allocated: PrimaryStats,
+  bonus?: Partial<PrimaryStats>
+): PrimaryStats => ({
+  str: base.str + allocated.str + (bonus?.str ?? 0),
+  vit: base.vit + allocated.vit + (bonus?.vit ?? 0),
+  dex: base.dex + allocated.dex + (bonus?.dex ?? 0),
+  int: base.int + allocated.int + (bonus?.int ?? 0),
+  luk: base.luk + allocated.luk + (bonus?.luk ?? 0),
+});
 
 /**
  * Calculates detailed combat stats based on attributes and level.
  */
-export const calculateDerivedStats = (base: BaseStats, level: number): DerivedStats => {
-  const { strength: STR, vitality: VIT, dexterity: DEX, intelligence: INT, luck: LUK } = base;
+export const calculateDerivedStats = (primary: PrimaryStats, level: number): DerivedStats => {
+  const c = DERIVED_CONFIG;
 
-  const maxHp = Math.round(50 + (VIT * 12) + (level * 8));
-  const maxMp = Math.round(20 + (INT * 10) + (level * 5));
+  const maxHp = Math.round(c.HP_BASE + level * c.HP_PER_LEVEL + primary.vit * c.HP_PER_VIT);
+  const maxMp = Math.round(c.MP_BASE + level * c.MP_PER_LEVEL + primary.int * c.MP_PER_INT);
 
-  const physicalAttack = Math.round(5 + (STR * 2.5) + (DEX * 1.0) + (level * 1.0));
-  const physicalDefense = Math.round(3 + (VIT * 2.0) + (STR * 0.8) + (level * 0.8));
+  // Updated Physical Attack to include linear DEX contribution
+  const physicalAttack = Math.round(
+    level * c.ATK_PER_LEVEL + 
+    primary.str * c.ATK_PER_STR + 
+    primary.dex * c.ATK_PER_DEX
+  );
 
-  const magicalAttack = Math.round(5 + (INT * 2.8) + (level * 1.0) + (LUK * 0.3));
-  const magicalDefense = Math.round(3 + (INT * 1.4) + (VIT * 1.2) + (level * 0.8));
+  const physicalDefense = Math.round(level * c.DEF_PER_LEVEL + primary.vit * c.DEF_PER_VIT);
 
-  // --- New Logic for Luck & Crit ---
-  // Crit Rate: Base 1% + (DEX * 0.2) + (LUK * 0.3)
-  const critRate = round(1 + (DEX * 0.2) + (LUK * 0.3));
-  
-  // Drop Rate Bonus: (LUK * 0.5)%
-  const dropRateBonus = round(LUK * 0.5);
+  const magicalAttack = Math.round(level * c.MATK_PER_LEVEL + primary.int * c.MATK_PER_INT);
+  const magicalDefense = Math.round(
+    level * c.MDEF_PER_LEVEL + primary.int * c.MDEF_PER_INT + primary.vit * c.MDEF_PER_VIT
+  );
+
+  const physicalReduction = physicalDefense / (physicalDefense + c.DEF_REDUCTION_CONSTANT);
+  const magicalReduction = magicalDefense / (magicalDefense + c.DEF_REDUCTION_CONSTANT);
+
+  const critChance = clamp(
+    c.CRIT_BASE + primary.luk * c.CRIT_PER_LUK + primary.dex * c.CRIT_PER_DEX,
+    0,
+    c.CRIT_CAP
+  );
+
+  const critDamage = clamp(
+    c.CRITDMG_BASE + primary.luk * c.CRITDMG_PER_LUK,
+    c.CRITDMG_BASE,
+    c.CRITDMG_CAP
+  );
+
+  // Accuracy and Speed reverted to linear scaling
+  const accuracy = Math.round(
+    c.ACC_BASE + 
+    (primary.dex * c.ACC_PER_DEX) + 
+    (primary.luk * c.ACC_PER_LUK)
+  );
+
+  const speed = Math.round(
+    c.SPD_BASE + 
+    (primary.dex * c.SPD_PER_DEX)
+  );
+
+  const evasion = Math.round(c.EVA_BASE + primary.dex * c.EVA_PER_DEX + primary.luk * c.EVA_PER_LUK);
 
   return {
     maxHp,
     maxMp,
     physicalAttack,
     physicalDefense,
+    physicalReduction,
     magicalAttack,
     magicalDefense,
-    critRate,
-    dropRateBonus
+    magicalReduction,
+    critChance: Math.round(critChance * 100) / 100,
+    critDamage: Math.round(critDamage * 100) / 100,
+    accuracy,
+    evasion,
+    speed,
   };
 };
 
@@ -64,6 +121,7 @@ export const applyEquipmentBonuses = (
   base: DerivedStats,
   equipmentStatsList: Array<EquipmentStats | undefined | null>
 ): DerivedStats => {
+  const c = DERIVED_CONFIG;
   const bonus = equipmentStatsList.reduce(
     (acc, s) => {
       if (!s) return acc;
@@ -76,30 +134,33 @@ export const applyEquipmentBonuses = (
     { physicalAttack: 0, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 }
   );
 
+  const finalPhysDef = base.physicalDefense + bonus.physicalDefense;
+  const finalMagDef = base.magicalDefense + bonus.magicalDefense;
+
   return {
     ...base,
     physicalAttack: base.physicalAttack + bonus.physicalAttack,
-    physicalDefense: base.physicalDefense + bonus.physicalDefense,
+    physicalDefense: finalPhysDef,
+    physicalReduction: finalPhysDef / (finalPhysDef + c.DEF_REDUCTION_CONSTANT),
     magicalAttack: base.magicalAttack + bonus.magicalAttack,
-    magicalDefense: base.magicalDefense + bonus.magicalDefense,
-    // Equipment currently doesn't add flat Crit/Drop, so pass base through
-    // Future update: Add bonus.critRate if added to EquipmentStats
-    critRate: base.critRate, 
-    dropRateBonus: base.dropRateBonus
+    magicalDefense: finalMagDef,
+    magicalReduction: finalMagDef / (finalMagDef + c.DEF_REDUCTION_CONSTANT),
+    critChance: base.critChance,
+    critDamage: base.critDamage,
+    accuracy: base.accuracy,
+    evasion: base.evasion,
+    speed: base.speed
   };
 };
 
-// --- Backward Compatibility Wrappers ---
-
-export const calculateMaxHp = (stats: BaseStats, level: number): number => {
+export const calculateMaxHp = (stats: PrimaryStats, level: number): number => {
   return calculateDerivedStats(stats, level).maxHp;
 };
 
-export const calculateMaxMp = (stats: BaseStats, level: number): number => {
+export const calculateMaxMp = (stats: PrimaryStats, level: number): number => {
   return calculateDerivedStats(stats, level).maxMp;
 };
 
-export const calculateCombatPower = (stats: BaseStats): number => {
-  // Rough estimate based on base stats sum
-  return stats.strength + stats.vitality + stats.dexterity + stats.intelligence + stats.luck;
+export const calculateCombatPower = (stats: PrimaryStats): number => {
+  return stats.str + stats.vit + stats.dex + stats.int + stats.luk;
 };

@@ -1,10 +1,11 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Mercenary } from '../../models/Mercenary';
 import { EquipmentSlotType } from '../../types/inventory';
-import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, MousePointer2, Zap, Brain, Target, Gem, User, ArrowRight, ChevronRight } from 'lucide-react';
+import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, MousePointer2, Zap, Brain, Target, Gem, User, ArrowRight, ChevronRight, Plus, Wind, FastForward, Crosshair } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
-import { calculateCombatPower, calculateDerivedStats, applyEquipmentBonuses, DerivedStats } from '../../models/Stats';
+import { calculateCombatPower, calculateDerivedStats, applyEquipmentBonuses, DerivedStats, PrimaryStats, mergePrimaryStats } from '../../models/Stats';
 import { InventoryItem } from '../../types/inventory';
 import { Equipment } from '../../models/Equipment';
 
@@ -123,9 +124,14 @@ const MercenaryPaperDoll = ({
 };
 
 const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenary: Mercenary; finalStats: DerivedStats; previewStats: DerivedStats | null }) => {
+    const { actions } = useGame();
     const xpPercent = mercenary.xpToNextLevel > 0 ? Math.min(100, Math.max(0, (mercenary.currentXp / mercenary.xpToNextLevel) * 100)) : 0;
     const hpPercent = finalStats.maxHp > 0 ? (mercenary.currentHp / finalStats.maxHp) * 100 : 0;
     const mpPercent = finalStats.maxMp > 0 ? (mercenary.currentMp / finalStats.maxMp) * 100 : 0;
+
+    const totalAllocated = mercenary.allocatedStats.str + mercenary.allocatedStats.vit + mercenary.allocatedStats.dex + mercenary.allocatedStats.int + mercenary.allocatedStats.luk;
+    const totalPoints = (mercenary.level - 1) * 3;
+    const availablePoints = totalPoints - totalAllocated;
 
     const renderStatRow = (icon: React.ReactNode, label: string, value: number | string, previewValue?: number | string, isPercent = false) => {
         let diff: number | null = null;
@@ -150,6 +156,17 @@ const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenar
         );
     };
 
+    // Fixed: replaced undefined dispatch with correct actions.allocateStat
+    const handlePlus = (stat: keyof PrimaryStats) => {
+        if (availablePoints > 0) {
+            actions.allocateStat(mercenary.id, stat);
+        }
+    };
+
+    const onAllocate = (stat: keyof PrimaryStats) => {
+        actions.allocateStat(mercenary.id, stat);
+    };
+
     return (
         <div className="p-5 flex flex-col gap-4 overflow-y-auto shrink-0 border-b border-stone-800 custom-scrollbar max-h-[60%]">
             <div className="bg-stone-800/50 p-3 rounded-xl border border-stone-800 shadow-sm shrink-0">
@@ -161,6 +178,46 @@ const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenar
                     <div className="h-full bg-amber-600 shadow-[0_0_10px_rgba(217,119,6,0.5)] transition-all duration-500 ease-out" style={{ width: `${xpPercent}%` }}></div>
                 </div>
             </div>
+            
+            {/* Primary Attributes with Allocation Buttons */}
+            <div className="bg-stone-950/30 rounded-xl border border-stone-800/50 p-3">
+                <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest flex items-center gap-2"><Star className="w-3 h-3" /> Attributes</h4>
+                    {availablePoints > 0 && (
+                        <div className="flex items-center gap-1.5 animate-pulse">
+                            <span className="text-[10px] font-black text-amber-500">+{availablePoints} POINTS</span>
+                        </div>
+                    )}
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                    {[
+                        { label: 'STR', key: 'str' as const },
+                        { label: 'INT', key: 'int' as const },
+                        { label: 'DEX', key: 'dex' as const },
+                        { label: 'VIT', key: 'vit' as const },
+                        { label: 'LUK', key: 'luk' as const, color: 'text-emerald-400' }
+                    ].map((stat) => {
+                        const mergedValue = mercenary.stats[stat.key] + mercenary.allocatedStats[stat.key];
+                        return (
+                            <div key={stat.key} className="flex flex-col gap-1">
+                                <div className="bg-stone-800 border border-stone-700 p-1.5 rounded-lg flex flex-col items-center justify-center relative">
+                                    <span className={`text-[9px] font-bold ${stat.color || 'text-stone-500'}`}>{stat.label}</span>
+                                    <span className="text-sm font-mono font-bold text-stone-200">{mergedValue}</span>
+                                </div>
+                                {availablePoints > 0 && (
+                                    <button 
+                                        onClick={() => onAllocate(stat.key)}
+                                        className="w-full h-6 bg-amber-600/20 hover:bg-amber-600 border border-amber-600/30 rounded flex items-center justify-center text-amber-500 hover:text-white transition-all group"
+                                    >
+                                        <Plus className="w-3 h-3 group-hover:scale-125" />
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3 shrink-0">
                 <div className="bg-stone-800/50 p-2.5 rounded-xl border border-stone-800 flex items-center gap-3">
                     <div className="p-1.5 bg-red-900/20 rounded-lg text-red-500 border border-red-900/30"><Heart className="w-4 h-4" /></div>
@@ -185,29 +242,18 @@ const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenar
                     </div>
                 </div>
             </div>
-            <div className="grid grid-cols-5 gap-2 shrink-0">
-                {[
-                    { label: 'STR', val: mercenary.stats.strength },
-                    { label: 'INT', val: mercenary.stats.intelligence },
-                    { label: 'DEX', val: mercenary.stats.dexterity },
-                    { label: 'VIT', val: mercenary.stats.vitality },
-                    { label: 'LUK', val: mercenary.stats.luck, color: 'text-emerald-400' }
-                ].map((stat, i) => (
-                    <div key={i} className="bg-stone-800/50 border border-stone-800 p-1.5 rounded-lg flex flex-col items-center justify-center">
-                        <span className={`text-[9px] font-bold ${stat.color || 'text-stone-500'}`}>{stat.label}</span>
-                        <span className="text-sm font-mono font-bold text-stone-200">{stat.val}</span>
-                    </div>
-                ))}
-            </div>
+
             <div className="shrink-0">
                 <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-2 flex items-center gap-2"><Sword className="w-3 h-3" /> Combat Statistics</h4>
                 <div className="grid grid-cols-2 gap-2">
-                    {renderStatRow(<Sword className="w-3 h-3" />, 'ATK', finalStats.physicalAttack, previewStats?.physicalAttack)}
-                    {renderStatRow(<Shield className="w-3 h-3" />, 'DEF', finalStats.physicalDefense, previewStats?.physicalDefense)}
+                    {renderStatRow(<Sword className="w-3 h-3" />, 'P.ATK', finalStats.physicalAttack, previewStats?.physicalAttack)}
+                    {renderStatRow(<Shield className="w-3 h-3" />, 'P.DEF', finalStats.physicalDefense, previewStats?.physicalDefense)}
                     {renderStatRow(<Zap className="w-3 h-3" />, 'M.ATK', finalStats.magicalAttack, previewStats?.magicalAttack)}
                     {renderStatRow(<Brain className="w-3 h-3" />, 'M.DEF', finalStats.magicalDefense, previewStats?.magicalDefense)}
-                    {renderStatRow(<Target className="w-3 h-3" />, 'CRIT', finalStats.critRate, previewStats?.critRate, true)}
-                    {renderStatRow(<Gem className="w-3 h-3" />, 'DROP', `+${finalStats.dropRateBonus}`, previewStats ? `+${previewStats.dropRateBonus}` : undefined)}
+                    {renderStatRow(<Crosshair className="w-3 h-3" />, 'ACC', finalStats.accuracy, previewStats?.accuracy)}
+                    {renderStatRow(<Wind className="w-3 h-3" />, 'EVA', finalStats.evasion, previewStats?.evasion)}
+                    {renderStatRow(<Target className="w-3 h-3" />, 'CRIT', `${finalStats.critChance}%`, previewStats ? `${previewStats.critChance}%` : undefined)}
+                    {renderStatRow(<FastForward className="w-3 h-3" />, 'SPD', finalStats.speed, previewStats?.speed)}
                 </div>
             </div>
         </div>
@@ -308,7 +354,8 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
 
     if (!mercenary) return null;
 
-    const baseDerived = calculateDerivedStats(mercenary.stats, mercenary.level);
+    const mergedPrimary = mergePrimaryStats(mercenary.stats, mercenary.allocatedStats);
+    const baseDerived = calculateDerivedStats(mergedPrimary, mercenary.level);
     const currentEquipmentStats = Object.values(mercenary.equipment).map(eq => eq?.stats).filter(Boolean);
     const finalStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
 
@@ -328,7 +375,7 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-300">
             <button onClick={onClose} className="absolute top-6 right-6 z-[220] p-2 bg-stone-900 hover:bg-stone-800 rounded-full text-stone-500 hover:text-white border border-stone-700 transition-colors"><X className="w-6 h-6" /></button>
             <div className="w-full max-w-6xl h-[85vh] bg-stone-950 border border-stone-800 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
-                <MercenaryPaperDoll mercenary={mercenary} combatPower={calculateCombatPower(mercenary.stats)} showAffinityGain={showAffinityGain} onUnequip={(slot) => onUnequip(mercenary.id, slot)} onSlotClick={setSelectedSlot} selectedSlot={selectedSlot} />
+                <MercenaryPaperDoll mercenary={mercenary} combatPower={calculateCombatPower(mergedPrimary)} showAffinityGain={showAffinityGain} onUnequip={(slot) => onUnequip(mercenary.id, slot)} onSlotClick={setSelectedSlot} selectedSlot={selectedSlot} />
                 <div className="w-full md:w-[60%] bg-stone-900 flex flex-col h-full max-h-full overflow-hidden">
                     <MercenaryStatsPanel mercenary={mercenary} finalStats={finalStats} previewStats={previewStats} />
                     <EquipmentInventoryList inventory={state.inventory.filter(i => i.type === 'EQUIPMENT')} selectedItemId={selectedInventoryItemId} onSelect={setSelectedInventoryItemId} onEquip={(id) => { actions.equipItem(mercenary.id, id); setSelectedInventoryItemId(null); }} selectedSlotFilter={selectedSlot} />
