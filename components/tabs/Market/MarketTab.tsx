@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useGame } from '../../../context/GameContext';
-import { Store, ShoppingCart, ShoppingBag, Minus, Trash2, AlertCircle, Package, Flame, ChevronRight, Box } from 'lucide-react';
+import { Store, ShoppingCart, ShoppingBag, Minus, Trash2, AlertCircle, Package, Flame, Check, Box, Wrench } from 'lucide-react';
 import { MATERIALS } from '../../../data/materials';
 import { MARKET_CATALOG } from '../../../data/market/index';
 import { getAssetUrl } from '../../../utils';
@@ -16,8 +16,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [showError, setShowError] = useState(false);
   const [showFurnaceSuccess, setShowFurnaceSuccess] = useState(false);
+  const [showWorkbenchSuccess, setShowWorkbenchSuccess] = useState(false);
 
-  const hasFurnace = state.forge.hasFurnace;
+  const { hasFurnace, hasWorkbench } = state.forge;
 
   const addToCart = (itemId: string) => {
     setCart(prev => ({
@@ -64,6 +65,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     }
 
     const buyingFurnace = cart['furnace'] && cart['furnace'] > 0;
+    const buyingWorkbench = cart['workbench'] && cart['workbench'] > 0;
 
     const itemsToBuy = Object.entries(cart).map(([id, count]) => ({ id, count }));
     actions.buyItems(itemsToBuy, total);
@@ -71,6 +73,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
     if (buyingFurnace) {
         setShowFurnaceSuccess(true);
+    } else if (buyingWorkbench) {
+        setShowWorkbenchSuccess(true);
     }
   };
 
@@ -102,17 +106,35 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                   </div>
                   <h2 className="text-2xl font-bold text-amber-100 mb-2">Furnace Installed!</h2>
                   <p className="text-stone-400 mb-6">
-                      Your forge is now operational. You can start smelting ores and crafting equipment.
+                      Your forge is now operational. You can start smelting ores and forging metal equipment.
                   </p>
                   <button 
-                      onClick={() => {
-                          setShowFurnaceSuccess(false);
-                          onNavigate('FORGE');
-                      }}
+                      onClick={() => setShowFurnaceSuccess(false)}
                       className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2"
                   >
-                      Go to Forge
-                      <ChevronRight className="w-5 h-5" />
+                      <Check className="w-5 h-5" />
+                      Back to Market
+                  </button>
+              </div>
+          </div>
+      )}
+
+      {showWorkbenchSuccess && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-stone-950/80 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="bg-stone-900 border-2 border-emerald-600 rounded-xl p-8 max-w-sm w-full shadow-2xl text-center animate-in zoom-in-95 duration-300">
+                  <div className="w-20 h-20 bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/50">
+                      <Wrench className="w-10 h-10 text-emerald-500 animate-pulse" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-emerald-100 mb-2">Workbench Ready!</h2>
+                  <p className="text-stone-400 mb-6">
+                      You can now craft leather garments, bows, and wooden staffs at your new workbench.
+                  </p>
+                  <button 
+                      onClick={() => setShowWorkbenchSuccess(false)}
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2"
+                  >
+                      <Check className="w-5 h-5" />
+                      Back to Market
                   </button>
               </div>
           </div>
@@ -133,11 +155,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
          <div className="p-4 grid grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto flex-1 min-h-0 content-start">
             {MARKET_CATALOG.map((marketItem: any) => {
                 
-                if (!hasFurnace) {
-                    if (marketItem.id !== 'furnace') return null;
-                } else {
-                    if (marketItem.id === 'furnace') return null;
-                }
+                const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
+                const isOwned = (marketItem.id === 'furnace' && hasFurnace) || (marketItem.id === 'workbench' && hasWorkbench);
+
+                if (isKeyItem && isOwned) return null;
 
                 let itemName = '';
                 let itemType = '';
@@ -146,7 +167,21 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                 if (marketItem.id === 'furnace') {
                     itemName = 'Blacksmith Furnace';
                     itemType = 'KEY ITEM';
-                    itemTier = 0;
+                    itemTier = 0; // Always available at start
+                } else if (marketItem.id === 'workbench') {
+                    itemName = 'Artisan Workbench';
+                    itemType = 'KEY ITEM';
+                    itemTier = 1; // Locked until Furnace is bought (tier level rises to 1)
+                } else if (marketItem.id === 'scroll_t2') {
+                    itemName = 'Upgrade Scroll (Tier 2)';
+                    itemType = 'SCROLL';
+                    itemTier = 1; // Locked until Furnace is bought
+                    if (currentTier >= 2) return null; // Already used
+                } else if (marketItem.id === 'scroll_t3') {
+                    itemName = 'Upgrade Scroll (Tier 3)';
+                    itemType = 'SCROLL';
+                    itemTier = 2; // Locked until T2 is reached
+                    if (currentTier >= 3) return null; // Already used
                 } else {
                     const itemDef = Object.values(MATERIALS).find(i => i.id === marketItem.id);
                     if (!itemDef) return null;
@@ -156,14 +191,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     itemTier = def.tier || 1;
                 }
 
-                if (marketItem.id === 'scroll_t2') {
-                    if (currentTier >= 2) return null;
-                } 
-                else if (marketItem.id === 'scroll_t3') {
-                    if (currentTier >= 3) return null;
-                    if (currentTier < 2) return null; 
-                }
-                else if (hasFurnace && itemTier > currentTier) {
+                // Global Visibility Filter: Hide items above current market tier
+                if (itemTier > currentTier) {
                     return null;
                 }
 
@@ -173,10 +202,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     <button 
                         key={marketItem.id}
                         onClick={() => addToCart(marketItem.id)}
-                        disabled={marketItem.id === 'furnace' && cart['furnace'] > 0} 
+                        disabled={isKeyItem && (cart[marketItem.id] > 0)} 
                         className={`flex flex-col items-center p-3 rounded-lg border transition-all text-center group relative overflow-hidden h-[150px] justify-between bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750`}
                     >
-                        {marketItem.id !== 'furnace' && !marketItem.id.startsWith('scroll') && (
+                        {!isKeyItem && !marketItem.id.startsWith('scroll') && (
                             <div className="absolute top-2 right-2 bg-stone-950/80 backdrop-blur-sm border border-stone-700 px-2 py-0.5 rounded text-[10px] text-stone-400 font-mono flex items-center gap-1 z-10">
                                 <Package className="w-3 h-3" />
                                 <span>{ownedCount}</span>
@@ -203,12 +232,13 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                   marketItem.id === 'oak_log' ? '🪵' : 
                                   marketItem.id.startsWith('scroll') ? '📜' : 
                                   marketItem.id === 'furnace' ? '🔥' : 
+                                  marketItem.id === 'workbench' ? '🛠️' :
                                   marketItem.id === 'energy_potion' ? '🧪' : '📦'}
                              </div>
                         </div>
                         
                         <div className="flex flex-col items-center w-full">
-                            <span className={`font-bold text-sm line-clamp-1 leading-tight px-1 ${marketItem.id.startsWith('scroll') || marketItem.id === 'furnace' ? 'text-amber-400' : 'text-stone-200'}`}>
+                            <span className={`font-bold text-sm line-clamp-1 leading-tight px-1 ${marketItem.id.startsWith('scroll') || isKeyItem ? 'text-amber-400' : 'text-stone-200'}`}>
                                 {itemName}
                             </span>
                             <span className="text-[10px] text-stone-500 mt-0.5">{itemType}</span>
@@ -218,7 +248,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                             {marketItem.price} G
                         </div>
                         
-                        {marketItem.id === 'furnace' && (
+                        {isKeyItem && (
                             <div className="absolute inset-0 border-2 border-amber-500/50 rounded-lg pointer-events-none animate-pulse"></div>
                         )}
                     </button>
@@ -250,6 +280,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                       let itemName = '';
                       if (id === 'furnace') {
                           itemName = 'Blacksmith Furnace';
+                      } else if (id === 'workbench') {
+                          itemName = 'Artisan Workbench';
                       } else {
                           const itemDef = Object.values(MATERIALS).find(i => i.id === id);
                           if (!itemDef) return null;
@@ -270,7 +302,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                       {marketItem.price * (count as number)}
                                   </div>
                                   <div className="flex items-center gap-1">
-                                      {id !== 'furnace' && (
+                                      {id !== 'furnace' && id !== 'workbench' && (
                                         <>
                                             <button onClick={() => removeFromCart(id)} className="p-1 hover:bg-stone-800 rounded text-stone-400">
                                                 <Minus className="w-4 h-4" />
@@ -280,7 +312,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                             </button>
                                         </>
                                       )}
-                                      {id === 'furnace' && (
+                                      {(id === 'furnace' || id === 'workbench') && (
                                           <button onClick={() => deleteFromCart(id)} className="p-1 hover:bg-red-900/30 rounded text-stone-500 hover:text-red-500 ml-1">
                                               <Trash2 className="w-4 h-4" />
                                           </button>

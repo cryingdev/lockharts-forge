@@ -16,18 +16,12 @@ export const EQUIPMENT_SUBCATEGORIES: EquipmentSubCategory[] = [
   // Armor
   { id: 'HELMET', name: 'Helmets', categoryId: 'ARMOR' },
   { id: 'CHESTPLATE', name: 'Chestplates', categoryId: 'ARMOR' },
-  { id: 'GLOVES', name: 'Gloves', categoryId: 'ARMOR' }, // Added
+  { id: 'GLOVES', name: 'Gloves', categoryId: 'ARMOR' },
   { id: 'SHIELD', name: 'Shields', categoryId: 'ARMOR' },
   { id: 'BOOTS', name: 'Boots', categoryId: 'ARMOR' },
 ];
 
-// --- 장비(레시피) 리스트 ---
 export const EQUIPMENT_ITEMS: EquipmentItem[] = [
-  // =================================================================
-  // TIER 1: BRONZE AGE & ROOKIE (초급)
-  // =================================================================
-  
-  // [DAGGER] Copper Dagger
   {
     id: 'dagger_copper_t1',
     name: 'Copper Dagger',
@@ -36,16 +30,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Cheap and easy to conceal. Favorite of street thugs.',
     subCategoryId: 'DAGGER',
     baseValue: 200,
-    requirements: [
-      { id: 'copper_ore', count: 1 },
-      { id: 'leather_strips', count: 1 }
-    ],
+    requirements: [{ id: 'copper_ore', count: 1 }, { id: 'leather_strips', count: 1 }],
     baseStats: { physicalAttack: 6, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'FORGE'
   },
-
-  // [SWORD] Bronze Shortsword
   {
     id: 'sword_bronze_t1',
     name: 'Bronze Shortsword',
@@ -54,17 +44,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'A solid alloy blade. Reliable for beginners.',
     subCategoryId: 'SWORD',
     baseValue: 450,
-    requirements: [
-      { id: 'copper_ore', count: 2 },
-      { id: 'tin_ore', count: 1 },
-      { id: 'oak_log', count: 1 }
-    ],
+    requirements: [{ id: 'copper_ore', count: 2 }, { id: 'tin_ore', count: 1 }, { id: 'oak_log', count: 1 }],
     baseStats: { physicalAttack: 14, physicalDefense: 1, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'FORGE'
   },
-
-  // [MACE] Wooden Club
   {
     id: 'mace_wood_t1',
     name: 'Reinforced Club',
@@ -73,15 +58,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'An oak branch studded with copper nails.',
     subCategoryId: 'MACE',
     baseValue: 180,
-    requirements: [
-      { id: 'oak_log', count: 2 }
-    ],
+    requirements: [{ id: 'oak_log', count: 2 }],
     baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'WORKBENCH'
   },
-
-  // [AXE] Woodcutter's Axe
   {
     id: 'axe_01_t1',
     name: 'Woodcutter\'s Axe',
@@ -90,16 +72,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'More tool than weapon, but it hurts.',
     subCategoryId: 'AXE',
     baseValue: 400,
-    requirements: [
-      { id: 'copper_ore', count: 2 },
-      { id: 'oak_log', count: 2 }
-    ],
+    requirements: [{ id: 'copper_ore', count: 2 }, { id: 'oak_log', count: 2 }],
     baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'FORGE'
   },
-
-  // [STAFF] Apprentice Staff (Two Handed)
   {
     id: 'staff_oak_t1',
     name: 'Apprentice Staff',
@@ -108,16 +86,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Helps channel basic magical energy.',
     subCategoryId: 'STAFF',
     baseValue: 300,
-    requirements: [
-      { id: 'oak_log', count: 2 },
-      { id: 'copper_ore', count: 1 }
-    ],
+    requirements: [{ id: 'oak_log', count: 2 }, { id: 'copper_ore', count: 1 }],
     baseStats: { physicalAttack: 5, physicalDefense: 0, magicalAttack: 8, magicalDefense: 2 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: true
+    isTwoHanded: true,
+    craftingType: 'WORKBENCH'
   },
-
-  // [CHEST] Leather Tunic
   {
     id: 'armor_leather_t1',
     name: 'Leather Tunic',
@@ -126,15 +100,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Lightweight protection for scouts.',
     subCategoryId: 'CHESTPLATE',
     baseValue: 420,
-    requirements: [
-      { id: 'leather_strips', count: 3 },
-      { id: 'wool_cloth', count: 1 }
-    ],
+    requirements: [{ id: 'leather_strips', count: 3 }, { id: 'wool_cloth', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 6, magicalAttack: 0, magicalDefense: 0 },
-    slotType: 'BODY'
+    slotType: 'BODY',
+    craftingType: 'WORKBENCH'
   },
-
-  // [GLOVES] Leather Gloves
   {
     id: 'gloves_leather_t1',
     name: 'Leather Gloves',
@@ -143,14 +113,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Protects hands from blisters and minor cuts.',
     subCategoryId: 'GLOVES',
     baseValue: 250,
-    requirements: [
-      { id: 'leather_strips', count: 2 }
-    ],
+    requirements: [{ id: 'leather_strips', count: 2 }],
     baseStats: { physicalAttack: 0, physicalDefense: 3, magicalAttack: 0, magicalDefense: 0 },
-    slotType: 'HANDS'
+    slotType: 'HANDS',
+    craftingType: 'WORKBENCH'
   },
-
-  // [SHIELD] Wooden Buckler
   {
     id: 'shield_wood_t1',
     name: 'Oak Buckler',
@@ -159,15 +126,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Good for deflecting light blows.',
     subCategoryId: 'SHIELD',
     baseValue: 300,
-    requirements: [
-      { id: 'oak_log', count: 2 },
-      { id: 'leather_strips', count: 1 }
-    ],
+    requirements: [{ id: 'oak_log', count: 2 }, { id: 'leather_strips', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 8, magicalAttack: 0, magicalDefense: 0 },
-    slotType: 'OFF_HAND'
+    slotType: 'OFF_HAND',
+    craftingType: 'WORKBENCH'
   },
-
-  // [HELMET] Copper Pot Helm
   {
     id: 'helm_01_t1',
     name: 'Copper Pot Helm',
@@ -176,18 +139,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Better than nothing. Barely.',
     subCategoryId: 'HELMET',
     baseValue: 350,
-    requirements: [
-      { id: 'copper_ore', count: 3 }
-    ],
+    requirements: [{ id: 'copper_ore', count: 3 }],
     baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
-    slotType: 'HEAD'
+    slotType: 'HEAD',
+    craftingType: 'FORGE'
   },
-
-  // =================================================================
-  // TIER 2: IRON AGE & SOLDIER (중급)
-  // =================================================================
-
-  // [DAGGER] Iron Dirk
   {
     id: 'dagger_iron_t2',
     name: 'Iron Dirk',
@@ -196,16 +152,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Heavy, armor-piercing point.',
     subCategoryId: 'DAGGER',
     baseValue: 550,
-    requirements: [
-      { id: 'iron_ore', count: 2 },
-      { id: 'leather_strips', count: 1 }
-    ],
+    requirements: [{ id: 'iron_ore', count: 2 }, { id: 'leather_strips', count: 1 }],
     baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'FORGE'
   },
-
-  // [SWORD] Iron Longsword
   {
     id: 'sword_iron_t2',
     name: 'Iron Longsword',
@@ -214,17 +166,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Standard issue for the royal guard.',
     subCategoryId: 'SWORD',
     baseValue: 750,
-    requirements: [
-      { id: 'iron_ore', count: 3 },
-      { id: 'oak_log', count: 1 },
-      { id: 'leather_strips', count: 1 }
-    ],
+    requirements: [{ id: 'iron_ore', count: 3 }, { id: 'oak_log', count: 1 }, { id: 'leather_strips', count: 1 }],
     baseStats: { physicalAttack: 25, physicalDefense: 2, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'FORGE'
   },
-
-  // [MACE] Flanged Mace
   {
     id: 'mace_iron_t2',
     name: 'Flanged Mace',
@@ -233,16 +180,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Designed to crush plate armor.',
     subCategoryId: 'MACE',
     baseValue: 700,
-    requirements: [
-      { id: 'iron_ore', count: 3 },
-      { id: 'oak_log', count: 1 }
-    ],
+    requirements: [{ id: 'iron_ore', count: 3 }, { id: 'oak_log', count: 1 }],
     baseStats: { physicalAttack: 22, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'FORGE'
   },
-
-  // [AXE] Iron Battle Axe (Two Handed)
   {
     id: 'axe_iron_t2',
     name: 'Iron Battle Axe',
@@ -251,16 +194,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Heavy cleaving power. Breaks shields.',
     subCategoryId: 'AXE',
     baseValue: 800,
-    requirements: [
-      { id: 'iron_ore', count: 3 },
-      { id: 'oak_log', count: 2 }
-    ],
+    requirements: [{ id: 'iron_ore', count: 3 }, { id: 'oak_log', count: 2 }],
     baseStats: { physicalAttack: 32, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: true
+    isTwoHanded: true,
+    craftingType: 'FORGE'
   },
-
-  // [STAFF] Silver Rod (Two Handed)
   {
     id: 'staff_silver_t2',
     name: 'Silver Rod',
@@ -269,16 +208,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Excellent conductor for mana.',
     subCategoryId: 'STAFF',
     baseValue: 1400,
-    requirements: [
-      { id: 'silver_ore', count: 2 },
-      { id: 'oak_log', count: 1 }
-    ],
+    requirements: [{ id: 'silver_ore', count: 2 }, { id: 'oak_log', count: 1 }],
     baseStats: { physicalAttack: 8, physicalDefense: 0, magicalAttack: 20, magicalDefense: 5 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: true
+    isTwoHanded: true,
+    craftingType: 'WORKBENCH'
   },
-
-  // [SWORD] Silver Rapier
   {
     id: 'sword_silver_t2',
     name: 'Silver Rapier',
@@ -287,16 +222,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Effective against spirits and undead.',
     subCategoryId: 'SWORD',
     baseValue: 1800,
-    requirements: [
-      { id: 'silver_ore', count: 3 },
-      { id: 'oak_log', count: 1 }
-    ],
+    requirements: [{ id: 'silver_ore', count: 3 }, { id: 'oak_log', count: 1 }],
     baseStats: { physicalAttack: 18, physicalDefense: 0, magicalAttack: 15, magicalDefense: 5 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'FORGE'
   },
-
-  // [CHEST] Hard Leather Armor
   {
     id: 'armor_hard_leather_t2',
     name: 'Reinforced Leather',
@@ -305,15 +236,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Boiled leather offering decent mobility.',
     subCategoryId: 'CHESTPLATE',
     baseValue: 950,
-    requirements: [
-      { id: 'hard_leather', count: 4 },
-      { id: 'wool_cloth', count: 1 }
-    ],
+    requirements: [{ id: 'hard_leather', count: 4 }, { id: 'wool_cloth', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 14, magicalAttack: 0, magicalDefense: 2 },
-    slotType: 'BODY'
+    slotType: 'BODY',
+    craftingType: 'WORKBENCH'
   },
-
-  // [GLOVES] Iron Gauntlets
   {
     id: 'gloves_iron_t2',
     name: 'Iron Gauntlets',
@@ -322,15 +249,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Heavy plated gloves for bashing and blocking.',
     subCategoryId: 'GLOVES',
     baseValue: 700,
-    requirements: [
-      { id: 'iron_ore', count: 2 },
-      { id: 'leather_strips', count: 2 }
-    ],
+    requirements: [{ id: 'iron_ore', count: 2 }, { id: 'leather_strips', count: 2 }],
     baseStats: { physicalAttack: 2, physicalDefense: 8, magicalAttack: 0, magicalDefense: 0 },
-    slotType: 'HANDS'
+    slotType: 'HANDS',
+    craftingType: 'FORGE'
   },
-
-  // [SHIELD] Iron Heater Shield
   {
     id: 'shield_iron_t2',
     name: 'Iron Heater Shield',
@@ -339,16 +262,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Provides excellent protection for knights.',
     subCategoryId: 'SHIELD',
     baseValue: 650,
-    requirements: [
-      { id: 'iron_ore', count: 2 },
-      { id: 'oak_log', count: 2 },
-      { id: 'leather_strips', count: 1 }
-    ],
+    requirements: [{ id: 'iron_ore', count: 2 }, { id: 'oak_log', count: 2 }, { id: 'leather_strips', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 18, magicalAttack: 0, magicalDefense: 0 },
-    slotType: 'OFF_HAND'
+    slotType: 'OFF_HAND',
+    craftingType: 'FORGE'
   },
-
-  // [HELMET] Iron Great Helm
   {
     id: 'helm_iron_t2',
     name: 'Iron Great Helm',
@@ -357,14 +275,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Full face protection. Slightly limits vision.',
     subCategoryId: 'HELMET',
     baseValue: 850,
-    requirements: [
-      { id: 'iron_ore', count: 4 }
-    ],
+    requirements: [{ id: 'iron_ore', count: 4 }],
     baseStats: { physicalAttack: 0, physicalDefense: 12, magicalAttack: 0, magicalDefense: 0 },
-    slotType: 'HEAD'
+    slotType: 'HEAD',
+    craftingType: 'FORGE'
   },
-
-  // [BOOTS] Plated Boots
   {
     id: 'boots_iron_t2',
     name: 'Iron Plated Boots',
@@ -373,19 +288,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Heavy footsteps, solid stance.',
     subCategoryId: 'BOOTS',
     baseValue: 600,
-    requirements: [
-      { id: 'iron_ore', count: 2 },
-      { id: 'leather_strips', count: 2 }
-    ],
+    requirements: [{ id: 'iron_ore', count: 2 }, { id: 'leather_strips', count: 2 }],
     baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
-    slotType: 'FEET'
+    slotType: 'FEET',
+    craftingType: 'FORGE'
   },
-
-  // =================================================================
-  // TIER 3: VETERAN & MAGICAL (고급)
-  // =================================================================
-
-  // [AXE] Gilded War Axe (Two Handed)
   {
     id: 'axe_gold_t3',
     name: 'Gilded War Axe',
@@ -394,17 +301,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'A weapon fit for a king. Beautiful and deadly.',
     subCategoryId: 'AXE',
     baseValue: 3000,
-    requirements: [
-      { id: 'gold_ore', count: 2 },
-      { id: 'iron_ore', count: 2 },
-      { id: 'ironwood_log', count: 1 }
-    ],
+    requirements: [{ id: 'gold_ore', count: 2 }, { id: 'iron_ore', count: 2 }, { id: 'ironwood_log', count: 1 }],
     baseStats: { physicalAttack: 38, physicalDefense: 0, magicalAttack: 5, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: true
+    isTwoHanded: true,
+    craftingType: 'FORGE'
   },
-
-  // [MACE] Ironwood Maul (Two Handed)
   {
     id: 'mace_ironwood_t3',
     name: 'Ironwood Maul',
@@ -413,16 +315,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'A massive log of ironwood bound with iron bands.',
     subCategoryId: 'MACE',
     baseValue: 1400,
-    requirements: [
-      { id: 'ironwood_log', count: 3 },
-      { id: 'iron_ore', count: 2 }
-    ],
+    requirements: [{ id: 'ironwood_log', count: 3 }, { id: 'iron_ore', count: 2 }],
     baseStats: { physicalAttack: 45, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: true
+    isTwoHanded: true,
+    craftingType: 'WORKBENCH'
   },
-
-  // [STAFF] Staff of Fire (Two Handed)
   {
     id: 'staff_fire_t3',
     name: 'Ignis Staff',
@@ -431,17 +329,12 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Humming with the heat of the volcano.',
     subCategoryId: 'STAFF',
     baseValue: 3500,
-    requirements: [
-      { id: 'ironwood_log', count: 1 },
-      { id: 'fire_essence', count: 1 },
-      { id: 'gold_ore', count: 1 }
-    ],
+    requirements: [{ id: 'ironwood_log', count: 1 }, { id: 'fire_essence', count: 1 }, { id: 'gold_ore', count: 1 }],
     baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 40, magicalDefense: 10 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: true
+    isTwoHanded: true,
+    craftingType: 'FORGE'
   },
-
-  // [GLOVES] Spellweave Gloves
   {
     id: 'gloves_spell_t3',
     name: 'Spellweave Gloves',
@@ -450,20 +343,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Enchanted fabric that guides mana flow.',
     subCategoryId: 'GLOVES',
     baseValue: 2000,
-    requirements: [
-      { id: 'wool_cloth', count: 3 },
-      { id: 'gold_ore', count: 1 },
-      { id: 'fire_essence', count: 1 }
-    ],
+    requirements: [{ id: 'wool_cloth', count: 3 }, { id: 'gold_ore', count: 1 }, { id: 'fire_essence', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 4, magicalAttack: 15, magicalDefense: 10 },
-    slotType: 'HANDS'
+    slotType: 'HANDS',
+    craftingType: 'WORKBENCH'
   },
-
-  // =================================================================
-  // TIER 4: LEGENDARY (전설)
-  // =================================================================
-
-  // [CHEST] Mithril Mail
   {
     id: 'armor_mithril_t4',
     name: 'Mithril Chainmail',
@@ -472,15 +356,11 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'Light as a feather, harder than dragon scales.',
     subCategoryId: 'CHESTPLATE',
     baseValue: 7000,
-    requirements: [
-      { id: 'mithril_ore', count: 3 },
-      { id: 'wool_cloth', count: 2 }
-    ],
+    requirements: [{ id: 'mithril_ore', count: 3 }, { id: 'wool_cloth', count: 2 }],
     baseStats: { physicalAttack: 0, physicalDefense: 40, magicalAttack: 0, magicalDefense: 15 },
-    slotType: 'BODY'
+    slotType: 'BODY',
+    craftingType: 'FORGE'
   },
-  
-  // [SWORD] Mithril Blade
   {
     id: 'sword_mithril_t4',
     name: 'Elven Mithril Blade',
@@ -489,12 +369,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     description: 'A blade that never dulls.',
     subCategoryId: 'SWORD',
     baseValue: 7500,
-    requirements: [
-      { id: 'mithril_ore', count: 3 },
-      { id: 'gold_ore', count: 1 }
-    ],
+    requirements: [{ id: 'mithril_ore', count: 3 }, { id: 'gold_ore', count: 1 }],
     baseStats: { physicalAttack: 55, physicalDefense: 5, magicalAttack: 10, magicalDefense: 5 },
     slotType: 'MAIN_HAND',
-    isTwoHanded: false
+    isTwoHanded: false,
+    craftingType: 'FORGE'
   },
 ];

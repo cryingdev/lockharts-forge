@@ -5,7 +5,8 @@ import { Mercenary } from '../../models/Mercenary';
 import { EquipmentSlotType } from '../../types/inventory';
 import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, MousePointer2, Zap, Brain, Target, Gem, User, ArrowRight, ChevronRight, Plus, Wind, FastForward, Crosshair } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
-import { calculateCombatPower, calculateDerivedStats, applyEquipmentBonuses, DerivedStats, PrimaryStats, mergePrimaryStats } from '../../models/Stats';
+import { calculateDerivedStats, applyEquipmentBonuses, DerivedStats, PrimaryStats, mergePrimaryStats } from '../../models/Stats';
+import { calculateCombatPower } from '../../utils/combatLogic';
 import { InventoryItem } from '../../types/inventory';
 import { Equipment } from '../../models/Equipment';
 
@@ -156,13 +157,6 @@ const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenar
         );
     };
 
-    // Fixed: replaced undefined dispatch with correct actions.allocateStat
-    const handlePlus = (stat: keyof PrimaryStats) => {
-        if (availablePoints > 0) {
-            actions.allocateStat(mercenary.id, stat);
-        }
-    };
-
     const onAllocate = (stat: keyof PrimaryStats) => {
         actions.allocateStat(mercenary.id, stat);
     };
@@ -179,7 +173,6 @@ const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenar
                 </div>
             </div>
             
-            {/* Primary Attributes with Allocation Buttons */}
             <div className="bg-stone-950/30 rounded-xl border border-stone-800/50 p-3">
                 <div className="flex justify-between items-center mb-3">
                     <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest flex items-center gap-2"><Star className="w-3 h-3" /> Attributes</h4>
@@ -356,10 +349,17 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
 
     const mergedPrimary = mergePrimaryStats(mercenary.stats, mercenary.allocatedStats);
     const baseDerived = calculateDerivedStats(mergedPrimary, mercenary.level);
-    const currentEquipmentStats = Object.values(mercenary.equipment).map(eq => eq?.stats).filter(Boolean);
+    /* Fix: Cast Object.values to fix TS errors where it defaults to unknown[] */
+    const currentEquipmentStats = (Object.values(mercenary.equipment) as (Equipment | null)[]).map(eq => eq?.stats).filter(Boolean);
     const finalStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
+    
+    // Default combat power
+    const currentAttackType = mergedPrimary.int > mergedPrimary.str ? 'MAGICAL' : 'PHYSICAL';
+    const currentCombatPower = calculateCombatPower(finalStats, currentAttackType);
 
     let previewStats: DerivedStats | null = null;
+    let previewCombatPower: number | null = null;
+
     if (selectedInventoryItemId) {
         const item = state.inventory.find(i => i.id === selectedInventoryItemId)?.equipmentData;
         if (item) {
@@ -367,7 +367,9 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
             if (item.slotType === 'MAIN_HAND' && item.isTwoHanded) previewEq.OFF_HAND = null;
             else if (item.slotType === 'OFF_HAND' && previewEq.MAIN_HAND?.isTwoHanded) previewEq.MAIN_HAND = null;
             previewEq[item.slotType] = item;
-            previewStats = applyEquipmentBonuses(baseDerived, Object.values(previewEq).map(e => e?.stats).filter(Boolean) as any);
+            /* Fix: Cast Object.values to fix TS errors where it defaults to unknown[] */
+            previewStats = applyEquipmentBonuses(baseDerived, (Object.values(previewEq) as (Equipment | null)[]).map(e => e?.stats).filter(Boolean) as any);
+            previewCombatPower = calculateCombatPower(previewStats, currentAttackType);
         }
     }
 
@@ -375,7 +377,14 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-300">
             <button onClick={onClose} className="absolute top-6 right-6 z-[220] p-2 bg-stone-900 hover:bg-stone-800 rounded-full text-stone-500 hover:text-white border border-stone-700 transition-colors"><X className="w-6 h-6" /></button>
             <div className="w-full max-w-6xl h-[85vh] bg-stone-950 border border-stone-800 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
-                <MercenaryPaperDoll mercenary={mercenary} combatPower={calculateCombatPower(mergedPrimary)} showAffinityGain={showAffinityGain} onUnequip={(slot) => onUnequip(mercenary.id, slot)} onSlotClick={setSelectedSlot} selectedSlot={selectedSlot} />
+                <MercenaryPaperDoll 
+                    mercenary={mercenary} 
+                    combatPower={previewCombatPower !== null ? previewCombatPower : currentCombatPower} 
+                    showAffinityGain={showAffinityGain} 
+                    onUnequip={(slot) => onUnequip(mercenary.id, slot)} 
+                    onSlotClick={setSelectedSlot} 
+                    selectedSlot={selectedSlot} 
+                />
                 <div className="w-full md:w-[60%] bg-stone-900 flex flex-col h-full max-h-full overflow-hidden">
                     <MercenaryStatsPanel mercenary={mercenary} finalStats={finalStats} previewStats={previewStats} />
                     <EquipmentInventoryList inventory={state.inventory.filter(i => i.type === 'EQUIPMENT')} selectedItemId={selectedInventoryItemId} onSelect={setSelectedInventoryItemId} onEquip={(id) => { actions.equipItem(mercenary.id, id); setSelectedInventoryItemId(null); }} selectedSlotFilter={selectedSlot} />

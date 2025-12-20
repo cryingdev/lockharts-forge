@@ -71,8 +71,10 @@ export const calculateDerivedStats = (primary: PrimaryStats, level: number): Der
   const physicalReduction = physicalDefense / (physicalDefense + c.DEF_REDUCTION_CONSTANT);
   const magicalReduction = magicalDefense / (magicalDefense + c.DEF_REDUCTION_CONSTANT);
 
+  // Curved Crit Chance Calculation: Base + (Multiplier * LUK^Exponent) + (DEX * Multiplier)
+  const critChanceFromLuck = Math.pow(primary.luk, (c as any).CRIT_LUK_EXPONENT || 0.85) * c.CRIT_PER_LUK;
   const critChance = clamp(
-    c.CRIT_BASE + primary.luk * c.CRIT_PER_LUK + primary.dex * c.CRIT_PER_DEX,
+    c.CRIT_BASE + critChanceFromLuck + primary.dex * c.CRIT_PER_DEX,
     0,
     c.CRIT_CAP
   );
@@ -159,8 +161,4 @@ export const calculateMaxHp = (stats: PrimaryStats, level: number): number => {
 
 export const calculateMaxMp = (stats: PrimaryStats, level: number): number => {
   return calculateDerivedStats(stats, level).maxMp;
-};
-
-export const calculateCombatPower = (stats: PrimaryStats): number => {
-  return stats.str + stats.vit + stats.dex + stats.int + stats.luk;
 };

@@ -65,11 +65,11 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
     };
 };
 
-export const handleFinishCrafting = (state: GameState, payload: { item: EquipmentItem; quality: number }): GameState => {
-    const { item, quality } = payload;
+export const handleFinishCrafting = (state: GameState, payload: { item: EquipmentItem; quality: number; bonus?: number }): GameState => {
+    const { item, quality, bonus = 0 } = payload;
     const masteryCount = state.craftingMastery[item.id] || 0;
 
-    const equipment = generateEquipment(item, quality, masteryCount);
+    const equipment = generateEquipment(item, quality, masteryCount, bonus);
     const newInventory = [...state.inventory];
     
     newInventory.push({
@@ -86,12 +86,15 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     const newMastery = { ...state.craftingMastery };
     newMastery[item.id] = (masteryCount || 0) + 1;
 
+    let logMsg = `Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})!`;
+    if (bonus > 0) logMsg += ` Minigame Bonus: +${bonus} Primary Stat.`;
+
     return {
         ...state,
         isCrafting: false,
         inventory: newInventory,
         craftingMastery: newMastery,
-        logs: [`Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})!`, ...state.logs]
+        logs: [logMsg, ...state.logs]
     };
 };
 

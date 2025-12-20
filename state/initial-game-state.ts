@@ -16,7 +16,7 @@ const createInitialInventory = (): InventoryItem[] => [
 
 export const createInitialGameState = (): GameState => ({
     stats: {
-        gold: 1000,
+        gold: 2500, // Updated starting gold
         energy: 100,
         maxEnergy: 100,
         day: 1,
@@ -26,11 +26,12 @@ export const createInitialGameState = (): GameState => ({
     inventory: createInitialInventory(),
     forge: {
         hasFurnace: false, // Starts without furnace
+        hasWorkbench: false, // Starts without workbench
         anvilLevel: 1,
         isShopOpen: false,
     },
     activeEvent: null,
-    logs: ['You stand amidst the ruins of Lockhart\'s Forge.', 'The furnace is cold and broken. You need to buy a new one.'],
+    logs: ['You stand amidst the ruins of Lockhart\'s Forge.', 'The equipment is cold and broken. You need to gather gold to rebuild.'],
     knownMercenaries: [...NAMED_MERCENARIES].map(m => ({
         ...m,
         expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, // Ensure initials have energy

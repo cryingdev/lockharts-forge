@@ -69,8 +69,13 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
             if (buyItem.id === 'furnace') {
                 newForgeState.hasFurnace = true;
                 if (newTierLevel === 0) newTierLevel = 1; 
-                logUpdates.unshift('Furnace acquired! You can now start forging.');
+                logUpdates.unshift('Furnace acquired! You can now start forging metal.');
                 return; 
+            }
+            if (buyItem.id === 'workbench') {
+                newForgeState.hasWorkbench = true;
+                logUpdates.unshift('Workbench installed! You can now craft leather and wood equipment.');
+                return;
             }
             const itemDef = Object.values(MATERIALS).find(i => i.id === buyItem.id);
             if (itemDef) {

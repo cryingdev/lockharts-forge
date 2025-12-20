@@ -17,7 +17,7 @@ export type GameAction =
   | { type: 'INSTALL_FURNACE' }
   | { type: 'START_CRAFTING'; payload: { item: EquipmentItem } }
   | { type: 'CANCEL_CRAFTING'; payload: { item: EquipmentItem } }
-  | { type: 'FINISH_CRAFTING'; payload: { item: EquipmentItem; quality: number } }
+  | { type: 'FINISH_CRAFTING'; payload: { item: EquipmentItem; quality: number; bonus?: number } }
   | { type: 'SELL_ITEM'; payload: { itemId: string; count: number; price: number; equipmentInstanceId?: string; customer?: Mercenary } }
   | { type: 'TOGGLE_SHOP' }
   | { type: 'ADD_KNOWN_MERCENARY'; payload: Mercenary }

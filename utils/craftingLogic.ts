@@ -1,3 +1,4 @@
+
 import { EquipmentItem } from '../types/inventory';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { MASTERY_THRESHOLDS } from '../config/mastery-config';
@@ -14,7 +15,7 @@ export const getEnergyCost = (item: EquipmentItem, masteryCount: number): number
     return Math.max(5, cost);
 };
 
-export const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number): Equipment => {
+export const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number, bonus: number = 0): Equipment => {
     let statMultiplier = 1.0;
     let priceMultiplier = 1.0;
     let namePrefix = '';
@@ -39,12 +40,28 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
     const finalMultiplier = qualityMultiplier * statMultiplier;
 
     const base = recipe.baseStats || { physicalAttack: 0, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 };
+    
+    // Calculate scaled stats
     const stats: EquipmentStats = {
         physicalAttack: Math.round(base.physicalAttack * finalMultiplier),
         physicalDefense: Math.round(base.physicalDefense * finalMultiplier),
         magicalAttack: Math.round(base.magicalAttack * finalMultiplier),
         magicalDefense: Math.round(base.magicalDefense * finalMultiplier),
     };
+
+    // Apply flat bonus to the PRIMARY stat (highest base value)
+    if (bonus > 0) {
+        const s = stats;
+        if (s.physicalAttack >= s.magicalAttack && s.physicalAttack >= s.physicalDefense && s.physicalAttack >= s.magicalDefense) {
+            s.physicalAttack += bonus;
+        } else if (s.magicalAttack >= s.physicalAttack && s.magicalAttack >= s.physicalDefense && s.magicalAttack >= s.magicalDefense) {
+            s.magicalAttack += bonus;
+        } else if (s.physicalDefense >= s.physicalAttack && s.physicalDefense >= s.magicalAttack && s.physicalDefense >= s.magicalDefense) {
+            s.physicalDefense += bonus;
+        } else {
+            s.magicalDefense += bonus;
+        }
+    }
 
     const price = Math.round(recipe.baseValue * finalMultiplier * priceMultiplier);
 

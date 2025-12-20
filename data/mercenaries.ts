@@ -32,7 +32,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     gender: 'Male',
     job: JobClass.NOVICE,
     level: 1,
-    stats: stats(4, 5, 6, 3, 15),
+    stats: stats(4, 4, 6, 3, 8), //
     allocatedStats: emptyAllocated(),
     currentHp: 0, // Calculated in init
     maxHp: 0,
@@ -55,7 +55,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     gender: 'Female',
     job: JobClass.NOVICE,
     level: 2,
-    stats: stats(3, 4, 8, 5, 20),
+    stats: stats(3, 4, 8, 5, 8),
     allocatedStats: emptyAllocated(),
     currentHp: 0,
     maxHp: 0,

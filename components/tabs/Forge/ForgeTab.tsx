@@ -3,7 +3,8 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
-import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award } from 'lucide-react';
+import WorkbenchMinigame from './WorkbenchMinigame';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
@@ -17,7 +18,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   
   const { inventory, stats, isCrafting, craftingMastery } = state;
-  const { hasFurnace } = state.forge;
+  const { hasFurnace, hasWorkbench } = state.forge;
 
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
@@ -47,7 +48,11 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const charcoalCount = getInventoryCount('charcoal');
   const hasFuel = charcoalCount > 0;
   
-  const canEnterForge = hasFuel || hasHeat;
+  const canEnterForge = useMemo(() => {
+      if (!selectedItem) return false;
+      if (selectedItem.craftingType === 'WORKBENCH') return true;
+      return hasFuel || hasHeat;
+  }, [selectedItem, hasFuel, hasHeat]);
   
   const requiredEnergy = useMemo(() => {
       if (!selectedItem) return GAME_CONFIG.ENERGY_COST.CRAFT;
@@ -134,9 +139,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       setIsPanelOpen(true);
   }, [actions, selectedItem]);
 
-  const handleMinigameComplete = useCallback((score: number) => {
+  const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
-        actions.finishCrafting(selectedItem, score);
+        actions.finishCrafting(selectedItem, score, bonus);
     }
     setIsPanelOpen(true);
   }, [selectedItem, actions]);
@@ -232,9 +237,16 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       );
   };
 
+  const isRequirementMet = useMemo(() => {
+      if (!selectedItem) return true;
+      if (selectedItem.craftingType === 'FORGE') return hasFurnace;
+      if (selectedItem.craftingType === 'WORKBENCH') return hasWorkbench;
+      return true;
+  }, [selectedItem, hasFurnace, hasWorkbench]);
+
   const content = useMemo(() => {
     
-    const canCraft = selectedItem && canAffordResources(selectedItem) && canEnterForge && hasEnergy;
+    const canCraft = selectedItem && canAffordResources(selectedItem) && canEnterForge && hasEnergy && isRequirementMet;
     
     let masteryInfo = null;
     if (selectedItem) {
@@ -269,17 +281,19 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     return (
         <div className="relative h-full w-full bg-stone-950 overflow-hidden">
         
-        {!hasFurnace && (
+        {selectedItem && !isRequirementMet && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center">
                 <div className="absolute inset-0 bg-stone-950/90 backdrop-blur-md animate-in fade-in duration-700"></div>
                 <div className="relative z-10 p-8 max-w-md w-full bg-stone-900 border-2 border-stone-800 rounded-2xl shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-500">
                     <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-6 border border-stone-700">
-                        <Flame className="w-10 h-10 text-stone-600" />
+                        {selectedItem.craftingType === 'FORGE' ? <Flame className="w-10 h-10 text-stone-600" /> : <Wrench className="w-10 h-10 text-stone-600" />}
                     </div>
-                    <h2 className="text-2xl font-bold text-stone-300 font-serif mb-2">The Forge is Cold</h2>
+                    <h2 className="text-2xl font-bold text-stone-300 font-serif mb-2">
+                        {selectedItem.craftingType === 'FORGE' ? 'Furnace Required' : 'Workbench Required'}
+                    </h2>
                     <p className="text-stone-500 mb-8 leading-relaxed">
-                        You cannot smelt ore or forge weapons without a <span className="text-amber-500 font-bold">Furnace</span>. 
-                        Visit the market to purchase the necessary equipment to begin your journey.
+                        Crafting <span className="text-amber-500 font-bold">{selectedItem.name}</span> requires a functional {selectedItem.craftingType === 'FORGE' ? 'furnace' : 'workbench'}. 
+                        Visit the market to purchase one.
                     </p>
                     <button 
                         onClick={() => onNavigate('MARKET')}
@@ -292,19 +306,27 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        <div className={`absolute inset-0 z-0 flex w-full h-full ${!hasFurnace ? 'blur-sm pointer-events-none' : ''}`}>
+        <div className={`absolute inset-0 z-0 flex w-full h-full ${selectedItem && !isRequirementMet ? 'blur-sm pointer-events-none' : ''}`}>
             
             <div className={`h-full relative flex flex-col transition-all duration-500 ease-in-out ${isPanelOpen ? 'w-[60%]' : 'w-full'}`}>
             <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-stone-925 relative overflow-hidden">
                 
                 <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">
-                    <Hammer className="w-96 h-96 text-stone-500" />
+                    {selectedItem?.craftingType === 'FORGE' ? (
+                        <Hammer className="w-96 h-96 text-stone-500" />
+                    ) : (
+                        <Wrench className="w-96 h-96 text-stone-500" />
+                    )}
                 </div>
 
                 {selectedItem ? (
                     <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg">
                     <div className="relative group">
-                        <div className="w-48 h-48 bg-stone-900 rounded-full border-4 border-amber-600 flex items-center justify-center shadow-[0_0_40px_rgba(217,119,6,0.2)] mb-8 group-hover:shadow-[0_0_60px_rgba(217,119,6,0.4)] transition-shadow">
+                        <div className={`w-48 h-48 bg-stone-900 rounded-full border-4 flex items-center justify-center transition-all duration-500 ${
+                            selectedItem.craftingType === 'FORGE' 
+                            ? 'border-amber-600 shadow-[0_0_40px_rgba(217,119,6,0.2)]' 
+                            : 'border-emerald-600 shadow-[0_0_40px_rgba(16,185,129,0.2)]'
+                        } mb-8 group-hover:scale-105`}>
                             <span className="text-8xl filter drop-shadow-lg">{selectedItem.icon}</span>
                         </div>
                     </div>
@@ -351,11 +373,18 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                         disabled={!canCraft}
                         className={`px-12 py-4 rounded-lg font-bold text-lg shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-3 border ${
                             canCraft 
-                            ? 'bg-amber-700 hover:bg-amber-600 text-amber-50 border-amber-500 hover:shadow-amber-900/50' 
+                            ? selectedItem.craftingType === 'FORGE'
+                                ? 'bg-amber-700 hover:bg-amber-600 text-amber-50 border-amber-500 hover:shadow-amber-900/50'
+                                : 'bg-emerald-700 hover:bg-emerald-600 text-emerald-50 border-emerald-500 hover:shadow-emerald-900/50'
                             : 'bg-stone-800 text-stone-500 border-stone-700 cursor-not-allowed opacity-70'
                         }`}
                     >
-                        {!canEnterForge ? (
+                        {!isRequirementMet ? (
+                            <>
+                                <Lock className="w-6 h-6" />
+                                Facility Required
+                            </>
+                        ) : !canEnterForge ? (
                             <>
                                 <Flame className="w-6 h-6 text-red-500" />
                                 Need Heat or Fuel
@@ -372,8 +401,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             </>
                         ) : (
                             <>
-                                <Hammer className="w-6 h-6" />
-                                Start Forging
+                                {selectedItem.craftingType === 'FORGE' ? <Hammer className="w-6 h-6" /> : <Wrench className="w-6 h-6" />}
+                                {selectedItem.craftingType === 'FORGE' ? 'Start Forging' : 'Start Crafting'}
                             </>
                         )}
                     </button>
@@ -494,7 +523,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                 <div className="p-4 border-t border-stone-800 bg-stone-900 shrink-0">
                 <div className="flex items-start gap-2 text-xs text-stone-500">
                     <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                    <p>Select a recipe to view requirements. Ensure you have enough <span className="text-amber-500 font-bold">Charcoal</span> and <span className="text-blue-400 font-bold">Energy</span>.</p>
+                    <p>Select a recipe to view requirements. {selectedItem?.craftingType === 'FORGE' ? 'Requires Heat and Charcoal.' : 'Non-metal items only require materials.'}</p>
                 </div>
                 </div>
             </div>
@@ -503,11 +532,19 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
         {isCrafting && selectedItem && (
             <div className="absolute inset-0 z-50 animate-in fade-in zoom-in-95 duration-300 bg-stone-950">
-            <SmithingMinigame 
-                difficulty={selectedItem.tier}
-                onComplete={handleMinigameComplete}
-                onClose={cancelCrafting}
-                />
+                {selectedItem.craftingType === 'FORGE' ? (
+                    <SmithingMinigame 
+                        difficulty={selectedItem.tier}
+                        onComplete={handleMinigameComplete}
+                        onClose={cancelCrafting}
+                    />
+                ) : (
+                    <WorkbenchMinigame 
+                        difficulty={selectedItem.tier}
+                        onComplete={handleMinigameComplete}
+                        onClose={cancelCrafting}
+                    />
+                )}
             </div>
         )}
 
@@ -541,7 +578,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
         </div>
     );
   }, [
-      activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, favoriteItems, craftingMastery,
+      activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, favoriteItems, craftingMastery, isRequirementMet,
       handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite,
       handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats
   ]);

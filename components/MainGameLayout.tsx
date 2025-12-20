@@ -5,6 +5,10 @@ import { InventoryDisplay } from './InventoryDisplay';
 import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 
+// Import Background Services
+import { useShopService } from '../services/shop/shop-service';
+import { useDungeonService } from '../services/dungeon/dungeon-service';
+
 // Import Tabs
 import ForgeTab from './tabs/Forge/ForgeTab';
 import ShopTab from './tabs/Shop/ShopTab';
@@ -28,6 +32,12 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
   const [activeTab, setActiveTab] = useState<'FORGE' | 'INVENTORY' | 'MARKET' | 'SHOP' | 'TAVERN' | 'DUNGEON' | 'SIMULATION'>('FORGE');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { state } = useGame();
+
+  // --- BACKGROUND SERVICES ---
+  // These hooks must be called within the GameProvider context
+  // and manage timers for the shop and dungeons.
+  useShopService();
+  useDungeonService();
   
   const completedExpeditionsCount = state.activeExpeditions.filter(
       exp => exp.status === 'COMPLETED'

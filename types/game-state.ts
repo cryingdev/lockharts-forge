@@ -16,6 +16,7 @@ export interface PlayerStats {
 
 export interface ForgeStatus {
   hasFurnace: boolean;
+  hasWorkbench: boolean;
   anvilLevel: number;
   isShopOpen: boolean;
 }

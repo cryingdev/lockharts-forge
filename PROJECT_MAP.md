@@ -11,38 +11,27 @@ This document describes the **current structural map** of the Lockhart’s Forge
 
 ## Game Concept & Narrative Context
 Lockhart’s Forge is a dark fantasy, blacksmith-centered management game.
-- The player rebuilds a ruined forge after a dragon attack.
-- Progress via crafting, selling, and managing relationships with mercenaries who explore dungeons for you.
+- Progress via crafting, selling, and managing relationships with mercenaries.
 
 ---
 
 ## Current File & Folder Structure
 
 ### UI Layer (React)
-- **Location**: `components/`, `context/`
-- **MercenaryDetailModal.tsx**: Handles detailed mercenary info and equipment management.
-  - *Current Logic*: Click-to-Select list view with responsive 2-column grid.
-  - *Stat Preview*: Real-time comparison between current and potential equipment stats.
-  - *Equip Flow*: Sequential click interaction (Select -> Preview -> Equip).
-
-### Services Layer (Headless Logic)
-- **Location**: `services/`
-- `shop-service.ts`: Background customer arrival and patience timers.
-- `dungeon-service.ts`: Background expedition timer monitoring.
+- **WorkbenchMinigame.tsx**: Rhythm-based stitching.
+  - *Stitching Logic*: Uses scale down + fill color to leave marks.
+- **SimulationTab.tsx**: Tactical testing ground.
+  - *Archetype Engine*: New logic to classify units for debugging stat impacts.
 
 ### State & Context Layer
-- `context/GameContext.tsx`: Main state provider.
-- `state/reducer/equipment.ts`: Core logic for swapping items, handling 2H weapons, and calculating affinity gains from first-time equipment.
+- `state/reducer/crafting.ts`: Bridges minigame results to equipment generation.
+- `utils/craftingLogic.ts`: Primary equipment factory. Handles `bonus` stats from perfect streaks.
+
+### Combat Logic
+- `utils/combatLogic.ts`: Core math for Hit/Crit/Damage.
+- `hooks/useSimulation.ts`: Orchestrates automated battle loops and bulk testing.
 
 ---
 
-## Folder Responsibilities
-
-- `components/modals/`: Overlay UI including the newly overhauled `MercenaryDetailModal`.
-- `models/`: Domain objects like `Equipment.ts` (now tracks `previousOwners` and `recipeId`).
-- `utils/craftingLogic.ts`: Logic for generating randomized equipment stats and rarity based on quality and mastery.
-
----
-
-## Summary
-The project is moving towards a more robust, mobile-friendly interaction pattern by replacing drag-and-drop with direct list interactions and providing clear visual feedback through the Stat Preview system.
+## Summary (v0.1.29)
+The project now features a complete feedback loop where player skill in minigames directly influences item power, and the simulation tool allows for high-fidelity debugging of how those bonuses affect combat balance.

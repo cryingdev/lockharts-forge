@@ -27,6 +27,8 @@ export interface EquipmentSubCategory {
   categoryId: EquipmentCategory;
 }
 
+export type CraftingType = 'FORGE' | 'WORKBENCH';
+
 export interface EquipmentItem {
   id: string;
   name: string;
@@ -41,4 +43,5 @@ export interface EquipmentItem {
   // New Fields
   slotType: EquipmentSlotType;
   isTwoHanded?: boolean;
+  craftingType: CraftingType; // Added to distinguish minigame logic
 }
