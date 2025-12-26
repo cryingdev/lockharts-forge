@@ -9,10 +9,14 @@ export const handleToggleShop = (state: GameState): GameState => {
     }
     const willOpen = !state.forge.isShopOpen;
     const shopCost = willOpen ? GAME_CONFIG.ENERGY_COST.OPEN_SHOP : 0;
+    
+    // When closing, kick everyone out and clear the active customer
     return {
         ...state,
         stats: { ...state.stats, energy: state.stats.energy - shopCost },
         forge: { ...state.forge, isShopOpen: willOpen },
+        activeCustomer: willOpen ? state.activeCustomer : null,
+        shopQueue: willOpen ? state.shopQueue : [],
         logs: [willOpen ? 'Shop is now OPEN.' : 'Shop is now CLOSED.', ...state.logs]
     };
 };

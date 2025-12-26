@@ -1,9 +1,8 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Mercenary } from '../../models/Mercenary';
 import { EquipmentSlotType } from '../../types/inventory';
-import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, MousePointer2, Zap, Brain, Target, Gem, User, ArrowRight, ChevronRight, Plus, Wind, FastForward, Crosshair } from 'lucide-react';
+import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, MousePointer2, Zap, Brain, Target, Gem, User, ArrowRight, ChevronRight, Plus, Wind, FastForward, Crosshair, Minus, Check, RefreshCw } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
 import { calculateDerivedStats, applyEquipmentBonuses, DerivedStats, PrimaryStats, mergePrimaryStats } from '../../models/Stats';
 import { calculateCombatPower } from '../../utils/combatLogic';
@@ -124,41 +123,55 @@ const MercenaryPaperDoll = ({
     );
 };
 
-const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenary: Mercenary; finalStats: DerivedStats; previewStats: DerivedStats | null }) => {
+const MercenaryStatsPanel = ({ 
+    mercenary, 
+    finalStats, 
+    localAllocated, 
+    onSetLocalAllocated 
+}: { 
+    mercenary: Mercenary; 
+    finalStats: DerivedStats; 
+    localAllocated: PrimaryStats;
+    onSetLocalAllocated: (stats: PrimaryStats) => void;
+}) => {
     const { actions } = useGame();
+    
     const xpPercent = mercenary.xpToNextLevel > 0 ? Math.min(100, Math.max(0, (mercenary.currentXp / mercenary.xpToNextLevel) * 100)) : 0;
     const hpPercent = finalStats.maxHp > 0 ? (mercenary.currentHp / finalStats.maxHp) * 100 : 0;
     const mpPercent = finalStats.maxMp > 0 ? (mercenary.currentMp / finalStats.maxMp) * 100 : 0;
 
-    const totalAllocated = mercenary.allocatedStats.str + mercenary.allocatedStats.vit + mercenary.allocatedStats.dex + mercenary.allocatedStats.int + mercenary.allocatedStats.luk;
+    const totalUsedLocal = Object.values(localAllocated).reduce((a, b) => a + b, 0);
     const totalPoints = (mercenary.level - 1) * 3;
-    const availablePoints = totalPoints - totalAllocated;
+    const availablePoints = Math.max(0, totalPoints - totalUsedLocal);
 
-    const renderStatRow = (icon: React.ReactNode, label: string, value: number | string, previewValue?: number | string, isPercent = false) => {
-        let diff: number | null = null;
-        if (previewValue !== undefined && typeof value === 'number' && typeof previewValue === 'number') {
-            diff = previewValue - value;
-        }
-        return (
-            <div className="bg-stone-800/50 p-2 rounded-lg border border-stone-800 flex justify-between items-center h-9">
-                <span className="text-[10px] text-stone-400 font-bold flex items-center gap-1.5">{icon} {label}</span>
-                <div className="flex items-center gap-2">
-                    <span className={`font-mono text-sm font-bold ${diff && diff !== 0 ? 'text-stone-500 line-through text-[10px]' : 'text-stone-200'}`}>
-                        {value}{isPercent ? '%' : ''}
-                    </span>
-                    {diff !== null && diff !== 0 && (
-                        <div className={`flex items-center text-xs font-mono font-bold ${diff > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            <ArrowRight className="w-3 h-3 mx-0.5" />
-                            {previewValue}{isPercent ? '%' : ''}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
+    const hasChanges = JSON.stringify(localAllocated) !== JSON.stringify(mercenary.allocatedStats);
+
+    const renderStatRow = (icon: React.ReactNode, label: string, value: number | string, isPercent = false) => (
+        <div className="bg-stone-800/50 p-2 rounded-lg border border-stone-800 flex justify-between items-center h-9">
+            <span className="text-[10px] text-stone-400 font-bold flex items-center gap-1.5">{icon} {label}</span>
+            <span className="font-mono text-sm font-bold text-stone-200">
+                {value}{isPercent ? '%' : ''}
+            </span>
+        </div>
+    );
+
+    const updateLocalStat = (key: keyof PrimaryStats, delta: number) => {
+        const newVal = localAllocated[key] + delta;
+        if (delta > 0 && availablePoints <= 0) return;
+        if (delta < 0 && newVal < mercenary.allocatedStats[key]) return; // Cannot go below already committed stats
+        
+        onSetLocalAllocated({
+            ...localAllocated,
+            [key]: newVal
+        });
     };
 
-    const onAllocate = (stat: keyof PrimaryStats) => {
-        actions.allocateStat(mercenary.id, stat);
+    const handleApply = () => {
+        actions.updateMercenaryStats(mercenary.id, localAllocated);
+    };
+
+    const handleReset = () => {
+        onSetLocalAllocated({ ...mercenary.allocatedStats });
     };
 
     return (
@@ -176,39 +189,69 @@ const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenar
             <div className="bg-stone-950/30 rounded-xl border border-stone-800/50 p-3">
                 <div className="flex justify-between items-center mb-3">
                     <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest flex items-center gap-2"><Star className="w-3 h-3" /> Attributes</h4>
-                    {availablePoints > 0 && (
-                        <div className="flex items-center gap-1.5 animate-pulse">
-                            <span className="text-[10px] font-black text-amber-500">+{availablePoints} POINTS</span>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                        {availablePoints > 0 ? (
+                             <span className="text-[10px] font-black text-amber-500 animate-pulse">+{availablePoints} POINTS AVAILABLE</span>
+                        ) : (
+                             <span className="text-[10px] font-bold text-stone-600 uppercase">Points Exhausted</span>
+                        )}
+                    </div>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                     {[
-                        { label: 'STR', key: 'str' as const },
-                        { label: 'INT', key: 'int' as const },
-                        { label: 'DEX', key: 'dex' as const },
-                        { label: 'VIT', key: 'vit' as const },
-                        { label: 'LUK', key: 'luk' as const, color: 'text-emerald-400' }
+                        { label: 'STR', key: 'str' as const, color: 'text-orange-400' },
+                        { label: 'INT', key: 'int' as const, color: 'text-blue-400' },
+                        { label: 'DEX', key: 'dex' as const, color: 'text-emerald-400' },
+                        { label: 'VIT', key: 'vit' as const, color: 'text-red-400' },
+                        { label: 'LUK', key: 'luk' as const, color: 'text-pink-400' }
                     ].map((stat) => {
-                        const mergedValue = mercenary.stats[stat.key] + mercenary.allocatedStats[stat.key];
+                        const committedValue = mercenary.stats[stat.key] + mercenary.allocatedStats[stat.key];
+                        const currentValue = mercenary.stats[stat.key] + localAllocated[stat.key];
+                        const isModified = localAllocated[stat.key] > mercenary.allocatedStats[stat.key];
+                        
                         return (
                             <div key={stat.key} className="flex flex-col gap-1">
-                                <div className="bg-stone-800 border border-stone-700 p-1.5 rounded-lg flex flex-col items-center justify-center relative">
-                                    <span className={`text-[9px] font-bold ${stat.color || 'text-stone-500'}`}>{stat.label}</span>
-                                    <span className="text-sm font-mono font-bold text-stone-200">{mergedValue}</span>
+                                <div className={`bg-stone-800 border ${isModified ? 'border-amber-500/50' : 'border-stone-700'} p-1.5 rounded-lg flex flex-col items-center justify-center relative transition-colors`}>
+                                    <span className={`text-[9px] font-bold ${stat.color}`}>{stat.label}</span>
+                                    <span className={`text-sm font-mono font-bold ${isModified ? 'text-amber-400 scale-110' : 'text-stone-200'} transition-all`}>{currentValue}</span>
                                 </div>
-                                {availablePoints > 0 && (
+                                <div className="flex gap-1">
                                     <button 
-                                        onClick={() => onAllocate(stat.key)}
-                                        className="w-full h-6 bg-amber-600/20 hover:bg-amber-600 border border-amber-600/30 rounded flex items-center justify-center text-amber-500 hover:text-white transition-all group"
+                                        onClick={() => updateLocalStat(stat.key, -1)}
+                                        disabled={localAllocated[stat.key] <= mercenary.allocatedStats[stat.key]}
+                                        className="flex-1 h-6 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded flex items-center justify-center text-stone-500 hover:text-red-400 transition-all disabled:opacity-30 disabled:pointer-events-none"
                                     >
-                                        <Plus className="w-3 h-3 group-hover:scale-125" />
+                                        <Minus className="w-3 h-3" />
                                     </button>
-                                )}
+                                    <button 
+                                        onClick={() => updateLocalStat(stat.key, 1)}
+                                        disabled={availablePoints <= 0}
+                                        className="flex-1 h-6 bg-stone-800 hover:bg-amber-900/40 border border-stone-700 hover:border-amber-600/50 rounded flex items-center justify-center text-stone-500 hover:text-amber-400 transition-all disabled:opacity-30 disabled:pointer-events-none"
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}
                 </div>
+
+                {hasChanges && (
+                    <div className="mt-4 flex gap-2 animate-in slide-in-from-top-2 duration-300">
+                         <button 
+                            onClick={handleReset}
+                            className="flex-1 py-2 bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-stone-200 text-xs font-bold rounded-lg border border-stone-700 transition-all flex items-center justify-center gap-2"
+                        >
+                            <RefreshCw className="w-3 h-3" /> Reset
+                        </button>
+                        <button 
+                            onClick={handleApply}
+                            className="flex-[2] py-2 bg-amber-700 hover:bg-amber-600 text-amber-50 text-xs font-bold rounded-lg shadow-lg border border-amber-500 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Check className="w-3 h-3" /> Apply Changes
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-3 shrink-0">
@@ -239,14 +282,14 @@ const MercenaryStatsPanel = ({ mercenary, finalStats, previewStats }: { mercenar
             <div className="shrink-0">
                 <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-2 flex items-center gap-2"><Sword className="w-3 h-3" /> Combat Statistics</h4>
                 <div className="grid grid-cols-2 gap-2">
-                    {renderStatRow(<Sword className="w-3 h-3" />, 'P.ATK', finalStats.physicalAttack, previewStats?.physicalAttack)}
-                    {renderStatRow(<Shield className="w-3 h-3" />, 'P.DEF', finalStats.physicalDefense, previewStats?.physicalDefense)}
-                    {renderStatRow(<Zap className="w-3 h-3" />, 'M.ATK', finalStats.magicalAttack, previewStats?.magicalAttack)}
-                    {renderStatRow(<Brain className="w-3 h-3" />, 'M.DEF', finalStats.magicalDefense, previewStats?.magicalDefense)}
-                    {renderStatRow(<Crosshair className="w-3 h-3" />, 'ACC', finalStats.accuracy, previewStats?.accuracy)}
-                    {renderStatRow(<Wind className="w-3 h-3" />, 'EVA', finalStats.evasion, previewStats?.evasion)}
-                    {renderStatRow(<Target className="w-3 h-3" />, 'CRIT', `${finalStats.critChance}%`, previewStats ? `${previewStats.critChance}%` : undefined)}
-                    {renderStatRow(<FastForward className="w-3 h-3" />, 'SPD', finalStats.speed, previewStats?.speed)}
+                    {renderStatRow(<Sword className="w-3 h-3" />, 'P.ATK', finalStats.physicalAttack)}
+                    {renderStatRow(<Shield className="w-3 h-3" />, 'P.DEF', finalStats.physicalDefense)}
+                    {renderStatRow(<Zap className="w-3 h-3" />, 'M.ATK', finalStats.magicalAttack)}
+                    {renderStatRow(<Brain className="w-3 h-3" />, 'M.DEF', finalStats.magicalDefense)}
+                    {renderStatRow(<Crosshair className="w-3 h-3" />, 'ACC', finalStats.accuracy)}
+                    {renderStatRow(<Wind className="w-3 h-3" />, 'EVA', finalStats.evasion)}
+                    {renderStatRow(<Target className="w-3 h-3" />, 'CRIT', `${finalStats.critChance}%`, true)}
+                    {renderStatRow(<FastForward className="w-3 h-3" />, 'SPD', finalStats.speed)}
                 </div>
             </div>
         </div>
@@ -323,16 +366,21 @@ const EquipmentInventoryList = ({
 
 const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, onClose, onUnequip }) => {
     const { state, actions } = useGame();
+    
     const [selectedSlot, setSelectedSlot] = useState<EquipmentSlotType | null>(null);
     const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string | null>(null);
     const [prevAffinity, setPrevAffinity] = useState(0);
     const [showAffinityGain, setShowAffinityGain] = useState(false);
+    
+    // Local state for pending stat changes
+    const [localAllocated, setLocalAllocated] = useState<PrimaryStats>({ str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
 
     useEffect(() => {
         if (mercenary) {
             setPrevAffinity(mercenary.affinity);
             setSelectedSlot(null);
             setSelectedInventoryItemId(null);
+            setLocalAllocated({ ...mercenary.allocatedStats });
         }
     }, [mercenary?.id]);
 
@@ -347,13 +395,12 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
 
     if (!mercenary) return null;
 
-    const mergedPrimary = mergePrimaryStats(mercenary.stats, mercenary.allocatedStats);
+    const mergedPrimary = mergePrimaryStats(mercenary.stats, localAllocated);
     const baseDerived = calculateDerivedStats(mergedPrimary, mercenary.level);
-    /* Fix: Cast Object.values to fix TS errors where it defaults to unknown[] */
+    
     const currentEquipmentStats = (Object.values(mercenary.equipment) as (Equipment | null)[]).map(eq => eq?.stats).filter(Boolean);
     const finalStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
     
-    // Default combat power
     const currentAttackType = mergedPrimary.int > mergedPrimary.str ? 'MAGICAL' : 'PHYSICAL';
     const currentCombatPower = calculateCombatPower(finalStats, currentAttackType);
 
@@ -367,11 +414,13 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
             if (item.slotType === 'MAIN_HAND' && item.isTwoHanded) previewEq.OFF_HAND = null;
             else if (item.slotType === 'OFF_HAND' && previewEq.MAIN_HAND?.isTwoHanded) previewEq.MAIN_HAND = null;
             previewEq[item.slotType] = item;
-            /* Fix: Cast Object.values to fix TS errors where it defaults to unknown[] */
             previewStats = applyEquipmentBonuses(baseDerived, (Object.values(previewEq) as (Equipment | null)[]).map(e => e?.stats).filter(Boolean) as any);
             previewCombatPower = calculateCombatPower(previewStats, currentAttackType);
         }
     }
+
+    const effectiveFinalStats = previewStats || finalStats;
+    const effectiveCombatPower = previewCombatPower !== null ? previewCombatPower : currentCombatPower;
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-300">
@@ -379,14 +428,19 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
             <div className="w-full max-w-6xl h-[85vh] bg-stone-950 border border-stone-800 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
                 <MercenaryPaperDoll 
                     mercenary={mercenary} 
-                    combatPower={previewCombatPower !== null ? previewCombatPower : currentCombatPower} 
+                    combatPower={effectiveCombatPower} 
                     showAffinityGain={showAffinityGain} 
                     onUnequip={(slot) => onUnequip(mercenary.id, slot)} 
                     onSlotClick={setSelectedSlot} 
                     selectedSlot={selectedSlot} 
                 />
                 <div className="w-full md:w-[60%] bg-stone-900 flex flex-col h-full max-h-full overflow-hidden">
-                    <MercenaryStatsPanel mercenary={mercenary} finalStats={finalStats} previewStats={previewStats} />
+                    <MercenaryStatsPanel 
+                        mercenary={mercenary} 
+                        finalStats={effectiveFinalStats} 
+                        localAllocated={localAllocated}
+                        onSetLocalAllocated={setLocalAllocated}
+                    />
                     <EquipmentInventoryList inventory={state.inventory.filter(i => i.type === 'EQUIPMENT')} selectedItemId={selectedInventoryItemId} onSelect={setSelectedInventoryItemId} onEquip={(id) => { actions.equipItem(mercenary.id, id); setSelectedInventoryItemId(null); }} selectedSlotFilter={selectedSlot} />
                 </div>
             </div>

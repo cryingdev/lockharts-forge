@@ -1,13 +1,61 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { Store, Coins, PackageOpen, Heart, Users } from 'lucide-react';
+import { Store, Coins, PackageOpen, Heart, Users, ArrowLeft, ZapOff, Link } from 'lucide-react';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { MATERIALS } from '../../../data/materials';
 import { getAssetUrl } from '../../../utils';
+import { GAME_CONFIG } from '../../../config/game-config';
 
-const ShopTab = () => {
+interface ShopTabProps {
+    onNavigate: (tab: any) => void;
+}
+
+const ShopSign = ({ isOpen, onToggle, disabled }: { isOpen: boolean, onToggle: () => void, disabled: boolean }) => {
+    return (
+        <div className="absolute top-4 right-4 z-50 flex flex-col items-center">
+            {/* Hanging Chains */}
+            <div className="flex justify-around w-24 h-6 px-4">
+                <div className="w-1 bg-stone-600 rounded-full"></div>
+                <div className="w-1 bg-stone-600 rounded-full"></div>
+            </div>
+            
+            {/* Flipping Sign Card */}
+            <button 
+                onClick={onToggle}
+                disabled={disabled}
+                className={`group relative w-36 h-16 perspective-1000 cursor-pointer disabled:cursor-not-allowed`}
+            >
+                <div className={`relative w-full h-full transition-transform duration-700 preserve-3d ${isOpen ? '' : 'rotate-y-180'}`}>
+                    
+                    {/* Front: OPEN */}
+                    <div className="absolute inset-0 backface-hidden bg-[#5d4037] border-2 border-[#3e2723] rounded-md shadow-lg flex flex-col items-center justify-center p-1">
+                        <div className="w-full h-full border border-[#795548]/30 rounded flex flex-col items-center justify-center">
+                             <span className="text-[10px] text-[#8d6e63] font-bold uppercase tracking-widest leading-none">The Forge is</span>
+                             <span className="text-xl font-black text-emerald-400 font-serif tracking-tighter drop-shadow-sm">OPEN</span>
+                        </div>
+                    </div>
+
+                    {/* Back: CLOSED */}
+                    <div className="absolute inset-0 backface-hidden rotate-y-180 bg-[#3e2723] border-2 border-[#1b0000] rounded-md shadow-lg flex flex-col items-center justify-center p-1">
+                        <div className="w-full h-full border border-[#5d4037]/30 rounded flex flex-col items-center justify-center">
+                             <span className="text-[10px] text-[#5d4037] font-bold uppercase tracking-widest leading-none">The Forge is</span>
+                             <span className="text-xl font-black text-stone-500 font-serif tracking-tighter drop-shadow-sm">CLOSED</span>
+                        </div>
+                    </div>
+
+                </div>
+                
+                {/* Wood Grain Texture Overlay */}
+                <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-overlay" style={{ 
+                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, #000 2px, #000 4px)' 
+                }}></div>
+            </button>
+        </div>
+    );
+};
+
+const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   const { isShopOpen } = state.forge;
   const { activeCustomer, shopQueue } = state;
@@ -56,6 +104,15 @@ const ShopTab = () => {
       }
   };
 
+  const canAffordOpen = state.stats.energy >= GAME_CONFIG.ENERGY_COST.OPEN_SHOP;
+
+  // Trigger energy bar highlight when entering "Exhausted" shop state
+  useEffect(() => {
+    if (!isShopOpen && !canAffordOpen) {
+        actions.triggerEnergyHighlight();
+    }
+  }, [isShopOpen, canAffordOpen, actions]);
+
   return (
     <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
         
@@ -72,9 +129,16 @@ const ShopTab = () => {
             />
         </div>
 
-        {/* Queue Indicator (Improved Visibility) */}
+        {/* The Wooden Sign Toggle - Positioned Top Right Corner */}
+        <ShopSign 
+            isOpen={isShopOpen} 
+            onToggle={handleToggleShop} 
+            disabled={!isShopOpen && !canAffordOpen}
+        />
+
+        {/* Queue Indicator - Positioned to the left of the Sign */}
         {isShopOpen && (
-            <div className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-stone-900/90 px-4 py-2 rounded-xl border-2 border-stone-700 text-stone-200 shadow-xl">
+            <div className="absolute top-4 right-[160px] z-50 flex items-center gap-2 bg-stone-900/90 px-4 py-2 rounded-xl border-2 border-stone-700 text-stone-200 shadow-xl">
                 <div className="bg-stone-800 p-1.5 rounded-full">
                     <Users className="w-5 h-5 text-amber-500" />
                 </div>
@@ -85,13 +149,10 @@ const ShopTab = () => {
             </div>
         )}
 
-        {/* ★★★ [UI Layer] Customer Info & Request Bubble ★★★ */}
+        {/* Customer Info & Request Bubble */}
         {isShopOpen && activeCustomer && (
             <>
-                {/* 1. Request Bubble (화면 왼쪽 고정) */}
-                <div 
-                    className="absolute top-[15%] left-10 z-50 animate-in slide-in-from-left-10 fade-in duration-500"
-                >
+                <div className="absolute top-[15%] left-10 z-50 animate-in slide-in-from-left-10 fade-in duration-500">
                      <div 
                         className="w-64 h-32 flex items-center justify-center"
                         style={{ backgroundImage: `url(${getAssetUrl('bubble_thought.png')})`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
@@ -111,7 +172,6 @@ const ShopTab = () => {
                     </div>
                 </div>
 
-                {/* 2. NPC Info Card (화면 오른쪽 고정) */}
                 <div className="absolute top-[15%] right-10 z-50 animate-in slide-in-from-right-10 fade-in duration-500">
                     <div className="w-48 bg-stone-900/90 border border-stone-700 p-3 rounded-lg backdrop-blur-sm shadow-xl text-xs">
                         <div className="flex items-center justify-between mb-2">
@@ -135,12 +195,11 @@ const ShopTab = () => {
             </>
         )}
 
-        {/* Layer 1: Character Only (UI elements removed) */}
+        {/* Layer 1: Character */}
         <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
             {isShopOpen && activeCustomer && (
                <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-200 ease-out">
                    <div className="relative h-[85vh] w-auto flex justify-center translate-y-12">
-                       {/* Character Sprite - Pure Image */}
                        <img 
                            src={activeCustomer.mercenary.sprite ? getAssetUrl(activeCustomer.mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
                            alt="Adventurer"
@@ -151,9 +210,8 @@ const ShopTab = () => {
             )}
         </div>
 
-        {/* Layer 1.5: The Shop Counter (Desk) */}
+        {/* Layer 1.5: The Shop Counter */}
         <div className="absolute bottom-0 w-full z-30 flex items-end justify-center pointer-events-none">
-            
             {!counterImgError ? (
                 <img 
                     src={getAssetUrl('shop_counter.png')}
@@ -168,13 +226,12 @@ const ShopTab = () => {
                     }}></div>
                 </div>
             )}
-                
             {isShopOpen && activeCustomer && (
                 <div className="absolute top-0 right-20 w-32 h-20 bg-amber-900/20 blur-xl rounded-full pointer-events-none"></div>
             )}
         </div>
 
-        {/* Layer 2: Dialogue UI (Bottom) */}
+        {/* Layer 2: Dialogue UI */}
         {isShopOpen && activeCustomer && (
             <DialogueBox 
                 speaker={activeCustomer.mercenary.name}
@@ -195,7 +252,47 @@ const ShopTab = () => {
             />
         )}
 
-        {/* ★★★ [NEW] Waiting State Message ★★★ */}
+        {/* Layer 3: Modal & Overlay Group */}
+        {!isShopOpen && (
+            <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+                {/* Dimming Backdrop */}
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] transition-opacity duration-700 animate-in fade-in"></div>
+                
+                {/* Content */}
+                <div className="relative z-10 flex flex-col items-center animate-in zoom-in-95 duration-500">
+                    {!canAffordOpen ? (
+                        // Exhausted State
+                        <div className="bg-stone-900 border-2 border-red-900 p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center max-w-xs ring-4 ring-black/50">
+                            <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mb-4 border border-red-800/50">
+                                <ZapOff className="w-8 h-8 text-red-500 animate-pulse" />
+                            </div>
+                            <h3 className="text-xl font-bold text-red-100 font-serif">Exhausted</h3>
+                            <p className="text-stone-500 text-sm mt-2 mb-6">
+                                You don't have the energy to manage the counter today. Get some rest.
+                            </p>
+                            <button 
+                                onClick={() => onNavigate('FORGE')}
+                                className="w-full py-3 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg font-bold text-sm transition-all border border-stone-700 pointer-events-auto flex items-center justify-center gap-2"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                Return to Forge
+                            </button>
+                        </div>
+                    ) : (
+                        // Just Closed State
+                        <div className="text-center group">
+                             <div className="w-20 h-20 bg-stone-800/80 rounded-full flex items-center justify-center mx-auto mb-4 border border-stone-700 backdrop-blur-sm shadow-xl transition-transform group-hover:scale-110 duration-500">
+                                <Store className="w-8 h-8 text-stone-500" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-stone-300 font-serif tracking-wide drop-shadow-md uppercase">Shop is Closed</h3>
+                            <p className="text-stone-500 text-sm mt-1 font-medium">Flip the sign to welcome customers.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
+
+        {/* Waiting State Message */}
         {isShopOpen && !activeCustomer && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none pb-20">
                 <div className="text-center animate-in fade-in zoom-in duration-500">
@@ -204,24 +301,6 @@ const ShopTab = () => {
                     </div>
                     <h3 className="text-xl font-bold text-stone-400">Waiting for customers...</h3>
                     <p className="text-stone-500 text-sm mt-1">They come and go as they please.</p>
-                </div>
-            </div>
-        )}
-
-        {/* Layer 3: Modal & Overlay Group */}
-        {!isShopOpen && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center">   
-                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-500"></div>
-                <div className="relative text-center animate-in zoom-in fade-in duration-300 p-8 bg-stone-900/90 rounded-2xl border border-stone-700 shadow-2xl backdrop-blur-md mb-20">
-                    <Store className="w-16 h-16 text-stone-600 mx-auto mb-4" />
-                    <h2 className="text-3xl font-bold text-stone-300 mb-2 font-serif">The Shop is Closed</h2>
-                    <p className="text-stone-500 max-w-xs mx-auto mb-6">Open the shop to start selling your crafted goods to adventurers.</p>
-                    <button 
-                        onClick={handleToggleShop}
-                        className="px-6 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg shadow-lg transition-all"
-                    >
-                        Open for Business
-                    </button>
                 </div>
             </div>
         )}

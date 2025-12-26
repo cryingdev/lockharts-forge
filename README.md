@@ -1,46 +1,32 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.29
+> **Version**: 0.1.31
 > **Status**: Alpha / Active Development
 
-**Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries. The project combines a React-based UI management system with Phaser 3 minigames for immersive crafting mechanics.
+**Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
 
-## 🛠 Tech Stack
+## 🔄 Recent Updates (v0.1.31)
 
-*   **Core Framework**: React 19 (TypeScript)
-*   **Game Engine**: Phaser 3.80+ (Used for Smithing/Workbench Minigames)
-*   **Build Tool**: Vite
-*   **Styling**: Tailwind CSS
-*   **Icons**: Lucide React
-*   **State Management**: React Context API (`GameContext`)
+*   **Forge Ignition Mechanics**:
+    *   The bellows now only increase heat if the forge is already lit (> 0°C). 
+    *   Players must use fuel (Heat Up) to ignite a completely cold forge.
+*   **Visual Centering**:
+    *   Aligned the dynamic heat glow (Ambient Glow) with the physical anvil position for consistent visual feedback across different screen sizes.
+*   **UI Polish**:
+    *   Removed intrusive "No Ignition" alert text to maintain a cleaner, more immersive forge atmosphere.
 
-## 🔄 Recent Updates (v0.1.29)
+## 🔄 Previous Updates (v0.1.30)
 
-*   **Workbench Minigame Refinement (Stitching System)**:
-    *   **Persistent Stitch Marks**: Nodes no longer disappear; they leave colored "stitches" (Gold for Perfect, Green for Good, Red for Miss) to show the crafting path.
-    *   **Auto-Miss Logic**: The needle passing a node without a hit now automatically triggers a "MISS" state.
-    *   **Skill Bonus System**: Maintaining a **Perfect Combo of 8 or more** grants +1 to the item's primary stat for every subsequent Perfect hit.
-*   **Combat Simulation Debugging Tools**:
-    *   **Tactical Archetype Analysis**: The simulator now auto-detects unit roles (Berserker, Guardian, Scholar, etc.) based on stat distribution, including bonuses from minigames.
-    *   **Advanced Bulk Simulation**: Run 10,000 rounds instantly to test stat equilibrium.
+*   **Asymmetric Anvil Geometry**: Adjusted anvil perspective where the left side height is 90% of the right side.
+*   **Progressive Blade Forging**: 5 visual stages based on completion score.
 
 ## 🌟 Key Features
 
 ### 1. The Forge (Crafting System)
-*   **Smithing & Workbench**: Distinct minigames for different equipment types.
-*   **Mastery System**: Tracks crafting counts to unlock stat multipliers and energy discounts.
-
-### 2. Economy & Management
-*   **Inventory System**: Detailed instance data for equipment with rarity and quality.
-*   **The Shop (Sales)**: Dynamic NPC queue with dialogue and affinity system.
-
-### 3. Tactical Simulation
-*   **Arena**: Test mercenaries against each other or custom builds using the exact combat logic used in expeditions.
-
-## 📂 Project Structure
-
-(See PROJECT_MAP.md for detailed internal documentation)
+*   **Smithing**: Manage heat and timing. Watch the billet morph into a blade as you strike the anvil.
+*   **Workbench**: Rhythm-based stitching for leather and wood.
+*   **Mastery**: Increased craft counts unlock quality bonuses and energy discounts.
 
 ## 📜 License
 

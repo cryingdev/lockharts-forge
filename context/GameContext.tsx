@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -6,9 +5,10 @@ import { createInitialGameState } from '../state/initial-game-state';
 import { EquipmentItem, EquipmentSlotType } from '../types/inventory';
 import { ShopCustomer } from '../types/shop';
 import { Mercenary } from '../models/Mercenary';
-import { generateShopRequest } from '../utils/shopUtils';
-import { calculateMaxHp, calculateMaxMp, PrimaryStats } from '../models/Stats';
-import { SHOP_CONFIG } from '../config/shop-config';
+import { PrimaryStats } from '../models/Stats';
+import { GAME_CONFIG } from '../config/game-config';
+import { getEnergyCost } from '../utils/craftingLogic';
+import { GameEvent } from '../types/events';
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -23,11 +23,27 @@ export const useGame = () => {
 export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
 
+  // --- Helper Trigger ---
+  const triggerEnergyHighlight = () => {
+      dispatch({ type: 'SET_UI_EFFECT', payload: { effect: 'energyHighlight', value: true } });
+      setTimeout(() => {
+          dispatch({ type: 'SET_UI_EFFECT', payload: { effect: 'energyHighlight', value: false } });
+      }, 3000);
+  };
+
   // --- ACTIONS ---
   const actions = useMemo(() => ({
-    repairItem: () => dispatch({ type: 'REPAIR_WORK' }),
+    repairItem: () => {
+        if (state.stats.energy < GAME_CONFIG.ENERGY_COST.REPAIR) {
+            triggerEnergyHighlight();
+            return;
+        }
+        dispatch({ type: 'REPAIR_WORK' });
+    },
     rest: () => dispatch({ type: 'SLEEP' }),
     confirmSleep: () => dispatch({ type: 'CONFIRM_SLEEP' }),
+    
+    triggerEvent: (event: GameEvent) => dispatch({ type: 'TRIGGER_EVENT', payload: event }),
     handleEventOption: (action: () => void) => {
       action();
       dispatch({ type: 'CLOSE_EVENT' });
@@ -35,15 +51,29 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     closeEvent: () => dispatch({ type: 'CLOSE_EVENT' }),
 
     // Crafting
-    startCrafting: (item: EquipmentItem) => dispatch({ type: 'START_CRAFTING', payload: { item } }),
+    startCrafting: (item: EquipmentItem) => {
+        const masteryCount = state.craftingMastery[item.id] || 0;
+        const energyCost = getEnergyCost(item, masteryCount);
+        if (state.stats.energy < energyCost) {
+            triggerEnergyHighlight();
+            return;
+        }
+        dispatch({ type: 'START_CRAFTING', payload: { item } });
+    },
     cancelCrafting: (item: EquipmentItem) => dispatch({ type: 'CANCEL_CRAFTING', payload: { item } }),
-    finishCrafting: (item: EquipmentItem, quality: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality } }),
+    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality, bonus } }),
     craftItem: (item: EquipmentItem, quality: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality } }),
 
     buyItems: (items: { id: string; count: number }[], totalCost: number) => dispatch({ type: 'BUY_MARKET_ITEMS', payload: { items, totalCost } }),
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) =>
         dispatch({ type: 'SELL_ITEM', payload: { itemId, count, price, equipmentInstanceId, customer } }),
-    toggleShop: () => dispatch({ type: 'TOGGLE_SHOP' }),
+    toggleShop: () => {
+        if (!state.forge.isShopOpen && state.stats.energy < GAME_CONFIG.ENERGY_COST.OPEN_SHOP) {
+            triggerEnergyHighlight();
+            return;
+        }
+        dispatch({ type: 'TOGGLE_SHOP' });
+    },
     addMercenary: (merc: Mercenary) => dispatch({ type: 'ADD_KNOWN_MERCENARY', payload: merc }),
 
     consumeItem: (id: string, count: number) => dispatch({ type: 'PAY_COST', payload: { items: [{ id, count }] } }),
@@ -73,13 +103,12 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     // Stat Actions
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
+    updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => dispatch({ type: 'UPDATE_MERCENARY_STATS', payload: { mercenaryId, stats } }),
 
-  }), []);
+    triggerEnergyHighlight
 
-  // --- SIDE EFFECTS (GAME LOOP) ---
-  // arrivals, queue, patience, expeditions...
-  // (Left out unchanged repetitive logic for brevity)
-  
+  }), [state.stats.energy, state.craftingMastery, state.forge.isShopOpen, state.activeEvent]);
+
   return (
     <GameContext.Provider value={{ state, actions }}>
       {children}

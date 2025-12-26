@@ -1,9 +1,9 @@
-
 import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
 import { PrimaryStats } from '../models/Stats';
+import { GameEvent } from './events';
 
 export interface GameContextType {
   state: GameState;
@@ -11,6 +11,8 @@ export interface GameContextType {
     repairItem: () => void;
     rest: () => void;
     confirmSleep: () => void;
+    // Added triggerEvent to actions to fix property missing error in ForgeTab
+    triggerEvent: (event: GameEvent) => void;
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
     
@@ -46,5 +48,8 @@ export interface GameContextType {
 
     useItem: (itemId: string) => void;
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => void;
+    updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;
+
+    triggerEnergyHighlight: () => void;
   };
 }

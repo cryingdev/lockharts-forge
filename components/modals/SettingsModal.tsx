@@ -84,7 +84,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit }
 
                 {/* Footer Info */}
                 <div className="p-3 bg-stone-950 text-center border-t border-stone-800">
-                    <span className="text-[10px] text-stone-600 font-mono uppercase">Lockhart's Forge v0.1.26</span>
+                    <span className="text-[10px] text-stone-600 font-mono uppercase">Lockhart's Forge v0.1.31</span>
                 </div>
             </div>
         </div>

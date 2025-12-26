@@ -65,4 +65,9 @@ export interface GameState {
   activeExpeditions: Expedition[];
   dungeonClearCounts: Record<string, number>; // Key: Dungeon ID, Value: Count
   dungeonResult: DungeonResult | null; // Populated when claim is clicked to show modal
+
+  // UI Effects State
+  uiEffects: {
+    energyHighlight: boolean;
+  };
 }

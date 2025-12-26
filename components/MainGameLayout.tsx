@@ -42,6 +42,8 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
   const completedExpeditionsCount = state.activeExpeditions.filter(
       exp => exp.status === 'COMPLETED'
   ).length;
+
+  const shopQueueCount = state.shopQueue.length;
   
   return (
     <div className="h-screen w-screen bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500">
@@ -108,6 +110,11 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
           >
             <Coins className="w-5 h-5" />
             <span className="font-bold tracking-wide">Shop</span>
+            {shopQueueCount > 0 && (
+                <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
+                    {shopQueueCount}
+                </div>
+            )}
           </button>
 
           <button 
@@ -138,7 +145,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
             <ForgeTab onNavigate={setActiveTab} />
         </div>
         <div className={`h-full w-full ${activeTab === 'SHOP' ? 'block' : 'hidden'}`}>
-            <ShopTab />
+            <ShopTab onNavigate={setActiveTab} />
         </div>
         {activeTab === 'INVENTORY' && <InventoryDisplay />}
         {activeTab === 'MARKET' && <MarketTab onNavigate={setActiveTab} />}

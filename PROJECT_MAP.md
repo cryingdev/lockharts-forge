@@ -3,35 +3,27 @@
 
 This document describes the **current structural map** of the Lockhart’s Forge project.
 
-## Purpose
-- Help AI assistants and developers quickly understand how the project is organized.
-- Clarify the responsibility of each folder and major file.
-
 ---
 
-## Game Concept & Narrative Context
-Lockhart’s Forge is a dark fantasy, blacksmith-centered management game.
-- Progress via crafting, selling, and managing relationships with mercenaries.
+## Current File & Folder Structure (v0.1.31)
 
----
-
-## Current File & Folder Structure
+### Core Systems (Phaser)
+- **game/SmithingScene.ts**: 
+  - *Thermal Logic*: Temperature cooling, fuel-based ignition, and bellows pumping (restricted at 0°C).
+  - *Heat Glow*: `ambientGlow` centered on anvil area.
+  - *Dynamic Visuals*: Color interpolation based on temperature; progressive blade morphing.
 
 ### UI Layer (React)
-- **WorkbenchMinigame.tsx**: Rhythm-based stitching.
-  - *Stitching Logic*: Uses scale down + fill color to leave marks.
-- **SimulationTab.tsx**: Tactical testing ground.
-  - *Archetype Engine*: New logic to classify units for debugging stat impacts.
-
-### State & Context Layer
-- `state/reducer/crafting.ts`: Bridges minigame results to equipment generation.
-- `utils/craftingLogic.ts`: Primary equipment factory. Handles `bonus` stats from perfect streaks.
-
-### Combat Logic
-- `utils/combatLogic.ts`: Core math for Hit/Crit/Damage.
-- `hooks/useSimulation.ts`: Orchestrates automated battle loops and bulk testing.
+- **ForgeTab.tsx**: 
+  - Crafting hub with category filtering (Weapon/Armor).
+  - Mastery tracking and resource requirement tooltips.
+- **SmithingMinigame.tsx**: 
+  - *Responsive Layout*: Uses `Phaser.Scale.RESIZE` to fill the container.
+  - *Full-Width Anvil*: Anvil image and surface scale to fill the entire container width.
+- **WorkbenchMinigame.tsx**: Rhythm-based stitching for leather/wood.
+- **SimulationTab.tsx**: Tactical testing ground for combat formulas.
 
 ---
 
-## Summary (v0.1.29)
-The project now features a complete feedback loop where player skill in minigames directly influences item power, and the simulation tool allows for high-fidelity debugging of how those bonuses affect combat balance.
+## Summary
+V0.1.31 introduces stricter ignition rules (requiring fuel to start from 0°C) and visual alignment fixes for ambient heat effects, reinforcing the "Forge Management" loop.

@@ -60,5 +60,10 @@ export const createInitialGameState = (): GameState => ({
     // Dungeon System
     activeExpeditions: [],
     dungeonClearCounts: {},
-    dungeonResult: null
+    dungeonResult: null,
+
+    // UI Effects State
+    uiEffects: {
+        energyHighlight: false
+    }
 });

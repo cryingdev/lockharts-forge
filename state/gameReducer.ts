@@ -1,4 +1,3 @@
-
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -9,7 +8,7 @@ import { handleTriggerEvent, handleCloseEvent, handleToggleJournal } from './red
 import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem } from './reducer/inventory';
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
 import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer } from './reducer/shop';
-import { handleAddKnownMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat } from './reducer/mercenary';
+import { handleAddKnownMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 
@@ -53,6 +52,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'HIRE_MERCENARY': return handleHireMercenary(state, action.payload);
     case 'FIRE_MERCENARY': return handleFireMercenary(state, action.payload);
     case 'ALLOCATE_STAT': return handleAllocateStat(state, action.payload);
+    case 'UPDATE_MERCENARY_STATS': return handleUpdateMercenaryStats(state, action.payload);
 
     // Expedition
     case 'START_EXPEDITION': return handleStartExpedition(state, action.payload);
@@ -63,6 +63,16 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     // Equipment
     case 'EQUIP_ITEM': return handleEquipItem(state, action.payload);
     case 'UNEQUIP_ITEM': return handleUnequipItem(state, action.payload);
+
+    // UI Effects
+    case 'SET_UI_EFFECT':
+        return {
+            ...state,
+            uiEffects: {
+                ...state.uiEffects,
+                [action.payload.effect]: action.payload.value
+            }
+        };
 
     default:
       return state;

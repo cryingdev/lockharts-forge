@@ -2,7 +2,6 @@
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import IntroScene from '../game/IntroScene';
-import { ChevronRight } from 'lucide-react';
 
 interface IntroScreenProps {
   onComplete: () => void;
@@ -45,14 +44,6 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
   return (
     <div className="fixed inset-0 bg-black z-50">
       <div ref={containerRef} className="w-full h-full" />
-      
-      {/* Skip Button */}
-      <button 
-        onClick={onComplete}
-        className="absolute bottom-8 right-8 text-stone-500 hover:text-stone-300 text-sm flex items-center gap-1 transition-colors animate-pulse"
-      >
-        SKIP <ChevronRight className="w-4 h-4" />
-      </button>
     </div>
   );
 };

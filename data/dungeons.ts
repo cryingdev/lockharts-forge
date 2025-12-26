@@ -9,7 +9,7 @@ export const DUNGEONS: DungeonDefinition[] = [
         tier: 1,
         description: 'The damp basement of an abandoned inn. Overrun by giant rats.',
         durationMinutes: 1, // Short for testing (real gameplay might be 5-10)
-        requiredPower: 15,
+        requiredPower: 55,
         energyCost: 20,
         baseXp: 50,
         rewards: [
@@ -23,8 +23,8 @@ export const DUNGEONS: DungeonDefinition[] = [
         name: 'Goblin Scavenger Camp',
         tier: 1,
         description: 'A small settlement of goblins hoarding stolen supplies.',
-        durationMinutes: 2,
-        requiredPower: 30,
+        durationMinutes: 5,
+        requiredPower: 105,
         energyCost: 25,
         baseXp: 80,
         rewards: [
@@ -32,7 +32,7 @@ export const DUNGEONS: DungeonDefinition[] = [
              { itemId: 'tin_ore', minQuantity: 1, maxQuantity: 3, chance: 0.8 },
              { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.5 }
         ],
-        bossUnlockReq: 5,
+        bossUnlockReq: 10,
         bossVariantId: 'dungeon_t1_goblin_king'
     },
     
@@ -42,8 +42,8 @@ export const DUNGEONS: DungeonDefinition[] = [
         name: 'Collapsed Iron Mine',
         tier: 2,
         description: 'Dark tunnels filled with hostile kobolds and rich veins.',
-        durationMinutes: 5,
-        requiredPower: 80,
+        durationMinutes: 10,
+        requiredPower: 150,
         energyCost: 35,
         baseXp: 150,
         rewards: [
@@ -57,14 +57,16 @@ export const DUNGEONS: DungeonDefinition[] = [
         name: 'Bandit Outpost',
         tier: 2,
         description: 'A fortified hill where bandits store their loot.',
-        durationMinutes: 10,
-        requiredPower: 120,
+        durationMinutes: 15,
+        requiredPower: 220,
         energyCost: 40,
         baseXp: 250,
         rewards: [
              { itemId: 'hard_leather', minQuantity: 2, maxQuantity: 4, chance: 1.0 },
              { itemId: 'iron_ore', minQuantity: 2, maxQuantity: 4, chance: 0.6 },
              { itemId: 'gold_ore', minQuantity: 1, maxQuantity: 1, chance: 0.1 }
-        ]
+        ],
+        bossUnlockReq: 20,
+        bossVariantId: 'dungeon_t2_bandit_leader'
     }
 ];

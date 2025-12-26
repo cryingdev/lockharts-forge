@@ -1,4 +1,3 @@
-
 import { GameState } from '../../types/index';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -88,5 +87,39 @@ export const handleAllocateStat = (state: GameState, payload: { mercenaryId: str
     return {
         ...state,
         knownMercenaries: newKnownMercenaries
+    };
+};
+
+export const handleUpdateMercenaryStats = (state: GameState, payload: { mercenaryId: string; stats: PrimaryStats }): GameState => {
+    const { mercenaryId, stats } = payload;
+    const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
+    if (mercIndex === -1) return state;
+
+    const merc = state.knownMercenaries[mercIndex];
+    
+    const merged = mergePrimaryStats(merc.stats, stats);
+    const newMaxHp = calculateMaxHp(merged, merc.level);
+    const newMaxMp = calculateMaxMp(merged, merc.level);
+
+    // Maintain current health percentage if possible, or just add the flat difference
+    const hpDiff = newMaxHp - merc.maxHp;
+    const mpDiff = newMaxMp - merc.maxMp;
+
+    const updatedMerc: Mercenary = {
+        ...merc,
+        allocatedStats: stats,
+        maxHp: newMaxHp,
+        maxMp: newMaxMp,
+        currentHp: merc.currentHp + (hpDiff > 0 ? hpDiff : 0),
+        currentMp: merc.currentMp + (mpDiff > 0 ? mpDiff : 0)
+    };
+
+    const newKnownMercenaries = [...state.knownMercenaries];
+    newKnownMercenaries[mercIndex] = updatedMerc;
+
+    return {
+        ...state,
+        knownMercenaries: newKnownMercenaries,
+        logs: [`Updated attributes for ${merc.name}.`, ...state.logs]
     };
 };

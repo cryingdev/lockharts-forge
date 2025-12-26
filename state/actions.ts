@@ -1,9 +1,9 @@
-
 import { GameEvent } from '../types/events';
 import { EquipmentItem, EquipmentSlotType } from '../types/inventory';
 import { ShopCustomer } from '../types/shop';
 import { Mercenary } from '../models/Mercenary';
 import { PrimaryStats } from '../models/Stats';
+import { GameState } from '../types/game-state';
 
 export type GameAction =
   | { type: 'REPAIR_WORK' }
@@ -36,4 +36,6 @@ export type GameAction =
   | { type: 'EQUIP_ITEM'; payload: { mercenaryId: string; inventoryItemId: string } }
   | { type: 'UNEQUIP_ITEM'; payload: { mercenaryId: string; slot: EquipmentSlotType } }
   | { type: 'USE_ITEM'; payload: { itemId: string } }
-  | { type: 'ALLOCATE_STAT'; payload: { mercenaryId: string; stat: keyof PrimaryStats } };
+  | { type: 'ALLOCATE_STAT'; payload: { mercenaryId: string; stat: keyof PrimaryStats } }
+  | { type: 'UPDATE_MERCENARY_STATS'; payload: { mercenaryId: string; stats: PrimaryStats } }
+  | { type: 'SET_UI_EFFECT'; payload: { effect: keyof GameState['uiEffects']; value: boolean } };

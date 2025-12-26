@@ -39,7 +39,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         LOCKHART'S<br/>FORGE
                     </h1>
                     <div className="h-1 w-32 bg-amber-800 mx-auto mt-4 rounded-full"></div>
-                    <p className="mt-4 text-stone-400 font-mono tracking-widest text-sm uppercase">Version 0.1.26</p>
+                    <p className="mt-4 text-stone-400 font-mono tracking-widest text-sm uppercase">Version 0.1.31</p>
                 </div>
 
                 {/* Menu Buttons */}

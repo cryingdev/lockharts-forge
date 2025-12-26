@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useGame } from '../../context/GameContext';
-import { User, XCircle, CheckCircle } from 'lucide-react';
+import { User, XCircle, CheckCircle, Flame, AlertCircle } from 'lucide-react';
 
 const EventModal = () => {
   const { state, actions } = useGame();
@@ -22,6 +21,14 @@ const EventModal = () => {
     return true;
   };
 
+  // Determine Icon based on title/content
+  const getIcon = () => {
+      const title = activeEvent.title.toLowerCase();
+      if (title.includes('forge') || title.includes('furnace')) return <Flame className="w-8 h-8 text-amber-500" />;
+      if (title.includes('warning') || title.includes('attention')) return <AlertCircle className="w-8 h-8 text-amber-500" />;
+      return <User className="w-8 h-8 text-amber-500" />;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="bg-stone-900 border-2 border-amber-600 rounded-xl max-w-lg w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
@@ -29,7 +36,7 @@ const EventModal = () => {
         {/* Header */}
         <div className="bg-stone-800 p-6 border-b border-stone-700 flex items-center space-x-4">
           <div className="bg-amber-900/30 p-3 rounded-full border border-amber-700">
-            <User className="w-8 h-8 text-amber-500" />
+            {getIcon()}
           </div>
           <h2 className="text-2xl font-serif text-amber-100">{activeEvent.title}</h2>
         </div>

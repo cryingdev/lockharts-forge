@@ -1,14 +1,14 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import WorkbenchMinigame from './WorkbenchMinigame';
-import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench, X, ShoppingCart } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
 import { MATERIALS } from '../../../data/materials';
+import { getAssetUrl } from '../../../utils';
 
 interface ForgeTabProps {
     onNavigate: (tab: any) => void;
@@ -17,12 +17,13 @@ interface ForgeTabProps {
 const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   
-  const { inventory, stats, isCrafting, craftingMastery } = state;
+  const { inventory, stats, isCrafting, craftingMastery, activeEvent } = state;
   const { hasFurnace, hasWorkbench } = state.forge;
 
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [hasPromptedFurnace, setHasPromptedFurnace] = useState(false);
   
   const [expandedSubCat, setExpandedSubCat] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -48,6 +49,28 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const charcoalCount = getInventoryCount('charcoal');
   const hasFuel = charcoalCount > 0;
   
+  // Requirement check for furnace when opening tab
+  useEffect(() => {
+    if (!hasFurnace && !hasPromptedFurnace && !activeEvent) {
+        actions.triggerEvent({
+            id: 'CUSTOMER_VISIT', // Logic uses title to decide icon
+            title: "The Forge lies in Ruins",
+            description: "Your journey as a blacksmith starts with a single spark. To begin forging weapons and armor, you must first install a Furnace from the market.",
+            options: [
+                {
+                    label: "Visit Market (500 G)",
+                    action: () => onNavigate('MARKET')
+                },
+                {
+                    label: "I'll look around first",
+                    action: () => {}
+                }
+            ]
+        });
+        setHasPromptedFurnace(true);
+    }
+  }, [hasFurnace, hasPromptedFurnace, activeEvent, actions, onNavigate]);
+
   const canEnterForge = useMemo(() => {
       if (!selectedItem) return false;
       if (selectedItem.craftingType === 'WORKBENCH') return true;
@@ -279,12 +302,25 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     }
 
     return (
-        <div className="relative h-full w-full bg-stone-950 overflow-hidden">
+        <div 
+            className="relative h-full w-full bg-stone-950 overflow-hidden"
+            style={{ 
+                backgroundImage: `url(${getAssetUrl('tile_forge.png')})`,
+                backgroundRepeat: 'repeat',
+                backgroundBlendMode: 'multiply'
+            }}
+        >
         
         {selectedItem && !isRequirementMet && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center">
                 <div className="absolute inset-0 bg-stone-950/90 backdrop-blur-md animate-in fade-in duration-700"></div>
                 <div className="relative z-10 p-8 max-w-md w-full bg-stone-900 border-2 border-stone-800 rounded-2xl shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-500">
+                    <button 
+                        onClick={() => setSelectedItem(null)}
+                        className="absolute top-4 right-4 p-2 text-stone-500 hover:text-stone-300 transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                     <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-6 border border-stone-700">
                         {selectedItem.craftingType === 'FORGE' ? <Flame className="w-10 h-10 text-stone-600" /> : <Wrench className="w-10 h-10 text-stone-600" />}
                     </div>
@@ -306,10 +342,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        <div className={`absolute inset-0 z-0 flex w-full h-full ${selectedItem && !isRequirementMet ? 'blur-sm pointer-events-none' : ''}`}>
+        <div className={`absolute inset-0 z-0 flex w-full h-full ${((selectedItem && !isRequirementMet) || !hasFurnace) ? 'blur-sm pointer-events-none' : ''}`}>
             
             <div className={`h-full relative flex flex-col transition-all duration-500 ease-in-out ${isPanelOpen ? 'w-[60%]' : 'w-full'}`}>
-            <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-stone-925 relative overflow-hidden">
+            <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-stone-925/40 relative overflow-hidden">
                 
                 <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">
                     {selectedItem?.craftingType === 'FORGE' ? (
@@ -335,7 +371,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     <p className="text-stone-400 text-center max-w-md mb-6 italic">"{selectedItem.description}"</p>
 
                     {masteryInfo && (
-                        <div className="w-full bg-stone-900/50 p-3 rounded-lg border border-stone-800 mb-6">
+                        <div className="w-full bg-stone-900/50 p-3 rounded-lg border border-stone-800 mb-6 backdrop-blur-sm">
                             <div className="flex justify-between items-center mb-1 text-xs uppercase font-bold tracking-wider">
                                 <span className="text-stone-500 flex items-center gap-1">
                                     <Award className="w-3 h-3" /> Mastery
@@ -358,10 +394,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     )}
 
                     <div className="flex items-center gap-3 mb-6">
-                         <div className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm ${
+                         <div className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm backdrop-blur-sm ${
                             hasEnergy 
-                            ? 'bg-blue-900/20 border-blue-700/50 text-blue-400' 
-                            : 'bg-red-900/20 border-red-700/50 text-red-500 animate-pulse'
+                            ? 'bg-blue-900/40 border-blue-700/50 text-blue-400' 
+                            : 'bg-red-900/40 border-red-700/50 text-red-500 animate-pulse'
                         }`}>
                             <Zap className="w-4 h-4" />
                             <span>Energy: -{requiredEnergy}</span>
@@ -412,15 +448,15 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     <div className="w-24 h-24 rounded-full border-4 border-dashed border-stone-700 flex items-center justify-center mb-4">
                         <Hammer className="w-10 h-10" />
                     </div>
-                    <h3 className="text-xl font-bold text-stone-500">The Anvil is Cold</h3>
-                    <p className="text-sm mt-2">Select a recipe from the right to begin.</p>
+                    <h3 className="text-xl font-bold text-stone-500 drop-shadow-md">The Anvil is Cold</h3>
+                    <p className="text-sm mt-2 font-medium">Select a recipe from the right to begin.</p>
                     </div>
                 )}
             </div>
             </div>
 
             <div 
-            className={`h-full bg-stone-900 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out relative ${
+            className={`h-full bg-stone-900/95 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out relative backdrop-blur-sm ${
                 isPanelOpen ? 'w-[40%] translate-x-0' : 'w-0 translate-x-full border-none'
             }`}
             >
@@ -580,7 +616,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   }, [
       activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, favoriteItems, craftingMastery, isRequirementMet,
       handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite,
-      handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats
+      handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, hasPromptedFurnace, activeEvent
   ]);
 
   return content;

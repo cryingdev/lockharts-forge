@@ -11,6 +11,7 @@ export default class IntroScene extends Phaser.Scene {
   make!: Phaser.GameObjects.GameObjectCreator;
   scale!: Phaser.Scale.ScaleManager;
   textures!: Phaser.Textures.TextureManager;
+  input!: Phaser.Input.InputPlugin;
   game!: Phaser.Game;
 
   constructor() {
@@ -18,14 +19,11 @@ export default class IntroScene extends Phaser.Scene {
   }
 
   preload() {
-    // Load assets for the cutscene
     this.load.image('intro_bg', getAssetUrl('intro_bg_01.png'));
-    // Load additional narrative backgrounds
     this.load.image('intro_bg_02', getAssetUrl('intro_bg_02.png'));
     this.load.image('intro_bg_03', getAssetUrl('intro_bg_03.png'));
     this.load.image('intro_bg_04', getAssetUrl('intro_bg_04.png'));
     this.load.image('intro_bg_05', getAssetUrl('intro_bg_05.png'));
-
     this.load.image('intro_dragon', getAssetUrl('intro_dragon_02.png'));
   }
   
@@ -59,12 +57,31 @@ export default class IntroScene extends Phaser.Scene {
         graphics.destroy();
     }
 
-    // --- Layers Setup ---
+    // --- Skip Functionality ---
+    this.input.once('pointerdown', () => {
+        this.game.events.emit('intro-complete');
+    });
 
-    // 1. Black Base Layer
+    // Subtle hint text
+    const skipHint = this.add.text(centerX, height - 40, 'Touch anywhere to skip', {
+        fontFamily: 'sans-serif',
+        fontSize: '12px',
+        color: '#57534e',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setAlpha(0).setDepth(20);
+
+    this.tweens.add({
+        targets: skipHint,
+        alpha: { from: 0, to: 0.5 },
+        duration: 1000,
+        delay: 1000,
+        hold: 2000,
+        yoyo: true
+    });
+
+    // --- Layers Setup ---
     this.add.rectangle(centerX, centerY, width, height, 0x000000).setDepth(0);
 
-    // 2. Background Images (Layered for crossfade)
     const createBg = (key: string, depth: number) => {
         const img = this.add.image(centerX, centerY, key).setAlpha(0).setDepth(depth);
         const scaleX = width / img.width;
@@ -74,30 +91,19 @@ export default class IntroScene extends Phaser.Scene {
     };
 
     const bg1 = createBg('intro_bg', 1);
-    const bg2 = createBg('intro_bg_02', 1); // Same depth, will control alpha
+    const bg2 = createBg('intro_bg_02', 1);
     const bg3 = createBg('intro_bg_03', 1);
     const bg4 = createBg('intro_bg_04', 1);
     const bg5 = createBg('intro_bg_05', 1);
 
-    // 3. Dragon Image
     const dragon = this.add.image(centerX, 0, 'intro_dragon').setDepth(2);
-    // Calculate the final target scale (full width)
     const finalDragonScale = width / dragon.width;
-    
-    // START SMALL: Simulate being far away/high up (20% of final size)
     dragon.setScale(finalDragonScale * 0.2);
-
-    const dragonHeight = dragon.height * finalDragonScale;
-    const startY = -dragonHeight / 2 - 50; 
     const loomY = centerY; 
-    // Attack Position: Top 15% of screen
     const attackY = height * 0.15; 
-
-    dragon.y = startY;
-    // FIX: Hide dragon initially so it doesn't peek out during Step 1/2
+    dragon.y = -dragon.height;
     dragon.setVisible(false);
 
-    // 4. Studio Text
     const devText = this.add.text(centerX, centerY, "CRYINGDEV STUDIO\nPRESENTS", {
       fontFamily: 'serif',
       fontSize: '45px',
@@ -106,220 +112,87 @@ export default class IntroScene extends Phaser.Scene {
       fontStyle: 'bold'
     }).setOrigin(0.5).setAlpha(0).setDepth(10);
 
-    // 5. Narrative Texts
     const narrativeText1 = this.createNarrativeText(centerX, centerY, "FIASCO,\nA MASTER OF DISASTER...", '#ef4444');
     const narrativeText2 = this.createNarrativeText(centerX, centerY, "EVERTHING WE LOVED IS LOST...", '#ef4444');
     const narrativeText3 = this.createNarrativeText(centerX, centerY, "BUT THE HAMMER IS STILL HERE.", '#ef4444');
-    // Text 2: The Despair (Slightly Higher)
     const textDespair = this.createNarrativeText(centerX, centerY - 40, "NEVER FORGET...", '#ef4444');
-    
-    // Text 3: The Vengeance (Slightly Lower, Brighter/Gold to signify the Forge)
     const textVengeance = this.createNarrativeText(centerX, centerY + 40, "AND FORGED A VENGEANCE.", '#f59e0b');
 
-    // 6. Fire Breath Effects
     const breathOverlay = this.add.rectangle(centerX, centerY, width, height, 0xff4400)
         .setAlpha(0)
         .setDepth(5)
         .setBlendMode(Phaser.BlendModes.ADD);
 
-    // Tracking variable for dynamic spread
     let breathSpread = 50;
-
-    // Initial Emitter Config: Narrow beam (Pillar)
     const fireEmitter = this.add.particles(centerX, -50, 'intro_flame', {
-        speedY: { min: 1200, max: 2200 }, // Very fast downward stream
-        speedX: { 
-            onEmit: () => Phaser.Math.Between(-breathSpread, breathSpread)
-        },
-        scale: { start: 6, end: 15 },     // Grow large
+        speedY: { min: 1200, max: 2200 },
+        speedX: { onEmit: () => Phaser.Math.Between(-breathSpread, breathSpread) },
+        scale: { start: 6, end: 15 },
         alpha: { start: 1, end: 0 },
         lifespan: 1500,
-        quantity: 40,                     // High density
+        quantity: 40,
         blendMode: 'ADD',
         emitting: false
     });
     fireEmitter.setDepth(4);
 
     // --- Animation Sequence ---
-    
     this.tweens.chain({
       tweens: [
-        // Step 1: Studio Name Fade In
-        {
-          targets: devText,
-          alpha: 1,
-          duration: 2500,
-          ease: 'Power2',
-        },
-        // Step 1b: Hold & Shake (Earthquake starts here)
-        {
-            targets: devText,
-            alpha: 1, 
-            duration: 2000, 
-            onStart: () => {
-                // Shake duration covers this hold (2000) + fade out (2000) + start of next (2000)
-                this.cameras.main.shake(6000, 0.005); 
-            }
-        },
-        // Step 1c: Studio Name Fade Out
-        {
-          targets: devText,
-          alpha: 0,
-          duration: 2000,
-          ease: 'Power2',
-        },
-        // Step 2: Fade In First Background
-        {
-          targets: bg1,
-          alpha: 1,
-          duration: 1500,
-          ease: 'Linear'
-        },
-        // Step 3: Dragon Descent (ZOOM IN EFFECT)
+        { targets: devText, alpha: 1, duration: 2500, ease: 'Power2' },
+        { targets: devText, alpha: 1, duration: 2000, onStart: () => this.cameras.main.shake(6000, 0.005) },
+        { targets: devText, alpha: 0, duration: 2000, ease: 'Power2' },
+        { targets: bg1, alpha: 1, duration: 1500, ease: 'Linear' },
         {
           targets: dragon,
-          y: loomY - 200,              // Move down
-          scale: finalDragonScale, // Grow to full size (Swoop effect)
+          y: loomY - 200,
+          scale: finalDragonScale,
           duration: 3000,
           ease: 'Sine.easeInOut',
-          hold: 500, // Brief hover
+          hold: 500,
           onStart: () => {
-              dragon.setVisible(true); // REVEAL DRAGON HERE
+              dragon.setVisible(true);
               this.cameras.main.shake(3500, 0.005); 
           }
         },
-        // Step 4: Dragon Ascend (Move to attack position FIRST)
-        {
-            targets: dragon,
-            y: 0,
-            scale: finalDragonScale * 0.7, 
-            duration: 1000, // Move up quickly
-            ease: 'Quad.easeOut'
-        },
-        // Step 5: BREATH ATTACK (Longer, Expanding from Center)
+        { targets: dragon, y: 0, scale: finalDragonScale * 0.7, duration: 1000, ease: 'Quad.easeOut' },
         {
             targets: breathOverlay,
-            alpha: 0.8, // Sustained glow
-            duration: 2500, // Longer attack duration
+            alpha: 0.8,
+            duration: 2500,
             yoyo: true, 
             hold: 100,
             onStart: () => {
-                // Set emitter to dragon's mouth at the top
                 fireEmitter.setPosition(centerX, attackY + 200);
-                
-                // Reset to narrow beam
                 breathSpread = 50;
-                
                 fireEmitter.start();
-                this.cameras.main.shake(2500, 0.03); // Shake for full duration
+                this.cameras.main.shake(2500, 0.03);
             },
             onUpdate: (tween: Phaser.Tweens.Tween) => {
-                // Expand the beam over time
-                const progress = tween.progress; // 0 to 1
-                
-                // Calculate spread: Start at 50, expand to 1200+
-                breathSpread = 50 + (progress * 1200);
+                breathSpread = 50 + (tween.progress * 1200);
             },
             onComplete: () => {
                 fireEmitter.stop();
                 dragon.setVisible(false);
             }
         },
-        // Step 6: Slideshow of Destruction (BG 2 & 3)
-        {
-            targets: bg2,
-            alpha: 1,
-            duration: 2000,
-            hold: 2500,
-            ease: 'Linear',
-        },
-        {
-            targets: narrativeText1,
-            alpha: 1,
-            duration: 1000,
-            hold: 3000,
-            ease: 'Power2',
-            offset: '-=1000',
-        },
-        {
-            targets: narrativeText1,
-            alpha: 0,
-            duration: 1000,
-            ease: 'Power2',
-        },
-        {
-            targets: bg3,
-            alpha: 1,
-            duration: 2000,
-            hold: 2500,
-            ease: 'Linear'
-        },
-        {
-            targets: narrativeText2,
-            alpha: 1,
-            duration: 1000,
-            hold: 3000,
-            ease: 'Power2',
-            offset: '-=1000' // Appears while BG4 is holding
-        },
-        {
-        targets: narrativeText2,
-            alpha: 0,
-            duration: 1000,
-            ease: 'Power2',
-        },
-        // Step 7: BG 4 (Longer exposure & Lingering effect)
-        {
-            targets: bg4,
-            alpha: 1,
-            duration: 3000, // Slower fade in
-            hold: 3500,     // Extended hold to let the viewer see the ruin
-            ease: 'Linear',
-        },
-        {
-            targets: narrativeText3,
-            alpha: 1,
-            duration: 1000,
-            hold: 3000,
-            ease: 'Power2',
-            offset: '-=1000' // Appears while BG4 is holding
-        },
-        // Step 8b: Fade Out Text 3
-        {
-            targets: narrativeText3,
-            alpha: 0,
-            duration: 1000,
-            ease: 'Power2'
-        },
-        // Step 9: Final BG (BG 5 - The Ruined Forge) - Appears AFTER tragedy text fades
-        {
-            targets: bg5,
-            alpha: 1,
-            duration: 3000, // Slow reveal
-            ease: 'Linear',
-        },
-        // Step 10: Narrative Text 2 (Despair) - Top line
-        {
-            targets: textDespair,
-            alpha: 1,
-            duration: 2000,
-            ease: 'Power2',
-            delay: 500
-        },
-        // Step 11: Narrative Text 3 (Vengeance) - Bottom line, appears later for impact
-        {
-            targets: textVengeance,
-            alpha: 1,
-            duration: 2500, // Slow burn appearance
-            ease: 'Power2',
-            offset: '-=1000' // Overlaps with the end of Text 2's tween
-        },
-        // Step 12: Final Fade Out (Everything)
+        { targets: bg2, alpha: 1, duration: 2000, hold: 2500, ease: 'Linear' },
+        { targets: narrativeText1, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2', offset: '-=1000' },
+        { targets: narrativeText1, alpha: 0, duration: 1000, ease: 'Power2' },
+        { targets: bg3, alpha: 1, duration: 2000, hold: 2500, ease: 'Linear' },
+        { targets: narrativeText2, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2', offset: '-=1000' },
+        { targets: narrativeText2, alpha: 0, duration: 1000, ease: 'Power2' },
+        { targets: bg4, alpha: 1, duration: 3000, hold: 3500, ease: 'Linear' },
+        { targets: narrativeText3, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2', offset: '-=1000' },
+        { targets: narrativeText3, alpha: 0, duration: 1000, ease: 'Power2' },
+        { targets: bg5, alpha: 1, duration: 3000, ease: 'Linear' },
+        { targets: textDespair, alpha: 1, duration: 2000, ease: 'Power2', delay: 500 },
+        { targets: textVengeance, alpha: 1, duration: 2500, ease: 'Power2', offset: '-=1000' },
         {
           targets: [bg1, bg2, bg3, bg4, bg5, textDespair, textVengeance],
           alpha: 0,
-          duration: 3000, // Slow final fade to black
-          delay: 3000,    // Hold the final message for a while
+          duration: 3000,
+          delay: 3000,
           onComplete: () => {
             this.game.events.emit('intro-complete');
           }

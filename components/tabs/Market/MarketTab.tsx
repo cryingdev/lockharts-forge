@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { Store, ShoppingCart, ShoppingBag, Minus, Trash2, AlertCircle, Package, Flame, Check, Box, Wrench } from 'lucide-react';
@@ -21,10 +20,17 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const { hasFurnace, hasWorkbench } = state.forge;
 
   const addToCart = (itemId: string) => {
-    setCart(prev => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + 1
-    }));
+    const isOneTimeItem = itemId === 'furnace' || itemId === 'workbench' || itemId.startsWith('scroll_');
+    
+    setCart(prev => {
+      // One-time items cannot have quantity > 1
+      if (isOneTimeItem && prev[itemId] > 0) return prev;
+      
+      return {
+        ...prev,
+        [itemId]: (prev[itemId] || 0) + 1
+      };
+    });
   };
 
   const removeFromCart = (itemId: string) => {
@@ -156,6 +162,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             {MARKET_CATALOG.map((marketItem: any) => {
                 
                 const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
+                const isScrollItem = marketItem.id.startsWith('scroll_');
                 const isOwned = (marketItem.id === 'furnace' && hasFurnace) || (marketItem.id === 'workbench' && hasWorkbench);
 
                 if (isKeyItem && isOwned) return null;
@@ -197,13 +204,15 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                 }
 
                 const ownedCount = getOwnedCount(marketItem.id);
+                const isInCart = cart[marketItem.id] > 0;
+                const isOneTimeDisabled = (isKeyItem || isScrollItem) && isInCart;
 
                 return (
                     <button 
                         key={marketItem.id}
                         onClick={() => addToCart(marketItem.id)}
-                        disabled={isKeyItem && (cart[marketItem.id] > 0)} 
-                        className={`flex flex-col items-center p-3 rounded-lg border transition-all text-center group relative overflow-hidden h-[150px] justify-between bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750`}
+                        disabled={isOneTimeDisabled} 
+                        className={`flex flex-col items-center p-3 rounded-lg border transition-all text-center group relative overflow-hidden h-[150px] justify-between ${isOneTimeDisabled ? 'bg-stone-900 border-stone-800 opacity-60 grayscale cursor-not-allowed' : 'bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750'}`}
                     >
                         {!isKeyItem && !marketItem.id.startsWith('scroll') && (
                             <div className="absolute top-2 right-2 bg-stone-950/80 backdrop-blur-sm border border-stone-700 px-2 py-0.5 rounded text-[10px] text-stone-400 font-mono flex items-center gap-1 z-10">
@@ -245,10 +254,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                         </div>
 
                         <div className="bg-stone-950 px-3 py-1 rounded-full border border-stone-700 text-amber-400 font-mono text-xs font-bold w-full">
-                            {marketItem.price} G
+                            {isInCart && isOneTimeDisabled ? 'In Cart' : `${marketItem.price} G`}
                         </div>
                         
-                        {isKeyItem && (
+                        {isKeyItem && !isOneTimeDisabled && (
                             <div className="absolute inset-0 border-2 border-amber-500/50 rounded-lg pointer-events-none animate-pulse"></div>
                         )}
                     </button>
@@ -290,6 +299,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
                       if (!marketItem) return null;
 
+                      const isOneTime = id === 'furnace' || id === 'workbench' || id.startsWith('scroll_');
+
                       return (
                           <div key={id} className="flex items-center justify-between bg-stone-900 p-3 rounded-lg border border-stone-800">
                               <div>
@@ -302,21 +313,16 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                       {marketItem.price * (count as number)}
                                   </div>
                                   <div className="flex items-center gap-1">
-                                      {id !== 'furnace' && id !== 'workbench' && (
+                                      {!isOneTime && (
                                         <>
                                             <button onClick={() => removeFromCart(id)} className="p-1 hover:bg-stone-800 rounded text-stone-400">
                                                 <Minus className="w-4 h-4" />
                                             </button>
-                                            <button onClick={() => deleteFromCart(id)} className="p-1 hover:bg-red-900/30 rounded text-stone-500 hover:text-red-500 ml-1">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
                                         </>
                                       )}
-                                      {(id === 'furnace' || id === 'workbench') && (
-                                          <button onClick={() => deleteFromCart(id)} className="p-1 hover:bg-red-900/30 rounded text-stone-500 hover:text-red-500 ml-1">
-                                              <Trash2 className="w-4 h-4" />
-                                          </button>
-                                      )}
+                                      <button onClick={() => deleteFromCart(id)} className="p-1 hover:bg-red-900/30 rounded text-stone-500 hover:text-red-500 ml-1">
+                                          <Trash2 className="w-4 h-4" />
+                                      </button>
                                   </div>
                               </div>
                           </div>
