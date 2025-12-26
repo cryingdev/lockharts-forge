@@ -1,4 +1,3 @@
-
 import { EquipmentItem } from '../types/inventory';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { MASTERY_THRESHOLDS } from '../config/mastery-config';
@@ -31,17 +30,16 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
     }
 
     let rarity = EquipmentRarity.COMMON;
-    if (quality >= 100) rarity = EquipmentRarity.LEGENDARY;
-    else if (quality >= 90) rarity = EquipmentRarity.EPIC;
-    else if (quality >= 75) rarity = EquipmentRarity.RARE;
-    else if (quality >= 50) rarity = EquipmentRarity.UNCOMMON;
+    if (quality >= 110) rarity = EquipmentRarity.LEGENDARY; 
+    else if (quality >= 100) rarity = EquipmentRarity.EPIC;  
+    else if (quality >= 85) rarity = EquipmentRarity.RARE;
+    else if (quality >= 60) rarity = EquipmentRarity.UNCOMMON;
 
-    const qualityMultiplier = 0.5 + (quality / 100) * 0.7; 
+    const qualityMultiplier = (quality / 100); 
     const finalMultiplier = qualityMultiplier * statMultiplier;
 
     const base = recipe.baseStats || { physicalAttack: 0, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 };
     
-    // Calculate scaled stats
     const stats: EquipmentStats = {
         physicalAttack: Math.round(base.physicalAttack * finalMultiplier),
         physicalDefense: Math.round(base.physicalDefense * finalMultiplier),
@@ -49,18 +47,20 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         magicalDefense: Math.round(base.magicalDefense * finalMultiplier),
     };
 
-    // Apply flat bonus to the PRIMARY stat (highest base value)
+    let appliedBonus: Equipment['appliedBonus'] = undefined;
+
     if (bonus > 0) {
-        const s = stats;
-        if (s.physicalAttack >= s.magicalAttack && s.physicalAttack >= s.physicalDefense && s.physicalAttack >= s.magicalDefense) {
-            s.physicalAttack += bonus;
-        } else if (s.magicalAttack >= s.physicalAttack && s.magicalAttack >= s.physicalDefense && s.magicalAttack >= s.magicalDefense) {
-            s.magicalAttack += bonus;
-        } else if (s.physicalDefense >= s.physicalAttack && s.physicalDefense >= s.magicalAttack && s.physicalDefense >= s.magicalDefense) {
-            s.physicalDefense += bonus;
-        } else {
-            s.magicalDefense += bonus;
+        let targetStat: keyof EquipmentStats = 'physicalAttack';
+        if (stats.magicalAttack > stats.physicalAttack) {
+            targetStat = 'magicalAttack';
+        } else if (stats.physicalDefense > stats.physicalAttack && stats.physicalDefense > stats.magicalAttack) {
+            targetStat = 'physicalDefense';
+        } else if (stats.magicalDefense > stats.physicalAttack && stats.magicalDefense > stats.magicalAttack) {
+            targetStat = 'magicalDefense';
         }
+        
+        stats[targetStat] += bonus;
+        appliedBonus = { stat: targetStat, value: bonus };
     }
 
     const price = Math.round(recipe.baseValue * finalMultiplier * priceMultiplier);
@@ -76,7 +76,12 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         icon: recipe.icon,
         description: recipe.description,
         stats: stats,
+        appliedBonus,
         specialAbilities: [], 
+        durability: recipe.maxDurability, 
+        maxDurability: recipe.maxDurability,
+        isRepairable: recipe.isRepairable,
+        equipRequirements: recipe.equipRequirements,
         craftedDate: Date.now(),
         previousOwners: [], 
         slotType: recipe.slotType,

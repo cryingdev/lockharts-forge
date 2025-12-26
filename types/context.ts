@@ -20,6 +20,7 @@ export interface GameContextType {
     cancelCrafting: (item: EquipmentItem) => void;
     finishCrafting: (item: EquipmentItem, quality: number, bonus?: number) => void;
     craftItem: (item: EquipmentItem, quality: number) => void; 
+    dismissCraftingResult: () => void;
     
     buyItems: (items: { id: string; count: number }[], totalCost: number) => void;
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => void;

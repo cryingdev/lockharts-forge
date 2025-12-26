@@ -1,12 +1,10 @@
-
 import { Mercenary, Gender } from '../models/Mercenary';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { JobClass, JOB_STAT_WEIGHTS } from '../models/JobClass';
 import { calculateMaxHp, calculateMaxMp, PrimaryStats, mergePrimaryStats } from '../models/Stats';
 import { generateFullName } from './nameGenerator';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
-import { EquipmentSlotType } from '../types/inventory';
-import { Equipment } from '../models/Equipment';
+import { Equipment, EquipmentSlotType } from '../models/Equipment';
 
 const distributeRandomPoints = (weights: PrimaryStats, points: number): PrimaryStats => {
     const stats = { str: 0, vit: 0, dex: 0, int: 0, luk: 0 };

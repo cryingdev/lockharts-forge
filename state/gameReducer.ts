@@ -38,6 +38,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'START_CRAFTING': return handleStartCrafting(state, action.payload);
     case 'CANCEL_CRAFTING': return handleCancelCrafting(state, action.payload);
     case 'FINISH_CRAFTING': return handleFinishCrafting(state, action.payload);
+    case 'DISMISS_CRAFTING_RESULT': return { ...state, lastCraftedItem: null };
     case 'SET_CRAFTING': return handleSetCrafting(state, action.payload);
     case 'UPDATE_FORGE_STATUS': return handleUpdateForgeStatus(state, action.payload);
 

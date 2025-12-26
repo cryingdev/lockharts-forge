@@ -1,8 +1,6 @@
-
 import { PrimaryStats } from './Stats';
 import { JobClass } from './JobClass';
-import { EquipmentSlotType } from '../types/inventory';
-import { Equipment } from './Equipment';
+import { Equipment, EquipmentSlotType } from './Equipment';
 
 export type Gender = 'Male' | 'Female';
 

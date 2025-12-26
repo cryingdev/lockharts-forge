@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { X, Wrench, Scissors } from 'lucide-react';
@@ -55,6 +54,16 @@ class WorkbenchScene extends Phaser.Scene {
 
   constructor() {
     super('WorkbenchScene');
+  }
+
+  public getQualityLabel(q: number): string {
+    if (q >= 110) return "MASTERWORK";
+    if (q >= 100) return "PRISTINE";
+    if (q >= 90) return "SUPERIOR";
+    if (q >= 80) return "FINE";
+    if (q >= 70) return "STANDARD";
+    if (q >= 60) return "RUSTIC";
+    return "CRUDE";
   }
 
   init(data: { onComplete: (score: number, bonus?: number) => void, difficulty: number }) {
@@ -335,23 +344,24 @@ class WorkbenchScene extends Phaser.Scene {
       
       const hitRatio = this.totalNodesSpawned > 0 ? (this.totalNodesHit / this.totalNodesSpawned) : 0;
       const finalQuality = Math.round(hitRatio * 100);
+      const label = this.getQualityLabel(finalQuality);
       
       const bg = this.add.rectangle(this.centerX, this.centerY, 1000, 1000, 0x000000, 0.8).setAlpha(0).setDepth(50);
       this.tweens.add({ targets: bg, alpha: 1, duration: 500 });
 
       const isDefective = finalQuality < 30;
-      const resultText = isDefective ? 'PIECE DEFECTIVE' : 'CRAFT COMPLETE';
+      const resultText = isDefective ? 'PIECE DEFECTIVE' : `${label} CRAFT!`;
       const resultColor = isDefective ? '#ef4444' : '#10b981';
 
       const txt = this.add.text(this.centerX, this.centerY - 40, resultText, {
           fontFamily: 'serif', fontSize: '42px', color: resultColor, stroke: '#000', strokeThickness: 4
       }).setOrigin(0.5).setAlpha(0).setDepth(51);
 
-      const statsTxt = this.add.text(this.centerX, this.centerY + 20, `Quality: ${finalQuality}% | Stitches: ${this.totalNodesHit}/${this.totalNodesSpawned}`, {
+      const statsTxt = this.add.text(this.centerX, this.centerY + 20, `Technique: ${this.totalNodesHit}/${this.totalNodesSpawned} Stitches`, {
           fontFamily: 'monospace', fontSize: '18px', color: '#fff'
       }).setOrigin(0.5).setAlpha(0).setDepth(51);
 
-      const bonusTxt = this.add.text(this.centerX, this.centerY + 60, `Bonus Stats: +${this.bonusStats}`, {
+      const bonusTxt = this.add.text(this.centerX, this.centerY + 60, `Bonus Potential: +${this.bonusStats}`, {
           fontFamily: 'monospace', fontSize: '20px', color: '#fbbf24', fontStyle: 'bold'
       }).setOrigin(0.5).setAlpha(0).setDepth(51);
 

@@ -1,6 +1,6 @@
 import { GameState } from '../../types/index';
-import { EquipmentSlotType } from '../../types/inventory';
-import { Equipment } from '../../models/Equipment';
+import { Equipment, EquipmentSlotType } from '../../models/Equipment';
+import { mergePrimaryStats } from '../../models/Stats';
 
 export const handleEquipItem = (state: GameState, payload: { mercenaryId: string; inventoryItemId: string }): GameState => {
     const { mercenaryId, inventoryItemId } = payload;
@@ -17,6 +17,27 @@ export const handleEquipItem = (state: GameState, payload: { mercenaryId: string
     if (invItem.type !== 'EQUIPMENT' || !invItem.equipmentData) return state;
     
     const equipData: Equipment = { ...invItem.equipmentData };
+
+    // --- 요구 스탯 검증 로직 ---
+    if (equipData.equipRequirements) {
+        const totalStats = mergePrimaryStats(mercenary.stats, mercenary.allocatedStats);
+        const req = equipData.equipRequirements;
+        const failedStats: string[] = [];
+
+        if (req.str && totalStats.str < req.str) failedStats.push(`STR ${req.str}`);
+        if (req.vit && totalStats.vit < req.vit) failedStats.push(`VIT ${req.vit}`);
+        if (req.dex && totalStats.dex < req.dex) failedStats.push(`DEX ${req.dex}`);
+        if (req.int && totalStats.int < req.int) failedStats.push(`INT ${req.int}`);
+        if (req.luk && totalStats.luk < req.luk) failedStats.push(`LUK ${req.luk}`);
+
+        if (failedStats.length > 0) {
+            return {
+                ...state,
+                logs: [`${mercenary.name} cannot equip ${equipData.name}. Missing: ${failedStats.join(', ')}`, ...state.logs]
+            };
+        }
+    }
+
     const targetSlot: EquipmentSlotType = equipData.slotType;
     
     let newInventory = [...state.inventory];
@@ -67,7 +88,6 @@ export const handleEquipItem = (state: GameState, payload: { mercenaryId: string
         });
     });
 
-    // 호감도 상승 로직 (최초 소유 시에만 적용)
     const previousOwners = equipData.previousOwners || [];
     let affinityGain = 0;
     let logMessage = `Equipped ${equipData.name} to ${mercenary.name}.`;

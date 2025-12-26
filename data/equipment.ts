@@ -1,4 +1,3 @@
-
 import { EquipmentCategory, EquipmentSubCategory, EquipmentItem } from '../types/index';
 
 export const EQUIPMENT_CATEGORIES: { id: EquipmentCategory; name: string }[] = [
@@ -7,13 +6,11 @@ export const EQUIPMENT_CATEGORIES: { id: EquipmentCategory; name: string }[] = [
 ];
 
 export const EQUIPMENT_SUBCATEGORIES: EquipmentSubCategory[] = [
-  // Weapons
   { id: 'SWORD', name: 'Swords', categoryId: 'WEAPON' },
   { id: 'AXE', name: 'Axes', categoryId: 'WEAPON' },
   { id: 'MACE', name: 'Maces', categoryId: 'WEAPON' },
   { id: 'STAFF', name: 'Staffs', categoryId: 'WEAPON' },
   { id: 'DAGGER', name: 'Daggers', categoryId: 'WEAPON' },
-  // Armor
   { id: 'HELMET', name: 'Helmets', categoryId: 'ARMOR' },
   { id: 'CHESTPLATE', name: 'Chestplates', categoryId: 'ARMOR' },
   { id: 'GLOVES', name: 'Gloves', categoryId: 'ARMOR' },
@@ -34,7 +31,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 6, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 30,
+    isRepairable: true,
+    equipRequirements: { dex: 4 }
   },
   {
     id: 'sword_bronze_t1',
@@ -48,7 +48,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 14, physicalDefense: 1, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 50,
+    isRepairable: true,
+    equipRequirements: { str: 4 }
   },
   {
     id: 'mace_wood_t1',
@@ -62,7 +65,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 25,
+    isRepairable: false, // Wooden club is usually not repairable
+    equipRequirements: { str: 3 }
   },
   {
     id: 'axe_01_t1',
@@ -76,7 +82,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 45,
+    isRepairable: true,
+    equipRequirements: { str: 5 }
   },
   {
     id: 'staff_oak_t1',
@@ -90,7 +99,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 5, physicalDefense: 0, magicalAttack: 8, magicalDefense: 2 },
     slotType: 'MAIN_HAND',
     isTwoHanded: true,
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 40,
+    isRepairable: false,
+    equipRequirements: { int: 5 }
   },
   {
     id: 'armor_leather_t1',
@@ -103,7 +115,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'leather_strips', count: 3 }, { id: 'wool_cloth', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 6, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'BODY',
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 60,
+    isRepairable: true,
+    equipRequirements: { vit: 3 }
   },
   {
     id: 'gloves_leather_t1',
@@ -116,7 +131,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'leather_strips', count: 2 }],
     baseStats: { physicalAttack: 0, physicalDefense: 3, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'HANDS',
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 35,
+    isRepairable: true,
+    equipRequirements: {}
   },
   {
     id: 'shield_wood_t1',
@@ -129,7 +147,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'oak_log', count: 2 }, { id: 'leather_strips', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 8, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'OFF_HAND',
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 40,
+    isRepairable: false,
+    equipRequirements: { str: 4 }
   },
   {
     id: 'helm_01_t1',
@@ -142,7 +163,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'copper_ore', count: 3 }],
     baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'HEAD',
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 40,
+    isRepairable: true,
+    equipRequirements: { vit: 4 }
   },
   {
     id: 'dagger_iron_t2',
@@ -156,7 +180,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 50,
+    isRepairable: true,
+    equipRequirements: { dex: 6, str: 4 }
   },
   {
     id: 'sword_iron_t2',
@@ -170,7 +197,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 25, physicalDefense: 2, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 80,
+    isRepairable: true,
+    equipRequirements: { str: 8 }
   },
   {
     id: 'mace_iron_t2',
@@ -184,7 +214,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 22, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 70,
+    isRepairable: true,
+    equipRequirements: { str: 10 }
   },
   {
     id: 'axe_iron_t2',
@@ -198,7 +231,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 32, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: true,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 75,
+    isRepairable: true,
+    equipRequirements: { str: 12 }
   },
   {
     id: 'staff_silver_t2',
@@ -212,7 +248,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 8, physicalDefense: 0, magicalAttack: 20, magicalDefense: 5 },
     slotType: 'MAIN_HAND',
     isTwoHanded: true,
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 60,
+    isRepairable: true,
+    equipRequirements: { int: 15 }
   },
   {
     id: 'sword_silver_t2',
@@ -226,7 +265,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 18, physicalDefense: 0, magicalAttack: 15, magicalDefense: 5 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 65,
+    isRepairable: true,
+    equipRequirements: { dex: 12, int: 8 }
   },
   {
     id: 'armor_hard_leather_t2',
@@ -239,7 +281,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'hard_leather', count: 4 }, { id: 'wool_cloth', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 14, magicalAttack: 0, magicalDefense: 2 },
     slotType: 'BODY',
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 100,
+    isRepairable: true,
+    equipRequirements: { vit: 10 }
   },
   {
     id: 'gloves_iron_t2',
@@ -252,7 +297,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'iron_ore', count: 2 }, { id: 'leather_strips', count: 2 }],
     baseStats: { physicalAttack: 2, physicalDefense: 8, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'HANDS',
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 60,
+    isRepairable: true,
+    equipRequirements: { str: 6 }
   },
   {
     id: 'shield_iron_t2',
@@ -265,7 +313,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'iron_ore', count: 2 }, { id: 'oak_log', count: 2 }, { id: 'leather_strips', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 18, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'OFF_HAND',
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 90,
+    isRepairable: true,
+    equipRequirements: { str: 8, vit: 5 }
   },
   {
     id: 'helm_iron_t2',
@@ -278,7 +329,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'iron_ore', count: 4 }],
     baseStats: { physicalAttack: 0, physicalDefense: 12, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'HEAD',
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 80,
+    isRepairable: true,
+    equipRequirements: { vit: 8 }
   },
   {
     id: 'boots_iron_t2',
@@ -291,7 +345,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'iron_ore', count: 2 }, { id: 'leather_strips', count: 2 }],
     baseStats: { physicalAttack: 0, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'FEET',
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 60,
+    isRepairable: true,
+    equipRequirements: { vit: 6 }
   },
   {
     id: 'axe_gold_t3',
@@ -305,7 +362,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 38, physicalDefense: 0, magicalAttack: 5, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: true,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 120,
+    isRepairable: true,
+    equipRequirements: { str: 20, luk: 10 }
   },
   {
     id: 'mace_ironwood_t3',
@@ -319,7 +379,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 45, physicalDefense: 5, magicalAttack: 0, magicalDefense: 0 },
     slotType: 'MAIN_HAND',
     isTwoHanded: true,
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 100,
+    isRepairable: false,
+    equipRequirements: { str: 25 }
   },
   {
     id: 'staff_fire_t3',
@@ -333,7 +396,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 10, physicalDefense: 0, magicalAttack: 40, magicalDefense: 10 },
     slotType: 'MAIN_HAND',
     isTwoHanded: true,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 90,
+    isRepairable: true,
+    equipRequirements: { int: 30 }
   },
   {
     id: 'gloves_spell_t3',
@@ -346,7 +412,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'wool_cloth', count: 3 }, { id: 'gold_ore', count: 1 }, { id: 'fire_essence', count: 1 }],
     baseStats: { physicalAttack: 0, physicalDefense: 4, magicalAttack: 15, magicalDefense: 10 },
     slotType: 'HANDS',
-    craftingType: 'WORKBENCH'
+    craftingType: 'WORKBENCH',
+    maxDurability: 50,
+    isRepairable: true,
+    equipRequirements: { int: 20, dex: 10 }
   },
   {
     id: 'armor_mithril_t4',
@@ -359,7 +428,10 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     requirements: [{ id: 'mithril_ore', count: 3 }, { id: 'wool_cloth', count: 2 }],
     baseStats: { physicalAttack: 0, physicalDefense: 40, magicalAttack: 0, magicalDefense: 15 },
     slotType: 'BODY',
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 300,
+    isRepairable: true,
+    equipRequirements: { vit: 30, str: 15 }
   },
   {
     id: 'sword_mithril_t4',
@@ -373,6 +445,9 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     baseStats: { physicalAttack: 55, physicalDefense: 5, magicalAttack: 10, magicalDefense: 5 },
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
-    craftingType: 'FORGE'
+    craftingType: 'FORGE',
+    maxDurability: 500, // Mithril is extremely durable
+    isRepairable: true,
+    equipRequirements: { str: 20, dex: 25 }
   },
 ];

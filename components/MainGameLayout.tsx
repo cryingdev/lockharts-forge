@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
@@ -22,6 +21,7 @@ import EventModal from './modals/EventModal';
 import SleepModal from './modals/SleepModal';
 import JournalModal from './modals/JournalModal';
 import DungeonResultModal from './modals/DungeonResultModal';
+import CraftingResultModal from './modals/CraftingResultModal';
 import SettingsModal from './modals/SettingsModal';
 
 interface MainGameLayoutProps {
@@ -158,6 +158,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
       <SleepModal />
       <JournalModal />
       <DungeonResultModal />
+      <CraftingResultModal />
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 

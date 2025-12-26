@@ -1,8 +1,18 @@
-
 import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
 import { getEnergyCost, generateEquipment } from '../../utils/craftingLogic';
 import { MATERIALS } from '../../data/materials';
+
+// Helper for Quality Label mapping (110+ is Masterwork)
+const getQualityLabel = (q: number): string => {
+    if (q >= 110) return "MASTERWORK";
+    if (q >= 100) return "PRISTINE";
+    if (q >= 90) return "SUPERIOR";
+    if (q >= 80) return "FINE";
+    if (q >= 70) return "STANDARD";
+    if (q >= 60) return "RUSTIC";
+    return "CRUDE";
+};
 
 export const handleStartCrafting = (state: GameState, payload: { item: EquipmentItem }): GameState => {
     const { item } = payload;
@@ -72,7 +82,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     const equipment = generateEquipment(item, quality, masteryCount, bonus);
     const newInventory = [...state.inventory];
     
-    newInventory.push({
+    const newItem: InventoryItem = {
         id: equipment.id, 
         name: equipment.name,
         type: 'EQUIPMENT',
@@ -81,19 +91,24 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         icon: item.icon,
         quantity: 1,
         equipmentData: equipment
-    });
+    };
+
+    newInventory.push(newItem);
 
     const newMastery = { ...state.craftingMastery };
     newMastery[item.id] = (masteryCount || 0) + 1;
 
-    let logMsg = `Successfully crafted ${equipment.rarity} ${item.name} (Quality: ${quality})!`;
-    if (bonus > 0) logMsg += ` Minigame Bonus: +${bonus} Primary Stat.`;
+    const label = getQualityLabel(quality);
+    // Generic log: label + name. No percentages.
+    let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}!`;
+    if (bonus > 0) logMsg += ` Minigame technique applied a stat bonus.`;
 
     return {
         ...state,
         isCrafting: false,
         inventory: newInventory,
         craftingMastery: newMastery,
+        lastCraftedItem: newItem,
         logs: [logMsg, ...state.logs]
     };
 };

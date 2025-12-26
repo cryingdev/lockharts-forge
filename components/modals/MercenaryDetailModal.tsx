@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Mercenary } from '../../models/Mercenary';
 import { EquipmentSlotType } from '../../types/inventory';
-import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, MousePointer2, Zap, Brain, Target, Gem, User, ArrowRight, ChevronRight, Plus, Wind, FastForward, Crosshair, Minus, Check, RefreshCw } from 'lucide-react';
+import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, MousePointer2, Zap, Brain, Target, Gem, User, ArrowRight, ChevronRight, Plus, Wind, FastForward, Crosshair, Minus, Check, RefreshCw, AlertCircle, ShieldAlert } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
 import { calculateDerivedStats, applyEquipmentBonuses, DerivedStats, PrimaryStats, mergePrimaryStats } from '../../models/Stats';
 import { calculateCombatPower } from '../../utils/combatLogic';
@@ -158,7 +158,7 @@ const MercenaryStatsPanel = ({
     const updateLocalStat = (key: keyof PrimaryStats, delta: number) => {
         const newVal = localAllocated[key] + delta;
         if (delta > 0 && availablePoints <= 0) return;
-        if (delta < 0 && newVal < mercenary.allocatedStats[key]) return; // Cannot go below already committed stats
+        if (delta < 0 && newVal < mercenary.allocatedStats[key]) return;
         
         onSetLocalAllocated({
             ...localAllocated,
@@ -301,18 +301,42 @@ const EquipmentInventoryList = ({
     selectedItemId,
     onSelect,
     onEquip,
-    selectedSlotFilter
+    selectedSlotFilter,
+    mercenary
 }: { 
     inventory: InventoryItem[]; 
     selectedItemId: string | null;
     onSelect: (itemId: string) => void;
     onEquip: (itemId: string) => void;
     selectedSlotFilter: EquipmentSlotType | null;
+    mercenary: Mercenary;
 }) => {
+    const totalMercStats = useMemo(() => mergePrimaryStats(mercenary.stats, mercenary.allocatedStats), [mercenary]);
+
     const displayInventory = useMemo(() => {
-        if (!selectedSlotFilter) return inventory;
-        return inventory.filter(item => item.equipmentData?.slotType === selectedSlotFilter);
+        let items = selectedSlotFilter 
+            ? inventory.filter(item => item.equipmentData?.slotType === selectedSlotFilter)
+            : inventory;
+        return items;
     }, [inventory, selectedSlotFilter]);
+
+    const getQualityLabel = (q: number): string => {
+        if (q >= 110) return "Masterwork";
+        if (q >= 100) return "Pristine";
+        if (q >= 90) return "Superior";
+        if (q >= 80) return "Fine";
+        if (q >= 70) return "Standard";
+        if (q >= 60) return "Rustic";
+        return "Crude";
+    };
+
+    const getQualityColor = (q: number): string => {
+        if (q >= 110) return 'text-amber-400';
+        if (q >= 100) return 'text-yellow-400';
+        if (q >= 90) return 'text-emerald-400';
+        if (q >= 80) return 'text-blue-400';
+        return 'text-stone-400';
+    };
 
     return (
         <div className="bg-stone-950 p-4 flex-1 flex flex-col min-h-0">
@@ -329,31 +353,78 @@ const EquipmentInventoryList = ({
                         {selectedSlotFilter ? 'No matching equipment.' : 'No equipment available.'}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 content-start">
+                    <div className="grid grid-cols-1 gap-2 content-start">
                         {displayInventory.map(item => {
                             if (!item.equipmentData) return null;
                             const isSelected = selectedItemId === item.id;
-                            let rarityColor = item.equipmentData.quality >= 90 ? 'text-purple-400' : item.equipmentData.quality >= 75 ? 'text-blue-400' : item.equipmentData.quality >= 50 ? 'text-emerald-400' : 'text-stone-400';
+                            const reqs = item.equipmentData.equipRequirements || {};
+                            
+                            const failedStats = Object.entries(reqs).filter(([stat, val]) => 
+                                totalMercStats[stat as keyof PrimaryStats] < (val as number)
+                            );
+                            const canEquip = failedStats.length === 0;
+
+                            const label = getQualityLabel(item.equipmentData.quality);
+                            const qColor = getQualityColor(item.equipmentData.quality);
                             let imageUrl = item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
 
                             return (
                                 <div 
                                     key={item.id}
-                                    onClick={() => isSelected ? onEquip(item.id) : onSelect(item.id)}
-                                    className={`flex items-center gap-3 p-2 rounded-lg border ${isSelected ? 'border-amber-500 bg-stone-800' : 'border-stone-800 hover:bg-stone-900'} cursor-pointer transition-all group`}
+                                    onClick={() => !isSelected && onSelect(item.id)}
+                                    className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${isSelected ? 'border-amber-500 bg-stone-800' : 'border-stone-800 hover:bg-stone-900'} cursor-pointer group ${!canEquip ? 'opacity-80' : ''}`}
                                 >
-                                    <div className="w-10 h-10 bg-stone-900 rounded border border-stone-700 flex items-center justify-center relative shrink-0">
-                                        <img src={imageUrl} className="w-8 h-8 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                                        <div className="hidden text-xl">{item.icon || '📦'}</div>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-bold truncate text-stone-300">{item.name}</div>
-                                        <div className="flex items-center gap-2 text-[10px]">
-                                            <span className="text-stone-500">{item.equipmentData.slotType.replace('_', ' ')}</span>
-                                            <span className={rarityColor}>Tier {Math.floor(item.equipmentData.quality / 20) + 1} ({item.equipmentData.quality})</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-stone-900 rounded border border-stone-700 flex items-center justify-center relative shrink-0">
+                                            <img src={imageUrl} className="w-8 h-8 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                                            <div className="hidden text-xl">{item.icon || '📦'}</div>
                                         </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-bold truncate text-stone-300">{item.name}</div>
+                                            <div className="flex items-center gap-2 text-[10px]">
+                                                <span className="text-stone-500 uppercase">{item.equipmentData.slotType.replace('_', ' ')}</span>
+                                                <span className={`${qColor} font-bold`}>{label}</span>
+                                            </div>
+                                        </div>
+                                        {isSelected && canEquip && (
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); onEquip(item.id); }}
+                                                className="shrink-0 px-3 py-1 bg-amber-700 hover:bg-amber-600 text-white text-[10px] font-bold uppercase rounded-md shadow-lg animate-in fade-in zoom-in duration-200"
+                                            >
+                                                Equip
+                                            </button>
+                                        )}
                                     </div>
-                                    {isSelected && <div className="shrink-0 text-[10px] text-amber-500 font-bold uppercase animate-pulse pr-2 flex items-center gap-1"><ChevronRight className="w-3 h-3" /> Equip</div>}
+                                    
+                                    {/* Additional Info: Durability & Requirements */}
+                                    <div className="flex justify-between items-end border-t border-stone-700/50 pt-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1 text-[9px] text-stone-500 font-bold" title="Durability">
+                                                <ShieldAlert className="w-2.5 h-2.5" />
+                                                {item.equipmentData.durability}/{item.equipmentData.maxDurability}
+                                            </div>
+                                            {!item.equipmentData.isRepairable && <span className="text-[8px] bg-stone-800 text-stone-600 px-1 rounded font-bold uppercase tracking-tighter">Disposable</span>}
+                                        </div>
+
+                                        {Object.keys(reqs).length > 0 && (
+                                            <div className="flex flex-wrap gap-1 justify-end max-w-[150px]">
+                                                {Object.entries(reqs).map(([stat, val]) => {
+                                                    const met = totalMercStats[stat as keyof PrimaryStats] >= (val as number);
+                                                    return (
+                                                        <span key={stat} className={`text-[8px] px-1 rounded font-bold uppercase ${met ? 'text-stone-500 border border-stone-800' : 'text-red-400 border border-red-900/30 bg-red-950/20'}`}>
+                                                            {stat} {val}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {!canEquip && isSelected && (
+                                        <div className="mt-1 text-[9px] text-red-500 font-bold bg-red-950/30 p-1.5 rounded border border-red-900/30 flex items-center gap-1.5 animate-in slide-in-from-top-1 duration-200">
+                                            <AlertCircle className="w-3 h-3" /> Requirements not met.
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -372,7 +443,6 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
     const [prevAffinity, setPrevAffinity] = useState(0);
     const [showAffinityGain, setShowAffinityGain] = useState(false);
     
-    // Local state for pending stat changes
     const [localAllocated, setLocalAllocated] = useState<PrimaryStats>({ str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
 
     useEffect(() => {
@@ -441,7 +511,14 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
                         localAllocated={localAllocated}
                         onSetLocalAllocated={setLocalAllocated}
                     />
-                    <EquipmentInventoryList inventory={state.inventory.filter(i => i.type === 'EQUIPMENT')} selectedItemId={selectedInventoryItemId} onSelect={setSelectedInventoryItemId} onEquip={(id) => { actions.equipItem(mercenary.id, id); setSelectedInventoryItemId(null); }} selectedSlotFilter={selectedSlot} />
+                    <EquipmentInventoryList 
+                        inventory={state.inventory.filter(i => i.type === 'EQUIPMENT')} 
+                        selectedItemId={selectedInventoryItemId} 
+                        onSelect={setSelectedInventoryItemId} 
+                        onEquip={(id) => { actions.equipItem(mercenary.id, id); setSelectedInventoryItemId(null); }} 
+                        selectedSlotFilter={selectedSlot}
+                        mercenary={mercenary}
+                    />
                 </div>
             </div>
         </div>

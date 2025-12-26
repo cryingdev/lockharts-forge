@@ -1,4 +1,3 @@
-
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
@@ -65,6 +64,9 @@ export interface GameState {
   activeExpeditions: Expedition[];
   dungeonClearCounts: Record<string, number>; // Key: Dungeon ID, Value: Count
   dungeonResult: DungeonResult | null; // Populated when claim is clicked to show modal
+
+  // Result Tracking
+  lastCraftedItem: InventoryItem | null;
 
   // UI Effects State
   uiEffects: {

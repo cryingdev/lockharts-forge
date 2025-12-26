@@ -1,9 +1,9 @@
+import { Equipment, EquipmentStats, EquipmentSlotType } from '../models/Equipment';
+import { PrimaryStats } from '../models/Stats';
 
-import { Equipment, EquipmentStats } from '../models/Equipment';
+export type { EquipmentSlotType };
 
 export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT' | 'SCROLL' | 'CONSUMABLE';
-
-export type EquipmentSlotType = 'MAIN_HAND' | 'OFF_HAND' | 'HEAD' | 'BODY' | 'HANDS' | 'FEET' | 'ACCESSORY';
 
 export interface ItemDefinition {
   id: string;
@@ -16,7 +16,7 @@ export interface ItemDefinition {
 
 export interface InventoryItem extends ItemDefinition {
   quantity: number;
-  equipmentData?: Equipment; // Stores the unique instance data for equipment
+  equipmentData?: Equipment; 
 }
 
 export type EquipmentCategory = 'WEAPON' | 'ARMOR';
@@ -32,16 +32,20 @@ export type CraftingType = 'FORGE' | 'WORKBENCH';
 export interface EquipmentItem {
   id: string;
   name: string;
-  tier: number; // 1 = Novice, 2 = Apprentice, etc.
-  icon: string; // Emoji for now
+  tier: number; 
+  icon: string; 
   description: string;
   subCategoryId: string;
   baseValue: number;
   requirements: { id: string; count: number }[];
-  baseStats?: EquipmentStats; // Baseline stats for calculation
+  baseStats?: EquipmentStats;
   
-  // New Fields
+  // Durability & Requirements Template
+  maxDurability: number;
+  isRepairable: boolean;
+  equipRequirements?: Partial<PrimaryStats>;
+
   slotType: EquipmentSlotType;
   isTwoHanded?: boolean;
-  craftingType: CraftingType; // Added to distinguish minigame logic
+  craftingType: CraftingType;
 }

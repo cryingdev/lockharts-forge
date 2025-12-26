@@ -3,7 +3,7 @@ import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipmen
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import WorkbenchMinigame from './WorkbenchMinigame';
-import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench, X, ShoppingCart } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
@@ -49,11 +49,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const charcoalCount = getInventoryCount('charcoal');
   const hasFuel = charcoalCount > 0;
   
-  // Requirement check for furnace when opening tab
   useEffect(() => {
     if (!hasFurnace && !hasPromptedFurnace && !activeEvent) {
         actions.triggerEvent({
-            id: 'CUSTOMER_VISIT', // Logic uses title to decide icon
+            id: 'CUSTOMER_VISIT',
             title: "The Forge lies in Ruins",
             description: "Your journey as a blacksmith starts with a single spark. To begin forging weapons and armor, you must first install a Furnace from the market.",
             options: [
@@ -200,7 +199,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       const isSelected = selectedItem?.id === item.id;
       const isFav = favorites.includes(item.id);
       const count = inventory.filter(i => i.name === item.name).length;
-      
       const masteryCount = craftingMastery[item.id] || 0;
       const masteryLevel = getMasteryLevel(masteryCount);
 
@@ -268,9 +266,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   }, [selectedItem, hasFurnace, hasWorkbench]);
 
   const content = useMemo(() => {
-    
     const canCraft = selectedItem && canAffordResources(selectedItem) && canEnterForge && hasEnergy && isRequirementMet;
-    
     let masteryInfo = null;
     if (selectedItem) {
         const count = craftingMastery[selectedItem.id] || 0;
@@ -297,7 +293,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             progress = 100;
             benefits = "Value +25%, Stats +20%, Cost -5 Energy";
         }
-        
         masteryInfo = { count, level, nextThreshold, progress, label, color, benefits };
     }
 
@@ -368,7 +363,27 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     </div>
 
                     <h2 className="text-3xl font-bold text-amber-500 mb-2 font-serif tracking-wide">{selectedItem.name}</h2>
-                    <p className="text-stone-400 text-center max-w-md mb-6 italic">"{selectedItem.description}"</p>
+                    <p className="text-stone-400 text-center max-w-md mb-4 italic">"{selectedItem.description}"</p>
+
+                    {/* Base Stats Section Added */}
+                    <div className="w-full grid grid-cols-4 gap-2 mb-6">
+                        <div className="bg-stone-900/80 border border-stone-800 p-2 rounded-lg flex flex-col items-center">
+                            <span className="text-[8px] text-stone-500 font-bold uppercase flex items-center gap-1 mb-1"><Sword className="w-2 h-2"/> P.Atk</span>
+                            <span className="text-xs font-mono font-bold text-stone-300">{selectedItem.baseStats?.physicalAttack || 0}</span>
+                        </div>
+                        <div className="bg-stone-900/80 border border-stone-800 p-2 rounded-lg flex flex-col items-center">
+                            <span className="text-[8px] text-stone-500 font-bold uppercase flex items-center gap-1 mb-1"><Shield className="w-2 h-2"/> P.Def</span>
+                            <span className="text-xs font-mono font-bold text-stone-300">{selectedItem.baseStats?.physicalDefense || 0}</span>
+                        </div>
+                        <div className="bg-stone-900/80 border border-stone-800 p-2 rounded-lg flex flex-col items-center">
+                            <span className="text-[8px] text-stone-500 font-bold uppercase flex items-center gap-1 mb-1"><Zap className="w-2 h-2"/> M.Atk</span>
+                            <span className="text-xs font-mono font-bold text-stone-300">{selectedItem.baseStats?.magicalAttack || 0}</span>
+                        </div>
+                        <div className="bg-stone-900/80 border border-stone-800 p-2 rounded-lg flex flex-col items-center">
+                            <span className="text-[8px] text-stone-500 font-bold uppercase flex items-center gap-1 mb-1"><Brain className="w-2 h-2"/> M.Def</span>
+                            <span className="text-xs font-mono font-bold text-stone-300">{selectedItem.baseStats?.magicalDefense || 0}</span>
+                        </div>
+                    </div>
 
                     {masteryInfo && (
                         <div className="w-full bg-stone-900/50 p-3 rounded-lg border border-stone-800 mb-6 backdrop-blur-sm">
@@ -558,8 +573,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
                 <div className="p-4 border-t border-stone-800 bg-stone-900 shrink-0">
                 <div className="flex items-start gap-2 text-xs text-stone-500">
-                    <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                    <p>Select a recipe to view requirements. {selectedItem?.craftingType === 'FORGE' ? 'Requires Heat and Charcoal.' : 'Non-metal items only require materials.'}</p>
+                    <div className="flex items-center gap-1 font-bold text-amber-600 uppercase tracking-tighter">
+                         <Info className="w-3.5 h-3.5" /> Potential
+                    </div>
+                    <p>Stats shown are base values. Higher quality crafts will multiply these results.</p>
                 </div>
                 </div>
             </div>

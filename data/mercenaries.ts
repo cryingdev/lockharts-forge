@@ -2,8 +2,7 @@ import { Mercenary } from '../models/Mercenary';
 import { JobClass } from '../models/JobClass';
 import { calculateMaxHp, calculateMaxMp, PrimaryStats } from '../models/Stats';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
-import { EquipmentSlotType } from '../types/inventory';
-import { Equipment } from '../models/Equipment';
+import { Equipment, EquipmentSlotType } from '../models/Equipment';
 
 const stats = (s: number, v: number, d: number, i: number, l: number): PrimaryStats => ({
   str: s, vit: v, dex: d, int: i, luk: l

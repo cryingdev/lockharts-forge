@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { MATERIALS } from '../data/materials';
@@ -16,17 +15,17 @@ const createInitialInventory = (): InventoryItem[] => [
 
 export const createInitialGameState = (): GameState => ({
     stats: {
-        gold: 2500, // Updated starting gold
+        gold: 2500,
         energy: 100,
         maxEnergy: 100,
         day: 1,
-        tierLevel: 0, // Starts at 0, requires Furnace to reach Tier 1
+        tierLevel: 0,
         incomeToday: 0,
     },
     inventory: createInitialInventory(),
     forge: {
-        hasFurnace: false, // Starts without furnace
-        hasWorkbench: false, // Starts without workbench
+        hasFurnace: false,
+        hasWorkbench: false,
         anvilLevel: 1,
         isShopOpen: false,
     },
@@ -34,10 +33,10 @@ export const createInitialGameState = (): GameState => ({
     logs: ['You stand amidst the ruins of Lockhart\'s Forge.', 'The equipment is cold and broken. You need to gather gold to rebuild.'],
     knownMercenaries: [...NAMED_MERCENARIES].map(m => ({
         ...m,
-        expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, // Ensure initials have energy
+        expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: 0,
         xpToNextLevel: m.level * 100,
-        status: 'VISITOR' // Default status
+        status: 'VISITOR'
     })),
 
     // Shop State
@@ -61,6 +60,9 @@ export const createInitialGameState = (): GameState => ({
     activeExpeditions: [],
     dungeonClearCounts: {},
     dungeonResult: null,
+
+    // Result Tracking
+    lastCraftedItem: null,
 
     // UI Effects State
     uiEffects: {
