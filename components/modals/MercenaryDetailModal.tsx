@@ -50,7 +50,7 @@ const MercenaryPaperDoll = ({
 
         let imageUrl = '';
         if (equippedItem) {
-            imageUrl = equippedItem.recipeId ? getAssetUrl(`${equippedItem.recipeId}.png`) : getAssetUrl(`${equippedItem.id.split('_')[0]}.png`);
+            imageUrl = equippedItem.image ? getAssetUrl(equippedItem.image) : (equippedItem.recipeId ? getAssetUrl(`${equippedItem.recipeId}.png`) : getAssetUrl(`${equippedItem.id.split('_')[0]}.png`));
         }
 
         return (
@@ -366,7 +366,7 @@ const EquipmentInventoryList = ({
 
                             const label = getQualityLabel(item.equipmentData.quality);
                             const qColor = getQualityColor(item.equipmentData.quality);
-                            let imageUrl = item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
+                            let imageUrl = item.equipmentData.image ? getAssetUrl(item.equipmentData.image) : (item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`));
 
                             return (
                                 <div 

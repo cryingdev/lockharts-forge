@@ -74,6 +74,7 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         rarity: rarity,
         price: price,
         icon: recipe.icon,
+        image: recipe.image,
         description: recipe.description,
         stats: stats,
         appliedBonus,

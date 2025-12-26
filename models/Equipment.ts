@@ -47,6 +47,7 @@ export interface Equipment {
   price: number;
   
   icon?: string;
+  image?: string;
   description?: string;
 
   // 전투 스탯

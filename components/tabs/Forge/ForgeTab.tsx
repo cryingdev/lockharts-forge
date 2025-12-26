@@ -40,6 +40,12 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       return itemDef ? itemDef.name : id;
   };
 
+  const getItemImageUrl = (item: EquipmentItem) => {
+    if (item.image) return getAssetUrl(item.image);
+    // Fallback logic for items without specific image filenames
+    return getAssetUrl(`${item.id}.png`);
+  };
+
   const GLOBAL_COOLING_RATE_PER_SEC = 5; 
   const timeDiffSec = (Date.now() - (state.lastForgeTime || 0)) / 1000;
   const coolingAmount = timeDiffSec * GLOBAL_COOLING_RATE_PER_SEC;
@@ -235,8 +241,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                 </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform -mt-2">
-                {item.icon}
+            <div className="flex-1 flex items-center justify-center group-hover:scale-110 transition-transform -mt-2">
+                <img 
+                    src={getItemImageUrl(item)} 
+                    className="w-10 h-10 object-contain drop-shadow-md" 
+                    onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} 
+                />
+                <span className="hidden text-3xl">{item.icon}</span>
             </div>
             
             <div className="w-full text-center pb-2 px-1 flex flex-col items-center gap-1">
@@ -358,7 +369,12 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             ? 'border-amber-600 shadow-[0_0_40px_rgba(217,119,6,0.2)]' 
                             : 'border-emerald-600 shadow-[0_0_40px_rgba(16,185,129,0.2)]'
                         } mb-8 group-hover:scale-105`}>
-                            <span className="text-8xl filter drop-shadow-lg">{selectedItem.icon}</span>
+                            <img 
+                                src={getItemImageUrl(selectedItem)} 
+                                className="w-32 h-32 object-contain drop-shadow-xl z-10" 
+                                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} 
+                            />
+                            <span className="hidden text-8xl filter drop-shadow-lg">{selectedItem.icon}</span>
                         </div>
                     </div>
 

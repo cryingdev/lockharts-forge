@@ -31,6 +31,7 @@ export const InventoryDisplay = () => {
 
     const getItemImageUrl = (item: InventoryItem) => {
         if (item.type === 'EQUIPMENT' && item.equipmentData) {
+            if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
             return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
         }
         return getAssetUrl(`${item.id}.png`);

@@ -34,6 +34,7 @@ export interface EquipmentItem {
   name: string;
   tier: number; 
   icon: string; 
+  image?: string;
   description: string;
   subCategoryId: string;
   baseValue: number;

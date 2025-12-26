@@ -15,7 +15,7 @@ const createInitialInventory = (): InventoryItem[] => [
 
 export const createInitialGameState = (): GameState => ({
     stats: {
-        gold: 2500,
+        gold: 1500,
         energy: 100,
         maxEnergy: 100,
         day: 1,
