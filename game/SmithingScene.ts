@@ -25,7 +25,6 @@ export default class SmithingScene extends Phaser.Scene {
   private backgroundTile!: Phaser.GameObjects.TileSprite;
   private bgOverlay!: Phaser.GameObjects.Rectangle;
   private anvilImage!: Phaser.GameObjects.Image;
-  private anvilSurface!: Phaser.GameObjects.Graphics;
   private targetRing!: Phaser.GameObjects.Graphics;
   private approachRing!: Phaser.GameObjects.Graphics;
   private progressBar!: Phaser.GameObjects.Rectangle;
@@ -45,12 +44,9 @@ export default class SmithingScene extends Phaser.Scene {
   private hitY: number = 0;
 
   private anvilConfig = {
-    topWidthRatio: 0.65,
-    botWidthRatio: 1.1,
     heightRatio: 0.4,
-    yOffset: 60,
-    imageOffsetX: 0,
-    imageOffsetY: 40,
+    yOffset: 40,
+    imageOffsetY: 30,
     hitAreaOffset: 45, 
   };
 
@@ -70,9 +66,11 @@ export default class SmithingScene extends Phaser.Scene {
   private coolingRate: number = 2;
   private currentTempStage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'COLD';
   private charcoalCount: number = 0;
-  private startRadius: number = 220;
-  private targetRadius: number = 55;
-  private currentRadius: number = 220;
+  
+  private startRadius: number = 180;
+  private targetRadius: number = 45;
+  
+  private currentRadius: number = 180;
   private shrinkDuration: number = 2000;
   private ringTimer: number = 0;
   private tempBar!: Phaser.GameObjects.Rectangle;
@@ -140,11 +138,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.load.image('blade_stage_3', getAssetUrl('billet_blade_03.png'));
     this.load.image('blade_stage_4', getAssetUrl('billet_blade_04.png'));
     this.load.image('blade_stage_5', getAssetUrl('billet_blade_05.png'));
-
-    this.load.spritesheet('bellows', getAssetUrl('bellows_sprite.png'), {
-      frameWidth: 298,
-      frameHeight: 188,
-    });
+    this.load.spritesheet('bellows', getAssetUrl('bellows_sprite.png'), { frameWidth: 298, frameHeight: 188 });
   }
 
   create() {
@@ -152,10 +146,7 @@ export default class SmithingScene extends Phaser.Scene {
 
     if (!this.textures.exists('white')) {
         const g = this.make.graphics({ x: 0, y: 0 });
-        g.fillStyle(0xffffff, 1);
-        g.fillRect(0, 0, 2, 2);
-        g.generateTexture('white', 2, 2);
-        g.destroy();
+        g.fillStyle(0xffffff, 1).fillRect(0, 0, 2, 2).generateTexture('white', 2, 2).destroy();
     }
 
     if (!this.anims.exists('bellows_pump')) {
@@ -167,13 +158,9 @@ export default class SmithingScene extends Phaser.Scene {
       });
     }
 
-    this.centerX = this.scale.width / 2;
-    this.centerY = this.scale.height / 2;
-
     this.backgroundTile = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'tile_forge').setOrigin(0).setDepth(-2).setAlpha(0.7);
     this.bgOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.4).setOrigin(0).setDepth(-1);
     this.anvilImage = this.add.image(0, 0, 'anvil_img').setDepth(1).setOrigin(0.5, 0.5);
-    this.anvilSurface = this.add.graphics().setDepth(2);
     this.bladeContainer = this.add.container(0, 0).setDepth(3).setAngle(-12);
     this.bladeFallbackRect = this.add.rectangle(0, 0, 600, 120, 0x57534e).setOrigin(0.5, 0.5);
     this.bladeContainer.add(this.bladeFallbackRect);
@@ -194,56 +181,63 @@ export default class SmithingScene extends Phaser.Scene {
     this.handleResize();
     this.input.keyboard?.on('keydown-SPACE', () => this.handleInput(), this);
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer, objs: any[]) => {
-      if (objs.includes(this.bellowsContainer) || this.bellowsContainer.list.some(c => objs.includes(c))) {
-        this.pumpBellows();
-        return;
-      }
-      if (objs.includes(this.heatUpBtnContainer) || this.heatUpBtnContainer.list.some(c => objs.includes(c))) {
-        this.requestHeatUp();
-        return;
-      }
+      if (objs.includes(this.bellowsContainer) || this.bellowsContainer.list.some(c => objs.includes(c))) { this.pumpBellows(); return; }
+      if (objs.includes(this.heatUpBtnContainer) || this.heatUpBtnContainer.list.some(c => objs.includes(c))) { this.requestHeatUp(); return; }
       if (!this.isPlaying) { this.handleInput(pointer); return; }
-      if (!this.isPointerInHitArea(pointer.worldX, pointer.worldY)) { this.handleMiss(); return; }
-      if (Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, this.hitX, this.hitY) > this.currentRadius + 4) { this.handleMiss(); return; }
+      if (!this.isPointerInHitArea(pointer.worldX, pointer.worldY)) { this.handleMiss(pointer.worldX, pointer.worldY); return; }
+      if (Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, this.hitX, this.hitY) > this.currentRadius + 4) { this.handleMiss(pointer.worldX, pointer.worldY); return; }
       this.handleInput(pointer);
     }, this);
     this.scale.on('resize', this.handleResize, this);
+
+    this.updateProgressBar();
   }
 
   private setupUI() {
-    this.progressBar = this.add.rectangle(0, 40, 0, 12, 0xeab308).setOrigin(0, 0.5);
-    this.uiContainer.add([this.add.rectangle(0, 40, 300, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e).setName('progBg'), this.progressBar]);
-    this.qualityText = this.add.text(0, 65, 'PRISTINE', { fontFamily: 'monospace', fontSize: '18px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
+    this.progressBar = this.add.rectangle(0, 20, 0.1, 12, 0xeab308).setOrigin(0, 0.5);
+    const progBg = this.add.rectangle(0, 20, 200, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e).setName('progBg').setOrigin(0, 0.5);
+    this.uiContainer.add([progBg, this.progressBar]);
+    
+    this.qualityText = this.add.text(0, 40, 'PRISTINE', { fontFamily: 'monospace', fontSize: '14px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add(this.qualityText);
-    this.tempBar = this.add.rectangle(0, 0, 18, 250, 0x3b82f6).setOrigin(0.5, 1).setScale(1, 0);
-    this.tempValueText = this.add.text(0, 0, '20°C', { fontFamily: 'monospace', fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-    this.uiContainer.add([this.add.rectangle(0, 0, 32, 260, 0x1c1917).setStrokeStyle(3, 0x57534e).setName('tempFrame'), this.add.rectangle(0, 0, 24, 250, 0x0c0a09).setName('tempBg'), this.tempBar, this.tempValueText]);
+    
+    this.tempBar = this.add.rectangle(0, 0, 14, 180, 0x3b82f6).setOrigin(0.5, 1).setScale(1, 0);
+    this.tempValueText = this.add.text(0, 0, '20°C', { fontFamily: 'monospace', fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    
+    this.uiContainer.add([
+      this.add.rectangle(0, 0, 24, 190, 0x1c1917).setStrokeStyle(3, 0x57534e).setName('tempFrame'), 
+      this.add.rectangle(0, 0, 18, 180, 0x0c0a09).setName('tempBg'), 
+      this.tempBar, 
+      this.tempValueText
+    ]);
+    
     this.createBellows();
     this.createHeatUpButton();
-    this.comboText = this.add.text(0, 0, '', { fontFamily: 'Impact', fontSize: '48px', color: '#fcd34d', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0);
-    this.infoText = this.add.text(0, 0, this.isReadyToStart ? 'CLICK TO START' : 'FORGE IS COLD\nADD FUEL TO HEAT', { fontFamily: 'monospace', fontSize: '28px', color: this.isReadyToStart ? '#fbbf24' : '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
+    
+    this.comboText = this.add.text(0, 0, '', { fontFamily: 'Impact', fontSize: '32px', color: '#fcd34d', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0).setDepth(26);
+    this.infoText = this.add.text(0, 0, this.isReadyToStart ? 'TOUCH TO START' : 'FORGE IS COLD\nADD FUEL', { fontFamily: 'monospace', fontSize: '20px', color: this.isReadyToStart ? '#fbbf24' : '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
     this.uiContainer.add([this.comboText, this.infoText]);
     this.tweens.add({ targets: this.infoText, alpha: 0.5, yoyo: true, repeat: -1, duration: 800 });
   }
 
   private createBellows() {
     this.bellowsContainer = this.add.container(0, 0);
-    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(0.35);
-    const txt = this.add.text(0, 25, 'PUMP', { fontSize: '10px', color: '#fde68a', fontFamily: 'monospace', fontStyle: 'bold' }).setOrigin(0.5);
+    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(0.25);
+    const txt = this.add.text(0, 18, 'PUMP', { fontSize: '9px', color: '#fde68a', fontFamily: 'monospace', fontStyle: 'bold' }).setOrigin(0.5);
     this.bellowsContainer.add([this.bellowsSprite, txt]);
-    this.bellowsContainer.setInteractive(new Phaser.Geom.Rectangle(-60, -45, 120, 90), Phaser.Geom.Rectangle.Contains);
+    this.bellowsContainer.setInteractive(new Phaser.Geom.Rectangle(-40, -30, 80, 60), Phaser.Geom.Rectangle.Contains);
     this.bellowsSprite.on('animationcomplete-bellows_pump', () => { this.isPumping = false; });
     this.uiContainer.add(this.bellowsContainer);
   }
 
   private createHeatUpButton() {
     this.heatUpBtnContainer = this.add.container(0, 0);
-    const bg = this.add.rectangle(0, 0, 90, 70, 0x1c1917).setStrokeStyle(2, 0x57534e).setName('btnBg');
-    const icon = this.add.text(0, -12, '🔥', { fontSize: '20px' }).setOrigin(0.5).setName('btnIcon');
-    const label = this.add.text(0, 10, 'HEAT UP', { fontSize: '10px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'monospace' }).setOrigin(0.5);
-    const countTxt = this.add.text(0, 22, `x${this.charcoalCount}`, { fontSize: '11px', color: '#78716c', fontFamily: 'monospace' }).setOrigin(0.5).setName('countTxt');
+    const bg = this.add.rectangle(0, 0, 70, 50, 0x1c1917).setStrokeStyle(2, 0x57534e).setName('btnBg');
+    const icon = this.add.text(0, -8, '🔥', { fontSize: '14px' }).setOrigin(0.5).setName('btnIcon');
+    const label = this.add.text(0, 8, 'HEAT UP', { fontSize: '9px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'monospace' }).setOrigin(0.5);
+    const countTxt = this.add.text(0, 18, `x${this.charcoalCount}`, { fontSize: '10px', color: '#78716c', fontFamily: 'monospace' }).setOrigin(0.5).setName('countTxt');
     this.heatUpBtnContainer.add([bg, icon, label, countTxt]);
-    this.heatUpBtnContainer.setInteractive(new Phaser.Geom.Rectangle(-45, -35, 90, 70), Phaser.Geom.Rectangle.Contains);
+    this.heatUpBtnContainer.setInteractive(new Phaser.Geom.Rectangle(-35, -25, 70, 50), Phaser.Geom.Rectangle.Contains);
     this.uiContainer.add(this.heatUpBtnContainer);
     this.refreshHeatUpButton();
   }
@@ -266,7 +260,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.bellowsSprite.play('bellows_pump');
     if (this.temperature > 0) {
       this.temperature = Math.min(100, this.temperature + 5);
-      if (!this.isPlaying && !this.isReadyToStart) { this.isReadyToStart = true; this.infoText.setText('CLICK TO START').setColor('#fbbf24'); }
+      if (!this.isPlaying && !this.isReadyToStart) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); }
     }
   }
 
@@ -279,7 +273,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   public heatUp() {
     this.temperature = Math.min(100, this.temperature + 40);
-    if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText('CLICK TO START').setColor('#fbbf24'); }
+    if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); }
     this.flashOverlay.setFillStyle(0xff8800, 1).setAlpha(0.4);
     this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 400, ease: 'Cubic.easeOut' });
   }
@@ -287,42 +281,66 @@ export default class SmithingScene extends Phaser.Scene {
   private handleResize() {
     this.centerX = this.scale.width / 2;
     this.centerY = this.scale.height / 2;
-    if (this.backgroundTile) this.backgroundTile.setSize(this.scale.width, this.scale.height);
-    if (this.bgOverlay) this.bgOverlay.setSize(this.scale.width, this.scale.height);
-    if (this.flashOverlay) this.flashOverlay.setSize(this.scale.width, this.scale.height);
-    const surfaceH = this.scale.height * this.anvilConfig.heightRatio;
-    const b = this.centerY + surfaceH / 2 + this.anvilConfig.yOffset;
+    const h = this.scale.height;
+    const w = this.scale.width;
+
+    if (this.backgroundTile) this.backgroundTile.setSize(w, h);
+    if (this.bgOverlay) this.bgOverlay.setSize(w, h);
+    if (this.flashOverlay) this.flashOverlay.setSize(w, h);
+
+    const isCompact = h < 450;
+    const anvilY = this.centerY + (isCompact ? 20 : this.anvilConfig.yOffset);
+
+    this.startRadius = Phaser.Math.Clamp(h * 0.25, 80, 200);
+    this.targetRadius = this.startRadius * 0.25;
+
     if (this.anvilImage && this.anvilImage.texture.key !== '__MISSING') {
-      const targetWidth = this.scale.width * 1.3;
+      const targetWidth = w * (isCompact ? 1.0 : 1.3);
       this.anvilImage.setScale(targetWidth / this.anvilImage.width);
-      this.anvilImage.setPosition(this.centerX, b + this.anvilConfig.imageOffsetY);
+      this.anvilImage.setPosition(this.centerX, anvilY + this.anvilConfig.imageOffsetY);
     }
-    if (this.ambientGlow) this.ambientGlow.setPosition(this.centerX, b);
-    const bladeY = b - surfaceH * 0.55; 
+    if (this.ambientGlow) this.ambientGlow.setPosition(this.centerX, anvilY);
+    
+    const surfaceH = h * this.anvilConfig.heightRatio;
+    const bladeY = anvilY - surfaceH * 0.45; 
     this.bladeContainer.setPosition(this.centerX, bladeY);
     const rad = Phaser.Math.DegToRad(this.bladeContainer.angle);
-    this.bladeContainer.x += Math.cos(rad) * 80;
-    this.bladeContainer.y += Math.sin(rad) * 80;
+    this.bladeContainer.x += Math.cos(rad) * 60;
+    this.bladeContainer.y += Math.sin(rad) * 60;
     this.hammerHitArea.setPosition(this.bladeContainer.x - Math.sin(rad) * this.anvilConfig.hitAreaOffset, this.bladeContainer.y + Math.cos(rad) * this.anvilConfig.hitAreaOffset);
     this.rebuildHitPoly();
-    this.repositionUIElements();
+    this.repositionUIElements(isCompact);
   }
 
-  private repositionUIElements() {
+  private repositionUIElements(isCompact: boolean) {
     const w = this.scale.width;
-    const stackX = w - 70;
-    const stackTopY = this.centerY - 100;
-    (this.uiContainer.getByName('progBg') as any).setPosition(this.centerX, 40);
-    this.progressBar.setPosition(this.centerX - 150, 40);
-    this.qualityText.setPosition(this.centerX, 65);
-    this.tempValueText.setPosition(stackX, stackTopY - 165);
-    (this.uiContainer.getByName('tempFrame') as any).setPosition(stackX, stackTopY);
-    (this.uiContainer.getByName('tempBg') as any).setPosition(stackX, stackTopY);
-    this.tempBar.setPosition(stackX, stackTopY + 125);
-    this.bellowsContainer.setPosition(stackX, stackTopY + 205);
-    this.heatUpBtnContainer.setPosition(stackX, stackTopY + 300);
-    this.infoText.setPosition(this.centerX, this.centerY - 220);
-    this.comboText.setPosition(this.centerX, this.centerY - 300);
+    const h = this.scale.height;
+    
+    const progBg = this.uiContainer.getByName('progBg') as Phaser.GameObjects.Rectangle;
+    const progWidth = isCompact ? 150 : 200;
+    const startX = this.centerX - (progWidth / 2);
+    progBg.setPosition(startX, 20).setSize(progWidth, 16);
+    this.progressBar.setPosition(startX, 20);
+    this.qualityText.setPosition(this.centerX, 45);
+    
+    const sideX = w - (isCompact ? 35 : 50);
+    const sideBaseY = isCompact ? 90 : this.centerY - 80;
+    const barHeight = isCompact ? 100 : 180;
+    
+    const tempFrame = this.uiContainer.getByName('tempFrame') as Phaser.GameObjects.Rectangle;
+    const tempBg = this.uiContainer.getByName('tempBg') as Phaser.GameObjects.Rectangle;
+    tempFrame.setPosition(sideX, sideBaseY).setSize(24, barHeight + 10);
+    tempBg.setPosition(sideX, sideBaseY).setSize(18, barHeight);
+    
+    this.tempBar.setPosition(sideX, sideBaseY + (barHeight / 2)).setSize(14, barHeight);
+    this.tempValueText.setPosition(sideX, sideBaseY - (barHeight / 2) - 15).setFontSize(isCompact ? '11px' : '14px');
+    
+    const controlGap = isCompact ? 50 : 65;
+    this.bellowsContainer.setPosition(sideX, sideBaseY + (barHeight / 2) + 40).setScale(isCompact ? 0.7 : 1);
+    this.heatUpBtnContainer.setPosition(sideX, sideBaseY + (barHeight / 2) + 40 + controlGap).setScale(isCompact ? 0.7 : 1);
+    
+    this.infoText.setPosition(this.centerX, this.centerY - (isCompact ? 100 : 180));
+    // Default position for comboText is handled dynamically in showFeedback
   }
 
   private rebuildHitPoly() {
@@ -340,31 +358,37 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.isFinished) return;
     if (!this.isPlaying) {
       if (this.isReadyToStart) { this.isPlaying = true; this.infoText.setVisible(false); this.resetRing(); this.flashOverlay.setFillStyle(0xffffff, 1).setAlpha(0.2); this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 300 }); } 
-      else { this.cameras.main.shake(50, 0.005); this.showFeedback('TOO COLD!', 0x3b82f6, 1.0); }
+      else { this.cameras.main.shake(50, 0.005); this.showFeedback('TOO COLD!', 0x3b82f6, 1.0, this.centerX, this.centerY); }
       return;
     }
     if (this.time.now - this.lastHitTime < this.hitCooldown) return;
     this.lastHitTime = this.time.now;
     const swingX = pointer ? pointer.worldX : this.hitX;
     const swingY = pointer ? pointer.worldY : this.hitY;
-    if (this.currentTempStage === 'COLD' || this.currentTempStage === 'NORMAL') { this.showFeedback('TOO COLD!', 0x3b82f6, 1.0); return; }
+    if (this.currentTempStage === 'COLD' || this.currentTempStage === 'NORMAL') { this.showFeedback('TOO COLD!', 0x3b82f6, 1.0, swingX, swingY); return; }
+    
     const diff = Math.abs(this.currentRadius - this.targetRadius);
     const eff = this.currentTempStage === 'AURA' ? 1.5 : this.currentTempStage === 'HOT' ? 1.0 : 0.5;
-    if (diff < 18) {
+    
+    const tolerancePerfect = this.targetRadius * 0.35;
+    const toleranceGood = this.targetRadius * 0.95;
+
+    if (diff < tolerancePerfect) {
       this.score += Math.ceil(8 * eff); this.combo++; this.perfectCount++;
-      if (this.perfectCount >= 6) { this.currentQuality += 1; this.showFeedback('QUALITY UP!', 0xfbbf24, 1.3, swingX, swingY - 40); }
-      this.createSparks(40, 0xffaa00, 2.0, 'spark_perfect', swingX, swingY); 
-      this.showFeedback('PERFECT!', 0xffb300, 1.5, swingX, swingY); this.cameras.main.shake(200, 0.025);
-    } else if (diff < 55) {
+      if (this.perfectCount >= 6) { this.currentQuality += 1; this.showFeedback('QUALITY UP!', 0xfbbf24, 1.3, this.hitX, this.hitY - 60); }
+      this.createSparks(30, 0xffaa00, 1.5, 'spark_perfect', swingX, swingY); 
+      this.showFeedback('PERFECT!', 0xffb300, 1.3, this.hitX, this.hitY); this.cameras.main.shake(150, 0.02);
+    } else if (diff < toleranceGood) {
       this.score += Math.ceil(5 * eff); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
-      this.createSparks(20, 0xffffff, 1.3, 'spark_normal', swingX, swingY); this.showFeedback('GOOD', 0xe5e5e5, 1.0, swingX, swingY);
+      this.createSparks(15, 0xffffff, 1.1, 'spark_normal', swingX, swingY); this.showFeedback('GOOD', 0xe5e5e5, 1.0, this.hitX, this.hitY);
     } else { this.handleMiss(swingX, swingY); }
     this.updateProgressBar(); if (this.score >= this.targetScore) this.winGame(); else this.resetRing();
   }
 
   private handleMiss(x?: number, y?: number) {
+    const fx = x ?? this.hitX; const fy = y ?? this.hitY;
     this.score = Math.max(0, this.score - 5); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 5);
-    this.cameras.main.shake(120, 0.012); this.showFeedback('MISS', 0xef4444, 1.2, x, y); this.updateProgressBar(); this.resetRing();
+    this.cameras.main.shake(100, 0.01); this.showFeedback('MISS', 0xef4444, 1.1, fx, fy); this.updateProgressBar(); this.resetRing();
   }
 
   update(time: number, delta: number) {
@@ -372,15 +396,30 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.isPlaying) this.handleRingLogic(delta);
     this.temperature = Math.max(0, this.temperature - this.coolingRate * (delta / 1000));
     this.refreshVisuals();
-    if (!this.isPlaying && this.isReadyToStart && this.temperature <= 0) { this.isReadyToStart = false; this.infoText.setText('FORGE IS COLD\nADD FUEL TO HEAT').setColor('#3b82f6'); }
+    if (!this.isPlaying && this.isReadyToStart && this.temperature <= 0) { this.isReadyToStart = false; this.infoText.setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6'); }
   }
 
   private refreshVisuals() {
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
-    const ratio = this.temperature / 100; this.tempBar.scaleY = ratio; this.tempValueText.setText(`${Math.floor(20 + ratio * 1480)}°C`);
+    
+    const ratio = this.temperature / 100;
+    this.tempBar.scaleY = ratio;
+    this.tempValueText.setText(`${Math.floor(20 + ratio * 1480)}°C`);
+
+    let barColor = 0xeab308; 
+    if (ratio < 0.4) {
+      const c = Phaser.Display.Color.Interpolate.ColorWithColor(new Phaser.Display.Color(59, 130, 246), new Phaser.Display.Color(234, 179, 8), 40, ratio * 100);
+      barColor = Phaser.Display.Color.GetColor(c.r, c.g, c.b);
+    } else if (ratio > 0.7) {
+      const c = Phaser.Display.Color.Interpolate.ColorWithColor(new Phaser.Display.Color(234, 179, 8), new Phaser.Display.Color(239, 68, 68), 30, (ratio - 0.7) * 100);
+      barColor = Phaser.Display.Color.GetColor(c.r, c.g, c.b);
+    }
+    this.tempBar.setFillStyle(barColor);
+
     const interp = Phaser.Display.Color.Interpolate.ColorWithColor(new Phaser.Display.Color(63, 63, 70), new Phaser.Display.Color(253, 230, 138), 100, ratio * 100);
     const color = Phaser.Display.Color.GetColor(interp.r, interp.g, interp.b);
     this.bladeFallbackRect.setFillStyle(color, 1); if (this.bladeImage) this.bladeImage.setTint(color);
+    
     const stage = Math.min(5, Math.floor(Phaser.Math.Clamp(this.score / this.targetScore, 0, 1) * 6));
     if (stage !== this.lastStage) { this.setBladeStage(stage); this.lastStage = stage; }
     if (this.ambientGlow) this.ambientGlow.setAlpha(ratio * 0.4);
@@ -392,52 +431,64 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.textures.exists(key)) {
       if (!this.bladeImage) { this.bladeImage = this.add.image(0, 0, key).setOrigin(0.5); this.bladeContainer.add(this.bladeImage); } else this.bladeImage.setTexture(key);
       this.bladeImage.setVisible(true); this.bladeFallbackRect.setVisible(true).setAlpha(0.15);
-      if (this.lastStage !== -1) { this.createOmniBurst(70, 0xffcc00, 2.5, 'spark_perfect', this.bladeContainer.x, this.bladeContainer.y); this.flashOverlay.setFillStyle(0xffcc00, 1).setAlpha(0.35); this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 250, ease: 'Quad.easeOut' }); this.tweens.add({ targets: this.bladeContainer, scale: 1.15, duration: 100, yoyo: true, ease: 'Quad.easeOut' }); }
+      if (this.lastStage !== -1) { this.createOmniBurst(50, 0xffcc00, 2.0, 'spark_perfect', this.bladeContainer.x, this.bladeContainer.y); this.flashOverlay.setFillStyle(0xffcc00, 1).setAlpha(0.3); this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 250 }); this.tweens.add({ targets: this.bladeContainer, scale: 1.1, duration: 100, yoyo: true }); }
     }
   }
 
   private handleRingLogic(delta: number) {
     this.ringTimer += delta; const t = Math.min(this.ringTimer / this.shrinkDuration, 1.5); this.currentRadius = this.startRadius * (1 - t * t);
-    this.approachRing.clear().lineStyle(8, this.currentRadius < this.targetRadius ? 0xffffff : 0xfabf24, 0.6).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
-    if (this.currentRadius < this.targetRadius - 30) { this.combo = 0; this.resetRing(); }
+    this.approachRing.clear().lineStyle(6, this.currentRadius < this.targetRadius ? 0xffffff : 0xfabf24, 0.5).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
+    if (this.currentRadius < this.targetRadius - 25) { this.combo = 0; this.resetRing(); }
   }
 
   private resetRing() {
-    if (this.temperature <= 0) { this.isPlaying = false; this.isReadyToStart = false; this.targetRing.clear(); this.approachRing.clear(); this.infoText.setVisible(true).setText('FORGE IS COLD\nADD FUEL TO HEAT').setColor('#3b82f6'); return; }
+    if (this.temperature <= 0) { this.isPlaying = false; this.isReadyToStart = false; this.targetRing.clear(); this.approachRing.clear(); this.infoText.setVisible(true).setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6'); return; }
     this.currentRadius = this.startRadius; this.ringTimer = 0;
     const w = this.hammerHitArea.width; const h = this.hammerHitArea.height;
-    const u = Phaser.Math.Between(-w * 0.35, w * 0.35); const v = Phaser.Math.Between(-h * 0.25, h * 0.25);
+    const u = Phaser.Math.Between(-w * 0.3, w * 0.3); const v = Phaser.Math.Between(-h * 0.2, h * 0.2);
     const rad = Phaser.Math.DegToRad(this.hammerHitArea.angle);
     this.hitX = this.hammerHitArea.x + (u * Math.cos(rad) - v * Math.sin(rad)); this.hitY = this.hammerHitArea.y + (u * Math.sin(rad) + v * Math.cos(rad));
-    if (this.isPlaying) this.targetRing.clear().fillStyle(0xfabf24, 0.1).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(5, 0xfabf24, 0.4).strokeCircle(this.hitX, this.hitY, this.targetRadius);
+    if (this.isPlaying) this.targetRing.clear().fillStyle(0xfabf24, 0.1).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(4, 0xfabf24, 0.4).strokeCircle(this.hitX, this.hitY, this.targetRadius);
   }
 
-  private updateProgressBar() { this.progressBar.width = Phaser.Math.Clamp((this.score / this.targetScore) * 300, 0, 300); }
+  private updateProgressBar() { 
+    const progBg = this.uiContainer.getByName('progBg') as Phaser.GameObjects.Rectangle;
+    const maxWidth = progBg.width;
+    const progressWidth = Math.max(0.1, Phaser.Math.Clamp((this.score / this.targetScore) * maxWidth, 0, maxWidth));
+    this.progressBar.width = progressWidth; 
+  }
 
   private createSparks(count: number, color: number, scale: number, key: string, x: number, y: number) {
-    const emitter = this.add.particles(x, y, this.textures.exists(key) ? key : 'white', { lifespan: 800, speed: { min: 300 * scale, max: 700 * scale }, angle: { min: 230, max: 310 }, scale: { start: 0.7, end: 0 }, gravityY: 1200, blendMode: 'ADD', tint: color });
+    const emitter = this.add.particles(x, y, this.textures.exists(key) ? key : 'white', { lifespan: 600, speed: { min: 200 * scale, max: 500 * scale }, angle: { min: 230, max: 310 }, scale: { start: 0.6, end: 0 }, gravityY: 1000, blendMode: 'ADD', tint: color });
     emitter.explode(count);
   }
 
   private createOmniBurst(count: number, color: number, scale: number, key: string, x: number, y: number) {
-    const emitter = this.add.particles(x, y, this.textures.exists(key) ? key : 'white', { lifespan: 1200, speed: { min: 200 * scale, max: 500 * scale }, angle: { min: 0, max: 360 }, scale: { start: 0.8, end: 0 }, gravityY: 400, blendMode: 'ADD', tint: color });
+    const emitter = this.add.particles(x, y, this.textures.exists(key) ? key : 'white', { lifespan: 1000, speed: { min: 150 * scale, max: 400 * scale }, angle: { min: 0, max: 360 }, scale: { start: 0.7, end: 0 }, gravityY: 300, blendMode: 'ADD', tint: color });
     emitter.explode(count);
   }
 
   private showFeedback(text: string, color: number, scale: number, x?: number, y?: number) {
     const fx = x ?? this.hitX; const fy = y ?? this.hitY;
-    const fb = this.add.text(fx, fy - 140, text, { fontFamily: 'Arial', fontSize: '36px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0'), stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setScale(0.5).setAlpha(0).setDepth(25);
-    this.tweens.add({ targets: fb, y: fy - 200, alpha: 1, scale: scale, duration: 250, hold: 400, yoyo: true, onComplete: () => fb.destroy() });
-    if (this.combo > 1) { this.comboText.setText(`${this.combo} COMBO!`).setAlpha(1); this.tweens.add({ targets: this.comboText, scale: { from: 1.5, to: 1 }, duration: 200, alpha: { from: 1, to: 0 }, delay: 500 }); }
+    // judgement text starts at ring center and floats up slightly
+    const fb = this.add.text(fx, fy, text, { fontFamily: 'Arial', fontSize: '24px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0'), stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setScale(0.5).setAlpha(0).setDepth(25);
+    this.tweens.add({ targets: fb, y: fy - 35, alpha: 1, scale: scale, duration: 200, hold: 300, yoyo: true, onComplete: () => fb.destroy() });
+    
+    if (this.combo > 1) { 
+        // Move combo text to appear right above the hit point
+        this.comboText.setPosition(fx, fy - 60);
+        this.comboText.setText(`${this.combo} COMBO!`).setAlpha(1).setScale(1.1); 
+        this.tweens.add({ targets: this.comboText, scale: { from: 1.3, to: 1 }, duration: 200, alpha: { from: 1, to: 0 }, delay: 600 }); 
+    }
   }
 
   private winGame() {
     this.isFinished = true; this.isPlaying = false; this.targetRing.clear(); this.approachRing.clear();
     if (this.onStatusUpdate) this.onStatusUpdate(this.temperature);
     const bg = this.add.rectangle(this.centerX, this.centerY, this.scale.width, this.scale.height, 0x000000).setAlpha(0).setDepth(100);
-    this.tweens.add({ targets: bg, alpha: 0.85, duration: 500 });
-    const txt = this.add.text(this.centerX, this.centerY, `${this.getQualityLabel(this.currentQuality)} CRAFT!`, { fontFamily: 'Georgia', fontSize: '72px', color: this.getLabelColor(this.currentQuality), stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setAlpha(0).setDepth(101);
-    this.tweens.add({ targets: txt, alpha: 1, scale: { from: 0.5, to: 1.2 }, duration: 600, ease: 'Back.out', onComplete: () => { this.time.delayedCall(1000, () => { if (this.onComplete) this.onComplete(this.currentQuality); }); } });
+    this.tweens.add({ targets: bg, alpha: 0.8, duration: 500 });
+    const txt = this.add.text(this.centerX, this.centerY, `${this.getQualityLabel(this.currentQuality)} CRAFT!`, { fontFamily: 'Georgia', fontSize: '48px', color: this.getLabelColor(this.currentQuality), stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setAlpha(0).setDepth(101);
+    this.tweens.add({ targets: txt, alpha: 1, scale: { from: 0.5, to: 1.1 }, duration: 600, ease: 'Back.out', onComplete: () => { this.time.delayedCall(1000, () => { if (this.onComplete) this.onComplete(this.currentQuality); }); } });
   }
 
   public getTemperature() { return this.temperature; }

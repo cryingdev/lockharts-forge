@@ -41,11 +41,10 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
       exp => exp.status === 'COMPLETED'
   ).length;
 
-  // Badge count includes both waiting in queue and the one currently at the counter
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
   
   return (
-    <div className="h-screen w-screen bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500">
+    <div className="h-full w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500">
       
       <Header 
         activeTab={activeTab} 
@@ -53,29 +52,29 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
         onSettingsClick={() => setIsSettingsOpen(true)}
       />
       
-      <div className="bg-stone-900 border-b border-stone-800 px-4 shrink-0 flex justify-between items-center">
-        <div className="flex space-x-1 overflow-x-auto no-scrollbar flex-1">
+      <div className="bg-stone-900 border-b border-stone-800 px-2 md:px-4 shrink-0 flex justify-between items-center z-10">
+        <div className="flex space-x-0.5 md:space-x-1 overflow-x-auto no-scrollbar flex-1">
           
           <button 
             onClick={() => setActiveTab('FORGE')}
-            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'FORGE' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
             }`}
           >
-            <Anvil className="w-5 h-5" />
-            <span className="font-bold tracking-wide">Forge</span>
+            <Anvil className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Forge</span>
           </button>
 
           <button 
             onClick={() => setActiveTab('DUNGEON')}
-            className={`relative flex items-center gap-2 px-6 py-4 border-b-2 transition-colors whitespace-nowrap ${
+            className={`relative flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'DUNGEON' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
             }`}
           >
-            <MapIcon className="w-5 h-5" />
-            <span className="font-bold tracking-wide">Dungeon</span>
+            <MapIcon className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Dungeon</span>
             {completedExpeditionsCount > 0 && (
-                <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
+                <div className="absolute top-1 right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-600 text-[8px] md:text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
                     {completedExpeditionsCount}
                 </div>
             )}
@@ -83,35 +82,34 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
 
           <button 
             onClick={() => setActiveTab('INVENTORY')}
-            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'INVENTORY' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
             }`}
           >
-            <Package className="w-5 h-5" />
-            <span className="font-bold tracking-wide">Inventory</span>
+            <Package className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Items</span>
           </button>
 
           <button 
             onClick={() => setActiveTab('MARKET')}
-            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'MARKET' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
             }`}
           >
-            <ShoppingBag className="w-5 h-5" />
-            <span className="font-bold tracking-wide">Market</span>
+            <ShoppingBag className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Market</span>
           </button>
 
           <button 
             onClick={() => setActiveTab('SHOP')}
-            className={`relative flex items-center gap-2 px-6 py-4 border-b-2 transition-colors whitespace-nowrap ${
+            className={`relative flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'SHOP' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
             }`}
           >
-            <Coins className="w-5 h-5" />
-            <span className="font-bold tracking-wide">Shop</span>
-            {/* Hide badge if currently looking at the shop */}
+            <Coins className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Shop</span>
             {activeTab !== 'SHOP' && totalShopVisitors > 0 && (
-                <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
+                <div className="absolute top-1 right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-600 text-[8px] md:text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
                     {totalShopVisitors}
                 </div>
             )}
@@ -119,22 +117,22 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
 
           <button 
             onClick={() => setActiveTab('TAVERN')}
-            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'TAVERN' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
             }`}
           >
-            <Beer className="w-5 h-5" />
-            <span className="font-bold tracking-wide">Tavern</span>
+            <Beer className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Tavern</span>
           </button>
 
           <button 
             onClick={() => setActiveTab('SIMULATION')}
-            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'SIMULATION' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
             }`}
           >
-            <Activity className="w-5 h-5" />
-            <span className="font-bold tracking-wide">Simulation</span>
+            <Activity className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Sim</span>
           </button>
 
         </div>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Phaser from 'phaser';
 import { X } from 'lucide-react';
@@ -52,7 +51,10 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       height: containerRef.current.clientHeight,
       backgroundColor: '#0c0a09',
       scene: [SmithingScene],
-      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+      scale: { 
+        mode: Phaser.Scale.FIT, // Changed to FIT for better mobile landscape compatibility
+        autoCenter: Phaser.Scale.CENTER_BOTH 
+      },
     };
 
     const game = new Phaser.Game(config);
@@ -90,14 +92,14 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   }, [charcoalCount]);
 
   return (
-    <div className="w-full h-full relative bg-stone-950 animate-in fade-in duration-300 overflow-hidden">
-      {/* Floating Close Button */}
+    <div className="absolute inset-0 z-50 bg-stone-950 animate-in fade-in duration-300 overflow-hidden">
+      {/* Floating Close Button - smaller for mobile */}
       <button 
         onClick={handleCancel}
-        className="absolute top-4 right-4 z-50 p-2 bg-stone-900/60 hover:bg-red-900/40 text-stone-400 hover:text-red-200 rounded-full border border-stone-700/50 backdrop-blur-md transition-all shadow-xl"
+        className="absolute top-2 right-2 md:top-4 md:right-4 z-50 p-1.5 md:p-2 bg-stone-900/60 hover:bg-red-900/40 text-stone-400 hover:text-red-200 rounded-full border border-stone-700/50 backdrop-blur-md transition-all shadow-xl"
         title="Cancel Forging"
       >
-        <X className="w-5 h-5" />
+        <X className="w-4 h-4 md:w-5 md:h-5" />
       </button>
 
       {/* Main Game Canvas Container */}

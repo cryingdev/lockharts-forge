@@ -33,7 +33,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
       backgroundColor: '#000000',
       scene: [IntroScene],
       scale: {
-        mode: Phaser.Scale.RESIZE,
+        mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
       }
     };
@@ -52,7 +52,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
   }, [isReady, onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-black z-50">
+    <div className="absolute inset-0 bg-black z-50 overflow-hidden">
       <div ref={containerRef} className="w-full h-full" />
     </div>
   );
