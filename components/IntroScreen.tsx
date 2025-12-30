@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import IntroScene from '../game/IntroScene';
@@ -33,7 +34,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
       backgroundColor: '#000000',
       scene: [IntroScene],
       scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE, // FIT에서 RESIZE로 변경
         autoCenter: Phaser.Scale.CENTER_BOTH
       }
     };
@@ -46,8 +47,10 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
     });
 
     return () => {
-      game.destroy(true);
-      gameRef.current = null;
+      if (gameRef.current) {
+          gameRef.current.destroy(true);
+          gameRef.current = null;
+      }
     };
   }, [isReady, onComplete]);
 

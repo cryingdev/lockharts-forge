@@ -26,7 +26,6 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     onClose();
   }, [actions, onClose]);
 
-  // Wait for container to have actual dimensions before starting Phaser
   useEffect(() => {
     const checkSize = () => {
         if (containerRef.current && containerRef.current.clientWidth > 0 && containerRef.current.clientHeight > 0) {
@@ -41,7 +40,6 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   useEffect(() => {
     if (!isReady || !containerRef.current) return;
     
-    // Calculate initial temperature based on time since last forge
     const initialTemp = Math.max(0, (state.forgeTemperature || 0) - ((Date.now() - (state.lastForgeTime || 0)) / 1000) * 5);
     
     const config: Phaser.Types.Core.GameConfig = {
@@ -52,7 +50,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       backgroundColor: '#0c0a09',
       scene: [SmithingScene],
       scale: { 
-        mode: Phaser.Scale.FIT, // Changed to FIT for better mobile landscape compatibility
+        mode: Phaser.Scale.RESIZE, // RESIZE 모드로 변경하여 부모 컨테이너 크기에 밀착
         autoCenter: Phaser.Scale.CENTER_BOTH 
       },
     };
@@ -83,7 +81,6 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     };
   }, [isReady, onComplete, difficulty]);
 
-  // Sync charcoal count changes to the active Phaser scene
   useEffect(() => {
     if (gameRef.current) {
       const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
@@ -93,16 +90,13 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
 
   return (
     <div className="absolute inset-0 z-50 bg-stone-950 animate-in fade-in duration-300 overflow-hidden">
-      {/* Floating Close Button - smaller for mobile */}
       <button 
         onClick={handleCancel}
-        className="absolute top-2 right-2 md:top-4 md:right-4 z-50 p-1.5 md:p-2 bg-stone-900/60 hover:bg-red-900/40 text-stone-400 hover:text-red-200 rounded-full border border-stone-700/50 backdrop-blur-md transition-all shadow-xl"
+        className="absolute top-2 right-2 md:top-4 md:right-4 z-50 p-2 md:p-3 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 hover:text-red-100 rounded-full border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90"
         title="Cancel Forging"
       >
-        <X className="w-4 h-4 md:w-5 md:h-5" />
+        <X className="w-5 h-5" />
       </button>
-
-      {/* Main Game Canvas Container */}
       <div ref={containerRef} className="w-full h-full" />
     </div>
   );

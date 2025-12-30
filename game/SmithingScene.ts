@@ -45,8 +45,8 @@ export default class SmithingScene extends Phaser.Scene {
 
   private anvilConfig = {
     heightRatio: 0.4,
-    yOffset: 40,
-    imageOffsetY: 30,
+    yOffset: 20,
+    imageOffsetY: 20,
     hitAreaOffset: 45, 
   };
 
@@ -184,12 +184,18 @@ export default class SmithingScene extends Phaser.Scene {
       if (objs.includes(this.bellowsContainer) || this.bellowsContainer.list.some(c => objs.includes(c))) { this.pumpBellows(); return; }
       if (objs.includes(this.heatUpBtnContainer) || this.heatUpBtnContainer.list.some(c => objs.includes(c))) { this.requestHeatUp(); return; }
       if (!this.isPlaying) { this.handleInput(pointer); return; }
-      if (!this.isPointerInHitArea(pointer.worldX, pointer.worldY)) { this.handleMiss(pointer.worldX, pointer.worldY); return; }
-      if (Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, this.hitX, this.hitY) > this.currentRadius + 4) { this.handleMiss(pointer.worldX, pointer.worldY); return; }
-      this.handleInput(pointer);
+      
+      const isInArea = this.isPointerInHitArea(pointer.worldX, pointer.worldY);
+      const distToCenter = Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, this.hitX, this.hitY);
+      
+      if (isInArea || distToCenter < this.startRadius * 0.8) {
+          this.handleInput(pointer);
+      } else {
+          this.handleMiss(pointer.worldX, pointer.worldY);
+      }
     }, this);
-    this.scale.on('resize', this.handleResize, this);
 
+    this.scale.on('resize', this.handleResize, this);
     this.updateProgressBar();
   }
 
@@ -198,15 +204,15 @@ export default class SmithingScene extends Phaser.Scene {
     const progBg = this.add.rectangle(0, 20, 200, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e).setName('progBg').setOrigin(0, 0.5);
     this.uiContainer.add([progBg, this.progressBar]);
     
-    this.qualityText = this.add.text(0, 40, 'PRISTINE', { fontFamily: 'monospace', fontSize: '14px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
+    this.qualityText = this.add.text(0, 40, 'PRISTINE', { fontFamily: 'monospace', fontSize: '16px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add(this.qualityText);
     
-    this.tempBar = this.add.rectangle(0, 0, 14, 180, 0x3b82f6).setOrigin(0.5, 1).setScale(1, 0);
+    this.tempBar = this.add.rectangle(0, 0, 16, 180, 0x3b82f6).setOrigin(0.5, 1).setScale(1, 0);
     this.tempValueText = this.add.text(0, 0, '20°C', { fontFamily: 'monospace', fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     
     this.uiContainer.add([
-      this.add.rectangle(0, 0, 24, 190, 0x1c1917).setStrokeStyle(3, 0x57534e).setName('tempFrame'), 
-      this.add.rectangle(0, 0, 18, 180, 0x0c0a09).setName('tempBg'), 
+      this.add.rectangle(0, 0, 28, 190, 0x1c1917).setStrokeStyle(3, 0x57534e).setName('tempFrame'), 
+      this.add.rectangle(0, 0, 22, 180, 0x0c0a09).setName('tempBg'), 
       this.tempBar, 
       this.tempValueText
     ]);
@@ -214,30 +220,30 @@ export default class SmithingScene extends Phaser.Scene {
     this.createBellows();
     this.createHeatUpButton();
     
-    this.comboText = this.add.text(0, 0, '', { fontFamily: 'Impact', fontSize: '32px', color: '#fcd34d', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0).setDepth(26);
-    this.infoText = this.add.text(0, 0, this.isReadyToStart ? 'TOUCH TO START' : 'FORGE IS COLD\nADD FUEL', { fontFamily: 'monospace', fontSize: '20px', color: this.isReadyToStart ? '#fbbf24' : '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
+    this.comboText = this.add.text(0, 0, '', { fontFamily: 'Impact', fontSize: '36px', color: '#fcd34d', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setAlpha(0).setDepth(26);
+    this.infoText = this.add.text(0, 0, this.isReadyToStart ? 'TOUCH TO START' : 'FORGE IS COLD\nADD FUEL', { fontFamily: 'monospace', fontSize: '24px', color: this.isReadyToStart ? '#fbbf24' : '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
     this.uiContainer.add([this.comboText, this.infoText]);
     this.tweens.add({ targets: this.infoText, alpha: 0.5, yoyo: true, repeat: -1, duration: 800 });
   }
 
   private createBellows() {
     this.bellowsContainer = this.add.container(0, 0);
-    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(0.25);
-    const txt = this.add.text(0, 18, 'PUMP', { fontSize: '9px', color: '#fde68a', fontFamily: 'monospace', fontStyle: 'bold' }).setOrigin(0.5);
+    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(0.3);
+    const txt = this.add.text(0, 22, 'PUMP', { fontSize: '10px', color: '#fde68a', fontFamily: 'monospace', fontStyle: 'bold' }).setOrigin(0.5);
     this.bellowsContainer.add([this.bellowsSprite, txt]);
-    this.bellowsContainer.setInteractive(new Phaser.Geom.Rectangle(-40, -30, 80, 60), Phaser.Geom.Rectangle.Contains);
+    this.bellowsContainer.setInteractive(new Phaser.Geom.Rectangle(-50, -40, 100, 80), Phaser.Geom.Rectangle.Contains);
     this.bellowsSprite.on('animationcomplete-bellows_pump', () => { this.isPumping = false; });
     this.uiContainer.add(this.bellowsContainer);
   }
 
   private createHeatUpButton() {
     this.heatUpBtnContainer = this.add.container(0, 0);
-    const bg = this.add.rectangle(0, 0, 70, 50, 0x1c1917).setStrokeStyle(2, 0x57534e).setName('btnBg');
-    const icon = this.add.text(0, -8, '🔥', { fontSize: '14px' }).setOrigin(0.5).setName('btnIcon');
-    const label = this.add.text(0, 8, 'HEAT UP', { fontSize: '9px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'monospace' }).setOrigin(0.5);
-    const countTxt = this.add.text(0, 18, `x${this.charcoalCount}`, { fontSize: '10px', color: '#78716c', fontFamily: 'monospace' }).setOrigin(0.5).setName('countTxt');
+    const bg = this.add.rectangle(0, 0, 80, 60, 0x1c1917).setStrokeStyle(3, 0x57534e).setName('btnBg');
+    const icon = this.add.text(0, -10, '🔥', { fontSize: '18px' }).setOrigin(0.5).setName('btnIcon');
+    const label = this.add.text(0, 10, 'HEAT UP', { fontSize: '10px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'monospace' }).setOrigin(0.5);
+    const countTxt = this.add.text(0, 22, `x${this.charcoalCount}`, { fontSize: '12px', color: '#78716c', fontFamily: 'monospace' }).setOrigin(0.5).setName('countTxt');
     this.heatUpBtnContainer.add([bg, icon, label, countTxt]);
-    this.heatUpBtnContainer.setInteractive(new Phaser.Geom.Rectangle(-35, -25, 70, 50), Phaser.Geom.Rectangle.Contains);
+    this.heatUpBtnContainer.setInteractive(new Phaser.Geom.Rectangle(-40, -30, 80, 60), Phaser.Geom.Rectangle.Contains);
     this.uiContainer.add(this.heatUpBtnContainer);
     this.refreshHeatUpButton();
   }
@@ -248,8 +254,8 @@ export default class SmithingScene extends Phaser.Scene {
     const countTxt = this.heatUpBtnContainer.getByName('countTxt') as Phaser.GameObjects.Text;
     const icon = this.heatUpBtnContainer.getByName('btnIcon') as Phaser.GameObjects.Text;
     countTxt.setText(`x${this.charcoalCount}`);
-    if (this.charcoalCount > 0) { bg.setStrokeStyle(2, 0xea580c); countTxt.setColor('#a8a29e'); icon.setAlpha(1); } 
-    else { bg.setStrokeStyle(2, 0x292524); countTxt.setColor('#44403c'); icon.setAlpha(0.3); }
+    if (this.charcoalCount > 0) { bg.setStrokeStyle(3, 0xea580c); countTxt.setColor('#a8a29e'); icon.setAlpha(1); } 
+    else { bg.setStrokeStyle(3, 0x292524); countTxt.setColor('#44403c'); icon.setAlpha(0.3); }
   }
 
   public updateCharcoalCount(count: number) { this.charcoalCount = count; this.refreshHeatUpButton(); }
@@ -289,24 +295,27 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.flashOverlay) this.flashOverlay.setSize(w, h);
 
     const isCompact = h < 450;
-    const anvilY = this.centerY + (isCompact ? 20 : this.anvilConfig.yOffset);
+    const anvilY = this.centerY + (isCompact ? 10 : this.anvilConfig.yOffset);
 
-    this.startRadius = Phaser.Math.Clamp(h * 0.25, 80, 200);
+    // 모바일에서 더 크게 보이도록 시작 반경 조정
+    this.startRadius = Phaser.Math.Clamp(h * 0.35, 120, 240);
     this.targetRadius = this.startRadius * 0.25;
 
     if (this.anvilImage && this.anvilImage.texture.key !== '__MISSING') {
-      const targetWidth = w * (isCompact ? 1.0 : 1.3);
+      // 화면 가로를 꽉 채우도록 모루 스케일링 강화
+      const targetWidth = w * (isCompact ? 1.2 : 1.4);
       this.anvilImage.setScale(targetWidth / this.anvilImage.width);
       this.anvilImage.setPosition(this.centerX, anvilY + this.anvilConfig.imageOffsetY);
     }
     if (this.ambientGlow) this.ambientGlow.setPosition(this.centerX, anvilY);
     
     const surfaceH = h * this.anvilConfig.heightRatio;
-    const bladeY = anvilY - surfaceH * 0.45; 
+    const bladeY = anvilY - surfaceH * 0.4; 
     this.bladeContainer.setPosition(this.centerX, bladeY);
     const rad = Phaser.Math.DegToRad(this.bladeContainer.angle);
     this.bladeContainer.x += Math.cos(rad) * 60;
     this.bladeContainer.y += Math.sin(rad) * 60;
+    
     this.hammerHitArea.setPosition(this.bladeContainer.x - Math.sin(rad) * this.anvilConfig.hitAreaOffset, this.bladeContainer.y + Math.cos(rad) * this.anvilConfig.hitAreaOffset);
     this.rebuildHitPoly();
     this.repositionUIElements(isCompact);
@@ -317,30 +326,30 @@ export default class SmithingScene extends Phaser.Scene {
     const h = this.scale.height;
     
     const progBg = this.uiContainer.getByName('progBg') as Phaser.GameObjects.Rectangle;
-    const progWidth = isCompact ? 150 : 200;
+    if (!progBg) return;
+    const progWidth = isCompact ? 180 : 250;
     const startX = this.centerX - (progWidth / 2);
-    progBg.setPosition(startX, 20).setSize(progWidth, 16);
-    this.progressBar.setPosition(startX, 20);
-    this.qualityText.setPosition(this.centerX, 45);
+    progBg.setPosition(startX, 25).setSize(progWidth, 16);
+    this.progressBar.setPosition(startX, 25);
+    this.qualityText.setPosition(this.centerX, 55);
     
-    const sideX = w - (isCompact ? 35 : 50);
-    const sideBaseY = isCompact ? 90 : this.centerY - 80;
-    const barHeight = isCompact ? 100 : 180;
+    const sideX = w - (isCompact ? 40 : 60);
+    const sideBaseY = isCompact ? 100 : this.centerY - 60;
+    const barHeight = isCompact ? 120 : 200;
     
     const tempFrame = this.uiContainer.getByName('tempFrame') as Phaser.GameObjects.Rectangle;
     const tempBg = this.uiContainer.getByName('tempBg') as Phaser.GameObjects.Rectangle;
-    tempFrame.setPosition(sideX, sideBaseY).setSize(24, barHeight + 10);
-    tempBg.setPosition(sideX, sideBaseY).setSize(18, barHeight);
+    tempFrame.setPosition(sideX, sideBaseY).setSize(28, barHeight + 10);
+    tempBg.setPosition(sideX, sideBaseY).setSize(22, barHeight);
     
-    this.tempBar.setPosition(sideX, sideBaseY + (barHeight / 2)).setSize(14, barHeight);
-    this.tempValueText.setPosition(sideX, sideBaseY - (barHeight / 2) - 15).setFontSize(isCompact ? '11px' : '14px');
+    this.tempBar.setPosition(sideX, sideBaseY + (barHeight / 2)).setSize(16, barHeight);
+    this.tempValueText.setPosition(sideX, sideBaseY - (barHeight / 2) - 20).setFontSize(isCompact ? '12px' : '14px');
     
-    const controlGap = isCompact ? 50 : 65;
-    this.bellowsContainer.setPosition(sideX, sideBaseY + (barHeight / 2) + 40).setScale(isCompact ? 0.7 : 1);
-    this.heatUpBtnContainer.setPosition(sideX, sideBaseY + (barHeight / 2) + 40 + controlGap).setScale(isCompact ? 0.7 : 1);
+    const controlGap = isCompact ? 65 : 85;
+    this.bellowsContainer.setPosition(sideX, sideBaseY + (barHeight / 2) + 45).setScale(isCompact ? 0.8 : 1);
+    this.heatUpBtnContainer.setPosition(sideX, sideBaseY + (barHeight / 2) + 45 + controlGap).setScale(isCompact ? 0.8 : 1);
     
-    this.infoText.setPosition(this.centerX, this.centerY - (isCompact ? 100 : 180));
-    // Default position for comboText is handled dynamically in showFeedback
+    this.infoText.setPosition(this.centerX, this.centerY - (isCompact ? 120 : 200));
   }
 
   private rebuildHitPoly() {
@@ -377,10 +386,10 @@ export default class SmithingScene extends Phaser.Scene {
       this.score += Math.ceil(8 * eff); this.combo++; this.perfectCount++;
       if (this.perfectCount >= 6) { this.currentQuality += 1; this.showFeedback('QUALITY UP!', 0xfbbf24, 1.3, this.hitX, this.hitY - 60); }
       this.createSparks(30, 0xffaa00, 1.5, 'spark_perfect', swingX, swingY); 
-      this.showFeedback('PERFECT!', 0xffb300, 1.3, this.hitX, this.hitY); this.cameras.main.shake(150, 0.02);
+      this.showFeedback('PERFECT!', 0xffb300, 1.4, this.hitX, this.hitY); this.cameras.main.shake(150, 0.02);
     } else if (diff < toleranceGood) {
       this.score += Math.ceil(5 * eff); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
-      this.createSparks(15, 0xffffff, 1.1, 'spark_normal', swingX, swingY); this.showFeedback('GOOD', 0xe5e5e5, 1.0, this.hitX, this.hitY);
+      this.createSparks(15, 0xffffff, 1.1, 'spark_normal', swingX, swingY); this.showFeedback('GOOD', 0xe5e5e5, 1.1, this.hitX, this.hitY);
     } else { this.handleMiss(swingX, swingY); }
     this.updateProgressBar(); if (this.score >= this.targetScore) this.winGame(); else this.resetRing();
   }
@@ -388,7 +397,7 @@ export default class SmithingScene extends Phaser.Scene {
   private handleMiss(x?: number, y?: number) {
     const fx = x ?? this.hitX; const fy = y ?? this.hitY;
     this.score = Math.max(0, this.score - 5); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 5);
-    this.cameras.main.shake(100, 0.01); this.showFeedback('MISS', 0xef4444, 1.1, fx, fy); this.updateProgressBar(); this.resetRing();
+    this.cameras.main.shake(100, 0.01); this.showFeedback('MISS', 0xef4444, 1.2, fx, fy); this.updateProgressBar(); this.resetRing();
   }
 
   update(time: number, delta: number) {
@@ -445,7 +454,7 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.temperature <= 0) { this.isPlaying = false; this.isReadyToStart = false; this.targetRing.clear(); this.approachRing.clear(); this.infoText.setVisible(true).setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6'); return; }
     this.currentRadius = this.startRadius; this.ringTimer = 0;
     const w = this.hammerHitArea.width; const h = this.hammerHitArea.height;
-    const u = Phaser.Math.Between(-w * 0.3, w * 0.3); const v = Phaser.Math.Between(-h * 0.2, h * 0.2);
+    const u = Phaser.Math.Between(-w * 0.35, w * 0.35); const v = Phaser.Math.Between(-h * 0.25, h * 0.25);
     const rad = Phaser.Math.DegToRad(this.hammerHitArea.angle);
     this.hitX = this.hammerHitArea.x + (u * Math.cos(rad) - v * Math.sin(rad)); this.hitY = this.hammerHitArea.y + (u * Math.sin(rad) + v * Math.cos(rad));
     if (this.isPlaying) this.targetRing.clear().fillStyle(0xfabf24, 0.1).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(4, 0xfabf24, 0.4).strokeCircle(this.hitX, this.hitY, this.targetRadius);
@@ -453,6 +462,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   private updateProgressBar() { 
     const progBg = this.uiContainer.getByName('progBg') as Phaser.GameObjects.Rectangle;
+    if (!progBg) return;
     const maxWidth = progBg.width;
     const progressWidth = Math.max(0.1, Phaser.Math.Clamp((this.score / this.targetScore) * maxWidth, 0, maxWidth));
     this.progressBar.width = progressWidth; 
@@ -471,14 +481,14 @@ export default class SmithingScene extends Phaser.Scene {
   private showFeedback(text: string, color: number, scale: number, x?: number, y?: number) {
     const fx = x ?? this.hitX; const fy = y ?? this.hitY;
     // judgement text starts at ring center and floats up slightly
-    const fb = this.add.text(fx, fy, text, { fontFamily: 'Arial', fontSize: '24px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0'), stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setScale(0.5).setAlpha(0).setDepth(25);
-    this.tweens.add({ targets: fb, y: fy - 35, alpha: 1, scale: scale, duration: 200, hold: 300, yoyo: true, onComplete: () => fb.destroy() });
+    const fb = this.add.text(fx, fy, text, { fontFamily: 'Arial Black', fontSize: '32px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0'), stroke: '#000', strokeThickness: 7 }).setOrigin(0.5).setScale(0.5).setAlpha(0).setDepth(25);
+    this.tweens.add({ targets: fb, y: fy - 40, alpha: 1, scale: scale, duration: 250, hold: 400, yoyo: true, onComplete: () => fb.destroy() });
     
     if (this.combo > 1) { 
         // Move combo text to appear right above the hit point
-        this.comboText.setPosition(fx, fy - 60);
-        this.comboText.setText(`${this.combo} COMBO!`).setAlpha(1).setScale(1.1); 
-        this.tweens.add({ targets: this.comboText, scale: { from: 1.3, to: 1 }, duration: 200, alpha: { from: 1, to: 0 }, delay: 600 }); 
+        this.comboText.setPosition(fx, fy - 75);
+        this.comboText.setText(`${this.combo} COMBO!`).setAlpha(1).setScale(1.2); 
+        this.tweens.add({ targets: this.comboText, scale: { from: 1.4, to: 1 }, duration: 200, alpha: { from: 1, to: 0 }, delay: 700 }); 
     }
   }
 
