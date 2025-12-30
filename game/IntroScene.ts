@@ -99,69 +99,61 @@ export default class IntroScene extends Phaser.Scene {
   }
 
   private handleResize() {
-    // gameSize 기준이 더 안전합니다 (RESIZE에서 특히)
     const w = this.scale.gameSize.width;
     const h = this.scale.gameSize.height;
-
     const cx = w / 2;
     const cy = h / 2;
 
-    // 화면 크기에 따라 0.6 ~ 1.2 사이로 연속 스케일
-    const short = Math.min(w, h);
-    const uiScale = Phaser.Math.Clamp(short / 720, 0.6, 1.2);
+    // 카메라를 캔버스(래퍼) 크기에 고정
+    this.cameras.main.setViewport(0, 0, w, h);
 
-    // --- BG: cover ---
+    // UI 스케일은 연속적으로 (짧은 축 기준)
+    const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.6, 1.2);
+
+    // BG: "세로 딱 맞춤" (가로는 크롭 허용)
     this.bgs.forEach(img => {
       img.setPosition(cx, cy);
-      const cover = Math.max(w / img.width, h / img.height);
-      img.setScale(cover);
+      const scale = h / img.height;     // height-fit
+      img.setScale(scale);
     });
 
-    // --- Dragon: 양축 기준으로 "화면 안에 들어오게" ---
+    // Dragon: height 중심으로 맞추되, width도 과하면 제한
     if (this.dragon) {
-      // 드래곤이 화면을 너무 꽉 채우지 않도록 0.85 정도
-      const fit = Math.min((w * 0.85) / this.dragon.width, (h * 0.70) / this.dragon.height);
-      this.dragon.setScale(fit);
-
-      // y 오프셋도 픽셀 고정 대신 비율 기반
-      const yOffset = -h * 0.18; // 화면 높이의 18% 위
-      this.dragon.setPosition(cx, cy + yOffset);
+      const dScaleByHeight = (h * 0.55) / this.dragon.height; // 화면 높이의 55%
+      const dScaleByWidth  = (w * 0.90) / this.dragon.width;  // 화면 너비의 90%
+      const dScale = Math.min(dScaleByHeight, dScaleByWidth);
+      this.dragon.setScale(dScale);
+      this.dragon.setPosition(cx, cy - h * 0.18);
     }
 
-    // --- Dev Text ---
     if (this.devText) {
       this.devText.setPosition(cx, cy);
       this.devText.setFontSize(Math.round(45 * uiScale));
     }
 
-    // --- Skip hint (노치/홈바 때문에 너무 아래로 가지 않게) ---
     if (this.skipHint) {
       this.skipHint.setPosition(cx, h - Math.max(24, h * 0.05));
       this.skipHint.setFontSize(Math.round(12 * uiScale));
     }
 
-    // --- Overlay ---
     if (this.breathOverlay) {
       this.breathOverlay.setPosition(cx, cy).setSize(w, h);
     }
 
-    // --- Narrative Texts ---
     this.narrativeTexts.forEach(t => {
       t.setPosition(cx, cy);
       t.setFontSize(Math.round(40 * uiScale));
     });
 
-    // 마지막 2줄(NEVER FORGET / AND FORGED...)은 세로 간격도 비율로
+    // 마지막 2줄 간격도 비율 기반
     const despairIdx = this.narrativeTexts.length - 2;
-    const gap = Math.max(24, h * 0.06); // 최소 24px, 아니면 화면 높이 6%
-
+    const gap = Math.max(24, h * 0.06);
     if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
     if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
 
-    // --- Fire emitter: 드래곤 기준으로 붙이는 게 제일 안정적 ---
+    // Fire emitter: 드래곤 “입 근처”로
     if (this.fireEmitter) {
       if (this.dragon) {
-        // 드래곤의 “대략 입 위치”를 비율로 잡음
         const mouthY = this.dragon.y + this.dragon.displayHeight * 0.10;
         this.fireEmitter.setPosition(cx, mouthY);
       } else {
