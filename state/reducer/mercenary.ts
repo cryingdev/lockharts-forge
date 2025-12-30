@@ -2,6 +2,7 @@ import { GameState } from '../../types/index';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 import { PrimaryStats, mergePrimaryStats, calculateMaxHp, calculateMaxMp } from '../../models/Stats';
+import { EquipmentRarity } from '../../models/Equipment';
 
 export const handleAddKnownMercenary = (state: GameState, merc: Mercenary): GameState => {
     if (state.knownMercenaries.some(m => m.id === merc.id)) return state;
@@ -48,6 +49,48 @@ export const handleFireMercenary = (state: GameState, payload: { mercenaryId: st
         ...state,
         knownMercenaries: updatedMercenaries,
         logs: [`Contract terminated. ${name} is no longer in your service.`, ...state.logs]
+    };
+};
+
+export const handleGiveGift = (state: GameState, payload: { mercenaryId: string; itemId: string }): GameState => {
+    const { mercenaryId, itemId } = payload;
+    const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
+    if (mercIndex === -1) return state;
+
+    const inventoryItem = state.inventory.find(i => i.id === itemId);
+    if (!inventoryItem || inventoryItem.quantity <= 0) return state;
+
+    const mercenary = { ...state.knownMercenaries[mercIndex] };
+    let affinityGain = 3; // Default for resources/consumables
+
+    if (inventoryItem.type === 'EQUIPMENT' && inventoryItem.equipmentData) {
+        affinityGain = 5; // Base for gear
+        // Rarity bonus
+        switch (inventoryItem.equipmentData.rarity) {
+            case EquipmentRarity.UNCOMMON: affinityGain += 2; break;
+            case EquipmentRarity.RARE: affinityGain += 4; break;
+            case EquipmentRarity.EPIC: affinityGain += 7; break;
+            case EquipmentRarity.LEGENDARY: affinityGain += 12; break;
+        }
+    }
+
+    mercenary.affinity = Math.min(100, (mercenary.affinity || 0) + affinityGain);
+
+    const newInventory = state.inventory.map(item => {
+        if (item.id === itemId) {
+            return { ...item, quantity: item.quantity - 1 };
+        }
+        return item;
+    }).filter(i => i.quantity > 0);
+
+    const newMercenaries = [...state.knownMercenaries];
+    newMercenaries[mercIndex] = mercenary;
+
+    return {
+        ...state,
+        inventory: newInventory,
+        knownMercenaries: newMercenaries,
+        logs: [`Gifted ${inventoryItem.name} to ${mercenary.name}. Affinity +${affinityGain}.`, ...state.logs]
     };
 };
 
