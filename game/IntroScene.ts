@@ -94,49 +94,80 @@ export default class IntroScene extends Phaser.Scene {
     this.scale.on('resize', this.handleResize, this);
 
     this.startSequence(n1, n2, n3, nDespair, nVengeance);
+
+    this.time.delayedCall(0, () => this.handleResize());
   }
 
   private handleResize() {
-    const w = this.scale.width;
-    const h = this.scale.height;
-    const centerX = w / 2;
-    const centerY = h / 2;
-    const isCompact = h < 450;
+    // gameSize 기준이 더 안전합니다 (RESIZE에서 특히)
+    const w = this.scale.gameSize.width;
+    const h = this.scale.gameSize.height;
 
-    // Background Image Cover Scaling
+    const cx = w / 2;
+    const cy = h / 2;
+
+    // 화면 크기에 따라 0.6 ~ 1.2 사이로 연속 스케일
+    const short = Math.min(w, h);
+    const uiScale = Phaser.Math.Clamp(short / 720, 0.6, 1.2);
+
+    // --- BG: cover ---
     this.bgs.forEach(img => {
-        img.setPosition(centerX, centerY);
-        const scale = Math.max(w / img.width, h / img.height);
-        img.setScale(scale);
+      img.setPosition(cx, cy);
+      const cover = Math.max(w / img.width, h / img.height);
+      img.setScale(cover);
     });
 
+    // --- Dragon: 양축 기준으로 "화면 안에 들어오게" ---
     if (this.dragon) {
-        this.dragon.setPosition(centerX, isCompact ? centerY - 100 : centerY - 200);
-        const dScale = (w * 0.8) / this.dragon.width;
-        this.dragon.setScale(dScale);
+      // 드래곤이 화면을 너무 꽉 채우지 않도록 0.85 정도
+      const fit = Math.min((w * 0.85) / this.dragon.width, (h * 0.70) / this.dragon.height);
+      this.dragon.setScale(fit);
+
+      // y 오프셋도 픽셀 고정 대신 비율 기반
+      const yOffset = -h * 0.18; // 화면 높이의 18% 위
+      this.dragon.setPosition(cx, cy + yOffset);
     }
 
+    // --- Dev Text ---
     if (this.devText) {
-        this.devText.setPosition(centerX, centerY);
-        this.devText.setFontSize(isCompact ? '32px' : '45px');
-    }
-    
-    if (this.skipHint) this.skipHint.setPosition(centerX, h - 40);
-    
-    if (this.breathOverlay) {
-        this.breathOverlay.setPosition(centerX, centerY).setSize(w, h);
+      this.devText.setPosition(cx, cy);
+      this.devText.setFontSize(Math.round(45 * uiScale));
     }
 
+    // --- Skip hint (노치/홈바 때문에 너무 아래로 가지 않게) ---
+    if (this.skipHint) {
+      this.skipHint.setPosition(cx, h - Math.max(24, h * 0.05));
+      this.skipHint.setFontSize(Math.round(12 * uiScale));
+    }
+
+    // --- Overlay ---
+    if (this.breathOverlay) {
+      this.breathOverlay.setPosition(cx, cy).setSize(w, h);
+    }
+
+    // --- Narrative Texts ---
     this.narrativeTexts.forEach(t => {
-        t.setPosition(centerX, centerY);
-        t.setFontSize(isCompact ? '28px' : '40px');
+      t.setPosition(cx, cy);
+      t.setFontSize(Math.round(40 * uiScale));
     });
 
+    // 마지막 2줄(NEVER FORGET / AND FORGED...)은 세로 간격도 비율로
     const despairIdx = this.narrativeTexts.length - 2;
-    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = centerY - (isCompact ? 30 : 40);
-    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = centerY + (isCompact ? 30 : 40);
+    const gap = Math.max(24, h * 0.06); // 최소 24px, 아니면 화면 높이 6%
 
-    if (this.fireEmitter) this.fireEmitter.setPosition(centerX, h * 0.15 + (isCompact ? 100 : 200));
+    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
+    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
+
+    // --- Fire emitter: 드래곤 기준으로 붙이는 게 제일 안정적 ---
+    if (this.fireEmitter) {
+      if (this.dragon) {
+        // 드래곤의 “대략 입 위치”를 비율로 잡음
+        const mouthY = this.dragon.y + this.dragon.displayHeight * 0.10;
+        this.fireEmitter.setPosition(cx, mouthY);
+      } else {
+        this.fireEmitter.setPosition(cx, h * 0.35);
+      }
+    }
   }
 
   private startSequence(n1: any, n2: any, n3: any, nD: any, nV: any) {
