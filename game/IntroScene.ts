@@ -90,7 +90,7 @@ export default class IntroScene extends Phaser.Scene {
     });
     this.fireEmitter.setDepth(4);
 
-    this.handleResize();
+    this.handleResize(this.scale.gameSize);
     this.scale.on('resize', this.handleResize, this);
 
     this.startSequence(n1, n2, n3, nDespair, nVengeance);
@@ -98,9 +98,9 @@ export default class IntroScene extends Phaser.Scene {
     this.time.delayedCall(0, () => this.handleResize());
   }
 
-  private handleResize() {
-    const w = this.scale.gameSize.width;
-    const h = this.scale.gameSize.height;
+private handleResize(gameSize?: Phaser.Structs.Size) {
+    const w = gameSize?.width ?? this.scale.gameSize.width;
+    const h = gameSize?.height ?? this.scale.gameSize.height;
     const cx = w / 2;
     const cy = h / 2;
 
