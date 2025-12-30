@@ -9,6 +9,12 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "preview": "vite preview"
+  },
   "dependencies": {
     "lucide-react": "^0.344.0",
     "phaser": "^3.80.1",
