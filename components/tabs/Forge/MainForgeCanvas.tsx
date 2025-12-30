@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import MainForgeScene, { MainForgeData } from '../../../game/MainForgeScene';
@@ -9,7 +10,6 @@ const MainForgeCanvas = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
 
-  // Wait for valid container dimensions to prevent Framebuffer Incomplete Attachment errors
   useEffect(() => {
     const checkSize = () => {
         if (containerRef.current && containerRef.current.clientWidth > 0 && containerRef.current.clientHeight > 0) {
@@ -48,11 +48,11 @@ const MainForgeCanvas = () => {
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO,
             parent: containerRef.current,
-            width: 800,
-            height: 450,
+            width: containerRef.current.clientWidth,
+            height: containerRef.current.clientHeight,
             backgroundColor: '#0c0a09',
             scale: {
-                mode: Phaser.Scale.FIT,
+                mode: Phaser.Scale.RESIZE, // FIT에서 RESIZE로 변경
                 autoCenter: Phaser.Scale.CENTER_BOTH
             },
             scene: [MainForgeScene],
@@ -74,12 +74,12 @@ const MainForgeCanvas = () => {
   }, []);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-stone-950">
+    <div className="w-full h-full flex flex-col items-center justify-center bg-stone-950 overflow-hidden">
       <div 
         ref={containerRef} 
-        className="w-full h-full max-w-4xl max-h-[60vh] rounded-xl overflow-hidden shadow-2xl border border-stone-800"
+        className="w-full h-full rounded-xl overflow-hidden shadow-2xl border border-stone-800"
       />
-      <div className="mt-4 text-stone-500 text-xs font-mono">
+      <div className="mt-2 md:mt-4 text-stone-500 text-[10px] md:text-xs font-mono">
         Interact with objects to perform actions.
       </div>
     </div>
