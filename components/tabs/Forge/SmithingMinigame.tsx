@@ -50,13 +50,24 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       backgroundColor: '#0c0a09',
       scene: [SmithingScene],
       scale: { 
-        mode: Phaser.Scale.RESIZE, // RESIZE 모드로 변경하여 부모 컨테이너 크기에 밀착
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH 
       },
     };
 
     const game = new Phaser.Game(config);
     gameRef.current = game;
+
+    // ResizeObserver for perfect scaling even with dynamic browser UI components
+    const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (game && game.scale && width > 0 && height > 0) {
+                game.scale.resize(width, height);
+            }
+        }
+    });
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
 
     const handleHeatUp = () => {
       actions.consumeItem(MATERIALS.CHARCOAL.id, 1);
@@ -74,6 +85,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     });
 
     return () => { 
+      resizeObserver.disconnect();
       if (gameRef.current) {
         gameRef.current.destroy(true); 
         gameRef.current = null; 
@@ -92,12 +104,16 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     <div className="absolute inset-0 z-50 bg-stone-950 animate-in fade-in duration-300 overflow-hidden">
       <button 
         onClick={handleCancel}
-        className="absolute top-2 right-2 md:top-4 md:right-4 z-50 p-2 md:p-3 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 hover:text-red-100 rounded-full border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90"
+        className="absolute top-2 left-2 md:top-4 md:left-4 z-50 p-2 md:p-3 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 hover:text-red-100 rounded-full border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90"
         title="Cancel Forging"
       >
         <X className="w-5 h-5" />
       </button>
-      <div ref={containerRef} className="w-full h-full" />
+      <div 
+        ref={containerRef} 
+        style={{ width: '100%', height: '100dvh' }} 
+        className="overflow-hidden"
+      />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import IntroScene from '../game/IntroScene';
@@ -34,7 +33,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
       backgroundColor: '#000000',
       scene: [IntroScene],
       scale: {
-        mode: Phaser.Scale.RESIZE, // FIT에서 RESIZE로 변경
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
       }
     };
@@ -42,11 +41,26 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
     const game = new Phaser.Game(config);
     gameRef.current = game;
 
+    // ResizeObserver implementation to sync Phaser scale with dynamic container size
+    const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (game && game.scale && width > 0 && height > 0) {
+                game.scale.resize(width, height);
+            }
+        }
+    });
+    
+    if (containerRef.current) {
+        resizeObserver.observe(containerRef.current);
+    }
+
     game.events.on('intro-complete', () => {
         onComplete();
     });
 
     return () => {
+      resizeObserver.disconnect();
       if (gameRef.current) {
           gameRef.current.destroy(true);
           gameRef.current = null;
@@ -56,7 +70,11 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
 
   return (
     <div className="absolute inset-0 bg-black z-50 overflow-hidden">
-      <div ref={containerRef} className="w-full h-full" />
+      <div 
+        ref={containerRef} 
+        style={{ width: '100%', height: '100dvh' }} 
+        className="overflow-hidden"
+      />
     </div>
   );
 };

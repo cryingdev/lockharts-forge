@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import MainForgeScene, { MainForgeData } from '../../../game/MainForgeScene';
@@ -39,6 +38,8 @@ const MainForgeCanvas = () => {
       }
     };
 
+    let resizeObserver: ResizeObserver | null = null;
+
     if (gameRef.current) {
         const scene = gameRef.current.scene.getScene('MainForgeScene');
         if (scene) {
@@ -52,7 +53,7 @@ const MainForgeCanvas = () => {
             height: containerRef.current.clientHeight,
             backgroundColor: '#0c0a09',
             scale: {
-                mode: Phaser.Scale.RESIZE, // FIT에서 RESIZE로 변경
+                mode: Phaser.Scale.RESIZE,
                 autoCenter: Phaser.Scale.CENTER_BOTH
             },
             scene: [MainForgeScene],
@@ -61,6 +62,21 @@ const MainForgeCanvas = () => {
         const game = new Phaser.Game(config);
         gameRef.current = game;
         game.scene.start('MainForgeScene', sceneData);
+
+        // ResizeObserver for dynamic layout shifts
+        resizeObserver = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                const { width, height } = entry.contentRect;
+                if (game && game.scale && width > 0 && height > 0) {
+                    game.scale.resize(width, height);
+                }
+            }
+        });
+        if (containerRef.current) resizeObserver.observe(containerRef.current);
+    }
+    
+    return () => {
+        if (resizeObserver) resizeObserver.disconnect();
     }
   }, [isReady, state.forge.hasFurnace]); 
   
@@ -77,9 +93,10 @@ const MainForgeCanvas = () => {
     <div className="w-full h-full flex flex-col items-center justify-center bg-stone-950 overflow-hidden">
       <div 
         ref={containerRef} 
-        className="w-full h-full rounded-xl overflow-hidden shadow-2xl border border-stone-800"
+        style={{ width: '100%', height: '100%' }}
+        className="flex-1 rounded-xl overflow-hidden shadow-2xl border border-stone-800"
       />
-      <div className="mt-2 md:mt-4 text-stone-500 text-[10px] md:text-xs font-mono">
+      <div className="mt-2 md:mt-4 text-stone-500 text-[10px] md:text-xs font-mono text-center shrink-0 pb-2">
         Interact with objects to perform actions.
       </div>
     </div>
