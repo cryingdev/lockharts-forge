@@ -34,8 +34,6 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
   const { state } = useGame();
 
   // --- BACKGROUND SERVICES ---
-  // These hooks must be called within the GameProvider context
-  // and manage timers for the shop and dungeons.
   useShopService();
   useDungeonService();
   
@@ -43,7 +41,8 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
       exp => exp.status === 'COMPLETED'
   ).length;
 
-  const shopQueueCount = state.shopQueue.length;
+  // Badge count includes both waiting in queue and the one currently at the counter
+  const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
   
   return (
     <div className="h-screen w-screen bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500">
@@ -110,9 +109,10 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
           >
             <Coins className="w-5 h-5" />
             <span className="font-bold tracking-wide">Shop</span>
-            {shopQueueCount > 0 && (
+            {/* Hide badge if currently looking at the shop */}
+            {activeTab !== 'SHOP' && totalShopVisitors > 0 && (
                 <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
-                    {shopQueueCount}
+                    {totalShopVisitors}
                 </div>
             )}
           </button>

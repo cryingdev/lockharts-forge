@@ -51,6 +51,7 @@ export const createInitialGameState = (): GameState => ({
     
     // Progression
     craftingMastery: {},
+    unlockedRecipes: [],
 
     // Minigame Persistence
     forgeTemperature: 0,

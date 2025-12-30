@@ -17,7 +17,7 @@ interface ForgeTabProps {
 const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   
-  const { inventory, stats, isCrafting, craftingMastery, activeEvent } = state;
+  const { inventory, stats, isCrafting, craftingMastery, activeEvent, unlockedRecipes } = state;
   const { hasFurnace, hasWorkbench } = state.forge;
 
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
@@ -99,11 +99,17 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
   const visibleItems = useMemo(() => {
       return EQUIPMENT_ITEMS.filter(item => {
+          // Locked recipes check
+          if (item.id === 'sword_bronze_long_t1') {
+              const isUnlocked = unlockedRecipes?.includes(item.id);
+              if (!isUnlocked) return false;
+          }
+          
           if (item.tier > stats.tierLevel) return false;
           const subCatDef = EQUIPMENT_SUBCATEGORIES.find(sc => sc.id === item.subCategoryId);
           return subCatDef?.categoryId === activeCategory;
       });
-  }, [activeCategory, stats.tierLevel]);
+  }, [activeCategory, stats.tierLevel, unlockedRecipes]);
 
   const favoriteItems = useMemo(() => {
       return visibleItems.filter(item => favorites.includes(item.id));
@@ -649,7 +655,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   }, [
       activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, favoriteItems, craftingMastery, isRequirementMet,
       handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite,
-      handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, hasPromptedFurnace, activeEvent
+      handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, hasPromptedFurnace, activeEvent, unlockedRecipes
   ]);
 
   return content;

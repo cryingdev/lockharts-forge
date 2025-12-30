@@ -115,11 +115,14 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                       Your forge is now operational. You can start smelting ores and forging metal equipment.
                   </p>
                   <button 
-                      onClick={() => setShowFurnaceSuccess(false)}
+                      onClick={() => {
+                          setShowFurnaceSuccess(false);
+                          onNavigate('FORGE');
+                      }}
                       className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2"
                   >
                       <Check className="w-5 h-5" />
-                      Back to Market
+                      Go to Forge
                   </button>
               </div>
           </div>

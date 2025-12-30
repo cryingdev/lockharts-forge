@@ -55,6 +55,7 @@ export interface GameState {
   
   // Progression
   craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count
+  unlockedRecipes: string[]; // List of IDs for recipes discovered via gameplay
 
   // Minigame Persistence
   forgeTemperature: number; // Residual heat from last session

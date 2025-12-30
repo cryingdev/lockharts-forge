@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem, DungeonResult } from '../../types/index';
 import { DUNGEONS } from '../../data/dungeons';
 import { Expedition } from '../../models/Dungeon';
@@ -156,6 +155,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     });
 
     const newClearCounts = { ...state.dungeonClearCounts };
+    const isFirstClear = !newClearCounts[dungeon.id];
     newClearCounts[dungeon.id] = (newClearCounts[dungeon.id] || 0) + 1;
     const remainingExpeditions = state.activeExpeditions.filter(e => e.id !== expeditionId);
 
@@ -170,14 +170,26 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
         ? `Returned from ${dungeon.name}${luckMsg}. Gained: ${gainedItems.map(i => `${i.name} x${i.count}`).join(', ')}`
         : `Returned from ${dungeon.name}. No loot found.`;
 
+    const finalLogs = [logStr, ...state.logs];
+    let newUnlockedRecipes = [...(state.unlockedRecipes || [])];
+
+    // Specific logic for Rat Cellar unlock
+    if (isFirstClear && dungeon.id === 'dungeon_t1_rats') {
+        if (!newUnlockedRecipes.includes('sword_bronze_long_t1')) {
+            newUnlockedRecipes.push('sword_bronze_long_t1');
+            finalLogs.unshift("📜 New Recipe Discovered: Bronze Longsword!");
+        }
+    }
+
     return {
         ...state,
         inventory: newInventory,
         knownMercenaries: newKnownMercenaries,
         activeExpeditions: remainingExpeditions,
         dungeonClearCounts: newClearCounts,
+        unlockedRecipes: newUnlockedRecipes,
         dungeonResult: resultData,
-        logs: [logStr, ...state.logs]
+        logs: finalLogs
     };
 };
 

@@ -1,4 +1,3 @@
-
 import { GameState } from '../../types/index';
 import { ShopCustomer } from '../../types/shop';
 import { GAME_CONFIG } from '../../config/game-config';
@@ -37,9 +36,10 @@ export const handleNextCustomer = (state: GameState): GameState => {
 };
 
 export const handleDismissCustomer = (state: GameState): GameState => {
+    const logEntry = state.activeCustomer ? [`${state.activeCustomer.mercenary.name} left the shop.`] : [];
     return {
         ...state,
         activeCustomer: null,
-        logs: state.activeCustomer ? [`${state.activeCustomer.mercenary.name} left the shop.`] : state.logs
+        logs: [...logEntry, ...state.logs]
     };
 };
