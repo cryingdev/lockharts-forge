@@ -10,16 +10,10 @@ export default class IntroScene extends Phaser.Scene {
   private fireEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
   private breathOverlay?: Phaser.GameObjects.Rectangle;
 
-  // ===== In-game Console UI =====
-  private consoleContainer?: Phaser.GameObjects.Container;
-  private consoleBg?: Phaser.GameObjects.Rectangle;
-  private consoleHeader?: Phaser.GameObjects.Rectangle;
-  private consoleTitle?: Phaser.GameObjects.Text;
-  private consoleText?: Phaser.GameObjects.Text;
-
-  private consoleLines: string[] = [];
-  private consoleMaxLines = 18;
-  private consoleEnabled = true;
+  // ✅ Debug HUD
+  private debugBg?: Phaser.GameObjects.Rectangle;
+  private debugText?: Phaser.GameObjects.Text;
+  private debugEnabled = true;
 
   constructor() {
     super('IntroScene');
@@ -56,10 +50,10 @@ export default class IntroScene extends Phaser.Scene {
   create() {
     if (this.scale.width <= 0 || this.scale.height <= 0) return;
 
-    // Particle texture (local)
+    // particle texture
     if (!this.textures.exists('intro_flame')) {
-      const g = this.make.graphics({ x: 0, y: 0 });
-      g.fillStyle(0xff5500, 1).fillCircle(16, 16, 16).generateTexture('intro_flame', 32, 32).destroy();
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      graphics.fillStyle(0xff5500, 1).fillCircle(16, 16, 16).generateTexture('intro_flame', 32, 32).destroy();
     }
 
     // skip
@@ -78,17 +72,14 @@ export default class IntroScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(20);
 
-    // BGs
     const keys = ['intro_bg', 'intro_bg_02', 'intro_bg_03', 'intro_bg_04', 'intro_bg_05'];
     keys.forEach((key) => {
       const img = this.add.image(0, 0, key).setAlpha(0).setDepth(1);
       this.bgs.push(img);
     });
 
-    // dragon
     this.dragon = this.add.image(0, 0, 'intro_dragon').setDepth(2).setVisible(false);
 
-    // dev text
     this.devText = this.add
       .text(0, 0, 'CRYINGDEV STUDIO\nPRESENTS', {
         fontFamily: 'serif',
@@ -101,21 +92,18 @@ export default class IntroScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(10);
 
-    // narrative
     const n1 = this.createNarrativeText('FIASCO,\nA MASTER OF DISASTER...', '#ef4444');
     const n2 = this.createNarrativeText('EVERTHING WE LOVED IS LOST...', '#ef4444');
     const n3 = this.createNarrativeText('BUT THE HAMMER IS STILL HERE.', '#ef4444');
     const nD = this.createNarrativeText('NEVER FORGET...', '#ef4444');
     const nV = this.createNarrativeText('AND FORGED A VENGEANCE.', '#f59e0b');
 
-    // overlay
     this.breathOverlay = this.add
       .rectangle(0, 0, this.scale.width, this.scale.height, 0xff4400)
       .setAlpha(0)
       .setDepth(5)
       .setBlendMode(Phaser.BlendModes.ADD);
 
-    // emitter
     this.fireEmitter = this.add.particles(0, 0, 'intro_flame', {
       speedY: { min: 1200, max: 2200 },
       speedX: { min: -600, max: 600 },
@@ -128,65 +116,125 @@ export default class IntroScene extends Phaser.Scene {
     });
     this.fireEmitter.setDepth(4);
 
-    // layout + resize
+    // ✅ Debug HUD 생성
+    this.createDebugHUD();
+    this.updateDebugHUD('create()');
+
+    // resize
     this.handleResize(this.scale.gameSize);
-    this.scale.on('resize', this.handleResize, this);
+    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+      this.handleResize(gameSize);
+      this.updateDebugHUD('scale.resize');
+    });
 
-    // console
-    this.createConsole();
-    this.cLog('IntroScene created');
-    this.cSnapshot();
-
-    this.scale.on(
-      'resize',
-      () => {
-        this.cLog('scale resize event');
-        this.cSnapshot();
-      },
-      this
-    );
-
-    // window events (for visibility inside console)
+    // window events (Scene 종료 시 제거)
     window.addEventListener('orientationchange', this.onOrientationChange);
     window.addEventListener('resize', this.onWindowResize);
-
-    this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       window.removeEventListener('orientationchange', this.onOrientationChange);
       window.removeEventListener('resize', this.onWindowResize);
+    });
+
+    // HUD 토글 (두 손가락 탭 등으로 바꾸고 싶으면 여기 수정)
+    this.input.keyboard?.on('keydown-D', () => {
+      this.debugEnabled = !this.debugEnabled;
+      this.debugBg?.setVisible(this.debugEnabled);
+      this.debugText?.setVisible(this.debugEnabled);
+      this.updateDebugHUD('toggle');
     });
 
     this.startSequence(n1, n2, n3, nD, nV);
   }
 
-  // ===== Resize strategy =====
-  // "세로를 기준으로 맞추고, 가로는 잘려도 OK" (height-fit)
+  // ===== Debug HUD =====
+  private createDebugHUD() {
+    const pad = 8;
+    const w = 520;
+    const h = 120;
+
+    this.debugBg = this.add
+      .rectangle(pad, pad, w, h, 0x000000, 0.65)
+      .setOrigin(0, 0)
+      .setDepth(99999);
+
+    this.debugText = this.add
+      .text(pad + 10, pad + 8, '', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#ffffff',
+        lineSpacing: 4,
+      })
+      .setDepth(100000);
+
+    // 카메라와 무관하게 화면 고정
+    this.debugBg.setScrollFactor(0);
+    this.debugText.setScrollFactor(0);
+  }
+
+  private updateDebugHUD(tag: string) {
+    if (!this.debugEnabled || !this.debugText) return;
+
+    const gsW = Math.round(this.scale.gameSize.width);
+    const gsH = Math.round(this.scale.gameSize.height);
+
+    const scW = Math.round(this.scale.width);
+    const scH = Math.round(this.scale.height);
+
+    const ww = Math.round(window.innerWidth);
+    const wh = Math.round(window.innerHeight);
+
+    const vvw = Math.round(window.visualViewport?.width ?? 0);
+    const vvh = Math.round(window.visualViewport?.height ?? 0);
+
+    const dpr = (window.devicePixelRatio ?? 1).toFixed(2);
+    const orient = gsH > gsW ? 'portrait' : 'landscape';
+
+    this.debugText.setText([
+      `[${tag}]`,
+      `phaser gameSize: ${gsW}x${gsH} (${orient})`,
+      `phaser scale:    ${scW}x${scH}`,
+      `window:         ${ww}x${wh}`,
+      `visualViewport: ${vvw}x${vvh}`,
+      `dpr:            ${dpr}`,
+    ].join('\n'));
+  }
+
+  private onOrientationChange = () => {
+    // orientationchange 직후 값이 늦게 바뀌는 브라우저 대응
+    this.updateDebugHUD('orientationchange');
+    this.time.delayedCall(60, () => this.updateDebugHUD('orientation+60ms'));
+    this.time.delayedCall(180, () => this.updateDebugHUD('orientation+180ms'));
+  };
+
+  private onWindowResize = () => {
+    this.updateDebugHUD('window.resize');
+    this.time.delayedCall(60, () => this.updateDebugHUD('resize+60ms'));
+  };
+
+  // ===== Responsive layout =====
   private handleResize(gameSize?: Phaser.Structs.Size) {
     const w = gameSize?.width ?? this.scale.gameSize.width;
     const h = gameSize?.height ?? this.scale.gameSize.height;
-
     const cx = w / 2;
     const cy = h / 2;
 
-    // pin camera to wrapper size
-    this.cameras.main.setViewport(0, 0, w, h);
+    const isPortrait = h > w;
+    const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.55, 1.15);
 
-    const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.6, 1.2);
-
-    // BG: height-fit (horizontal crop allowed)
+    // BG cover
     this.bgs.forEach((img) => {
       img.setPosition(cx, cy);
-      const s = h / img.height;
+      const s = Math.max(w / img.width, h / img.height);
       img.setScale(s);
     });
 
-    // dragon: fit by height but also cap by width
+    // dragon: portrait면 조금 더 위로/작게
     if (this.dragon) {
-      const sH = (h * 0.55) / this.dragon.height;
-      const sW = (w * 0.9) / this.dragon.width;
-      const s = Math.min(sH, sW);
-
+      const maxW = w * 0.9;
+      const maxH = isPortrait ? h * 0.42 : h * 0.55;
+      const s = Math.min(maxW / this.dragon.width, maxH / this.dragon.height);
       this.dragon.setScale(s);
-      this.dragon.setPosition(cx, cy - h * 0.18);
+      this.dragon.setPosition(cx, cy - h * (isPortrait ? 0.22 : 0.18));
     }
 
     if (this.devText) {
@@ -195,7 +243,7 @@ export default class IntroScene extends Phaser.Scene {
     }
 
     if (this.skipHint) {
-      this.skipHint.setPosition(cx, h - Math.max(24, h * 0.05));
+      this.skipHint.setPosition(cx, h - Math.max(28, h * 0.06));
       this.skipHint.setFontSize(Math.round(12 * uiScale));
     }
 
@@ -208,24 +256,21 @@ export default class IntroScene extends Phaser.Scene {
       t.setFontSize(Math.round(40 * uiScale));
     });
 
+    // despair / vengeance split
     const despairIdx = this.narrativeTexts.length - 2;
     const gap = Math.max(24, h * 0.06);
     if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
     if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
 
+    // fire origin
     if (this.fireEmitter) {
-      if (this.dragon) {
-        const mouthY = this.dragon.y + this.dragon.displayHeight * 0.1;
-        this.fireEmitter.setPosition(cx, mouthY);
-      } else {
-        this.fireEmitter.setPosition(cx, h * 0.35);
-      }
+      const mouthY = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.1 : h * 0.35;
+      this.fireEmitter.setPosition(cx, mouthY);
     }
 
-    this.layoutConsole();
+    // debug HUD는 상단 고정이라 따로 위치 조정 필요 없음
   }
 
-  // ===== Tween sequence =====
   private startSequence(n1: any, n2: any, n3: any, nD: any, nV: any) {
     this.tweens.chain({
       tweens: [
@@ -290,127 +335,5 @@ export default class IntroScene extends Phaser.Scene {
         },
       ],
     });
-  }
-
-  // ===== Console window events =====
-  private onOrientationChange = () => {
-    this.cLog('window orientationchange');
-    this.time.delayedCall(60, () => this.cSnapshot());
-  };
-
-  private onWindowResize = () => {
-    this.cLog('window resize');
-    this.time.delayedCall(60, () => this.cSnapshot());
-  };
-
-  // ===== In-game Console =====
-  private createConsole() {
-    if (this.consoleContainer) return;
-
-    const w = this.scale.gameSize.width;
-    const h = this.scale.gameSize.height;
-
-    // ✅ 아래가 잘리는 문제가 있어서 "상단 고정"으로 배치
-    const panelW = Math.min(w - 20, 560);
-    const panelH = 170;
-    const x = 10;
-    const y = 10;
-
-    this.consoleBg = this.add.rectangle(x, y, panelW, panelH, 0x000000, 0x00).setOrigin(0, 0).setDepth(10000);
-    this.consoleBg.setFillStyle(0x000000, 0.65);
-
-    const headerH = 26;
-    this.consoleHeader = this.add.rectangle(x, y, panelW, headerH, 0x111827, 0.85).setOrigin(0, 0).setDepth(10001);
-
-    this.consoleTitle = this.add.text(x + 10, y + 5, 'DEBUG CONSOLE (3-finger tap to toggle)', {
-      fontFamily: 'monospace',
-      fontSize: '12px',
-      color: '#a7f3d0',
-    }).setDepth(10002);
-
-    this.consoleText = this.add.text(x + 10, y + headerH + 8, '', {
-      fontFamily: 'monospace',
-      fontSize: '12px',
-      color: '#e5e7eb',
-      wordWrap: { width: panelW - 20, useAdvancedWrap: true },
-    }).setDepth(10002);
-
-    this.consoleContainer = this.add
-      .container(0, 0, [this.consoleBg, this.consoleHeader, this.consoleTitle, this.consoleText])
-      .setDepth(10000);
-
-    // 3-finger toggle
-    this.input.on('pointerdown', () => {
-      const active = this.input.manager.pointers.filter((pt) => pt.isDown).length;
-      if (active >= 3) {
-        this.consoleEnabled = !this.consoleEnabled;
-        this.consoleContainer?.setVisible(this.consoleEnabled);
-        this.cLog(this.consoleEnabled ? 'console ON' : 'console OFF');
-      }
-    });
-
-    this.renderConsole();
-  }
-
-  private layoutConsole() {
-    if (!this.consoleBg || !this.consoleHeader || !this.consoleTitle || !this.consoleText) return;
-
-    const w = this.scale.gameSize.width;
-
-    const panelW = Math.min(w - 20, 560);
-    const panelH = 170;
-    const x = 10;
-    const y = 10;
-
-    const headerH = 26;
-
-    this.consoleBg.setPosition(x, y).setSize(panelW, panelH);
-    this.consoleHeader.setPosition(x, y).setSize(panelW, headerH);
-    this.consoleTitle.setPosition(x + 10, y + 5);
-
-    this.consoleText.setPosition(x + 10, y + headerH + 8);
-    this.consoleText.setWordWrapWidth(panelW - 20);
-
-    this.consoleContainer?.setVisible(this.consoleEnabled);
-  }
-
-  private cLog(msg: string) {
-    if (!this.consoleEnabled) return;
-
-    const t = new Date();
-    const ts = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}:${String(
-      t.getSeconds()
-    ).padStart(2, '0')}`;
-
-    this.consoleLines.push(`[${ts}] ${msg}`);
-    if (this.consoleLines.length > this.consoleMaxLines) {
-      this.consoleLines.splice(0, this.consoleLines.length - this.consoleMaxLines);
-    }
-    this.renderConsole();
-  }
-
-  private cSnapshot() {
-    const gsW = Math.round(this.scale.gameSize.width);
-    const gsH = Math.round(this.scale.gameSize.height);
-    const sW = Math.round(this.scale.width);
-    const sH = Math.round(this.scale.height);
-
-    const ww = Math.round(window.innerWidth);
-    const wh = Math.round(window.innerHeight);
-    const vvw = Math.round(window.visualViewport?.width ?? 0);
-    const vvh = Math.round(window.visualViewport?.height ?? 0);
-    const dpr = (window.devicePixelRatio ?? 1).toFixed(2);
-
-    const orient = gsH > gsW ? 'PORTRAIT' : 'LANDSCAPE';
-
-    this.cLog(`Phaser gameSize=${gsW}x${gsH} (${orient}) scale=${sW}x${sH}`);
-    this.cLog(`window=${ww}x${wh} visualViewport=${vvw}x${vvh} dpr=${dpr}`);
-
-    this.layoutConsole();
-  }
-
-  private renderConsole() {
-    if (!this.consoleText) return;
-    this.consoleText.setText(this.consoleLines.join('\n'));
   }
 }

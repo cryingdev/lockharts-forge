@@ -2,31 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <title>Lockhart's Forge</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
       :root {
         --base-font-size: 16px;
       }
 
+      /* ✅ 모바일 회전/주소창 변화에서도 안정적으로 “화면 꽉 채우기” */
+      html,
       body {
-        background-color: #0c0a09;
-        color: #f5f5f4;
+        width: 100%;
+        height: 100%;
         margin: 0;
         padding: 0;
         overflow: hidden;
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        position: fixed;
+        background-color: #0c0a09;
+        color: #f5f5f4;
         font-size: var(--base-font-size);
       }
-      
+
+      /* ❌ body fixed + 100vh/dvh 조합 제거 (아래 잘림/회전 꼬임 예방) */
+      body {
+        position: relative;
+      }
+
+      /* ✅ root는 항상 화면 전체를 덮는 레이어 */
       #root {
+        position: fixed;
+        inset: 0;
         width: 100%;
         height: 100%;
-        position: relative;
         overflow: hidden;
         transition: transform 0.3s ease-in-out;
       }
@@ -38,60 +49,99 @@
         }
       }
 
-      /* Forced Landscape Orientation for Portrait Screens */
-      @media screen and (orientation: portrait) {
-        #root {
-          width: 100dvh !important;
-          height: 100vw !important;
-          position: absolute;
-          top: 0;
-          left: 100vw;
-          transform: rotate(90deg);
-          transform-origin: 0 0;
+      /* ❌ 강제 회전(Forced Landscape) 제거: portrait에서도 그대로 렌더링 */
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
         }
       }
-
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+      .animate-in {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
 
       @keyframes shake-hard {
-        0% { transform: translate(1px, 1px) rotate(0deg); }
-        10% { transform: translate(-1px, -2px) rotate(-1deg); }
-        20% { transform: translate(-3px, 0px) rotate(1deg); }
-        30% { transform: translate(3px, 2px) rotate(0deg); }
-        40% { transform: translate(1px, -1px) rotate(1deg); }
-        50% { transform: translate(-1px, 2px) rotate(-1deg); }
-        60% { transform: translate(-3px, 1px) rotate(0deg); }
-        70% { transform: translate(3px, 1px) rotate(-1deg); }
-        80% { transform: translate(-1px, -1px) rotate(1deg); }
-        90% { transform: translate(1px, 2px) rotate(0deg); }
-        100% { transform: translate(1px, -2px) rotate(-1deg); }
+        0% {
+          transform: translate(1px, 1px) rotate(0deg);
+        }
+        10% {
+          transform: translate(-1px, -2px) rotate(-1deg);
+        }
+        20% {
+          transform: translate(-3px, 0px) rotate(1deg);
+        }
+        30% {
+          transform: translate(3px, 2px) rotate(0deg);
+        }
+        40% {
+          transform: translate(1px, -1px) rotate(1deg);
+        }
+        50% {
+          transform: translate(-1px, 2px) rotate(-1deg);
+        }
+        60% {
+          transform: translate(-3px, 1px) rotate(0deg);
+        }
+        70% {
+          transform: translate(3px, 1px) rotate(-1deg);
+        }
+        80% {
+          transform: translate(-1px, -1px) rotate(1deg);
+        }
+        90% {
+          transform: translate(1px, 2px) rotate(0deg);
+        }
+        100% {
+          transform: translate(1px, -2px) rotate(-1deg);
+        }
       }
-      .animate-shake-hard { animation: shake-hard 0.2s ease-in-out infinite; }
+      .animate-shake-hard {
+        animation: shake-hard 0.2s ease-in-out infinite;
+      }
 
-      .preserve-3d { transform-style: preserve-3d; }
-      .backface-hidden { backface-visibility: hidden; }
-      .rotate-y-180 { transform: rotateY(180deg); }
-      
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #44403c; border-radius: 10px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #57534e; }
-    </style>
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-        "phaser": "https://aistudiocdn.com/phaser@^3.90.0",
-        "vite": "https://aistudiocdn.com/vite@^7.2.4",
-        "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+      .preserve-3d {
+        transform-style: preserve-3d;
       }
-    }
+      .backface-hidden {
+        backface-visibility: hidden;
+      }
+      .rotate-y-180 {
+        transform: rotateY(180deg);
+      }
+
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #44403c;
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #57534e;
+      }
+    </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://aistudiocdn.com/react@^19.2.0",
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+          "react/": "https://aistudiocdn.com/react@^19.2.0/",
+          "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+          "phaser": "https://aistudiocdn.com/phaser@^3.90.0",
+          "vite": "https://aistudiocdn.com/vite@^7.2.4",
+          "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+        }
+      }
     </script>
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
