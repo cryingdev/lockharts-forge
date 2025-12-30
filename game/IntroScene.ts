@@ -1,4 +1,3 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -45,8 +44,19 @@ export default class IntroScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
+    if (width <= 0 || height <= 0) return; // Prevent WebGL initialization issues
+
     const centerX = width / 2;
     const centerY = height / 2;
+
+    // --- Global Fallback Textures ---
+    if (!this.textures.exists('white')) {
+        const graphics = this.make.graphics({ x: 0, y: 0 });
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillRect(0, 0, 2, 2);
+        graphics.generateTexture('white', 2, 2);
+        graphics.destroy();
+    }
 
     // --- Asset Generation (Procedural Fire) ---
     if (!this.textures.exists('intro_flame')) {
@@ -57,12 +67,10 @@ export default class IntroScene extends Phaser.Scene {
         graphics.destroy();
     }
 
-    // --- Skip Functionality ---
     this.input.once('pointerdown', () => {
         this.game.events.emit('intro-complete');
     });
 
-    // Subtle hint text
     const skipHint = this.add.text(centerX, height - 40, 'Touch anywhere to skip', {
         fontFamily: 'sans-serif',
         fontSize: '12px',
@@ -79,7 +87,6 @@ export default class IntroScene extends Phaser.Scene {
         yoyo: true
     });
 
-    // --- Layers Setup ---
     this.add.rectangle(centerX, centerY, width, height, 0x000000).setDepth(0);
 
     const createBg = (key: string, depth: number) => {
@@ -136,7 +143,6 @@ export default class IntroScene extends Phaser.Scene {
     });
     fireEmitter.setDepth(4);
 
-    // --- Animation Sequence ---
     this.tweens.chain({
       tweens: [
         { targets: devText, alpha: 1, duration: 2500, ease: 'Power2' },

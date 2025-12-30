@@ -1,5 +1,4 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import MainForgeScene, { MainForgeData } from '../../../game/MainForgeScene';
 import { useGame } from '../../../context/GameContext';
@@ -8,11 +7,22 @@ const MainForgeCanvas = () => {
   const { state, actions } = useGame();
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  // We need to restart the scene when game state critical to visualization changes
-  // This is a simple way to sync React State -> Phaser
+  // Wait for valid container dimensions to prevent Framebuffer Incomplete Attachment errors
   useEffect(() => {
-    if (!containerRef.current) return;
+    const checkSize = () => {
+        if (containerRef.current && containerRef.current.clientWidth > 0 && containerRef.current.clientHeight > 0) {
+            setIsReady(true);
+        } else {
+            requestAnimationFrame(checkSize);
+        }
+    };
+    checkSize();
+  }, []);
+
+  useEffect(() => {
+    if (!isReady || !containerRef.current) return;
 
     const sceneData: MainForgeData = {
       hasFurnace: state.forge.hasFurnace,
@@ -22,28 +32,23 @@ const MainForgeCanvas = () => {
             actions.repairItem();
             break;
           case 'EMPTY_SLOT':
-            // Could trigger a tooltip or thought bubble
             break;
           case 'FURNACE':
-            // Open furnace UI
             break;
         }
       }
     };
 
     if (gameRef.current) {
-        // If game exists, just restart the scene with new data
-        // Note: In a complex game, we'd use events. For this simple setup, restart is cleaner to ensure visuals match state.
         const scene = gameRef.current.scene.getScene('MainForgeScene');
         if (scene) {
             scene.scene.restart(sceneData);
         }
     } else {
-        // Init Game
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO,
             parent: containerRef.current,
-            width: 800, // Internal resolution
+            width: 800,
             height: 450,
             backgroundColor: '#0c0a09',
             scale: {
@@ -57,17 +62,8 @@ const MainForgeCanvas = () => {
         gameRef.current = game;
         game.scene.start('MainForgeScene', sceneData);
     }
-
-    return () => {
-        // We generally don't destroy the game on every render, 
-        // but if the component unmounts (tab switch), we should.
-        // However, since we want to persist updates, we might keep it alive or accept the destroy/create cost.
-        // For this architecture, we will destroy to prevent memory leaks on tab switch.
-    };
-
-  }, [state.forge.hasFurnace]); 
+  }, [isReady, state.forge.hasFurnace]); 
   
-  // Separate cleanup effect
   useEffect(() => {
       return () => {
           if (gameRef.current) {

@@ -11,7 +11,6 @@ export interface GameContextType {
     repairItem: () => void;
     rest: () => void;
     confirmSleep: () => void;
-    // Added triggerEvent to actions to fix property missing error in ForgeTab
     triggerEvent: (event: GameEvent) => void;
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
@@ -38,6 +37,7 @@ export interface GameContextType {
 
     hireMercenary: (mercenaryId: string, cost: number) => void;
     fireMercenary: (mercenaryId: string) => void;
+    giveGift: (mercenaryId: string, itemId: string) => void;
 
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
     completeExpedition: (expeditionId: string) => void;

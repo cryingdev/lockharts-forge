@@ -85,10 +85,12 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     setCrafting: (isCrafting: boolean) => dispatch({ type: 'SET_CRAFTING', payload: isCrafting }),
     updateForgeStatus: (temp: number) => dispatch({ type: 'UPDATE_FORGE_STATUS', payload: { temp } }),
+    updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => dispatch({ type: 'UPDATE_MERCENARY_STATS', payload: { mercenaryId, stats } }),
     toggleJournal: () => dispatch({ type: 'TOGGLE_JOURNAL' }),
 
     hireMercenary: (mercenaryId: string, cost: number) => dispatch({ type: 'HIRE_MERCENARY', payload: { mercenaryId, cost } }),
     fireMercenary: (mercenaryId: string) => dispatch({ type: 'FIRE_MERCENARY', payload: { mercenaryId } }),
+    giveGift: (mercenaryId: string, itemId: string) => dispatch({ type: 'GIVE_GIFT', payload: { mercenaryId, itemId } }),
 
     startExpedition: (dungeonId: string, partyIds: string[]) => dispatch({ type: 'START_EXPEDITION', payload: { dungeonId, partyIds } }),
     completeExpedition: (expeditionId: string) => dispatch({ type: 'COMPLETE_EXPEDITION', payload: { expeditionId } }),
@@ -104,11 +106,10 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     // Stat Actions
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
-    updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => dispatch({ type: 'UPDATE_MERCENARY_STATS', payload: { mercenaryId, stats } }),
 
     triggerEnergyHighlight
 
-  }), [state.stats.energy, state.craftingMastery, state.forge.isShopOpen, state.activeEvent]);
+  }), [state.stats.energy, state.craftingMastery, state.forge.isShopOpen, state.activeEvent, state.knownMercenaries]);
 
   return (
     <GameContext.Provider value={{ state, actions }}>

@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Mercenary } from '../../models/Mercenary';
 import { EquipmentSlotType } from '../../types/inventory';
-import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, MousePointer2, Zap, Brain, Target, Gem, User, ArrowRight, ChevronRight, Plus, Wind, FastForward, Crosshair, Minus, Check, RefreshCw, AlertCircle, ShieldAlert } from 'lucide-react';
+import { X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Activity, Star, Box, Zap, Brain, Target, User, Plus, Wind, FastForward, Crosshair, Minus, Check, RefreshCw, AlertCircle, ShieldAlert, ArrowUp, ArrowDown } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
 import { calculateDerivedStats, applyEquipmentBonuses, DerivedStats, PrimaryStats, mergePrimaryStats } from '../../models/Stats';
 import { calculateCombatPower } from '../../utils/combatLogic';
@@ -13,22 +13,43 @@ interface MercenaryDetailModalProps {
     mercenary: Mercenary | null;
     onClose: () => void;
     onUnequip: (mercId: string, slot: EquipmentSlotType) => void;
+    isReadOnly?: boolean;
 }
+
+const StatDiff = ({ current, next, isPercent = false }: { current: number, next: number, isPercent?: boolean }) => {
+    const diff = next - current;
+    if (Math.abs(diff) < 0.01) return null;
+
+    const isPositive = diff > 0;
+    const color = isPositive ? 'text-emerald-400' : 'text-red-400';
+    const Icon = isPositive ? ArrowUp : ArrowDown;
+
+    return (
+        <div className={`flex items-center gap-0.5 font-mono text-[10px] font-bold ${color} animate-in fade-in slide-in-from-left-1`}>
+            <Icon className="w-3 h-3" />
+            <span>{isPercent ? Math.abs(diff).toFixed(1) : Math.abs(Math.round(diff))}</span>
+        </div>
+    );
+};
 
 const MercenaryPaperDoll = ({ 
     mercenary, 
-    combatPower, 
+    baseCombatPower,
+    nextCombatPower,
     showAffinityGain, 
     onUnequip, 
     onSlotClick,
     selectedSlot,
+    isReadOnly
 }: { 
     mercenary: Mercenary; 
-    combatPower: number; 
+    baseCombatPower: number; 
+    nextCombatPower: number;
     showAffinityGain: boolean; 
     onUnequip: (slot: EquipmentSlotType) => void; 
     onSlotClick: (slot: EquipmentSlotType | null) => void;
     selectedSlot: EquipmentSlotType | null;
+    isReadOnly?: boolean;
 }) => {
     const renderSlot = ({ slot, icon, style }: { slot: EquipmentSlotType; icon: React.ReactNode; style: string }) => {
         const equippedItem = mercenary.equipment[slot];
@@ -68,7 +89,7 @@ const MercenaryPaperDoll = ({
                     <div className="text-stone-600">{icon}</div>
                 )}
                 <div className="hidden text-xl">{equippedItem?.icon || '📦'}</div>
-                {equippedItem && (
+                {equippedItem && !isReadOnly && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onUnequip(slot); }}
                         className="absolute -top-2 -right-2 bg-stone-900 rounded-full border border-stone-600 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-900 hover:border-red-500 text-stone-400 hover:text-red-200 z-30"
@@ -79,6 +100,8 @@ const MercenaryPaperDoll = ({
             </div>
         );
     };
+
+    const cpDiff = nextCombatPower - baseCombatPower;
 
     return (
         <div className="w-full md:w-[40%] relative bg-gradient-to-b from-stone-900 to-stone-950 border-r border-stone-800 flex flex-col items-center justify-center overflow-hidden group select-none">
@@ -95,9 +118,17 @@ const MercenaryPaperDoll = ({
             <div className="absolute top-8 right-8 z-30">
                 <div className="flex flex-col items-end">
                     <span className="text-[10px] text-stone-500 uppercase font-bold tracking-wider">Combat Power</span>
-                    <div className="flex items-center gap-1 text-xl font-mono font-bold text-stone-300">
-                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        {combatPower}
+                    <div className="flex flex-col items-end">
+                        <div className="flex items-center gap-1 text-xl font-mono font-bold text-stone-300">
+                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                            {nextCombatPower}
+                        </div>
+                        {Math.abs(cpDiff) > 0 && (
+                            <div className={`text-xs font-bold flex items-center gap-0.5 ${cpDiff > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {cpDiff > 0 ? <Plus className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                {Math.abs(cpDiff)}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -125,14 +156,18 @@ const MercenaryPaperDoll = ({
 
 const MercenaryStatsPanel = ({ 
     mercenary, 
+    baseStats,
     finalStats, 
     localAllocated, 
-    onSetLocalAllocated 
+    onSetLocalAllocated,
+    isReadOnly
 }: { 
     mercenary: Mercenary; 
+    baseStats: DerivedStats;
     finalStats: DerivedStats; 
     localAllocated: PrimaryStats;
     onSetLocalAllocated: (stats: PrimaryStats) => void;
+    isReadOnly?: boolean;
 }) => {
     const { actions } = useGame();
     
@@ -146,14 +181,22 @@ const MercenaryStatsPanel = ({
 
     const hasChanges = JSON.stringify(localAllocated) !== JSON.stringify(mercenary.allocatedStats);
 
-    const renderStatRow = (icon: React.ReactNode, label: string, value: number | string, isPercent = false) => (
-        <div className="bg-stone-800/50 p-2 rounded-lg border border-stone-800 flex justify-between items-center h-9">
-            <span className="text-[10px] text-stone-400 font-bold flex items-center gap-1.5">{icon} {label}</span>
-            <span className="font-mono text-sm font-bold text-stone-200">
-                {value}{isPercent ? '%' : ''}
-            </span>
-        </div>
-    );
+    const renderStatRow = (icon: React.ReactNode, label: string, baseValue: number, nextValue: number, isPercent = false) => {
+        const diff = nextValue - baseValue;
+        const colorClass = diff > 0 ? 'text-emerald-400' : diff < 0 ? 'text-red-400' : 'text-stone-200';
+
+        return (
+            <div className="bg-stone-800/50 p-2 rounded-lg border border-stone-800 flex justify-between items-center h-10">
+                <span className="text-[10px] text-stone-400 font-bold flex items-center gap-1.5">{icon} {label}</span>
+                <div className="flex items-center gap-2">
+                    <span className={`font-mono text-sm font-bold ${colorClass}`}>
+                        {isPercent ? nextValue.toFixed(1) : Math.round(nextValue)}{isPercent ? '%' : ''}
+                    </span>
+                    <StatDiff current={baseValue} next={nextValue} isPercent={isPercent} />
+                </div>
+            </div>
+        );
+    };
 
     const updateLocalStat = (key: keyof PrimaryStats, delta: number) => {
         const newVal = localAllocated[key] + delta;
@@ -190,10 +233,8 @@ const MercenaryStatsPanel = ({
                 <div className="flex justify-between items-center mb-3">
                     <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest flex items-center gap-2"><Star className="w-3 h-3" /> Attributes</h4>
                     <div className="flex items-center gap-1.5">
-                        {availablePoints > 0 ? (
+                        {!isReadOnly && availablePoints > 0 && (
                              <span className="text-[10px] font-black text-amber-500 animate-pulse">+{availablePoints} POINTS AVAILABLE</span>
-                        ) : (
-                             <span className="text-[10px] font-bold text-stone-600 uppercase">Points Exhausted</span>
                         )}
                     </div>
                 </div>
@@ -205,7 +246,6 @@ const MercenaryStatsPanel = ({
                         { label: 'VIT', key: 'vit' as const, color: 'text-red-400' },
                         { label: 'LUK', key: 'luk' as const, color: 'text-pink-400' }
                     ].map((stat) => {
-                        const committedValue = mercenary.stats[stat.key] + mercenary.allocatedStats[stat.key];
                         const currentValue = mercenary.stats[stat.key] + localAllocated[stat.key];
                         const isModified = localAllocated[stat.key] > mercenary.allocatedStats[stat.key];
                         
@@ -215,28 +255,30 @@ const MercenaryStatsPanel = ({
                                     <span className={`text-[9px] font-bold ${stat.color}`}>{stat.label}</span>
                                     <span className={`text-sm font-mono font-bold ${isModified ? 'text-amber-400 scale-110' : 'text-stone-200'} transition-all`}>{currentValue}</span>
                                 </div>
-                                <div className="flex gap-1">
-                                    <button 
-                                        onClick={() => updateLocalStat(stat.key, -1)}
-                                        disabled={localAllocated[stat.key] <= mercenary.allocatedStats[stat.key]}
-                                        className="flex-1 h-6 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded flex items-center justify-center text-stone-500 hover:text-red-400 transition-all disabled:opacity-30 disabled:pointer-events-none"
-                                    >
-                                        <Minus className="w-3 h-3" />
-                                    </button>
-                                    <button 
-                                        onClick={() => updateLocalStat(stat.key, 1)}
-                                        disabled={availablePoints <= 0}
-                                        className="flex-1 h-6 bg-stone-800 hover:bg-amber-900/40 border border-stone-700 hover:border-amber-600/50 rounded flex items-center justify-center text-stone-500 hover:text-amber-400 transition-all disabled:opacity-30 disabled:pointer-events-none"
-                                    >
-                                        <Plus className="w-3 h-3" />
-                                    </button>
-                                </div>
+                                {!isReadOnly && (
+                                    <div className="flex gap-1">
+                                        <button 
+                                            onClick={() => updateLocalStat(stat.key, -1)}
+                                            disabled={localAllocated[stat.key] <= mercenary.allocatedStats[stat.key]}
+                                            className="flex-1 h-6 bg-stone-800 hover:bg-stone-700 text-stone-500 hover:text-red-400 transition-all disabled:opacity-30 disabled:pointer-events-none"
+                                        >
+                                            <Minus className="w-3 h-3" />
+                                        </button>
+                                        <button 
+                                            onClick={() => updateLocalStat(stat.key, 1)}
+                                            disabled={availablePoints <= 0}
+                                            className="flex-1 h-6 bg-stone-800 hover:bg-amber-900/40 border border-stone-700 hover:border-amber-600/50 rounded flex items-center justify-center text-stone-500 hover:text-amber-400 transition-all disabled:opacity-30 disabled:pointer-events-none"
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
                 </div>
 
-                {hasChanges && (
+                {!isReadOnly && hasChanges && (
                     <div className="mt-4 flex gap-2 animate-in slide-in-from-top-2 duration-300">
                          <button 
                             onClick={handleReset}
@@ -259,7 +301,11 @@ const MercenaryStatsPanel = ({
                     <div className="p-1.5 bg-red-900/20 rounded-lg text-red-500 border border-red-900/30"><Heart className="w-4 h-4" /></div>
                     <div className="flex-1">
                         <div className="flex justify-between text-[10px] text-stone-400 font-bold mb-1">
-                            <span>HEALTH</span><span className="text-stone-200">{mercenary.currentHp} / {finalStats.maxHp}</span>
+                            <span>HEALTH</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-stone-200">{mercenary.currentHp} / {finalStats.maxHp}</span>
+                                <StatDiff current={baseStats.maxHp} next={finalStats.maxHp} />
+                            </div>
                         </div>
                         <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden">
                             <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${hpPercent}%` }}></div>
@@ -270,7 +316,11 @@ const MercenaryStatsPanel = ({
                     <div className="p-1.5 bg-blue-900/20 rounded-lg text-blue-500 border border-blue-900/30"><Activity className="w-4 h-4" /></div>
                     <div className="flex-1">
                         <div className="flex justify-between text-[10px] text-stone-400 font-bold mb-1">
-                            <span>MANA</span><span className="text-stone-200">{mercenary.currentMp} / {finalStats.maxMp}</span>
+                            <span>MANA</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-stone-200">{mercenary.currentMp} / {finalStats.maxMp}</span>
+                                <StatDiff current={baseStats.maxMp} next={finalStats.maxMp} />
+                            </div>
                         </div>
                         <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden">
                             <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${mpPercent}%` }}></div>
@@ -282,14 +332,14 @@ const MercenaryStatsPanel = ({
             <div className="shrink-0">
                 <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-2 flex items-center gap-2"><Sword className="w-3 h-3" /> Combat Statistics</h4>
                 <div className="grid grid-cols-2 gap-2">
-                    {renderStatRow(<Sword className="w-3 h-3" />, 'P.ATK', finalStats.physicalAttack)}
-                    {renderStatRow(<Shield className="w-3 h-3" />, 'P.DEF', finalStats.physicalDefense)}
-                    {renderStatRow(<Zap className="w-3 h-3" />, 'M.ATK', finalStats.magicalAttack)}
-                    {renderStatRow(<Brain className="w-3 h-3" />, 'M.DEF', finalStats.magicalDefense)}
-                    {renderStatRow(<Crosshair className="w-3 h-3" />, 'ACC', finalStats.accuracy)}
-                    {renderStatRow(<Wind className="w-3 h-3" />, 'EVA', finalStats.evasion)}
-                    {renderStatRow(<Target className="w-3 h-3" />, 'CRIT', `${finalStats.critChance}%`, true)}
-                    {renderStatRow(<FastForward className="w-3 h-3" />, 'SPD', finalStats.speed)}
+                    {renderStatRow(<Sword className="w-3 h-3" />, 'P.ATK', baseStats.physicalAttack, finalStats.physicalAttack)}
+                    {renderStatRow(<Shield className="w-3 h-3" />, 'P.DEF', baseStats.physicalDefense, finalStats.physicalDefense)}
+                    {renderStatRow(<Zap className="w-3 h-3" />, 'M.ATK', baseStats.magicalAttack, finalStats.magicalAttack)}
+                    {renderStatRow(<Brain className="w-3 h-3" />, 'M.DEF', baseStats.magicalDefense, finalStats.magicalDefense)}
+                    {renderStatRow(<Crosshair className="w-3 h-3" />, 'ACC', baseStats.accuracy, finalStats.accuracy)}
+                    {renderStatRow(<Wind className="w-3 h-3" />, 'EVA', baseStats.evasion, finalStats.evasion)}
+                    {renderStatRow(<Target className="w-3 h-3" />, 'CRIT', baseStats.critChance, finalStats.critChance, true)}
+                    {renderStatRow(<FastForward className="w-3 h-3" />, 'SPD', baseStats.speed, finalStats.speed)}
                 </div>
             </div>
         </div>
@@ -302,7 +352,8 @@ const EquipmentInventoryList = ({
     onSelect,
     onEquip,
     selectedSlotFilter,
-    mercenary
+    mercenary,
+    isReadOnly
 }: { 
     inventory: InventoryItem[]; 
     selectedItemId: string | null;
@@ -310,6 +361,7 @@ const EquipmentInventoryList = ({
     onEquip: (itemId: string) => void;
     selectedSlotFilter: EquipmentSlotType | null;
     mercenary: Mercenary;
+    isReadOnly?: boolean;
 }) => {
     const totalMercStats = useMemo(() => mergePrimaryStats(mercenary.stats, mercenary.allocatedStats), [mercenary]);
 
@@ -372,7 +424,7 @@ const EquipmentInventoryList = ({
                                 <div 
                                     key={item.id}
                                     onClick={() => !isSelected && onSelect(item.id)}
-                                    className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${isSelected ? 'border-amber-500 bg-stone-800' : 'border-stone-800 hover:bg-stone-900'} cursor-pointer group ${!canEquip ? 'opacity-80' : ''}`}
+                                    className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${isSelected ? 'border-amber-500 bg-stone-800 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]' : 'border-stone-800 hover:bg-stone-900'} cursor-pointer group ${!canEquip ? 'opacity-80' : ''}`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-stone-900 rounded border border-stone-700 flex items-center justify-center relative shrink-0">
@@ -386,7 +438,7 @@ const EquipmentInventoryList = ({
                                                 <span className={`${qColor} font-bold`}>{label}</span>
                                             </div>
                                         </div>
-                                        {isSelected && canEquip && (
+                                        {!isReadOnly && isSelected && canEquip && (
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); onEquip(item.id); }}
                                                 className="shrink-0 px-3 py-1 bg-amber-700 hover:bg-amber-600 text-white text-[10px] font-bold uppercase rounded-md shadow-lg animate-in fade-in zoom-in duration-200"
@@ -396,7 +448,6 @@ const EquipmentInventoryList = ({
                                         )}
                                     </div>
                                     
-                                    {/* Additional Info: Durability & Requirements */}
                                     <div className="flex justify-between items-end border-t border-stone-700/50 pt-2">
                                         <div className="flex items-center gap-2">
                                             <div className="flex items-center gap-1 text-[9px] text-stone-500 font-bold" title="Durability">
@@ -435,7 +486,7 @@ const EquipmentInventoryList = ({
     );
 };
 
-const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, onClose, onUnequip }) => {
+const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, onClose, onUnequip, isReadOnly = false }) => {
     const { state, actions } = useGame();
     
     const [selectedSlot, setSelectedSlot] = useState<EquipmentSlotType | null>(null);
@@ -469,10 +520,10 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
     const baseDerived = calculateDerivedStats(mergedPrimary, mercenary.level);
     
     const currentEquipmentStats = (Object.values(mercenary.equipment) as (Equipment | null)[]).map(eq => eq?.stats).filter(Boolean);
-    const finalStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
+    const currentStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
     
     const currentAttackType = mergedPrimary.int > mergedPrimary.str ? 'MAGICAL' : 'PHYSICAL';
-    const currentCombatPower = calculateCombatPower(finalStats, currentAttackType);
+    const currentCombatPower = calculateCombatPower(currentStats, currentAttackType);
 
     let previewStats: DerivedStats | null = null;
     let previewCombatPower: number | null = null;
@@ -489,7 +540,7 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
         }
     }
 
-    const effectiveFinalStats = previewStats || finalStats;
+    const effectiveFinalStats = previewStats || currentStats;
     const effectiveCombatPower = previewCombatPower !== null ? previewCombatPower : currentCombatPower;
 
     return (
@@ -498,18 +549,22 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
             <div className="w-full max-w-6xl h-[85vh] bg-stone-950 border border-stone-800 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
                 <MercenaryPaperDoll 
                     mercenary={mercenary} 
-                    combatPower={effectiveCombatPower} 
+                    baseCombatPower={currentCombatPower}
+                    nextCombatPower={effectiveCombatPower} 
                     showAffinityGain={showAffinityGain} 
                     onUnequip={(slot) => onUnequip(mercenary.id, slot)} 
                     onSlotClick={setSelectedSlot} 
                     selectedSlot={selectedSlot} 
+                    isReadOnly={isReadOnly}
                 />
                 <div className="w-full md:w-[60%] bg-stone-900 flex flex-col h-full max-h-full overflow-hidden">
                     <MercenaryStatsPanel 
                         mercenary={mercenary} 
+                        baseStats={currentStats}
                         finalStats={effectiveFinalStats} 
                         localAllocated={localAllocated}
                         onSetLocalAllocated={setLocalAllocated}
+                        isReadOnly={isReadOnly}
                     />
                     <EquipmentInventoryList 
                         inventory={state.inventory.filter(i => i.type === 'EQUIPMENT')} 
@@ -518,6 +573,7 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
                         onEquip={(id) => { actions.equipItem(mercenary.id, id); setSelectedInventoryItemId(null); }} 
                         selectedSlotFilter={selectedSlot}
                         mercenary={mercenary}
+                        isReadOnly={isReadOnly}
                     />
                 </div>
             </div>

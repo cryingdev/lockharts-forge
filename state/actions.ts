@@ -31,6 +31,7 @@ export type GameAction =
   | { type: 'TOGGLE_JOURNAL' }
   | { type: 'HIRE_MERCENARY'; payload: { mercenaryId: string; cost: number } }
   | { type: 'FIRE_MERCENARY'; payload: { mercenaryId: string } }
+  | { type: 'GIVE_GIFT'; payload: { mercenaryId: string; itemId: string } }
   | { type: 'START_EXPEDITION'; payload: { dungeonId: string; partyIds: string[] } }
   | { type: 'COMPLETE_EXPEDITION'; payload: { expeditionId: string } }
   | { type: 'CLAIM_EXPEDITION'; payload: { expeditionId: string } }
