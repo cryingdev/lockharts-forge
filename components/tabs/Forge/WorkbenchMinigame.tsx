@@ -259,7 +259,22 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
     const game = new Phaser.Game(config);
     gameRef.current = game;
     game.scene.start('WorkbenchScene', { onComplete, difficulty });
-    return () => { if (gameRef.current) gameRef.current.destroy(true); };
+
+    // ResizeObserver for dynamic container changes, ensuring Phaser knows about viewport-fit and dvh shifts
+    const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (game && game.scale && width > 0 && height > 0) {
+                game.scale.resize(width, height);
+            }
+        }
+    });
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+
+    return () => { 
+        resizeObserver.disconnect();
+        if (gameRef.current) gameRef.current.destroy(true); 
+    };
   }, [isReady, onComplete, difficulty]);
 
   return (
@@ -273,8 +288,12 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
                 <X className="w-3 h-3" /> CANCEL
             </button>
         </div>
-        <div className="flex-1 w-full relative flex items-center justify-center bg-[#1c1917]">
-            <div ref={containerRef} className="w-full h-full" />
+        <div className="flex-1 w-full relative flex items-center justify-center bg-[#1c1917] overflow-hidden">
+            <div 
+              ref={containerRef} 
+              style={{ width: '100%', height: '100dvh' }}
+              className="overflow-hidden" 
+            />
         </div>
     </div>
   );

@@ -248,7 +248,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.hammerHitArea.setPosition(this.bladeContainer.x - Math.sin(rad) * this.anvilConfig.hitAreaOffset, this.bladeContainer.y + Math.cos(rad) * this.anvilConfig.hitAreaOffset);
     this.rebuildHitPoly();
     this.repositionUIElements(isCompact);
-    if (this.isPlaying) this.resetRing(); // 리사이즈 시 판정 링도 재배치
+    if (this.isPlaying) this.resetRing(); 
   }
 
   private repositionUIElements(isCompact: boolean) {
@@ -264,8 +264,8 @@ export default class SmithingScene extends Phaser.Scene {
     this.qualityText.setPosition(this.centerX, 55).setFontSize(isCompact ? '14px' : '16px');
 
     const sideX = w - (isCompact ? 40 : 60);
-    // Fixed: centerY was used instead of this.centerY
-    const sideY = isCompact ? h * 0.4 : this.centerY - 40;
+    // User Request: Move the temperature system upward. Changed from centerY - 40 to centerY - 100 or higher.
+    const sideY = isCompact ? h * 0.3 : this.centerY - 100; 
     const barH = isCompact ? 120 : 200;
 
     const tFrame = this.uiContainer.getByName('tempFrame') as Phaser.GameObjects.Rectangle;
@@ -310,7 +310,7 @@ export default class SmithingScene extends Phaser.Scene {
     const eff = this.currentTempStage === 'AURA' ? 1.5 : this.currentTempStage === 'HOT' ? 1.0 : 0.5;
     if (diff < this.targetRadius * 0.35) {
       this.score += Math.ceil(8 * eff); this.combo++; this.perfectCount++;
-      if (this.perfectCount >= 6) { this.currentQuality += 1; this.showFeedback('QUALITY UP!', 0xfbbf24, this.hitX, this.hitY - 60); }
+      if (this.perfectCount >= 6) { this.currentQuality += 1; this.showFeedback('QUALITY UP!', 0xfbbf24, 1.3, this.hitX, this.hitY - 60); }
       this.createSparks(30, 0xffaa00, 1.5, 'spark_perfect', swingX, swingY); 
       this.showFeedback('PERFECT!', 0xffb300, 1.4, this.hitX, this.hitY); this.cameras.main.shake(150, 0.02);
     } else if (diff < this.targetRadius * 0.95) {
