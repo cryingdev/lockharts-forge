@@ -1,19 +1,7 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
 export default class IntroScene extends Phaser.Scene {
-  add!: Phaser.GameObjects.GameObjectFactory;
-  tweens!: Phaser.Tweens.TweenManager;
-  cameras!: Phaser.Cameras.Scene2D.CameraManager;
-  time!: Phaser.Time.Clock;
-  load!: Phaser.Loader.LoaderPlugin;
-  make!: Phaser.GameObjects.GameObjectCreator;
-  scale!: Phaser.Scale.ScaleManager;
-  textures!: Phaser.Textures.TextureManager;
-  input!: Phaser.Input.InputPlugin;
-  game!: Phaser.Game;
-
   private bgs: Phaser.GameObjects.Image[] = [];
   private dragon?: Phaser.GameObjects.Image;
   private narrativeTexts: Phaser.GameObjects.Text[] = [];
@@ -34,7 +22,7 @@ export default class IntroScene extends Phaser.Scene {
     this.load.image('intro_bg_05', getAssetUrl('intro_bg_05.png'));
     this.load.image('intro_dragon', getAssetUrl('intro_dragon_02.png'));
   }
-  
+
   private createNarrativeText(text: string, color: string = '#ef4444') {
     const t = this.add
       .text(0, 0, text, {
@@ -56,11 +44,6 @@ export default class IntroScene extends Phaser.Scene {
   create() {
     if (this.scale.width <= 0 || this.scale.height <= 0) return;
 
-    if (!this.textures.exists('white')) {
-        const graphics = this.make.graphics({ x: 0, y: 0 });
-        graphics.fillStyle(0xffffff, 1).fillRect(0, 0, 2, 2).generateTexture('white', 2, 2).destroy();
-    }
-
     if (!this.textures.exists('intro_flame')) {
         const graphics = this.make.graphics({ x: 0, y: 0 });
         graphics.fillStyle(0xff5500, 1).fillCircle(16, 16, 16).generateTexture('intro_flame', 32, 32).destroy();
@@ -74,8 +57,6 @@ export default class IntroScene extends Phaser.Scene {
         fontFamily: 'sans-serif', fontSize: '12px', color: '#57534e', fontStyle: 'bold'
     }).setOrigin(0.5).setAlpha(0).setDepth(20);
 
-    this.tweens.add({ targets: this.skipHint, alpha: { from: 0, to: 0.5 }, duration: 1000, delay: 1000, hold: 2000, yoyo: true });
-
     const keys = ['intro_bg', 'intro_bg_02', 'intro_bg_03', 'intro_bg_04', 'intro_bg_05'];
     keys.forEach(key => {
         const img = this.add.image(0, 0, key).setAlpha(0).setDepth(1);
@@ -86,9 +67,7 @@ export default class IntroScene extends Phaser.Scene {
 
     this.devText = this.add.text(0, 0, "CRYINGDEV STUDIO\nPRESENTS", {
       fontFamily: 'serif', fontSize: '45px', color: '#a8a29e', align: 'center', fontStyle: 'bold'
-    }).setOrigin(0.5)
-      .setAlpha(0)
-      .setDepth(10);
+    }).setOrigin(0.5).setAlpha(0).setDepth(10);
 
     const n1 = this.createNarrativeText("FIASCO,\nA MASTER OF DISASTER...", '#ef4444');
     const n2 = this.createNarrativeText("EVERTHING WE LOVED IS LOST...", '#ef4444');
@@ -122,7 +101,9 @@ export default class IntroScene extends Phaser.Scene {
     const h = this.scale.height;
     const centerX = w / 2;
     const centerY = h / 2;
+    const isCompact = h < 450;
 
+    // Background Image Cover Scaling
     this.bgs.forEach(img => {
         img.setPosition(centerX, centerY);
         const scale = Math.max(w / img.width, h / img.height);
@@ -130,30 +111,35 @@ export default class IntroScene extends Phaser.Scene {
     });
 
     if (this.dragon) {
-        this.dragon.setPosition(centerX, centerY - 200);
-        const dScale = w / this.dragon.width;
+        this.dragon.setPosition(centerX, isCompact ? centerY - 100 : centerY - 200);
+        const dScale = (w * 0.8) / this.dragon.width;
         this.dragon.setScale(dScale);
     }
 
-    if (this.devText) this.devText.setPosition(centerX, centerY);
+    if (this.devText) {
+        this.devText.setPosition(centerX, centerY);
+        this.devText.setFontSize(isCompact ? '32px' : '45px');
+    }
+    
     if (this.skipHint) this.skipHint.setPosition(centerX, h - 40);
+    
     if (this.breathOverlay) {
-        this.breathOverlay.setPosition(centerX, centerY);
-        this.breathOverlay.setSize(w, h);
+        this.breathOverlay.setPosition(centerX, centerY).setSize(w, h);
     }
 
-    this.narrativeTexts.forEach(t => t.setPosition(centerX, centerY));
-    // despair/vengeance specific vertical offset
-    const despairIdx = this.narrativeTexts.length - 2;
-    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = centerY - 40;
-    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = centerY + 40;
+    this.narrativeTexts.forEach(t => {
+        t.setPosition(centerX, centerY);
+        t.setFontSize(isCompact ? '28px' : '40px');
+    });
 
-    if (this.fireEmitter) this.fireEmitter.setPosition(centerX, h * 0.15 + 200);
+    const despairIdx = this.narrativeTexts.length - 2;
+    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = centerY - (isCompact ? 30 : 40);
+    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = centerY + (isCompact ? 30 : 40);
+
+    if (this.fireEmitter) this.fireEmitter.setPosition(centerX, h * 0.15 + (isCompact ? 100 : 200));
   }
 
   private startSequence(n1: any, n2: any, n3: any, nD: any, nV: any) {
-    const finalDragonScale = this.scale.width / this.dragon!.width;
-    
     this.tweens.chain({
       tweens: [
         { targets: this.devText, alpha: 1, duration: 2500, ease: 'Power2' },
@@ -162,8 +148,7 @@ export default class IntroScene extends Phaser.Scene {
         { targets: this.bgs[0], alpha: 1, duration: 1500, ease: 'Linear' },
         {
           targets: this.dragon,
-          y: this.scale.height / 2 - 200,
-          scale: finalDragonScale,
+          alpha: { from: 0, to: 1 },
           duration: 3000,
           ease: 'Sine.easeInOut',
           hold: 500,
@@ -172,7 +157,7 @@ export default class IntroScene extends Phaser.Scene {
               this.cameras.main.shake(3500, 0.005); 
           }
         },
-        { targets: this.dragon, y: 0, scale: finalDragonScale * 0.7, duration: 1000, ease: 'Quad.easeOut' },
+        { targets: this.dragon, y: '-=150', scale: '*=0.7', duration: 1000, ease: 'Quad.easeOut' },
         {
             targets: this.breathOverlay,
             alpha: 0.8,
@@ -188,17 +173,17 @@ export default class IntroScene extends Phaser.Scene {
             }
         },
         { targets: this.bgs[1], alpha: 1, duration: 2000, hold: 2500, ease: 'Linear' },
-        { targets: n1, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2', offset: '-=1000' },
+        { targets: n1, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2' },
         { targets: n1, alpha: 0, duration: 1000, ease: 'Power2' },
         { targets: this.bgs[2], alpha: 1, duration: 2000, hold: 2500, ease: 'Linear' },
-        { targets: n2, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2', offset: '-=1000' },
+        { targets: n2, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2' },
         { targets: n2, alpha: 0, duration: 1000, ease: 'Power2' },
         { targets: this.bgs[3], alpha: 1, duration: 3000, hold: 3500, ease: 'Linear' },
-        { targets: n3, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2', offset: '-=1000' },
+        { targets: n3, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2' },
         { targets: n3, alpha: 0, duration: 1000, ease: 'Power2' },
         { targets: this.bgs[4], alpha: 1, duration: 3000, ease: 'Linear' },
         { targets: nD, alpha: 1, duration: 2000, ease: 'Power2', delay: 500 },
-        { targets: nV, alpha: 1, duration: 2500, ease: 'Power2', offset: '-=1000' },
+        { targets: nV, alpha: 1, duration: 2500, ease: 'Power2' },
         {
           targets: [...this.bgs, nD, nV],
           alpha: 0,
