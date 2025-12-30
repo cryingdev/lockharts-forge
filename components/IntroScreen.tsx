@@ -13,11 +13,11 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
 
   useEffect(() => {
     const checkSize = () => {
-        if (containerRef.current && containerRef.current.clientWidth > 0 && containerRef.current.clientHeight > 0) {
-            setIsReady(true);
-        } else {
-            requestAnimationFrame(checkSize);
-        }
+      if (containerRef.current && containerRef.current.clientWidth > 0 && containerRef.current.clientHeight > 0) {
+        setIsReady(true);
+      } else {
+        requestAnimationFrame(checkSize);
+      }
     };
     checkSize();
   }, []);
@@ -28,51 +28,46 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       parent: containerRef.current,
-      width: containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight,
+      // 기준 해상도(초기 좌표계 안정화용)
+      width: 1280,
+      height: 720,
       backgroundColor: '#000000',
       scene: [IntroScene],
       scale: {
         mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+        autoCenter: Phaser.Scale.CENTER_BOTH,
       }
     };
 
     const game = new Phaser.Game(config);
     gameRef.current = game;
 
-    // ResizeObserver implementation to sync Phaser scale with dynamic container size
-    const resizeObserver = new ResizeObserver((entries) => {
-        for (let entry of entries) {
-            const { width, height } = entry.contentRect;
-            if (game && game.scale && width > 0 && height > 0) {
-                game.scale.resize(width, height);
-            }
-        }
-    });
-    
-    if (containerRef.current) {
-        resizeObserver.observe(containerRef.current);
-    }
+    const onIntroComplete = () => onComplete();
+    game.events.on('intro-complete', onIntroComplete);
 
-    game.events.on('intro-complete', () => {
-        onComplete();
+    const resizeObserver = new ResizeObserver(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      if (w > 0 && h > 0) game.scale.resize(w, h);
     });
+
+    resizeObserver.observe(containerRef.current);
 
     return () => {
       resizeObserver.disconnect();
-      if (gameRef.current) {
-          gameRef.current.destroy(true);
-          gameRef.current = null;
-      }
+      game.events.off('intro-complete', onIntroComplete);
+      game.destroy(true);
+      gameRef.current = null;
     };
   }, [isReady, onComplete]);
 
   return (
     <div className="absolute inset-0 bg-black z-50 overflow-hidden">
-      <div 
-        ref={containerRef} 
-        style={{ width: '100%', height: '100dvh' }} 
+      <div
+        ref={containerRef}
+        style={{ width: '100%', height: '100dvh', touchAction: 'none' }}
         className="overflow-hidden"
       />
     </div>
