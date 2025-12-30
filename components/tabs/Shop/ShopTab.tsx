@@ -13,34 +13,31 @@ interface ShopTabProps {
 
 const ShopSign = ({ isOpen, onToggle, disabled }: { isOpen: boolean, onToggle: () => void, disabled: boolean }) => {
     return (
-        <div className="absolute top-4 right-4 z-50 flex flex-col items-center">
-            <div className="flex justify-around w-24 h-6 px-4">
-                <div className="w-1 bg-stone-600 rounded-full"></div>
-                <div className="w-1 bg-stone-600 rounded-full"></div>
+        <div className="absolute top-2 md:top-4 right-2 md:right-4 z-50 flex flex-col items-center">
+            <div className="flex justify-around w-16 md:w-24 h-4 md:h-6 px-4">
+                <div className="w-0.5 md:w-1 bg-stone-600 rounded-full"></div>
+                <div className="w-0.5 md:w-1 bg-stone-600 rounded-full"></div>
             </div>
             
             <button 
                 onClick={onToggle}
                 disabled={disabled}
-                className={`group relative w-36 h-16 perspective-1000 cursor-pointer disabled:cursor-not-allowed`}
+                className={`group relative w-24 md:w-36 h-10 md:h-16 perspective-1000 cursor-pointer disabled:cursor-not-allowed`}
             >
                 <div className={`relative w-full h-full transition-transform duration-700 preserve-3d ${isOpen ? '' : 'rotate-y-180'}`}>
-                    <div className="absolute inset-0 backface-hidden bg-[#5d4037] border-2 border-[#3e2723] rounded-md shadow-lg flex flex-col items-center justify-center p-1">
+                    <div className="absolute inset-0 backface-hidden bg-[#5d4037] border md:border-2 border-[#3e2723] rounded shadow-lg flex flex-col items-center justify-center p-0.5 md:p-1">
                         <div className="w-full h-full border border-[#795548]/30 rounded flex flex-col items-center justify-center">
-                             <span className="text-[10px] text-[#8d6e63] font-bold uppercase tracking-widest leading-none">The Forge is</span>
-                             <span className="text-xl font-black text-emerald-400 font-serif tracking-tighter drop-shadow-sm">OPEN</span>
+                             <span className="text-[8px] md:text-[10px] text-[#8d6e63] font-bold uppercase tracking-widest leading-none">The Forge is</span>
+                             <span className="text-sm md:text-xl font-black text-emerald-400 font-serif tracking-tighter drop-shadow-sm">OPEN</span>
                         </div>
                     </div>
-                    <div className="absolute inset-0 backface-hidden rotate-y-180 bg-[#3e2723] border-2 border-[#1b0000] rounded-md shadow-lg flex flex-col items-center justify-center p-1">
+                    <div className="absolute inset-0 backface-hidden rotate-y-180 bg-[#3e2723] border md:border-2 border-[#1b0000] rounded shadow-lg flex flex-col items-center justify-center p-0.5 md:p-1">
                         <div className="w-full h-full border border-[#5d4037]/30 rounded flex flex-col items-center justify-center">
-                             <span className="text-[10px] text-[#5d4037] font-bold uppercase tracking-widest leading-none">The Forge is</span>
-                             <span className="text-xl font-black text-stone-500 font-serif tracking-tighter drop-shadow-sm">CLOSED</span>
+                             <span className="text-[8px] md:text-[10px] text-[#5d4037] font-bold uppercase tracking-widest leading-none">The Forge is</span>
+                             <span className="text-sm md:text-xl font-black text-stone-500 font-serif tracking-tighter drop-shadow-sm">CLOSED</span>
                         </div>
                     </div>
                 </div>
-                <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-overlay" style={{ 
-                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, #000 2px, #000 4px)' 
-                }}></div>
             </button>
         </div>
     );
@@ -75,28 +72,17 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
   const handleSell = () => {
       if (!activeCustomer) return;
-      
       const { mercenary, request } = activeCustomer;
-
       if (request.type === 'RESOURCE') {
           actions.sellItem(request.requestedId, 1, request.price, undefined, mercenary);
       } else {
-          const matchingItem = state.inventory.find(i => 
-              i.equipmentData && i.id.startsWith(request.requestedId)
-          );
-          if (matchingItem) {
-              actions.sellItem(matchingItem.id, 1, request.price, matchingItem.id, mercenary);
-          }
+          const matchingItem = state.inventory.find(i => i.equipmentData && i.id.startsWith(request.requestedId));
+          if (matchingItem) actions.sellItem(matchingItem.id, 1, request.price, matchingItem.id, mercenary);
       }
   };
 
-  const handleRefuse = () => {
-      actions.dismissCustomer();
-  };
-
-  const handleToggleShop = () => {
-      actions.toggleShop();
-  };
+  const handleRefuse = () => actions.dismissCustomer();
+  const handleToggleShop = () => actions.toggleShop();
 
   const hasItem = () => {
       if (!activeCustomer) return false;
@@ -118,7 +104,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             <img 
                 src={getAssetUrl('shop_interior.png')} 
                 alt="Shop Interior" 
-                className="absolute top-0 opacity-60 w-full h-auto left-0 portrait:h-full portrait:w-auto portrait:max-w-none portrait:left-1/2 portrait:-translate-x-1/2"
+                className="absolute top-0 opacity-60 w-full h-full object-cover"
                 onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #292524, #1c1917)';
@@ -133,101 +119,67 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         />
 
         {isShopOpen && (
-            <div className="absolute top-4 right-[160px] z-50 flex items-center gap-2 bg-stone-900/90 px-4 py-2 rounded-xl border-2 border-stone-700 text-stone-200 shadow-xl">
-                <div className="bg-stone-800 p-1.5 rounded-full">
-                    <Users className="w-5 h-5 text-amber-500" />
+            <div className="absolute top-2 md:top-4 right-32 md:right-44 z-50 flex items-center gap-1.5 md:gap-2 bg-stone-900/90 px-2 md:px-4 py-1 md:py-2 rounded-xl border border-stone-700 text-stone-200 shadow-xl backdrop-blur-md">
+                <div className="bg-stone-800 p-1 md:p-1.5 rounded-full">
+                    <Users className="w-3 h-3 md:w-5 md:h-5 text-amber-500" />
                 </div>
                 <div className="flex flex-col leading-none">
-                    <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider">Queue</span>
-                    <span className="text-lg font-bold font-mono">{shopQueue.length}</span>
+                    <span className="text-[7px] md:text-[10px] text-stone-500 font-bold uppercase tracking-wider">Queue</span>
+                    <span className="text-sm md:text-lg font-bold font-mono">{shopQueue.length}</span>
                 </div>
             </div>
         )}
 
         {isShopOpen && activeCustomer && (
-            <>
-                <div className="absolute top-[15%] left-10 z-50 animate-in slide-in-from-left-10 fade-in duration-500">
-                     <div 
-                        className="w-64 h-32 flex items-center justify-center"
-                        style={{ backgroundImage: `url(${getAssetUrl('bubble_thought.png')})`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
-                    >
-                        <div className="pb-6 pl-2 flex items-center gap-3">
-                            <div className="bg-stone-100/90 p-1.5 rounded-lg backdrop-blur-sm border border-stone-300 flex items-center justify-center w-12 h-12 shadow-inner">
-                                <img 
-                                    src={getItemImageUrl(activeCustomer.request.requestedId)} 
-                                    className="w-8 h-8 object-contain drop-shadow-sm" 
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                    }}
-                                />
-                                <span className="hidden text-2xl">{getItemIcon(activeCustomer.request.requestedId)}</span>
-                            </div>
-                            <div className="leading-tight">
-                                <div className="font-bold text-stone-800 text-sm line-clamp-1 w-24">{getItemName(activeCustomer.request.requestedId)}</div>
-                                <div className="text-xs font-bold text-emerald-600 flex items-center gap-0.5">
-                                    <Coins className="w-3 h-3" />
-                                    {activeCustomer.request.price} G
-                                </div>
-                            </div>
+            <div className="absolute top-[8%] md:top-[10%] left-4 md:left-10 z-50 animate-in slide-in-from-left-10 fade-in duration-500">
+                <div className="w-36 md:w-48 bg-stone-950/80 border border-stone-700/50 p-2 md:p-3 rounded-2xl backdrop-blur-xl shadow-2xl text-[9px] md:text-xs ring-1 ring-white/10">
+                    <div className="flex items-center justify-between mb-1.5 md:mb-2">
+                        <span className="font-black text-amber-500 uppercase tracking-tighter">{activeCustomer.mercenary.job}</span>
+                        <span className="text-stone-500 font-mono">Lv.{activeCustomer.mercenary.level}</span>
+                    </div>
+                    <div className="space-y-1 mb-1.5 md:mb-2">
+                        <div className="w-full bg-stone-900 h-1 md:h-1.5 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                            <div className="bg-red-600 h-full shadow-[0_0_10px_rgba(220,38,38,0.5)]" style={{ width: `${(activeCustomer.mercenary.currentHp / activeCustomer.mercenary.maxHp) * 100}%` }}></div>
+                        </div>
+                        <div className="w-full bg-stone-900 h-1 md:h-1.5 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                            <div className="bg-blue-600 h-full shadow-[0_0_10px_rgba(37,99,235,0.5)]" style={{ width: `${(activeCustomer.mercenary.currentMp / activeCustomer.mercenary.maxMp) * 100}%` }}></div>
                         </div>
                     </div>
-                </div>
-
-                <div className="absolute top-[15%] right-10 z-50 animate-in slide-in-from-right-10 fade-in duration-500">
-                    <div className="w-48 bg-stone-900/90 border border-stone-700 p-3 rounded-lg backdrop-blur-sm shadow-xl text-xs">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="font-bold text-amber-500">{activeCustomer.mercenary.job}</span>
-                            <span className="text-stone-500">Lv.{activeCustomer.mercenary.level}</span>
-                        </div>
-                        <div className="space-y-1 mb-2">
-                            <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
-                                <div className="bg-red-500 h-full" style={{ width: `${(activeCustomer.mercenary.currentHp / activeCustomer.mercenary.maxHp) * 100}%` }}></div>
-                            </div>
-                            <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
-                                <div className="bg-blue-500 h-full" style={{ width: `${(activeCustomer.mercenary.currentMp / activeCustomer.mercenary.maxMp) * 100}%` }}></div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1 text-pink-400 font-bold">
-                            <Heart className="w-3 h-3 fill-pink-400" />
-                            <span>{activeCustomer.mercenary.affinity}</span>
-                        </div>
+                    <div className="flex items-center gap-1.5 text-pink-500 font-black">
+                        <Heart className="w-3 h-3 fill-pink-500" />
+                        <span>{activeCustomer.mercenary.affinity}</span>
                     </div>
                 </div>
-            </>
+            </div>
         )}
 
-        <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
+        {/* Character Placement - Even Larger (h-110dvh) and Lower (translate-y-30dvh) */}
+        <div className="absolute inset-0 z-20 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
             {isShopOpen && activeCustomer && (
-               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-200 ease-out">
-                   <div className="relative h-[85vh] w-auto flex justify-center translate-y-12">
+               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-500 ease-out">
+                   <div className="relative h-[110dvh] md:h-[120dvh] w-auto flex justify-center translate-y-[30dvh]">
                        <img 
                            src={activeCustomer.mercenary.sprite ? getAssetUrl(activeCustomer.mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
                            alt="Adventurer"
-                           className="h-full object-contain object-bottom filter drop-shadow-2xl"
+                           className="h-full object-contain object-bottom filter drop-shadow-[0_0_60px_rgba(0,0,0,0.9)]"
                        />
                    </div>
                </div>
             )}
         </div>
 
-        <div className="absolute bottom-0 w-full z-30 flex items-end justify-center pointer-events-none">
+        <div className="absolute bottom-0 w-full h-24 md:h-40 z-30 flex items-end justify-center pointer-events-none">
             {!counterImgError ? (
                 <img 
                     src={getAssetUrl('shop_counter.png')}
                     alt="Shop Counter"
-                    className="w-full h-full object-cover object-top filter drop-shadow-[0_-10px_20px_rgba(0,0,0,0.5)]"
+                    className="w-full h-full object-cover object-top filter drop-shadow-[0_-15px_30px_rgba(0,0,0,0.6)]"
                     onError={() => setCounterImgError(true)}
                 />
             ) : (
-                <div className="w-full h-full bg-[#3f2e22] border-t-[6px] border-[#5d4037] shadow-[0_-10px_20px_rgba(0,0,0,0.5)] relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-10" style={{ 
-                        backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 12px)' 
-                    }}></div>
+                <div className="w-full h-full bg-[#3f2e22] border-t-2 md:border-t-[8px] border-[#5d4037] shadow-[0_-20px_40px_rgba(0,0,0,0.7)] relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 12px)' }}></div>
                 </div>
-            )}
-            {isShopOpen && activeCustomer && (
-                <div className="absolute top-0 right-20 w-32 h-20 bg-amber-900/20 blur-xl rounded-full pointer-events-none"></div>
             )}
         </div>
 
@@ -235,51 +187,41 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             <DialogueBox 
                 speaker={activeCustomer.mercenary.name}
                 text={activeCustomer.request.dialogue}
+                highlightTerm={getItemName(activeCustomer.request.requestedId)}
+                itemDetail={{
+                    icon: getItemIcon(activeCustomer.request.requestedId),
+                    imageUrl: getItemImageUrl(activeCustomer.request.requestedId),
+                    price: activeCustomer.request.price
+                }}
                 options={[
-                    { 
-                        label: `Sell (${activeCustomer.request.price} G)`, 
-                        action: handleSell, 
-                        variant: 'primary',
-                        disabled: !hasItem()
-                    },
-                    { 
-                        label: "Refuse", 
-                        action: handleRefuse, 
-                        variant: 'danger' 
-                    }
+                    { label: `Sell (${activeCustomer.request.price} G)`, action: handleSell, variant: 'primary', disabled: !hasItem() },
+                    { label: "Refuse", action: handleRefuse, variant: 'danger' }
                 ]}
             />
         )}
 
         {!isShopOpen && (
             <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] transition-opacity duration-700 animate-in fade-in"></div>
-                
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-1000 animate-in fade-in"></div>
                 <div className="relative z-10 flex flex-col items-center animate-in zoom-in-95 duration-500">
                     {!canAffordOpen ? (
-                        <div className="bg-stone-900 border-2 border-red-900 p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center max-w-xs ring-4 ring-black/50">
-                            <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mb-4 border border-red-800/50">
-                                <ZapOff className="w-8 h-8 text-red-500 animate-pulse" />
+                        <div className="bg-stone-950/90 border-2 border-red-900/50 p-6 md:p-10 rounded-[2rem] shadow-2xl flex flex-col items-center text-center max-w-xs ring-4 ring-black/50 backdrop-blur-2xl">
+                            <div className="w-16 h-16 md:w-20 md:h-20 bg-red-950/30 rounded-full flex items-center justify-center mb-4 border border-red-800/30">
+                                <ZapOff className="w-8 h-8 md:w-10 md:h-10 text-red-500 animate-pulse" />
                             </div>
-                            <h3 className="text-xl font-bold text-red-100 font-serif">Exhausted</h3>
-                            <p className="text-stone-500 text-sm mt-2 mb-6">
-                                You don't have the energy to manage the counter today. Get some rest.
+                            <h3 className="text-xl md:text-2xl font-black text-red-100 font-serif uppercase tracking-tight">Exhausted</h3>
+                            <p className="text-stone-500 text-xs md:text-base mt-2 mb-6 leading-relaxed">
+                                You lack the energy to manage the counter. Take a rest to recover.
                             </p>
-                            <button 
-                                onClick={() => onNavigate('FORGE')}
-                                className="w-full py-3 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg font-bold text-sm transition-all border border-stone-700 pointer-events-auto flex items-center justify-center gap-2"
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                Return to Forge
-                            </button>
+                            <button onClick={() => onNavigate('FORGE')} className="w-full py-3 md:py-4 bg-stone-900 hover:bg-stone-800 text-stone-200 rounded-xl font-black text-xs md:text-sm transition-all border border-stone-700 pointer-events-auto flex items-center justify-center gap-2 uppercase tracking-widest"><ArrowLeft className="w-4 h-4" />Back to Forge</button>
                         </div>
                     ) : (
                         <div className="text-center group">
-                             <div className="w-20 h-20 bg-stone-800/80 rounded-full flex items-center justify-center mx-auto mb-4 border border-stone-700 backdrop-blur-sm shadow-xl transition-transform group-hover:scale-110 duration-500">
-                                <Store className="w-8 h-8 text-stone-500" />
+                             <div className="w-20 h-20 md:w-24 md:h-24 bg-stone-900/80 rounded-full flex items-center justify-center mx-auto mb-4 border border-stone-700/50 backdrop-blur-xl shadow-2xl transition-transform group-hover:scale-110 duration-700 ring-1 ring-white/5">
+                                <Store className="w-8 h-8 md:w-10 md:h-10 text-stone-500" />
                             </div>
-                            <h3 className="text-2xl font-bold text-stone-300 font-serif tracking-wide drop-shadow-md uppercase">Shop is Closed</h3>
-                            <p className="text-stone-500 text-sm mt-1 font-medium">Flip the sign to welcome customers.</p>
+                            <h3 className="text-2xl md:text-4xl font-black text-stone-300 font-serif tracking-tighter drop-shadow-2xl uppercase">Shop is Closed</h3>
+                            <p className="text-stone-500 text-sm md:text-lg mt-2 font-black uppercase tracking-widest opacity-60">Flip the sign to welcome travelers</p>
                         </div>
                     )}
                 </div>
@@ -288,12 +230,11 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
         {isShopOpen && !activeCustomer && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none pb-20">
-                <div className="text-center animate-in fade-in zoom-in duration-500">
-                    <div className="w-24 h-24 bg-black/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 backdrop-blur-sm">
-                        <Store className="w-10 h-10 text-stone-500" />
+                <div className="text-center animate-in fade-in zoom-in duration-1000">
+                    <div className="w-20 h-20 md:w-28 md:h-28 bg-black/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 backdrop-blur-xl shadow-inner">
+                        <Store className="w-10 h-10 md:w-12 md:h-12 text-stone-700 animate-pulse" />
                     </div>
-                    <h3 className="text-xl font-bold text-stone-400">Waiting for customers...</h3>
-                    <p className="text-stone-500 text-sm mt-1">They come and go as they please.</p>
+                    <h3 className="text-lg md:text-2xl font-black text-stone-500 uppercase tracking-[0.3em] opacity-40">Awaiting Customers</h3>
                 </div>
             </div>
         )}

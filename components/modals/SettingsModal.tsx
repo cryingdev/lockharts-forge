@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Save, Upload, Volume2, LogOut, X, Settings } from 'lucide-react';
 
@@ -39,7 +38,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit }
     ];
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-stone-900 border-2 border-stone-700 rounded-xl w-full max-w-sm shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
                 
                 {/* Header */}

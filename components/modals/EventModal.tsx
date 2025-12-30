@@ -8,7 +8,6 @@ const EventModal = () => {
 
   if (!activeEvent) return null;
 
-  // Helper to check if player can afford an option
   const canAfford = (option: typeof activeEvent.options[0]) => {
     if (!option.cost) return true;
     if (option.cost.gold && stats.gold < option.cost.gold) return false;
@@ -21,7 +20,6 @@ const EventModal = () => {
     return true;
   };
 
-  // Determine Icon based on title/content
   const getIcon = () => {
       const title = activeEvent.title.toLowerCase();
       if (title.includes('forge') || title.includes('furnace')) return <Flame className="w-8 h-8 text-amber-500" />;
@@ -30,25 +28,25 @@ const EventModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-stone-900 border-2 border-amber-600 rounded-xl max-w-lg w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="bg-stone-900 border-2 border-amber-600 rounded-xl max-w-lg w-full max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
         
-        {/* Header */}
-        <div className="bg-stone-800 p-6 border-b border-stone-700 flex items-center space-x-4">
-          <div className="bg-amber-900/30 p-3 rounded-full border border-amber-700">
+        {/* Header - Compact for mobile */}
+        <div className="bg-stone-800 p-4 md:p-6 border-b border-stone-700 flex items-center space-x-4 shrink-0">
+          <div className="bg-amber-900/30 p-2 md:p-3 rounded-full border border-amber-700">
             {getIcon()}
           </div>
-          <h2 className="text-2xl font-serif text-amber-100">{activeEvent.title}</h2>
+          <h2 className="text-xl md:text-2xl font-serif text-amber-100 truncate">{activeEvent.title}</h2>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          <p className="text-stone-300 text-lg leading-relaxed italic">
+        {/* Content - Scrollable */}
+        <div className="p-4 md:p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+          <p className="text-stone-300 text-base md:text-lg leading-relaxed italic">
             "{activeEvent.description}"
           </p>
 
           {/* Options */}
-          <div className="space-y-3">
+          <div className="space-y-3 pb-2">
             {activeEvent.options.map((option, idx) => {
               const affordable = canAfford(option);
               return (
@@ -56,17 +54,17 @@ const EventModal = () => {
                   key={idx}
                   onClick={() => affordable && actions.handleEventOption(option.action)}
                   disabled={!affordable}
-                  className={`w-full text-left p-4 rounded-lg border transition-all flex justify-between items-center group ${
+                  className={`w-full text-left p-3 md:p-4 rounded-lg border transition-all flex justify-between items-center group ${
                     affordable 
                       ? 'bg-stone-800 border-stone-600 hover:border-amber-500 hover:bg-stone-750 text-stone-100' 
                       : 'bg-stone-900/50 border-stone-800 text-stone-600 cursor-not-allowed'
                   }`}
                 >
-                  <span className="font-medium group-hover:text-amber-400 transition-colors">{option.label}</span>
+                  <span className="font-medium text-sm md:text-base group-hover:text-amber-400 transition-colors">{option.label}</span>
                   {affordable ? (
-                     <CheckCircle className="w-5 h-5 text-stone-500 group-hover:text-amber-500" />
+                     <CheckCircle className="w-5 h-5 text-stone-500 group-hover:text-amber-500 shrink-0" />
                   ) : (
-                     <XCircle className="w-5 h-5 text-red-900" />
+                     <XCircle className="w-5 h-5 text-red-900 shrink-0" />
                   )}
                 </button>
               );
