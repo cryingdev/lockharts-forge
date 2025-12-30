@@ -102,7 +102,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         
         <div className="absolute inset-0 z-0">
             <img 
-                src={getAssetUrl('shop_interior.png')} 
+                src={getAssetUrl('shop_bg.jpeg')} 
                 alt="Shop Interior" 
                 className="absolute top-0 opacity-60 w-full h-full object-cover"
                 onError={(e) => {
