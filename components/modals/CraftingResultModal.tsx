@@ -46,7 +46,7 @@ const CraftingResultModal = () => {
 
         return (
             <div 
-                className={`bg-stone-950/50 p-2 md:p-3 rounded-xl border transition-all hover:bg-stone-900 group cursor-help flex justify-between items-center ${
+                className={`bg-stone-950/50 p-2 md:p-3 rounded-xl border transition-all hover:bg-stone-900 group flex justify-between items-center ${
                     status === 'UP' ? 'border-amber-600/40 shadow-[inner_0_0_10px_rgba(245,158,11,0.1)]' : 
                     status === 'DOWN' ? 'border-red-900/40 shadow-[inner_0_0_10px_rgba(239,68,68,0.05)]' : 
                     'border-stone-800'
@@ -71,32 +71,30 @@ const CraftingResultModal = () => {
     };
 
     return (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-500 overflow-hidden">
-            <div className="relative z-10 w-full max-w-md max-h-[95vh] bg-stone-900 border-2 border-amber-600 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-2 md:p-4 animate-in fade-in duration-500 overflow-hidden">
+            <div className="relative z-10 w-full max-w-md max-h-[95dvh] bg-stone-900 border-2 border-amber-600/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
                 
                 {/* Header - Compact for small screens */}
-                <div className="bg-stone-850 p-4 md:p-6 border-b border-stone-800 flex flex-col items-center text-center relative overflow-hidden shrink-0">
+                <div className="bg-stone-850 p-3 md:p-6 border-b border-stone-800 flex flex-col items-center text-center relative overflow-hidden shrink-0">
                     <div className="absolute top-0 right-0 p-2 opacity-5 hidden md:block">
                          <Hammer className="w-20 h-20 text-stone-500" />
                     </div>
-                    <div className={`w-16 h-16 md:w-24 md:h-24 bg-stone-900 rounded-full border-4 ${qColor.replace('text-', 'border-')} flex items-center justify-center mb-2 md:mb-4 shadow-2xl`}>
+                    <div className={`w-14 h-14 md:w-24 md:h-24 bg-stone-900 rounded-full border-4 ${qColor.replace('text-', 'border-')} flex items-center justify-center mb-1.5 md:mb-4 shadow-2xl transition-all`}>
                         <img 
                             src={imageUrl} 
-                            className="w-10 h-10 md:w-16 md:h-16 object-contain drop-shadow-lg" 
-                            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                            className="w-9 h-9 md:w-16 md:h-16 object-contain drop-shadow-lg" 
                         />
-                        <span className="hidden text-3xl md:text-5xl">{item.icon || '📦'}</span>
                     </div>
-                    <h2 className="text-xl md:text-2xl font-bold text-stone-200 font-serif tracking-wide truncate w-full">{data.name}</h2>
-                    <div className={`flex items-center gap-2 mt-1 md:mt-2 px-3 py-0.5 md:py-1 rounded-full bg-stone-950 border border-stone-800 font-bold uppercase tracking-widest text-[9px] md:text-[10px] ${qColor}`}>
+                    <h2 className="text-lg md:text-2xl font-bold text-stone-200 font-serif tracking-wide truncate w-full leading-tight">{data.name}</h2>
+                    <div className={`flex items-center gap-2 mt-1 md:mt-2 px-3 py-0.5 md:py-1 rounded-full bg-stone-950 border border-stone-800 font-bold uppercase tracking-widest text-[8px] md:text-[10px] ${qColor}`}>
                         <Star className="w-2.5 h-2.5 md:w-3 md:h-3 fill-current" />
                         {label} Quality
                     </div>
                 </div>
 
                 {/* Content - Scrollable */}
-                <div className="p-4 md:p-6 space-y-4 md:space-y-5 overflow-y-auto flex-1 custom-scrollbar">
-                    <p className="text-stone-400 text-xs md:text-sm text-center italic leading-relaxed px-2">
+                <div className="p-3 md:p-6 space-y-3 md:space-y-5 overflow-y-auto flex-1 custom-scrollbar">
+                    <p className="text-stone-400 text-[10px] md:text-sm text-center italic leading-relaxed px-2">
                         "{item.description}"
                     </p>
 
@@ -107,19 +105,19 @@ const CraftingResultModal = () => {
                         {renderStatItem(<Brain className="w-3 h-3" />, "M.Def", "magicalDefense", data.stats.magicalDefense)}
                     </div>
 
-                    <div className="flex justify-between items-center text-xs border-t border-stone-800 pt-3 md:pt-4 px-2">
+                    <div className="flex justify-between items-center text-[10px] border-t border-stone-800/50 pt-3 md:pt-4 px-2">
                         <span className="text-stone-500 uppercase font-bold tracking-tighter">Market Value</span>
-                        <span className="text-amber-500 font-mono font-bold text-base md:text-lg">{data.price} G</span>
+                        <span className="text-amber-500 font-mono font-bold text-sm md:text-lg">{data.price} G</span>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-stone-800 bg-stone-850 shrink-0">
+                <div className="p-3 md:p-4 border-t border-stone-800 bg-stone-850 shrink-0">
                     <button 
                         onClick={actions.dismissCraftingResult}
-                        className="w-full py-3 md:py-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95"
+                        className="w-full py-2.5 md:py-4 bg-amber-700 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95 text-xs md:text-base"
                     >
-                        <Check className="w-5 h-5" />
+                        <Check className="w-4 h-4 md:w-5 md:h-5" />
                         Complete Forge
                     </button>
                 </div>
