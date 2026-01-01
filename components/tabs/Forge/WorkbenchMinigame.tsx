@@ -16,6 +16,7 @@ class WorkbenchScene extends Phaser.Scene {
   public tweens!: Phaser.Tweens.TweenManager;
   public cameras!: Phaser.Cameras.Scene2D.CameraManager;
   public scale!: Phaser.Scale.ScaleManager;
+  public input!: Phaser.Input.InputPlugin;
   public time!: Phaser.Time.Clock;
   public textures!: Phaser.Textures.TextureManager;
   public children!: Phaser.GameObjects.DisplayList;
@@ -43,6 +44,7 @@ class WorkbenchScene extends Phaser.Scene {
   private confirmedProgress: number = 0; 
   private perfectCombo: number = 0;
   private bonusStats: number = 0;
+  private currentQuality: number = 100; // Synchronized with Smithing: Start at 100
   private persistentElements: (Phaser.GameObjects.GameObject)[] = [];
   private isFinished: boolean = false;
   private onComplete?: (score: number, bonus?: number) => void;
@@ -56,6 +58,7 @@ class WorkbenchScene extends Phaser.Scene {
     super('WorkbenchScene');
   }
 
+  // Synchronized with SmithingScene
   public getQualityLabel(q: number): string {
     if (q >= 110) return "MASTERWORK";
     if (q >= 100) return "PRISTINE";
@@ -64,6 +67,17 @@ class WorkbenchScene extends Phaser.Scene {
     if (q >= 70) return "STANDARD";
     if (q >= 60) return "RUSTIC";
     return "CRUDE";
+  }
+
+  // Synchronized with SmithingScene
+  private getLabelColor(q: number): string {
+    if (q >= 110) return '#f59e0b';
+    if (q >= 100) return '#fbbf24';
+    if (q >= 90) return '#10b981';
+    if (q >= 80) return '#3b82f6';
+    if (q >= 70) return '#a8a29e';
+    if (q >= 60) return '#d97706';
+    return '#ef4444';
   }
 
   init(data: { onComplete: (score: number, bonus?: number) => void, difficulty: number }) {
@@ -76,6 +90,7 @@ class WorkbenchScene extends Phaser.Scene {
     this.confirmedProgress = 0;
     this.perfectCombo = 0;
     this.bonusStats = 0;
+    this.currentQuality = 100; // Reset to base 100
     this.isFinished = false;
     this.cursorProgress = 0;
   }
@@ -127,9 +142,8 @@ class WorkbenchScene extends Phaser.Scene {
 
   private handleScreenClick(vx: number, vy: number) {
     if (this.isFinished) return;
-    // Find closest node to virtual tap
     for (const node of this.targetNodes) {
-        if (Phaser.Geom.Circle.Contains(new Phaser.Geom.Circle(node.x, node.y, 40), vx, vy)) {
+        if (Phaser.Geom.Circle.Contains(new Phaser.Geom.Circle(node.x, node.y, 45), vx, vy)) {
             this.handleNodeClick(node);
             return;
         }
@@ -240,6 +254,7 @@ class WorkbenchScene extends Phaser.Scene {
         const p = seg.min + Math.random() * (seg.max - seg.min);
         const node = this.add.circle(0, 0, 20, 0x10b981, 0.2).setStrokeStyle(3, 0x10b981).setDepth(5);
         (node as any).progressPos = p; (node as any).isHit = false; (node as any).isMissed = false;
+        this.totalNodesSpawned++;
         this.targetNodes.push(node);
         this.tweens.add({ targets: node, scale: { from: 0, to: 1 }, duration: 300, delay: idx * 50, ease: 'Back.out' });
         this.root.add(node);
@@ -253,15 +268,22 @@ class WorkbenchScene extends Phaser.Scene {
     if (diff < 0.08) {
         const isPerfect = (1 - (diff / 0.08)) > 0.8;
         (node as any).isHit = true; this.totalNodesHit++; this.hitsInCurrentCycle++;
+        
         if (isPerfect) {
-            this.perfectCombo++; this.showFeedback('PERFECT!', 0xfbbf24, node.x, node.y);
+            this.perfectCombo++;
+            this.currentQuality += 1; // Gain quality on Perfect
+            this.showFeedback('PERFECT!', 0xfbbf24, node.x, node.y);
             if (this.perfectCombo >= 8) {
                 this.bonusStats++;
                 const bonusTxt = this.add.text(node.x, node.y, '+1', { fontFamily: 'monospace', fontSize: '18px', color: '#fbbf24', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
                 this.root.add(bonusTxt);
                 this.persistentElements.push(bonusTxt);
             }
-        } else { this.perfectCombo = 0; this.showFeedback('GOOD!', 0x10b981, node.x, node.y); }
+        } else { 
+            this.perfectCombo = 0; 
+            this.currentQuality = Math.max(0, this.currentQuality - 1); // Slight loss on Good
+            this.showFeedback('GOOD!', 0x10b981, node.x, node.y); 
+        }
         this.cameras.main.shake(100, 0.005);
         this.tweens.add({ targets: node, scale: 0.4, duration: 200, onStart: () => { node.setFillStyle(isPerfect ? 0xfbbf24 : 0x10b981, 1); node.setStrokeStyle(0); } });
     } else this.handleMiss(node);
@@ -269,7 +291,10 @@ class WorkbenchScene extends Phaser.Scene {
 
   handleMiss(node: Phaser.GameObjects.Arc) {
       if ((node as any).isMissed || (node as any).isHit) return;
-      (node as any).isMissed = true; this.perfectCombo = 0;
+      (node as any).isMissed = true; 
+      this.perfectCombo = 0;
+      this.currentQuality = Math.max(0, this.currentQuality - 4); // Significant loss on Miss
+      
       node.setFillStyle(0xef4444, 1).setStrokeStyle(0);
       const xMark = this.add.text(node.x, node.y, '×', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
       this.root.add(xMark);
@@ -291,13 +316,32 @@ class WorkbenchScene extends Phaser.Scene {
 
   finishGame() {
       this.isFinished = true; this.cursor.setVisible(false);
-      const quality = Math.round((this.totalNodesSpawned > 0 ? (this.totalNodesHit / this.totalNodesSpawned) : 0) * 100);
-      const label = this.getQualityLabel(quality);
+      const label = this.getQualityLabel(this.currentQuality);
+      const labelColor = this.getLabelColor(this.currentQuality);
+      
       const bg = this.add.rectangle(this.centerX, this.centerY, this.virtualW, this.virtualH, 0x000000, 0.85).setAlpha(0).setDepth(50);
       this.root.add(bg);
-      const txt = this.add.text(this.centerX, this.centerY - 40, quality < 30 ? 'DEFECTIVE' : `${label} CRAFT!`, { fontFamily: 'serif', fontSize: '40px', color: quality < 30 ? '#ef4444' : '#10b981', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0).setDepth(51);
+      
+      const txt = this.add.text(this.centerX, this.centerY - 40, `${label} CRAFT!`, { 
+        fontFamily: 'serif', 
+        fontSize: '40px', 
+        color: labelColor, 
+        stroke: '#000', 
+        strokeThickness: 5 
+      }).setOrigin(0.5).setAlpha(0).setDepth(51);
+      
       this.root.add(txt);
-      this.tweens.add({ targets: [bg, txt], alpha: 1, duration: 500, onComplete: () => { this.time.delayedCall(1500, () => { if (this.onComplete) this.onComplete(quality, this.bonusStats); }); } });
+      
+      this.tweens.add({ 
+        targets: [bg, txt], 
+        alpha: 1, 
+        duration: 500, 
+        onComplete: () => { 
+          this.time.delayedCall(1500, () => { 
+            if (this.onComplete) this.onComplete(this.currentQuality, this.bonusStats); 
+          }); 
+        } 
+      });
   }
 }
 

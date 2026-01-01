@@ -47,29 +47,34 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
 
   return (
     <header className="w-full bg-slate-900 border-b border-slate-700 p-2 md:p-3 shadow-lg shrink-0 z-20">
-      <div className="max-w-7xl mx-auto flex justify-between items-center text-slate-100 gap-2 md:gap-4">
+      {/* 
+          max-w-7xl 및 mx-auto를 제거하여 
+          화면이 넓어져도 항상 양 끝(Edge-to-Edge) 레이아웃을 유지합니다. 
+      */}
+      <div className="w-full flex items-center justify-between text-slate-100 gap-2 md:gap-4 px-1 md:px-2">
         
-        <div className="flex items-center flex-1 min-w-0 gap-2 md:gap-3">
-             <div className="flex items-center space-x-1 md:space-x-2 bg-slate-800 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-slate-700 shrink-0">
-                <Calendar className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                <span className="font-bold text-xs md:text-sm tracking-wide">Day {day}</span>
-            </div>
-
-            <button 
-                onClick={actions.toggleJournal}
-                className="flex-1 flex items-center gap-2 md:gap-3 px-2 md:px-3 py-1 md:py-1.5 bg-slate-900/50 hover:bg-slate-800 rounded-lg border border-slate-800/50 hover:border-slate-600 transition-all group min-w-0 text-left"
-                title="Open Journal / View Logs"
-            >
-                <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-slate-500 group-hover:text-amber-400 shrink-0 transition-colors" />
-                <div className="hidden sm:block flex-1 min-w-0">
-                    <LogTicker message={state.logs[0] || ''} />
-                </div>
-                <span className="sm:hidden text-[10px] text-slate-500 font-mono truncate">
-                    {state.logs[0] ? 'Log...' : 'Journal'}
-                </span>
-            </button>
+        {/* Left: Date info (Pinned Left) */}
+        <div className="flex items-center space-x-1 md:space-x-2 bg-slate-800 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-slate-700 shrink-0 shadow-inner">
+            <Calendar className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+            <span className="font-bold text-xs md:text-sm tracking-wide">Day {day}</span>
         </div>
 
+        {/* Center: Flexible Journal/Ticker (Fluid - Takes all remaining space) */}
+        <button 
+            onClick={actions.toggleJournal}
+            className="flex-1 min-w-0 flex items-center gap-2 md:gap-3 px-2 md:px-3 py-1 md:py-1.5 bg-slate-900/50 hover:bg-slate-800 rounded-lg border border-slate-800/50 hover:border-slate-600 transition-all group text-left overflow-hidden"
+            title="Open Journal / View Logs"
+        >
+            <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-slate-500 group-hover:text-amber-400 shrink-0 transition-colors" />
+            <div className="hidden sm:block flex-1 min-w-0">
+                <LogTicker message={state.logs[0] || ''} />
+            </div>
+            <span className="sm:hidden text-[10px] text-slate-500 font-mono truncate">
+                {state.logs[0] ? 'Recent log...' : 'Journal'}
+            </span>
+        </button>
+
+        {/* Right: Stats & System (Pinned Right) */}
         <div className="flex items-center space-x-2 md:space-x-4 shrink-0">
           <div className={`flex flex-col w-20 md:w-28 p-1 rounded-md transition-all ease-out ${
               uiEffects.energyHighlight 
@@ -84,7 +89,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
               }`} /> 
               <span className={`font-mono transition-all ease-out ${
                   uiEffects.energyHighlight 
-                  ? 'text-white font-black scale-105 duration-150 drop-shadow-[0_0_10px_rgba(255,255,255,1)]' 
+                  ? 'text-white font-black scale-105 duration-150 drop-shadow-[0_0_100px_rgba(255,255,255,1)]' 
                   : 'text-slate-300 duration-[3000ms] scale-100'
               }`}>
                 {energy}/{maxEnergy}
@@ -105,16 +110,16 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
 
           <button
             onClick={actions.rest}
-            className="flex items-center space-x-1 md:space-x-2 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-indigo-700/50 transition-colors"
+            className="flex items-center space-x-1 md:space-x-2 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-indigo-700/50 transition-colors shadow-sm"
             title="End the Day"
           >
             <BedDouble className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            <span className="text-[10px] md:text-sm font-bold hidden xs:inline">Rest</span>
+            <span className="text-[10px] md:text-sm font-bold hidden xs:inline uppercase tracking-widest">Rest</span>
           </button>
 
           <button
             onClick={onSettingsClick}
-            className="p-1.5 md:p-2 text-stone-400 hover:text-stone-200 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-lg transition-all"
+            className="p-1.5 md:p-2 text-stone-400 hover:text-stone-200 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-lg transition-all shadow-sm"
             title="System Menu"
           >
             <Settings className="w-4 h-4 md:w-5 md:h-5" />
