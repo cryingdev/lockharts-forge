@@ -5,7 +5,7 @@ import { getAssetUrl } from '../utils';
  * IntroScene
  * - No CSS forced rotation.
  * - If the screen is portrait (width < height), we render the intro in a "virtual landscape"
- *   coordinate system by rotating a single root container (-90deg) and swapping virtual width/height.
+ *   coordinate system by rotating a single root container (+90deg) and swapping virtual width/height.
  * - All layout calculations use (virtualW, virtualH) so the intro composition stays "landscape-like".
  *
  * NOTE:
@@ -171,11 +171,11 @@ export default class IntroScene extends Phaser.Scene {
    */
   private toVirtual(sx: number, sy: number) {
     if (!this.isPortrait) return { x: sx, y: sy };
-    // When portrait, we rotate root -90deg with position(0, virtualW).
+    // When portrait, we rotate root +90deg and shift it right by virtualH: position(virtualH, 0).
     // The mapping becomes: screen (sx,sy) -> virtual (x,y)
-    // x = virtualW - sy
-    // y = sx
-    return { x: this.virtualW - sy, y: sx };
+    // x = sy
+    // y = virtualH - sx
+    return { x: sy, y: this.virtualH - sx };
   }
 
   /**
@@ -194,9 +194,9 @@ export default class IntroScene extends Phaser.Scene {
 
     // Rotate root in portrait so the composition appears landscape-like
     if (this.isPortrait) {
-      // With rotation -90deg, we shift down by virtualW to keep visible quadrant
-      this.root.setRotation(-Math.PI / 2);
-      this.root.setPosition(0, this.virtualW);
+      // With rotation +90deg, we shift right by virtualH to keep visible quadrant
+      this.root.setRotation(Math.PI / 2);
+      this.root.setPosition(this.virtualH, 0);
     } else {
       this.root.setRotation(0);
       this.root.setPosition(0, 0);
