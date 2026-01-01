@@ -1,8 +1,10 @@
+
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
 export interface SmithingSceneData {
-  onComplete: (score: number) => void;
+  // Fix: Updated onComplete signature to support optional bonus parameter
+  onComplete: (score: number, bonus?: number) => void;
   onStatusUpdate?: (temp: number) => void;
   onHeatUpRequest?: () => void;
   difficulty: number;
@@ -85,7 +87,8 @@ export default class SmithingScene extends Phaser.Scene {
   private lastPumpTime: number = 0;
   private pumpCooldown: number = 100; 
   
-  private onComplete?: (score: number) => void;
+  // Fix: Updated onComplete signature in the scene property to match the data structure
+  private onComplete?: (score: number, bonus?: number) => void;
   private onStatusUpdate?: (temp: number) => void;
   private onHeatUpRequest?: () => void;
 
@@ -587,7 +590,8 @@ export default class SmithingScene extends Phaser.Scene {
     this.tweens.add({ targets: bg, alpha: 0.8, duration: 500 });
     const txt = this.add.text(this.centerX, this.centerY, `${this.getQualityLabel(this.currentQuality)} CRAFT!`, { fontFamily: 'Georgia', fontSize: '48px', color: this.getLabelColor(this.currentQuality), stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setAlpha(0).setDepth(101);
     this.root.add(txt);
-    this.tweens.add({ targets: txt, alpha: 1, scale: { from: 0.5, to: 1.1 }, duration: 600, ease: 'Back.out', onComplete: () => { this.time.delayedCall(1000, () => { if (this.onComplete) this.onComplete(this.currentQuality); }); } });
+    // Fix: Updated call to this.onComplete with 2 arguments matching the updated property signature
+    this.tweens.add({ targets: txt, alpha: 1, scale: { from: 0.5, to: 1.1 }, duration: 600, ease: 'Back.out', onComplete: () => { this.time.delayedCall(1000, () => { if (this.onComplete) this.onComplete(this.currentQuality, 0); }); } });
   }
 
   private highlightHeatUpBtn() {

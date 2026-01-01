@@ -14,9 +14,8 @@ class WorkbenchScene extends Phaser.Scene {
   private cursor!: Phaser.GameObjects.Rectangle;
   private progressBar!: Phaser.GameObjects.Rectangle;
   private progBg!: Phaser.GameObjects.Rectangle;
-  private cycleText!: Phaser.GameObjects.Text;
   private comboText!: Phaser.GameObjects.Text;
-  private instructionText!: Phaser.GameObjects.Text;
+  private qualityText!: Phaser.GameObjects.Text;
   private wavePathGraphics!: Phaser.GameObjects.Graphics;
   
   private centerX: number = 0;
@@ -32,6 +31,7 @@ class WorkbenchScene extends Phaser.Scene {
   private hitsInCurrentCycle: number = 0;
   private confirmedProgress: number = 0; 
   private perfectCombo: number = 0;
+  private currentQuality: number = 100;
   private bonusStats: number = 0;
   private persistentElements: (Phaser.GameObjects.GameObject)[] = [];
   private isFinished: boolean = false;
@@ -56,6 +56,17 @@ class WorkbenchScene extends Phaser.Scene {
     return "CRUDE";
   }
 
+  // Same color table as SmithingScene for visual consistency
+  private getLabelColor(q: number): string {
+    if (q >= 110) return '#f59e0b'; // Gold
+    if (q >= 100) return '#fbbf24'; // Amber
+    if (q >= 90) return '#10b981';  // Emerald
+    if (q >= 80) return '#3b82f6';  // Blue
+    if (q >= 70) return '#a8a29e';  // Stone
+    if (q >= 60) return '#d97706';  // Orange-ish
+    return '#ef4444';               // Red
+  }
+
   init(data: { onComplete: (score: number, bonus?: number) => void, difficulty: number }) {
     this.onComplete = data.onComplete;
     this.cursorSpeed = 0.00015 + (data.difficulty * 0.00002);
@@ -65,6 +76,7 @@ class WorkbenchScene extends Phaser.Scene {
     this.hitsInCurrentCycle = 0;
     this.confirmedProgress = 0;
     this.perfectCombo = 0;
+    this.currentQuality = 100;
     this.bonusStats = 0;
     this.isFinished = false;
     this.cursorProgress = 0;
@@ -91,8 +103,16 @@ class WorkbenchScene extends Phaser.Scene {
 
     this.progBg = this.add.rectangle(0, 0, 250, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e);
     this.progressBar = this.add.rectangle(0, 0, 0, 12, 0x10b981).setOrigin(0, 0.5);
-    this.cycleText = this.add.text(0, 0, `PROGRESS: 0%`, { fontFamily: 'monospace', fontSize: '16px', color: '#10b981', fontStyle: 'bold' }).setOrigin(0.5);
-    this.root.add([this.progBg, this.progressBar, this.cycleText]);
+    
+    // Initial text with matching Smithing style
+    this.qualityText = this.add.text(0, 0, 'PRISTINE', { 
+        fontFamily: 'monospace', 
+        fontSize: '16px', 
+        color: '#fbbf24', 
+        fontStyle: 'bold' 
+    }).setOrigin(0.5);
+    
+    this.root.add([this.progBg, this.progressBar, this.qualityText]);
 
     this.wavePathGraphics = this.add.graphics().setDepth(1);
     this.root.add(this.wavePathGraphics);
@@ -100,9 +120,15 @@ class WorkbenchScene extends Phaser.Scene {
     this.cursor = this.add.rectangle(0, 0, 4, 35, 0xffffff).setDepth(10).setStrokeStyle(1, 0xcccccc);
     this.root.add(this.cursor);
 
-    this.comboText = this.add.text(0, 0, '', { fontFamily: 'Impact', fontSize: '32px', color: '#10b981', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0).setDepth(20);
-    this.instructionText = this.add.text(0, 0, '', { fontFamily: 'monospace', fontSize: '12px', color: '#10b981', stroke: '#000', strokeThickness: 2, align: 'center' }).setOrigin(0.5);
-    this.root.add([this.comboText, this.instructionText]);
+    // Global combo text, usually hidden until multi-hits
+    this.comboText = this.add.text(0, 0, '', { 
+        fontFamily: 'Impact', 
+        fontSize: '32px', 
+        color: '#fbbf24', 
+        stroke: '#000', 
+        strokeThickness: 5 
+    }).setOrigin(0.5).setAlpha(0).setDepth(20);
+    this.root.add(this.comboText);
 
     this.handleResize(this.scale.gameSize);
     this.scale.on('resize', this.handleResize, this);
@@ -117,7 +143,6 @@ class WorkbenchScene extends Phaser.Scene {
 
   private handleScreenClick(vx: number, vy: number) {
     if (this.isFinished) return;
-    // Find closest node to virtual tap
     for (const node of this.targetNodes) {
         if (Phaser.Geom.Circle.Contains(new Phaser.Geom.Circle(node.x, node.y, 40), vx, vy)) {
             this.handleNodeClick(node);
@@ -151,7 +176,7 @@ class WorkbenchScene extends Phaser.Scene {
     this.waveAmplitude = isCompact ? 50 : 80;
     this.waveWidth = w * 0.85;
 
-    const bg = this.children.getByName('bgImg') as Phaser.GameObjects.Image;
+    const bg = this.root.getByName('bgImg') as Phaser.GameObjects.Image;
     if (bg) {
         bg.setPosition(this.centerX, this.centerY);
         bg.setScale(Math.max(w / bg.width, h / bg.height) * 1.1);
@@ -161,9 +186,8 @@ class WorkbenchScene extends Phaser.Scene {
     this.progBg.setPosition(this.centerX, 40).setSize(progW, 18);
     this.progressBar.setPosition(this.centerX - progW / 2, 40).width = (this.confirmedProgress / 100) * progW;
     
-    this.cycleText.setPosition(this.centerX, 70).setFontSize(isCompact ? '14px' : '18px');
-    this.comboText.setPosition(this.centerX, this.centerY - (isCompact ? 100 : 150));
-    this.instructionText.setPosition(this.centerX, h - 40).setText(isCompact ? 'STITCH UNTIL 100%' : 'STITCH UNTIL PROGRESS REACHES 100%');
+    // Position qualityText below the progress bar
+    this.qualityText.setPosition(this.centerX, 70).setFontSize(isCompact ? '14px' : '16px');
 
     this.drawWavePath();
     this.repositionNodes();
@@ -203,9 +227,8 @@ class WorkbenchScene extends Phaser.Scene {
     if (this.cursorProgress > 1) {
         this.cursorProgress = 0;
         if (this.hitsInCurrentCycle > 0) {
-            this.confirmedProgress = Math.min(100, this.confirmedProgress + 20);
-            this.progressBar.width = (this.confirmedProgress / 100) * this.progBg.width;
-            this.cycleText.setText(`PROGRESS: ${this.confirmedProgress}%`);
+            this.confirmedProgress = Math.min(100, this.confirmedProgress + 25);
+            this.updateUI();
         }
         if (this.confirmedProgress >= 100) { this.finishGame(); return; }
         this.currentCycle++; this.hitsInCurrentCycle = 0; this.spawnSegmentedNodes(); 
@@ -217,6 +240,12 @@ class WorkbenchScene extends Phaser.Scene {
     const freq = Math.PI * 2 * this.wavePeriods;
     const angle = Math.atan((this.waveAmplitude * freq / this.waveWidth) * Math.cos(this.cursorProgress * freq));
     this.cursor.setPosition(x, y).setRotation(angle + Math.PI / 2);
+  }
+
+  private updateUI() {
+    this.progressBar.width = (this.confirmedProgress / 100) * this.progBg.width;
+    // Real-time quality label and color update
+    this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
   }
 
   spawnSegmentedNodes() {
@@ -233,6 +262,7 @@ class WorkbenchScene extends Phaser.Scene {
         this.targetNodes.push(node);
         this.tweens.add({ targets: node, scale: { from: 0, to: 1 }, duration: 300, delay: idx * 50, ease: 'Back.out' });
         this.root.add(node);
+        this.totalNodesSpawned++;
     });
     this.repositionNodes();
   }
@@ -244,22 +274,31 @@ class WorkbenchScene extends Phaser.Scene {
         const isPerfect = (1 - (diff / 0.08)) > 0.8;
         (node as any).isHit = true; this.totalNodesHit++; this.hitsInCurrentCycle++;
         if (isPerfect) {
-            this.perfectCombo++; this.showFeedback('PERFECT!', 0xfbbf24, node.x, node.y);
+            this.perfectCombo++; 
             if (this.perfectCombo >= 8) {
+                this.currentQuality += 1;
                 this.bonusStats++;
                 const bonusTxt = this.add.text(node.x, node.y, '+1', { fontFamily: 'monospace', fontSize: '18px', color: '#fbbf24', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
                 this.root.add(bonusTxt);
                 this.persistentElements.push(bonusTxt);
             }
-        } else { this.perfectCombo = 0; this.showFeedback('GOOD!', 0x10b981, node.x, node.y); }
+            this.showFeedback('PERFECT!', 0xfbbf24, node.x, node.y);
+        } else { 
+            this.currentQuality = Math.max(0, this.currentQuality - 2);
+            this.perfectCombo = 0; 
+            this.showFeedback('GOOD!', 0x10b981, node.x, node.y); 
+        }
         this.cameras.main.shake(100, 0.005);
         this.tweens.add({ targets: node, scale: 0.4, duration: 200, onStart: () => { node.setFillStyle(isPerfect ? 0xfbbf24 : 0x10b981, 1); node.setStrokeStyle(0); } });
     } else this.handleMiss(node);
+    this.updateUI();
   }
 
   handleMiss(node: Phaser.GameObjects.Arc) {
       if ((node as any).isMissed || (node as any).isHit) return;
-      (node as any).isMissed = true; this.perfectCombo = 0;
+      (node as any).isMissed = true; 
+      this.currentQuality = Math.max(0, this.currentQuality - 5);
+      this.perfectCombo = 0;
       node.setFillStyle(0xef4444, 1).setStrokeStyle(0);
       const xMark = this.add.text(node.x, node.y, '×', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
       this.root.add(xMark);
@@ -267,25 +306,48 @@ class WorkbenchScene extends Phaser.Scene {
       this.tweens.add({ targets: node, scale: 0.4, duration: 200 });
       this.showFeedback('MISS', 0xef4444, node.x, node.y);
       this.cameras.main.shake(100, 0.005);
+      this.updateUI();
   }
 
   showFeedback(text: string, color: number, x: number, y: number) {
-      const fb = this.add.text(x, y - 40, text, { fontFamily: 'Arial Black', fontSize: '24px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0'), stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setDepth(20);
+      // Primary judgment text
+      const fb = this.add.text(x, y - 40, text, { 
+          fontFamily: 'Arial Black', 
+          fontSize: '24px', 
+          fontStyle: 'bold', 
+          color: '#' + color.toString(16).padStart(6, '0'), 
+          stroke: '#000', 
+          strokeThickness: 5 
+      }).setOrigin(0.5).setDepth(25);
       this.root.add(fb);
-      this.tweens.add({ targets: fb, y: fb.y - 30, alpha: 0, duration: 600, onComplete: () => fb.destroy() });
+      this.tweens.add({ targets: fb, y: y - 70, alpha: 0, duration: 600, onComplete: () => fb.destroy() });
+      
+      // Secondary combo text - exactly matching SmithingScene style
       if (this.perfectCombo > 1) {
-          this.comboText.setText(`${this.perfectCombo} PERFECT!`).setAlpha(1).setColor(this.perfectCombo >= 8 ? '#fbbf24' : '#10b981');
-          this.tweens.add({ targets: this.comboText, alpha: 0, duration: 800, delay: 500 });
+          this.comboText.setPosition(x, y - 75)
+              .setText(`${this.perfectCombo} COMBO!`)
+              .setAlpha(1)
+              .setScale(1.2)
+              .setColor(this.perfectCombo >= 8 ? '#fbbf24' : '#10b981');
+          
+          this.tweens.add({ 
+              targets: this.comboText, 
+              scale: { from: 1.4, to: 1 }, 
+              y: y - 105, 
+              alpha: 0, 
+              duration: 800, 
+              delay: 500 
+          });
       }
   }
 
   finishGame() {
       this.isFinished = true; this.cursor.setVisible(false);
-      const quality = Math.round((this.totalNodesSpawned > 0 ? (this.totalNodesHit / this.totalNodesSpawned) : 0) * 100);
+      const quality = this.currentQuality;
       const label = this.getQualityLabel(quality);
       const bg = this.add.rectangle(this.centerX, this.centerY, this.virtualW, this.virtualH, 0x000000, 0.85).setAlpha(0).setDepth(50);
       this.root.add(bg);
-      const txt = this.add.text(this.centerX, this.centerY - 40, quality < 30 ? 'DEFECTIVE' : `${label} CRAFT!`, { fontFamily: 'serif', fontSize: '40px', color: quality < 30 ? '#ef4444' : '#10b981', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0).setDepth(51);
+      const txt = this.add.text(this.centerX, this.centerY - 40, quality < 30 ? 'DEFECTIVE' : `${label} CRAFT!`, { fontFamily: 'serif', fontSize: '40px', color: quality < 30 ? '#ef4444' : this.getLabelColor(quality), stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0).setDepth(51);
       this.root.add(txt);
       this.tweens.add({ targets: [bg, txt], alpha: 1, duration: 500, onComplete: () => { this.time.delayedCall(1500, () => { if (this.onComplete) this.onComplete(quality, this.bonusStats); }); } });
   }
@@ -295,6 +357,12 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
+
+  const onCompleteRef = useRef(onComplete);
+  const onCloseRef = useRef(onClose);
+  
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
     const checkSize = () => {
@@ -314,7 +382,11 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
     };
     const game = new Phaser.Game(config);
     gameRef.current = game;
-    game.scene.start('WorkbenchScene', { onComplete, difficulty });
+    
+    game.scene.start('WorkbenchScene', { 
+      onComplete: (score: number, bonus?: number) => onCompleteRef.current(score, bonus), 
+      difficulty 
+    });
 
     const resizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
@@ -330,7 +402,7 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
         resizeObserver.disconnect();
         if (gameRef.current) gameRef.current.destroy(true); 
     };
-  }, [isReady, onComplete, difficulty]);
+  }, [isReady, difficulty]);
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-stone-950 animate-in fade-in duration-300 overflow-hidden">
@@ -339,7 +411,7 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
                 <Scissors className="w-4 h-4 text-emerald-400" />
                 <span className="text-stone-200 font-bold text-xs md:text-sm tracking-wide">Workbench</span>
             </div>
-            <button onClick={onClose} className="flex items-center gap-1 px-3 py-1 bg-stone-800 hover:bg-red-900/20 text-stone-400 hover:text-red-400 rounded border border-stone-700 transition-all text-[10px] font-bold">
+            <button onClick={() => onCloseRef.current()} className="flex items-center gap-1 px-3 py-1 bg-stone-800 hover:bg-red-900/20 text-stone-400 hover:text-red-400 rounded border border-stone-700 transition-all text-[10px] font-bold">
                 <X className="w-3 h-3" /> CANCEL
             </button>
         </div>
