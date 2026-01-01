@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -8,6 +9,27 @@
     <style>
       :root {
         --base-font-size: 16px;
+      }
+
+      /* Disable text selection and context menu calls on touch devices */
+      * {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-drag: none;
+      }
+
+      /* Allow selection in potential input fields (if any added later) */
+      input, textarea {
+        -webkit-user-select: text;
+        -khtml-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
       }
 
       body {
@@ -80,6 +102,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Disable the context menu (right click / long press menu)
+      window.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+      }, false);
+    </script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
