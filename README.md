@@ -1,16 +1,17 @@
+
 # Lockhart's Forge
 
-> **Version**: 0.1.32
+> **Version**: 0.1.33
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
 
-## 🔄 Recent Updates (v0.1.32)
+## 🔄 Recent Updates (v0.1.33)
 
+*   **Multi-Slot Save System**: Integrated a robust persistence layer using `localStorage`.
+    *   **Continue / Resume**: Title screen now detects existing saves and offers a "CONTINUE" button to jump into the latest session immediately.
+    *   **Slot Management**: Added support for up to 3 independent save slots with metadata previews (Day, Gold, Timestamp).
 *   **Fluid Header Layout**: Optimized the Header UI to make the Journal (Log Ticker) variable in width, pushing essential stats and date information to the edges.
-*   **Global UI Protections**: 
-    *   Disabled context menus (long-press/right-click) and text selection globally to provide a seamless "app-like" experience.
-    *   Blocked element dragging to prevent accidental browser interactions during gameplay.
 *   **Immersive Tavern Interaction**:
     *   Redesigned the character scale in Tavern mode. Sprites now occupy ~75% of the viewport height in mobile portrait.
     *   Added a foreground Tavern Table and adjusted character depth (bottom-offset) to create a sense of presence and immersion.

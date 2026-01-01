@@ -1,3 +1,4 @@
+
 import { EquipmentItem } from '../types/inventory';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { MASTERY_THRESHOLDS } from '../config/mastery-config';
@@ -35,7 +36,8 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
     else if (quality >= 85) rarity = EquipmentRarity.RARE;
     else if (quality >= 60) rarity = EquipmentRarity.UNCOMMON;
 
-    const qualityMultiplier = (quality / 100); 
+    // 적용: 최소 품질 배율을 0.2로 설정하여 능력치가 0이 되는 것을 방지
+    const qualityMultiplier = Math.max(0.2, quality / 100); 
     const finalMultiplier = qualityMultiplier * statMultiplier;
 
     const base = recipe.baseStats || { physicalAttack: 0, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 };

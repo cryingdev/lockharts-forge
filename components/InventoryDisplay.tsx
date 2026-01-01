@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle } from 'lucide-react';
+import { Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle, Brain } from 'lucide-react';
 import { InventoryItem } from '../types/index';
 import { getAssetUrl } from '../utils';
 
@@ -37,19 +38,43 @@ export const InventoryDisplay = () => {
         return getAssetUrl(`${item.id}.png`);
     };
 
-    const getQualityLabel = (q: number): string => {
-        if (q >= 110) return "Masterwork";
-        if (q >= 100) return "Pristine";
-        if (q >= 90) return "Superior";
-        if (q >= 80) return "Fine";
-        if (q >= 70) return "Standard";
-        return "Crude";
+    const renderEquipmentStats = (item: InventoryItem) => {
+        if (!item.equipmentData?.stats) return null;
+        const s = item.equipmentData.stats;
+        
+        // 스테프나 마법 무기의 경우 마법 수치가 더 높으면 마법 스탯을 우선 표시
+        const isMagical = s.magicalAttack > s.physicalAttack || s.magicalDefense > s.physicalDefense;
+        const atkLabel = isMagical ? "M.ATK" : "P.ATK";
+        const defLabel = isMagical ? "M.DEF" : "P.DEF";
+        const atkValue = isMagical ? s.magicalAttack : s.physicalAttack;
+        const defValue = isMagical ? s.magicalDefense : s.physicalDefense;
+
+        return (
+            <div className="mb-4 space-y-1 shrink-0">
+                <div className="grid grid-cols-2 gap-1.5">
+                    <div className="flex justify-between bg-stone-900 p-1.5 rounded border border-stone-800 text-[9px] md:text-[10px]">
+                        <span className="text-stone-500 uppercase flex items-center gap-1">
+                            {isMagical ? <Zap className="w-2 h-2 text-blue-400" /> : <Sword className="w-2 h-2 text-stone-500" />}
+                            {atkLabel}
+                        </span>
+                        <span className="font-mono text-stone-200 font-bold">{atkValue}</span>
+                    </div>
+                    <div className="flex justify-between bg-stone-900 p-1.5 rounded border border-stone-800 text-[9px] md:text-[10px]">
+                        <span className="text-stone-500 uppercase flex items-center gap-1">
+                            {isMagical ? <Brain className="w-2 h-2 text-purple-400" /> : <Shield className="w-2 h-2 text-stone-500" />}
+                            {defLabel}
+                        </span>
+                        <span className="font-mono text-stone-200 font-bold">{defValue}</span>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     return (
         <div className="flex flex-row h-full w-full max-w-7xl mx-auto p-2 md:p-4 gap-2 md:gap-4 overflow-hidden">
             
-            {/* Grid Area - Use flex-[2] to ensure more space */}
+            {/* Grid Area */}
             <div className="flex-[1.5] md:flex-[2.5] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex flex-col min-w-0">
                 <div className="bg-slate-800/50 p-2 md:p-3 border-b border-slate-700 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
@@ -84,7 +109,7 @@ export const InventoryDisplay = () => {
                 </div>
             </div>
 
-            {/* Details Area - constrained width */}
+            {/* Details Area */}
             <div className="flex-1 md:w-96 bg-black rounded-xl border border-stone-800 overflow-hidden flex flex-col min-w-0">
                 <div className="bg-stone-900/50 p-2 md:p-3 border-b border-stone-800 flex items-center gap-2 shrink-0">
                     <Info className="w-3.5 h-3.5 md:w-4 md:h-4 text-stone-500" />
@@ -104,20 +129,7 @@ export const InventoryDisplay = () => {
 
                         <p className="text-stone-400 text-[10px] md:text-xs italic leading-tight text-center mb-4 px-1">"{currentSelectedItem.description}"</p>
                         
-                        {currentSelectedItem.equipmentData?.stats && (
-                            <div className="mb-4 space-y-1 shrink-0">
-                                <div className="grid grid-cols-2 gap-1.5">
-                                    <div className="flex justify-between bg-stone-900 p-1.5 rounded border border-stone-800 text-[9px] md:text-[10px]">
-                                        <span className="text-stone-500 uppercase">ATK</span>
-                                        <span className="font-mono text-stone-200 font-bold">{currentSelectedItem.equipmentData.stats.physicalAttack || currentSelectedItem.equipmentData.stats.magicalAttack}</span>
-                                    </div>
-                                    <div className="flex justify-between bg-stone-900 p-1.5 rounded border border-stone-800 text-[9px] md:text-[10px]">
-                                        <span className="text-stone-500 uppercase">DEF</span>
-                                        <span className="font-mono text-stone-200 font-bold">{currentSelectedItem.equipmentData.stats.physicalDefense || currentSelectedItem.equipmentData.stats.magicalDefense}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {renderEquipmentStats(currentSelectedItem)}
 
                         <div className="mt-auto space-y-2 pt-2">
                             {currentSelectedItem.type === 'CONSUMABLE' && <button onClick={handleConsume} className="w-full py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 rounded text-[10px] md:text-sm font-bold transition-all">Use Item</button>}

@@ -1,3 +1,4 @@
+
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -14,6 +15,9 @@ import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
+    // Save & Load
+    case 'LOAD_GAME': return action.payload;
+
     // Repair
     case 'REPAIR_WORK': return handleRepairWork(state);
 

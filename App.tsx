@@ -1,27 +1,34 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameProvider } from './context/GameContext';
 import IntroScreen from './components/IntroScreen';
 import TitleScreen from './components/TitleScreen';
 import MainGameLayout from './components/MainGameLayout';
+import { loadFromStorage } from './utils/saveSystem';
+import { GameState } from './types/game-state';
 
 type GameView = 'INTRO' | 'TITLE' | 'GAME';
 
 const App = () => {
   const [view, setView] = useState<GameView>('INTRO');
+  const [pendingLoadState, setPendingLoadState] = useState<GameState | null>(null);
 
   const handleIntroComplete = () => {
       setView('TITLE');
   };
 
   const handleNewGame = () => {
+      setPendingLoadState(null);
       setView('GAME');
   };
 
-  const handleLoadGame = () => {
-      // Logic to load saved state would go here
-      // For now, treat as new game or show error
-      console.log("Load Game not implemented yet");
+  const handleLoadGame = (data: GameState) => {
+      if (data) {
+          setPendingLoadState(data);
+          setView('GAME');
+      } else {
+          alert("Failed to load save data!");
+      }
   };
 
   const handleQuitToTitle = () => {
@@ -35,14 +42,33 @@ const App = () => {
         {view === 'TITLE' && <TitleScreen onNewGame={handleNewGame} onLoadGame={handleLoadGame} />}
         
         {view === 'GAME' && (
-            // Wrapping MainGameLayout in GameProvider here ensures 
-            // a fresh game state is created every time we enter 'GAME' view.
             <GameProvider>
-                <MainGameLayout onQuit={handleQuitToTitle} />
+                <GameLoader initialData={pendingLoadState}>
+                    <MainGameLayout onQuit={handleQuitToTitle} />
+                </GameLoader>
             </GameProvider>
         )}
       </>
   );
+};
+
+/**
+ * GameLoader 컴포넌트:
+ * GameProvider 내부에서 실행되어, 로드할 데이터가 있는 경우 상태를 즉시 교체합니다.
+ */
+import { useGame } from './context/GameContext';
+const GameLoader: React.FC<{ initialData: GameState | null, children: React.ReactNode }> = ({ initialData, children }) => {
+    const { actions } = useGame();
+    const isFirstRun = React.useRef(true);
+
+    useEffect(() => {
+        if (isFirstRun.current && initialData) {
+            actions.loadGame(initialData);
+        }
+        isFirstRun.current = false;
+    }, [initialData, actions]);
+
+    return <>{children}</>;
 };
 
 export default App;
