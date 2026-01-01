@@ -43,19 +43,8 @@
         transition: transform 0.3s ease-in-out;
       }
 
-      /* CSS 강제 가로 모드 (세로 방향일 때 root를 90도 회전) */
-      @media screen and (orientation: portrait) {
-        #root {
-          width: 100vh;
-          width: 100dvh;
-          height: 100vw;
-          position: absolute;
-          top: 0;
-          left: 100vw;
-          transform: rotate(90deg);
-          transform-origin: top left;
-        }
-      }
+      /* 제거됨: @media screen and (orientation: portrait) { #root { ... transform: rotate(90deg); ... } } */
+      /* 이제 Phaser 내부 로직이 portrait 감지 및 회전을 수동으로 처리합니다. */
 
       @media screen and (max-height: 500px) {
         :root {
