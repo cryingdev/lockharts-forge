@@ -11,17 +11,6 @@ export interface SmithingSceneData {
 }
 
 export default class SmithingScene extends Phaser.Scene {
-  public load!: Phaser.Loader.LoaderPlugin;
-  public add!: Phaser.GameObjects.GameObjectFactory;
-  public make!: Phaser.GameObjects.GameObjectCreator;
-  public tweens!: Phaser.Tweens.TweenManager;
-  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
-  public scale!: Phaser.Scale.ScaleManager;
-  public input!: Phaser.Input.InputPlugin;
-  public anims!: Phaser.Animations.AnimationManager;
-  public time!: Phaser.Time.Clock;
-  public textures!: Phaser.Textures.TextureManager;
-
   private backgroundTile!: Phaser.GameObjects.TileSprite;
   private bgOverlay!: Phaser.GameObjects.Rectangle;
   private anvilImage!: Phaser.GameObjects.Image;
@@ -72,18 +61,13 @@ export default class SmithingScene extends Phaser.Scene {
   private shrinkDuration: number = 2000;
   private ringTimer: number = 0;
   
-  // Advanced Temperature Gauge UI
-  private tempIndicatorBox!: Phaser.GameObjects.Container;
-  private tempFillBar!: Phaser.GameObjects.Graphics;
+  private tempBar!: Phaser.GameObjects.Rectangle;
   private tempValueText!: Phaser.GameObjects.Text;
-  
   private bellowsContainer!: Phaser.GameObjects.Container;
   private bellowsSprite!: Phaser.GameObjects.Sprite;
   private heatUpBtnContainer!: Phaser.GameObjects.Container;
   private uiContainer!: Phaser.GameObjects.Container;
-  
-  private lastPumpTime: number = 0;
-  private pumpCooldown: number = 100; 
+  private isPumping: boolean = false;
   
   private onComplete?: (score: number) => void;
   private onStatusUpdate?: (temp: number) => void;
@@ -130,10 +114,9 @@ export default class SmithingScene extends Phaser.Scene {
     this.temperature = data.initialTemp || 0;
     this.isFinished = false;
     this.isPlaying = false;
-    this.isReadyToStart = (20 + (this.temperature / 100) * 1480) > 400;
+    this.isReadyToStart = this.temperature > 0;
     this.currentQuality = 100;
     this.perfectCount = 0;
-    this.lastPumpTime = 0;
   }
 
   preload() {
@@ -231,7 +214,7 @@ export default class SmithingScene extends Phaser.Scene {
         this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 300 });
     } else {
         this.cameras.main.shake(50, 0.005);
-        this.highlightHeatUpBtn();
+        this.showFeedback('TOO COLD!', 0x3b82f6, 1.0, vx, vy);
     }
   }
 
@@ -241,7 +224,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.lastHitTime = this.time.now;
 
     if (this.currentTempStage === 'COLD' || this.currentTempStage === 'NORMAL') {
-        this.highlightHeatUpBtn();
+        this.showFeedback('TOO COLD!', 0x3b82f6, 1.0, vx, vy);
         return;
     }
     
@@ -254,6 +237,7 @@ export default class SmithingScene extends Phaser.Scene {
       this.perfectCount++;
       if (this.perfectCount >= 6) {
           this.currentQuality += 1;
+          this.showFeedback('QUALITY UP!', 0xfbbf24, 1.3, this.hitX, this.hitY - 60);
       }
       this.createSparks(30, 0xffaa00, 1.5, 'spark_perfect', vx, vy); 
       this.showFeedback('PERFECT!', 0xffb300, 1.4, this.hitX, this.hitY);
@@ -261,7 +245,6 @@ export default class SmithingScene extends Phaser.Scene {
     } else if (diff < this.targetRadius * 0.95) {
       this.score += Math.ceil(5 * eff);
       this.combo = 0;
-      this.perfectCount = 0; 
       this.currentQuality = Math.max(0, this.currentQuality - 2);
       this.createSparks(15, 0xffffff, 1.1, 'spark_normal', vx, vy);
       this.showFeedback('GOOD', 0xe5e5e5, 1.1, this.hitX, this.hitY);
@@ -274,12 +257,8 @@ export default class SmithingScene extends Phaser.Scene {
     else this.resetRing();
   }
 
-  private isBellowsClick(objs: any[]) { 
-    return objs.includes(this.bellowsContainer) || (this.bellowsContainer && this.bellowsContainer.list.some(c => objs.includes(c))); 
-  }
-  private isHeatUpClick(objs: any[]) { 
-    return objs.includes(this.heatUpBtnContainer) || (this.heatUpBtnContainer && this.heatUpBtnContainer.list.some(c => objs.includes(c))); 
-  }
+  private isBellowsClick(objs: any[]) { return objs.includes(this.bellowsContainer) || this.bellowsContainer.list.some(c => objs.includes(c)); }
+  private isHeatUpClick(objs: any[]) { return objs.includes(this.heatUpBtnContainer) || this.heatUpBtnContainer.list.some(c => objs.includes(c)); }
 
   private setupUI() {
     this.progressBar = this.add.rectangle(0, 25, 0.1, 14, 0xeab308).setOrigin(0, 0.5);
@@ -287,24 +266,20 @@ export default class SmithingScene extends Phaser.Scene {
     this.qualityText = this.add.text(0, 55, 'PRISTINE', { fontFamily: 'monospace', fontSize: '16px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add([progBg, this.progressBar, this.qualityText]);
 
-    // --- Optimized Temperature Gauge UI (Minimalist: Gauge Bar & Value) ---
-    this.tempFillBar = this.add.graphics().setName('tempFillBar'); 
-    
-    this.tempIndicatorBox = this.add.container(0, 0).setName('tempIndicatorBox').setDepth(30);
-    this.tempValueText = this.add.text(0, 0, '20°C', { fontFamily: 'monospace', fontSize: '14px', color: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
-    this.tempIndicatorBox.add([this.tempValueText]);
-    
+    this.tempBar = this.add.rectangle(0, 0, 16, 200, 0x3b82f6).setOrigin(0.5, 1).setScale(1, 0);
+    this.tempValueText = this.add.text(0, 0, '20°C', { fontFamily: 'monospace', fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add([
-      this.add.rectangle(0, 0, 40, 210, 0x1c1917).setStrokeStyle(2, 0x57534e).setName('tempFrame'), // Simplified frame
-      this.add.rectangle(0, 0, 32, 200, 0x000000, 1.0).setName('tempBg'), // Solid pure black background
-      this.tempFillBar,
-      this.tempIndicatorBox
+      this.add.rectangle(0, 0, 28, 210, 0x1c1917).setStrokeStyle(3, 0x57534e).setName('tempFrame'),
+      this.add.rectangle(0, 0, 22, 200, 0x0c0a09).setName('tempBg'),
+      this.tempBar,
+      this.tempValueText
     ]);
 
     this.bellowsContainer = this.add.container(0, 0);
     this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(0.3);
     const pumpTxt = this.add.text(0, 22, 'PUMP', { fontSize: '10px', color: '#fde68a', fontFamily: 'monospace', fontStyle: 'bold' }).setOrigin(0.5);
     this.bellowsContainer.add([this.bellowsSprite, pumpTxt]).setInteractive(new Phaser.Geom.Rectangle(-50, -40, 100, 80), Phaser.Geom.Rectangle.Contains);
+    this.bellowsSprite.on('animationcomplete-bellows_pump', () => { this.isPumping = false; });
 
     this.heatUpBtnContainer = this.add.container(0, 0);
     const btnBg = this.add.rectangle(0, 0, 80, 60, 0x1c1917).setStrokeStyle(3, 0x57534e).setName('btnBg');
@@ -382,47 +357,22 @@ export default class SmithingScene extends Phaser.Scene {
     this.updateProgressBar();
     this.qualityText.setPosition(this.centerX, 55).setFontSize(isCompact ? '14px' : '16px');
 
-    const sideX = w - (isCompact ? 50 : 100);
-    const sideY = isCompact ? 110 : 160; 
+    const sideX = w - (isCompact ? 40 : 60);
+    const sideY = isCompact ? h * 0.3 : this.centerY - 100; 
     const barH = isCompact ? 120 : 200;
 
     const tFrame = this.uiContainer.getByName('tempFrame') as Phaser.GameObjects.Rectangle;
     const tBg = this.uiContainer.getByName('tempBg') as Phaser.GameObjects.Rectangle;
-    tFrame.setPosition(sideX, sideY).setSize(40, barH + 8);
-    tBg.setPosition(sideX, sideY).setSize(32, barH);
-    
-    // Fill Bar starts at the bottom of the background rect
-    this.tempFillBar.setPosition(sideX, sideY + barH / 2);
-
-    const bottomY = sideY + barH / 2 + 25;
-    // Centering the text box under the gauge now that icon is gone
-    this.tempIndicatorBox.setPosition(sideX, bottomY);
+    tFrame.setPosition(sideX, sideY).setSize(28, barH + 10);
+    tBg.setPosition(sideX, sideY).setSize(22, barH);
+    this.tempBar.setPosition(sideX, sideY + barH/2).setSize(16, barH);
+    this.tempValueText.setPosition(sideX, sideY - barH/2 - 20).setFontSize(isCompact ? '12px' : '14px');
 
     const ctrlGap = isCompact ? 65 : 85;
-    this.bellowsContainer.setPosition(sideX, bottomY + 25).setScale(isCompact ? 0.8 : 1);
-    this.heatUpBtnContainer.setPosition(sideX, bottomY + 25 + ctrlGap).setScale(isCompact ? 0.8 : 1);
+    this.bellowsContainer.setPosition(sideX, sideY + barH/2 + 45).setScale(isCompact ? 0.8 : 1);
+    this.heatUpBtnContainer.setPosition(sideX, sideY + barH/2 + 45 + ctrlGap).setScale(isCompact ? 0.8 : 1);
     
     this.infoText.setPosition(this.centerX, this.centerY - (isCompact ? 100 : 180)).setFontSize(isCompact ? '18px' : '24px');
-  }
-
-  private getHeatColor(ratio: number): number {
-    const t = Phaser.Math.Clamp(ratio, 0, 1);
-
-    const BLUE = Phaser.Display.Color.ObjectToColor({ r: 59, g: 130, b: 246 });
-    const DARK = Phaser.Display.Color.ObjectToColor({ r: 28, g: 25, b: 23 });
-    const DARK_RED = Phaser.Display.Color.ObjectToColor({ r: 127, g: 29, b: 29 });
-    const ORANGE = Phaser.Display.Color.ObjectToColor({ r: 249, g: 115, b: 22 });
-    const PALE = Phaser.Display.Color.ObjectToColor({ r: 255, g: 253, b: 235 });
-
-    const lerp = (a: Phaser.Display.Color, b: Phaser.Display.Color, p: number) => {
-      const c = Phaser.Display.Color.Interpolate.ColorWithColor(a, b, 100, Math.round(p * 100));
-      return Phaser.Display.Color.GetColor(c.r, c.g, c.b); 
-    };
-
-    if (t < 0.20) return lerp(BLUE, DARK, t / 0.20);
-    if (t < 0.45) return lerp(DARK, DARK_RED, (t - 0.20) / 0.25);
-    if (t < 0.75) return lerp(DARK_RED, ORANGE, (t - 0.45) / 0.30);
-    return lerp(ORANGE, PALE, (t - 0.75) / 0.25);
   }
 
   private rebuildHitPoly() {
@@ -439,7 +389,6 @@ export default class SmithingScene extends Phaser.Scene {
   private handleMiss(x?: number, y?: number) {
     this.score = Math.max(0, this.score - 5);
     this.combo = 0;
-    this.perfectCount = 0;
     this.currentQuality = Math.max(0, this.currentQuality - 5);
     this.cameras.main.shake(100, 0.01);
     this.showFeedback('MISS', 0xef4444, 1.2, x ?? this.hitX, y ?? this.hitY);
@@ -449,57 +398,24 @@ export default class SmithingScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     if (this.isFinished) return;
-    
+    if (this.isPlaying) this.handleRingLogic(delta);
     this.temperature = Math.max(0, this.temperature - this.coolingRate * (delta / 1000));
-
-    if (this.isPlaying) {
-      if (this.temperature <= 0) {
-        this.targetRing.clear();
-        this.approachRing.clear();
-        this.infoText.setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6').setVisible(true);
-      } else {
-        if (this.infoText.visible && (this.infoText.text.includes('COLD') || this.infoText.text.includes('FUEL'))) {
-            this.infoText.setVisible(false);
-            this.resetRing();
-        }
-        this.handleRingLogic(delta);
-      }
-    }
-    
     this.refreshVisuals();
-    if (!this.isPlaying) {
-        const realTemp = 20 + (this.temperature / 100) * 1480;
-        if (this.isReadyToStart && realTemp <= 400) {
-            this.isReadyToStart = false;
-            this.infoText.setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6').setVisible(true);
-        } else if (!this.isReadyToStart && realTemp > 400) {
-            this.isReadyToStart = true;
-            this.infoText.setText('TOUCH TO START').setColor('#fbbf24').setVisible(true);
-        }
+    if (!this.isPlaying && this.isReadyToStart && this.temperature <= 0) {
+        this.isReadyToStart = false;
+        this.infoText.setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6');
     }
   }
 
   private refreshVisuals() {
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
+    const ratio = this.temperature / 100;
+    this.tempBar.scaleY = ratio;
+    this.tempValueText.setText(`${Math.floor(20 + ratio * 1480)}°C`);
 
-    const ratio = Phaser.Math.Clamp(this.temperature / 100, 0, 1);
-    const realTemp = Math.floor(20 + ratio * 1480);
-    this.tempValueText.setText(`${realTemp}°C`);
-
-    // --- Gradient Processing for Temperature Bar ---
-    const colorTop = this.getHeatColor(ratio);
-    const colorBottom = this.getHeatColor(0); 
-
-    const tBg = this.uiContainer.getByName('tempBg') as Phaser.GameObjects.Rectangle;
-    const barWidth = 32;
-    const barMaxHeight = tBg.height;
-    const barCurrentHeight = Math.max(1, ratio * barMaxHeight);
-    
-    // Redraw fill with new logic
-    this.tempFillBar.clear();
-    this.tempFillBar.fillGradientStyle(colorTop, colorTop, colorBottom, colorBottom, 1, 1, 1, 1);
-    // Draw from local (0,0) which is positioned at the gauge bottom
-    this.tempFillBar.fillRect(-barWidth / 2, -barCurrentHeight, barWidth, barCurrentHeight);
+    let barColor = 0xeab308; 
+    if (ratio < 0.4) barColor = 0x3b82f6; else if (ratio > 0.7) barColor = 0xef4444;
+    this.tempBar.setFillStyle(barColor);
 
     const progress = Phaser.Math.Clamp(this.score / this.targetScore, 0, 1);
     const stage = Math.min(5, Math.floor(progress * 6));
@@ -533,17 +449,12 @@ export default class SmithingScene extends Phaser.Scene {
     this.approachRing.clear().lineStyle(6, this.currentRadius < this.targetRadius ? 0xffffff : 0xfabf24, 0.5).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
     if (this.currentRadius < this.targetRadius - 25) {
         this.combo = 0;
-        this.perfectCount = 0;
         this.resetRing();
     }
   }
 
   private resetRing() {
-    this.targetRing.clear();
-    this.approachRing.clear();
-    
     if (this.temperature <= 0) return;
-    
     this.currentRadius = this.startRadius;
     this.ringTimer = 0;
     const w = this.hammerHitArea.width;
@@ -590,52 +501,15 @@ export default class SmithingScene extends Phaser.Scene {
     this.tweens.add({ targets: txt, alpha: 1, scale: { from: 0.5, to: 1.1 }, duration: 600, ease: 'Back.out', onComplete: () => { this.time.delayedCall(1000, () => { if (this.onComplete) this.onComplete(this.currentQuality); }); } });
   }
 
-  private highlightHeatUpBtn() {
-    const bg = this.heatUpBtnContainer.getByName('btnBg') as Phaser.GameObjects.Rectangle;
-    if (!bg) return;
-    
-    this.tweens.killTweensOf(this.heatUpBtnContainer);
-    
-    this.tweens.add({
-        targets: this.heatUpBtnContainer,
-        scale: 1.2,
-        duration: 200,
-        yoyo: true,
-        ease: 'Cubic.easeOut',
-        onStart: () => {
-            bg.setStrokeStyle(4, 0xffaa00);
-        },
-        onComplete: () => {
-            this.refreshHeatUpButton();
-        }
-    });
-  }
-
   private pumpBellows() {
-    const now = this.time.now;
-    if (now - this.lastPumpTime < this.pumpCooldown) return;
-    this.lastPumpTime = now;
-
-    if (this.bellowsSprite) {
-        this.bellowsSprite.play('bellows_pump', true);
-    }
-
-    const realTemp = 20 + (this.temperature / 100) * 1480;
-    if (realTemp <= 400) {
-        this.highlightHeatUpBtn();
-        return;
-    }
-
-    if (this.temperature >= 0) {
+    if (this.isPumping) return;
+    this.isPumping = true;
+    this.bellowsSprite.play('bellows_pump');
+    if (this.temperature > 0) {
       this.temperature = Math.min(100, this.temperature + 5);
-      if (this.temperature > 0) {
-          if (!this.isPlaying && !this.isReadyToStart) {
-              const checkTemp = 20 + (this.temperature / 100) * 1480;
-              if (checkTemp > 400) {
-                  this.isReadyToStart = true;
-                  this.infoText.setText('TOUCH TO START').setColor('#fbbf24');
-              }
-          }
+      if (!this.isPlaying && !this.isReadyToStart) {
+          this.isReadyToStart = true;
+          this.infoText.setText('TOUCH TO START').setColor('#fbbf24');
       }
     }
   }
@@ -649,8 +523,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   public heatUp() {
     this.temperature = Math.min(100, this.temperature + 40);
-    const realTemp = 20 + (this.temperature / 100) * 1480;
-    if (!this.isPlaying && realTemp > 400) {
+    if (!this.isPlaying) {
         this.isReadyToStart = true;
         this.infoText.setText('TOUCH TO START').setColor('#fbbf24');
     }

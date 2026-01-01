@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -11,7 +10,7 @@
         --base-font-size: 16px;
       }
 
-      /* Disable text selection and context menu calls on touch devices */
+      /* 텍스트 선택 및 컨텍스트 메뉴 방지 */
       * {
         -webkit-touch-callout: none;
         -webkit-user-select: none;
@@ -41,39 +40,22 @@
         height: 100%;
         position: relative;
         overflow: hidden;
+        transition: transform 0.3s ease-in-out;
       }
 
-      /* Landscape Lock Overlay */
-      #orientation-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-        background-color: #0c0a09;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 2rem;
-      }
-
-      /* Only show overlay when in portrait mode on mobile/tablets */
-      @media screen and (orientation: portrait) and (max-width: 1024px) {
-        #orientation-overlay {
-          display: flex;
-        }
+      /* CSS 강제 가로 모드 (세로 방향일 때 root를 90도 회전) */
+      @media screen and (orientation: portrait) {
         #root {
-          display: none;
+          width: 100vh;
+          width: 100dvh;
+          height: 100vw;
+          position: absolute;
+          top: 0;
+          left: 100vw;
+          transform: rotate(90deg);
+          transform-origin: top left;
         }
       }
-
-      /* Icon Animation */
-      @keyframes rotate-device {
-        0% { transform: rotate(0deg); }
-        50% { transform: rotate(-90deg); }
-        100% { transform: rotate(0deg); }
-      }
-      .animate-rotate { animation: rotate-device 2s ease-in-out infinite; }
 
       @media screen and (max-height: 500px) {
         :root {
@@ -109,53 +91,29 @@
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #57534e; }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-        "phaser": "https://aistudiocdn.com/phaser@^3.90.0",
-        "vite": "https://aistudiocdn.com/vite@^7.2.4",
-        "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.454.0",
+    "phaser": "https://esm.sh/phaser@3.80.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
   </head>
   <body>
-    <!-- Orientation Restriction Overlay -->
-    <div id="orientation-overlay">
-      <div class="mb-6 p-6 rounded-full bg-amber-900/20 border-2 border-amber-500/30">
-        <svg class="w-12 h-12 text-amber-500 animate-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-          <line x1="12" y1="18" x2="12.01" y2="18"/>
-        </svg>
-      </div>
-      <h2 style="font-family: serif;" class="text-2xl font-black text-amber-100 mb-2 uppercase tracking-tighter">Landscape Mode Required</h2>
-      <p class="text-stone-500 text-sm max-w-[250px] leading-relaxed font-medium">Please rotate your device to begin your journey at Lockhart's Forge.</p>
-    </div>
-
     <div id="root"></div>
 
     <script>
-      // Disable the context menu
+      // 우클릭 방지
       window.addEventListener('contextmenu', function(e) {
         e.preventDefault();
       }, false);
-
-      // Attempt to lock orientation on first user interaction
-      const lockLandscape = async () => {
-        try {
-          if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock('landscape');
-          }
-        } catch (err) {
-          console.warn('Orientation lock not supported or failed:', err);
-        }
-      };
-
-      window.addEventListener('touchstart', lockLandscape, { once: true });
-      window.addEventListener('mousedown', lockLandscape, { once: true });
     </script>
     <script type="module" src="/index.tsx"></script>
   </body>
