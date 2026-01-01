@@ -7,7 +7,8 @@ import { MATERIALS } from '../../../data/materials';
 import SmithingScene from '../../../game/SmithingScene';
 
 interface SmithingMinigameProps {
-  onComplete: (score: number) => void;
+  // Fix: Updated onComplete signature to support optional bonus parameter
+  onComplete: (score: number, bonus?: number) => void;
   onClose: () => void;
   difficulty?: number;
 }
@@ -84,8 +85,9 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     };
 
     // 씬 시작 시 Refs를 사용하여 콜백 연결
+    // Fix: Updated scene start configuration to handle optional bonus argument
     game.scene.start('SmithingScene', { 
-      onComplete: (score: number) => onCompleteRef.current(score), 
+      onComplete: (score: number, bonus?: number) => onCompleteRef.current(score, bonus), 
       difficulty, 
       initialTemp, 
       charcoalCount, 
