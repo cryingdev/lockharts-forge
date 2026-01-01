@@ -1,7 +1,19 @@
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
+/**
+ * IntroScene
+ * - No CSS forced rotation.
+ * - If the screen is portrait (width < height), we render the intro in a "virtual landscape"
+ *   coordinate system by rotating a single root container (-90deg) and swapping virtual width/height.
+ * - All layout calculations use (virtualW, virtualH) so the intro composition stays "landscape-like".
+ *
+ * NOTE:
+ * - Current intro interaction is "tap anywhere to skip" (no complex pointer mapping needed).
+ * - If you later add precise touch controls in portrait, use toVirtual() to map pointer coords.
+ */
 export default class IntroScene extends Phaser.Scene {
+  // Scene objects
   private bgs: Phaser.GameObjects.Image[] = [];
   private dragon?: Phaser.GameObjects.Image;
   private narrativeTexts: Phaser.GameObjects.Text[] = [];
@@ -10,10 +22,13 @@ export default class IntroScene extends Phaser.Scene {
   private fireEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
   private breathOverlay?: Phaser.GameObjects.Rectangle;
 
-  // ✅ Debug HUD
-  private debugBg?: Phaser.GameObjects.Rectangle;
-  private debugText?: Phaser.GameObjects.Text;
-  private debugEnabled = true;
+  // Root container (rotated in portrait)
+  private root!: Phaser.GameObjects.Container;
+
+  // Virtual (landscape) coordinate system
+  private virtualW = 0;
+  private virtualH = 0;
+  private isPortrait = false;
 
   constructor() {
     super('IntroScene');
@@ -43,6 +58,9 @@ export default class IntroScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(10);
 
+    // ✅ Important: add to root so it rotates together in portrait
+    this.root.add(t);
+
     this.narrativeTexts.push(t);
     return t;
   }
@@ -50,17 +68,25 @@ export default class IntroScene extends Phaser.Scene {
   create() {
     if (this.scale.width <= 0 || this.scale.height <= 0) return;
 
-    // particle texture
+    // Root container for all intro visuals
+    this.root = this.add.container(0, 0);
+
+    // Particle texture
     if (!this.textures.exists('intro_flame')) {
       const graphics = this.make.graphics({ x: 0, y: 0 });
-      graphics.fillStyle(0xff5500, 1).fillCircle(16, 16, 16).generateTexture('intro_flame', 32, 32).destroy();
+      graphics
+        .fillStyle(0xff5500, 1)
+        .fillCircle(16, 16, 16)
+        .generateTexture('intro_flame', 32, 32)
+        .destroy();
     }
 
-    // skip
+    // Skip on tap
     this.input.once('pointerdown', () => {
       this.game.events.emit('intro-complete');
     });
 
+    // Hint
     this.skipHint = this.add
       .text(0, 0, 'Touch anywhere to skip', {
         fontFamily: 'sans-serif',
@@ -72,14 +98,21 @@ export default class IntroScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(20);
 
+    this.root.add(this.skipHint);
+
+    // Backgrounds
     const keys = ['intro_bg', 'intro_bg_02', 'intro_bg_03', 'intro_bg_04', 'intro_bg_05'];
     keys.forEach((key) => {
       const img = this.add.image(0, 0, key).setAlpha(0).setDepth(1);
+      this.root.add(img);
       this.bgs.push(img);
     });
 
+    // Dragon
     this.dragon = this.add.image(0, 0, 'intro_dragon').setDepth(2).setVisible(false);
+    this.root.add(this.dragon);
 
+    // Dev text
     this.devText = this.add
       .text(0, 0, 'CRYINGDEV STUDIO\nPRESENTS', {
         fontFamily: 'serif',
@@ -92,18 +125,26 @@ export default class IntroScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(10);
 
+    this.root.add(this.devText);
+
+    // Narrative
     const n1 = this.createNarrativeText('FIASCO,\nA MASTER OF DISASTER...', '#ef4444');
     const n2 = this.createNarrativeText('EVERTHING WE LOVED IS LOST...', '#ef4444');
     const n3 = this.createNarrativeText('BUT THE HAMMER IS STILL HERE.', '#ef4444');
-    const nD = this.createNarrativeText('NEVER FORGET...', '#ef4444');
-    const nV = this.createNarrativeText('AND FORGED A VENGEANCE.', '#f59e0b');
+    const nDespair = this.createNarrativeText('NEVER FORGET...', '#ef4444');
+    const nVengeance = this.createNarrativeText('AND FORGED A VENGEANCE.', '#f59e0b');
 
+    // Breath overlay
     this.breathOverlay = this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0xff4400)
+      .rectangle(0, 0, 10, 10, 0xff4400)
       .setAlpha(0)
       .setDepth(5)
       .setBlendMode(Phaser.BlendModes.ADD);
 
+    this.root.add(this.breathOverlay);
+
+    // Fire particles
+    // ✅ Phaser 3.60+ (incl. 3.80): this.add.particles returns a ParticleEmitter (GameObject)
     this.fireEmitter = this.add.particles(0, 0, 'intro_flame', {
       speedY: { min: 1200, max: 2200 },
       speedX: { min: -600, max: 600 },
@@ -115,167 +156,122 @@ export default class IntroScene extends Phaser.Scene {
       emitting: false,
     });
     this.fireEmitter.setDepth(4);
+    this.root.add(this.fireEmitter);
 
-    // ✅ Debug HUD 생성
-    this.createDebugHUD();
-    this.updateDebugHUD('create()');
-
-    // resize
+    // Initial layout & resize binding
     this.handleResize(this.scale.gameSize);
-    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-      this.handleResize(gameSize);
-      this.updateDebugHUD('scale.resize');
-    });
-
-    // window events (Scene 종료 시 제거)
-    window.addEventListener('orientationchange', this.onOrientationChange);
-    window.addEventListener('resize', this.onWindowResize);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      window.removeEventListener('orientationchange', this.onOrientationChange);
-      window.removeEventListener('resize', this.onWindowResize);
-    });
-
-    // HUD 토글 (두 손가락 탭 등으로 바꾸고 싶으면 여기 수정)
-    this.input.keyboard?.on('keydown-D', () => {
-      this.debugEnabled = !this.debugEnabled;
-      this.debugBg?.setVisible(this.debugEnabled);
-      this.debugText?.setVisible(this.debugEnabled);
-      this.updateDebugHUD('toggle');
-    });
-
-    this.startSequence(n1, n2, n3, nD, nV);
+    this.scale.on('resize', this.handleResize, this);
+    // Start sequence
+    this.startSequence(n1, n2, n3, nDespair, nVengeance);
   }
 
-  // ===== Debug HUD =====
-  private createDebugHUD() {
-    const pad = 8;
-    const w = 520;
-    const h = 120;
-
-    this.debugBg = this.add
-      .rectangle(pad, pad, w, h, 0x000000, 0.65)
-      .setOrigin(0, 0)
-      .setDepth(99999);
-
-    this.debugText = this.add
-      .text(pad + 10, pad + 8, '', {
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        color: '#ffffff',
-        lineSpacing: 4,
-      })
-      .setDepth(100000);
-
-    // 카메라와 무관하게 화면 고정
-    this.debugBg.setScrollFactor(0);
-    this.debugText.setScrollFactor(0);
+  /**
+   * Map screen pointer coords -> virtual landscape coords.
+   * If you later need accurate touch input while portrait-rotated, use this.
+   */
+  private toVirtual(sx: number, sy: number) {
+    if (!this.isPortrait) return { x: sx, y: sy };
+    // When portrait, we rotate root -90deg with position(0, virtualW).
+    // The mapping becomes: screen (sx,sy) -> virtual (x,y)
+    // x = virtualW - sy
+    // y = sx
+    return { x: this.virtualW - sy, y: sx };
   }
 
-  private updateDebugHUD(tag: string) {
-    if (!this.debugEnabled || !this.debugText) return;
-
-    const gsW = Math.round(this.scale.gameSize.width);
-    const gsH = Math.round(this.scale.gameSize.height);
-
-    const scW = Math.round(this.scale.width);
-    const scH = Math.round(this.scale.height);
-
-    const ww = Math.round(window.innerWidth);
-    const wh = Math.round(window.innerHeight);
-
-    const vvw = Math.round(window.visualViewport?.width ?? 0);
-    const vvh = Math.round(window.visualViewport?.height ?? 0);
-
-    const dpr = (window.devicePixelRatio ?? 1).toFixed(2);
-    const orient = gsH > gsW ? 'portrait' : 'landscape';
-
-    this.debugText.setText([
-      `[${tag}]`,
-      `phaser gameSize: ${gsW}x${gsH} (${orient})`,
-      `phaser scale:    ${scW}x${scH}`,
-      `window:         ${ww}x${wh}`,
-      `visualViewport: ${vvw}x${vvh}`,
-      `dpr:            ${dpr}`,
-    ].join('\n'));
-  }
-
-  private onOrientationChange = () => {
-    // orientationchange 직후 값이 늦게 바뀌는 브라우저 대응
-    this.updateDebugHUD('orientationchange');
-    this.time.delayedCall(60, () => this.updateDebugHUD('orientation+60ms'));
-    this.time.delayedCall(180, () => this.updateDebugHUD('orientation+180ms'));
-  };
-
-  private onWindowResize = () => {
-    this.updateDebugHUD('window.resize');
-    this.time.delayedCall(60, () => this.updateDebugHUD('resize+60ms'));
-  };
-
-  // ===== Responsive layout =====
+  /**
+   * Portrait: rotate the entire root container to keep "landscape composition".
+   * Layout is always calculated in (virtualW, virtualH).
+   */
   private handleResize(gameSize?: Phaser.Structs.Size) {
-    const w = gameSize?.width ?? this.scale.gameSize.width;
-    const h = gameSize?.height ?? this.scale.gameSize.height;
-    const cx = w / 2;
-    const cy = h / 2;
+    const screenW = gameSize?.width ?? this.scale.gameSize.width;
+    const screenH = gameSize?.height ?? this.scale.gameSize.height;
 
-    const isPortrait = h > w;
-    const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.55, 1.15);
+    this.isPortrait = screenH > screenW;
 
-    // BG cover
+    // Virtual landscape coordinate system
+    this.virtualW = this.isPortrait ? screenH : screenW;
+    this.virtualH = this.isPortrait ? screenW : screenH;
+
+    // Rotate root in portrait so the composition appears landscape-like
+    if (this.isPortrait) {
+      // With rotation -90deg, we shift down by virtualW to keep visible quadrant
+      this.root.setRotation(-Math.PI / 2);
+      this.root.setPosition(0, this.virtualW);
+    } else {
+      this.root.setRotation(0);
+      this.root.setPosition(0, 0);
+    }
+
+    const w = this.virtualW;
+    const h = this.virtualH;
+    const centerX = w / 2;
+    const centerY = h / 2;
+
+    // "compact" based on virtual height (since we always compose in landscape)
+    const isCompact = h < 450;
+
+    // Background cover scaling using virtual dimensions
     this.bgs.forEach((img) => {
-      img.setPosition(cx, cy);
+      img.setPosition(centerX, centerY);
       const s = Math.max(w / img.width, h / img.height);
       img.setScale(s);
     });
 
-    // dragon: portrait면 조금 더 위로/작게
+    // Dragon placement
     if (this.dragon) {
-      const maxW = w * 0.9;
-      const maxH = isPortrait ? h * 0.42 : h * 0.55;
-      const s = Math.min(maxW / this.dragon.width, maxH / this.dragon.height);
-      this.dragon.setScale(s);
-      this.dragon.setPosition(cx, cy - h * (isPortrait ? 0.22 : 0.18));
+      this.dragon.setPosition(centerX, isCompact ? centerY - 100 : centerY - 200);
+      const dScale = (w * 0.8) / this.dragon.width;
+      this.dragon.setScale(dScale);
     }
 
+    // Dev text
     if (this.devText) {
-      this.devText.setPosition(cx, cy);
-      this.devText.setFontSize(Math.round(45 * uiScale));
+      this.devText.setPosition(centerX, centerY);
+      this.devText.setFontSize(isCompact ? '32px' : '45px');
     }
 
+    // Skip hint
     if (this.skipHint) {
-      this.skipHint.setPosition(cx, h - Math.max(28, h * 0.06));
-      this.skipHint.setFontSize(Math.round(12 * uiScale));
+      this.skipHint.setPosition(centerX, h - 40);
+      this.skipHint.setFontSize(isCompact ? '11px' : '12px');
     }
 
+    // Breath overlay size (virtual)
     if (this.breathOverlay) {
-      this.breathOverlay.setPosition(cx, cy).setSize(w, h);
+      this.breathOverlay.setPosition(centerX, centerY).setSize(w, h);
     }
 
+    // Narrative texts
     this.narrativeTexts.forEach((t) => {
-      t.setPosition(cx, cy);
-      t.setFontSize(Math.round(40 * uiScale));
+      t.setPosition(centerX, centerY);
+      t.setFontSize(isCompact ? '28px' : '40px');
     });
 
-    // despair / vengeance split
+    // Despair / Vengeance split positioning
     const despairIdx = this.narrativeTexts.length - 2;
-    const gap = Math.max(24, h * 0.06);
-    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
-    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
-
-    // fire origin
-    if (this.fireEmitter) {
-      const mouthY = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.1 : h * 0.35;
-      this.fireEmitter.setPosition(cx, mouthY);
+    if (this.narrativeTexts[despairIdx]) {
+      this.narrativeTexts[despairIdx].y = centerY - (isCompact ? 30 : 40);
+    }
+    if (this.narrativeTexts[despairIdx + 1]) {
+      this.narrativeTexts[despairIdx + 1].y = centerY + (isCompact ? 30 : 40);
     }
 
-    // debug HUD는 상단 고정이라 따로 위치 조정 필요 없음
+    // Fire origin (virtual)
+    if (this.fireEmitter) {
+      this.fireEmitter.setPosition(centerX, h * 0.15 + (isCompact ? 100 : 200));
+    }
   }
 
   private startSequence(n1: any, n2: any, n3: any, nD: any, nV: any) {
     this.tweens.chain({
       tweens: [
         { targets: this.devText, alpha: 1, duration: 2500, ease: 'Power2' },
-        { targets: this.devText, alpha: 1, duration: 2000, onStart: () => this.cameras.main.shake(6000, 0.005) },
+        {
+          targets: this.devText,
+          alpha: 1,
+          duration: 2000,
+          onStart: () => this.cameras.main.shake(6000, 0.005),
+        },
         { targets: this.devText, alpha: 0, duration: 2000, ease: 'Power2' },
 
         { targets: this.bgs[0], alpha: 1, duration: 1500, ease: 'Linear' },
@@ -331,7 +327,9 @@ export default class IntroScene extends Phaser.Scene {
           alpha: 0,
           duration: 3000,
           delay: 3000,
-          onComplete: () => this.game.events.emit('intro-complete'),
+          onComplete: () => {
+            this.game.events.emit('intro-complete');
+          },
         },
       ],
     });
