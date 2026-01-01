@@ -28,26 +28,12 @@
         height: 100%;
         position: relative;
         overflow: hidden;
-        transition: transform 0.3s ease-in-out;
       }
 
       /* Compact UI for short screens (Mobile Landscape) */
       @media screen and (max-height: 500px) {
         :root {
           --base-font-size: 13px;
-        }
-      }
-
-      /* Forced Landscape Orientation for Portrait Screens */
-      @media screen and (orientation: portrait) {
-        #root {
-          width: 100dvh !important;
-          height: 100vw !important;
-          position: absolute;
-          top: 0;
-          left: 100vw;
-          transform: rotate(90deg);
-          transform-origin: 0 0;
         }
       }
 

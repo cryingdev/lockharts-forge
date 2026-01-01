@@ -2,6 +2,17 @@ import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
 export default class IntroScene extends Phaser.Scene {
+  public load!: Phaser.Loader.LoaderPlugin;
+  public add!: Phaser.GameObjects.GameObjectFactory;
+  public make!: Phaser.GameObjects.GameObjectCreator;
+  public tweens!: Phaser.Tweens.TweenManager;
+  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
+  public scale!: Phaser.Scale.ScaleManager;
+  public input!: Phaser.Input.InputPlugin;
+  public game!: Phaser.Game;
+  public time!: Phaser.Time.Clock;
+  public textures!: Phaser.Textures.TextureManager;
+
   private bgs: Phaser.GameObjects.Image[] = [];
   private dragon?: Phaser.GameObjects.Image;
   private narrativeTexts: Phaser.GameObjects.Text[] = [];
@@ -9,6 +20,14 @@ export default class IntroScene extends Phaser.Scene {
   private skipHint?: Phaser.GameObjects.Text;
   private fireEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
   private breathOverlay?: Phaser.GameObjects.Rectangle;
+
+  // Root container (rotated in portrait)
+  private root!: Phaser.GameObjects.Container;
+
+  // Virtual (landscape) coordinate system
+  private virtualW = 0;
+  private virtualH = 0;
+  private isPortrait = false;
 
   constructor() {
     super('IntroScene');
@@ -28,7 +47,7 @@ export default class IntroScene extends Phaser.Scene {
       .text(0, 0, text, {
         fontFamily: 'serif',
         fontSize: '40px',
-        color: color,
+        color,
         align: 'center',
         fontStyle: 'italic',
         stroke: '#000000',
@@ -37,6 +56,8 @@ export default class IntroScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0)
       .setDepth(10);
+
+    this.root.add(t);
     this.narrativeTexts.push(t);
     return t;
   }
@@ -44,30 +65,36 @@ export default class IntroScene extends Phaser.Scene {
   create() {
     if (this.scale.width <= 0 || this.scale.height <= 0) return;
 
+    this.root = this.add.container(0, 0);
+
     if (!this.textures.exists('intro_flame')) {
-        const graphics = this.make.graphics({ x: 0, y: 0 });
-        graphics.fillStyle(0xff5500, 1).fillCircle(16, 16, 16).generateTexture('intro_flame', 32, 32).destroy();
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      graphics.fillStyle(0xff5500, 1).fillCircle(16, 16, 16).generateTexture('intro_flame', 32, 32).destroy();
     }
 
     this.input.once('pointerdown', () => {
-        this.game.events.emit('intro-complete');
+      this.game.events.emit('intro-complete');
     });
 
     this.skipHint = this.add.text(0, 0, 'Touch anywhere to skip', {
-        fontFamily: 'sans-serif', fontSize: '12px', color: '#57534e', fontStyle: 'bold'
+      fontFamily: 'sans-serif', fontSize: '12px', color: '#57534e', fontStyle: 'bold'
     }).setOrigin(0.5).setAlpha(0).setDepth(20);
+    this.root.add(this.skipHint);
 
     const keys = ['intro_bg', 'intro_bg_02', 'intro_bg_03', 'intro_bg_04', 'intro_bg_05'];
     keys.forEach(key => {
-        const img = this.add.image(0, 0, key).setAlpha(0).setDepth(1);
-        this.bgs.push(img);
+      const img = this.add.image(0, 0, key).setAlpha(0).setDepth(1);
+      this.root.add(img);
+      this.bgs.push(img);
     });
 
     this.dragon = this.add.image(0, 0, 'intro_dragon').setDepth(2).setVisible(false);
+    this.root.add(this.dragon);
 
     this.devText = this.add.text(0, 0, "CRYINGDEV STUDIO\nPRESENTS", {
       fontFamily: 'serif', fontSize: '45px', color: '#a8a29e', align: 'center', fontStyle: 'bold'
     }).setOrigin(0.5).setAlpha(0).setDepth(10);
+    this.root.add(this.devText);
 
     const n1 = this.createNarrativeText("FIASCO,\nA MASTER OF DISASTER...", '#ef4444');
     const n2 = this.createNarrativeText("EVERTHING WE LOVED IS LOST...", '#ef4444');
@@ -75,89 +102,103 @@ export default class IntroScene extends Phaser.Scene {
     const nDespair = this.createNarrativeText("NEVER FORGET...", '#ef4444');
     const nVengeance = this.createNarrativeText("AND FORGED A VENGEANCE.", '#f59e0b');
 
-    this.breathOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xff4400)
-        .setAlpha(0).setDepth(5).setBlendMode(Phaser.BlendModes.ADD);
+    this.breathOverlay = this.add.rectangle(0, 0, 10, 10, 0xff4400)
+      .setAlpha(0).setDepth(5).setBlendMode(Phaser.BlendModes.ADD);
+    this.root.add(this.breathOverlay);
 
     this.fireEmitter = this.add.particles(0, 0, 'intro_flame', {
-        speedY: { min: 1200, max: 2200 },
-        speedX: { min: -600, max: 600 },
-        scale: { start: 6, end: 15 },
-        alpha: { start: 1, end: 0 },
-        lifespan: 1500,
-        quantity: 40,
-        blendMode: 'ADD',
-        emitting: false
+      speedY: { min: 1200, max: 2200 },
+      speedX: { min: -600, max: 600 },
+      scale: { start: 6, end: 15 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 1500,
+      quantity: 40,
+      blendMode: 'ADD',
+      emitting: false
     });
     this.fireEmitter.setDepth(4);
+    this.root.add(this.fireEmitter);
 
     this.handleResize(this.scale.gameSize);
     this.scale.on('resize', this.handleResize, this);
 
     this.startSequence(n1, n2, n3, nDespair, nVengeance);
-
     this.time.delayedCall(0, () => this.handleResize());
   }
 
-private handleResize(gameSize?: Phaser.Structs.Size) {
-    const w = gameSize?.width ?? this.scale.gameSize.width;
-    const h = gameSize?.height ?? this.scale.gameSize.height;
-    const cx = w / 2;
-    const cy = h / 2;
+  private toVirtual(sx: number, sy: number) {
+    if (!this.isPortrait) return { x: sx, y: sy };
+    return { x: sy, y: this.virtualH - sx };
+  }
 
-    // 카메라를 캔버스(래퍼) 크기에 고정
-    this.cameras.main.setViewport(0, 0, w, h);
+  private handleResize(gameSize?: Phaser.Structs.Size) {
+    const screenW = gameSize?.width ?? this.scale.gameSize.width;
+    const screenH = gameSize?.height ?? this.scale.gameSize.height;
 
-    // UI 스케일은 연속적으로 (짧은 축 기준)
+    this.isPortrait = screenH > screenW;
+    this.virtualW = this.isPortrait ? screenH : screenW;
+    this.virtualH = this.isPortrait ? screenW : screenH;
+
+    if (this.isPortrait) {
+      this.root.setRotation(Math.PI / 2);
+      this.root.setPosition(this.virtualH, 0);
+    } else {
+      this.root.setRotation(0);
+      this.root.setPosition(0, 0);
+    }
+
+    const w = this.virtualW;
+    const h = this.virtualH;
+    const centerX = w / 2;
+    const centerY = h / 2;
+
+    this.cameras.main.setViewport(0, 0, screenW, screenH);
     const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.6, 1.2);
 
-    // BG: "세로 딱 맞춤" (가로는 크롭 허용)
     this.bgs.forEach(img => {
-      img.setPosition(cx, cy);
-      const scale = h / img.height;     // height-fit
-      img.setScale(scale);
+      img.setPosition(centerX, centerY);
+      const s = Math.max(w / img.width, h / img.height);
+      img.setScale(s);
     });
 
-    // Dragon: height 중심으로 맞추되, width도 과하면 제한
     if (this.dragon) {
-      const dScaleByHeight = (h * 0.55) / this.dragon.height; // 화면 높이의 55%
-      const dScaleByWidth  = (w * 0.90) / this.dragon.width;  // 화면 너비의 90%
+      const dScaleByHeight = (h * 0.55) / this.dragon.height;
+      const dScaleByWidth  = (w * 0.90) / this.dragon.width;
       const dScale = Math.min(dScaleByHeight, dScaleByWidth);
       this.dragon.setScale(dScale);
-      this.dragon.setPosition(cx, cy - h * 0.18);
+      this.dragon.setPosition(centerX, centerY - h * 0.18);
     }
 
     if (this.devText) {
-      this.devText.setPosition(cx, cy);
+      this.devText.setPosition(centerX, centerY);
       this.devText.setFontSize(Math.round(45 * uiScale));
     }
 
     if (this.skipHint) {
-      this.skipHint.setPosition(cx, h - Math.max(24, h * 0.05));
+      this.skipHint.setPosition(centerX, h - Math.max(24, h * 0.05));
       this.skipHint.setFontSize(Math.round(12 * uiScale));
     }
 
     if (this.breathOverlay) {
-      this.breathOverlay.setPosition(cx, cy).setSize(w, h);
+      this.breathOverlay.setPosition(centerX, centerY).setSize(w, h);
     }
 
     this.narrativeTexts.forEach(t => {
-      t.setPosition(cx, cy);
+      t.setPosition(centerX, centerY);
       t.setFontSize(Math.round(40 * uiScale));
     });
 
-    // 마지막 2줄 간격도 비율 기반
     const despairIdx = this.narrativeTexts.length - 2;
     const gap = Math.max(24, h * 0.06);
-    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
-    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
+    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = centerY - gap / 2;
+    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = centerY + gap / 2;
 
-    // Fire emitter: 드래곤 “입 근처”로
     if (this.fireEmitter) {
       if (this.dragon) {
         const mouthY = this.dragon.y + this.dragon.displayHeight * 0.10;
-        this.fireEmitter.setPosition(cx, mouthY);
+        this.fireEmitter.setPosition(centerX, mouthY);
       } else {
-        this.fireEmitter.setPosition(cx, h * 0.35);
+        this.fireEmitter.setPosition(centerX, h * 0.35);
       }
     }
   }
