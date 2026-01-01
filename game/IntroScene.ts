@@ -153,7 +153,8 @@ export default class IntroScene extends Phaser.Scene {
     const centerY = h / 2;
 
     this.cameras.main.setViewport(0, 0, screenW, screenH);
-    const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.6, 1.2);
+    // More aggressive scaling for small heights
+    const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.4, 1.2);
 
     this.bgs.forEach(img => {
       img.setPosition(centerX, centerY);
@@ -166,7 +167,7 @@ export default class IntroScene extends Phaser.Scene {
       const dScaleByWidth  = (w * 0.90) / this.dragon.width;
       const dScale = Math.min(dScaleByHeight, dScaleByWidth);
       this.dragon.setScale(dScale);
-      this.dragon.setPosition(centerX, centerY - h * 0.18);
+      this.dragon.setPosition(centerX, centerY - h * 0.22); // Slightly higher for more space
     }
 
     if (this.devText) {
@@ -189,13 +190,13 @@ export default class IntroScene extends Phaser.Scene {
     });
 
     const despairIdx = this.narrativeTexts.length - 2;
-    const gap = Math.max(24, h * 0.06);
+    const gap = Math.max(20, h * 0.08); // Responsive gap
     if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = centerY - gap / 2;
     if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = centerY + gap / 2;
 
     if (this.fireEmitter) {
       if (this.dragon) {
-        const mouthY = this.dragon.y + this.dragon.displayHeight * 0.10;
+        const mouthY = this.dragon.y + this.dragon.displayHeight * 0.12;
         this.fireEmitter.setPosition(centerX, mouthY);
       } else {
         this.fireEmitter.setPosition(centerX, h * 0.35);

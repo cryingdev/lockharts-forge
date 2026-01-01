@@ -119,47 +119,46 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   };
 
   return (
-    <div className="absolute bottom-3 md:bottom-6 left-1/2 -translate-x-1/2 w-[94vw] md:w-[90vw] max-w-6xl z-40">
+    <div className="absolute bottom-2 md:bottom-6 left-1/2 -translate-x-1/2 w-[96vw] md:w-[90vw] max-w-6xl z-40">
       <div 
-        className="w-full h-[33vh] bg-stone-950/20 backdrop-blur-3xl border border-white/10 md:border-2 rounded-3xl shadow-[0_40px_80px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-500 ring-1 ring-white/10"
+        className="w-full h-[30vh] min-h-[120px] bg-stone-950/20 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_40px_80px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-500 ring-1 ring-white/10"
       >
         
-        {/* Speaker Name Badge - Extreme transparency */}
-        <div className="bg-stone-900/10 p-3 md:p-6 border-r border-white/5 flex flex-col items-center gap-2 md:gap-4 w-28 md:w-44 shrink-0 justify-center">
-          <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-amber-900/20 to-stone-800/40 border border-amber-600/20 flex items-center justify-center shadow-inner">
-             <User className="w-6 h-6 md:w-10 md:h-10 text-amber-500/80 drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]" />
+        {/* Speaker Name Badge - Reduced padding for landscape */}
+        <div className="bg-stone-900/10 p-2 md:p-6 border-r border-white/5 flex flex-col items-center gap-1 md:gap-4 w-24 md:w-44 shrink-0 justify-center">
+          <div className="w-10 h-10 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-amber-900/20 to-stone-800/40 border border-amber-600/20 flex items-center justify-center shadow-inner">
+             <User className="w-5 h-5 md:w-10 md:h-10 text-amber-500/80 drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]" />
           </div>
           <div className="flex flex-col items-center">
-              <span className="font-black text-amber-50 text-xs md:text-xl text-center font-serif leading-tight tracking-tight drop-shadow-md">
+              <span className="font-black text-amber-50 text-[10px] md:text-xl text-center font-serif leading-tight tracking-tight drop-shadow-md truncate w-full">
                 {speaker}
               </span>
-              <span className="text-[7px] md:text-[9px] text-stone-500/80 uppercase font-black tracking-widest mt-1 hidden xs:block">Interlocutor</span>
           </div>
         </div>
 
-        {/* Text Area Content */}
-        <div className="flex-1 p-4 md:p-8 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent">
+        {/* Text Area Content - Responsive spacing */}
+        <div className="flex-1 p-3 md:p-8 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent">
           <div 
             ref={scrollRef}
             className="flex-1 overflow-y-auto custom-scrollbar pr-2 cursor-pointer"
             onClick={handleSkipTyping}
           >
             <div 
-              className={`text-sm md:text-2xl text-stone-50 leading-snug md:leading-relaxed font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${isTyping ? 'after:content-["_"] after:inline-block after:w-2 after:h-5 after:bg-amber-500 after:animate-pulse after:ml-1' : ''}`}
+              className={`text-xs md:text-2xl text-stone-50 leading-snug md:leading-relaxed font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${isTyping ? 'after:content-["_"] after:inline-block after:w-2 after:h-4 md:after:h-5 after:bg-amber-500 after:animate-pulse after:ml-1' : ''}`}
             >
               {renderFormattedText()}
             </div>
           </div>
 
-          {/* Options */}
+          {/* Options - More compact buttons for small height */}
           {!isTyping && options.length > 0 && (
-            <div className="mt-3 md:mt-6 flex flex-wrap gap-2 md:gap-4 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
+            <div className="mt-2 md:mt-6 flex flex-wrap gap-2 md:gap-4 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
               {options.map((option, idx) => (
                 <button
                   key={idx}
                   onClick={option.action}
                   disabled={option.disabled}
-                  className={`px-4 md:px-8 py-2 md:py-4 rounded-xl font-black text-[10px] md:text-sm flex items-center gap-2 transition-all transform active:scale-95 border shadow-2xl ${
+                  className={`px-3 md:px-8 py-1.5 md:py-4 rounded-lg md:rounded-xl font-black text-[9px] md:text-sm flex items-center gap-1.5 md:gap-2 transition-all transform active:scale-95 border shadow-2xl ${
                     option.disabled 
                       ? 'bg-stone-800/40 text-stone-600 border-stone-700/30 cursor-not-allowed'
                       : option.variant === 'danger'
@@ -170,13 +169,11 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
                   }`}
                 >
                   {option.label}
-                  {!option.disabled && <ChevronRight className="w-3 h-3 md:w-5 md:h-5 opacity-70 group-hover:translate-x-1 transition-transform" />}
+                  {!option.disabled && <ChevronRight className="w-2.5 h-2.5 md:w-5 md:h-5 opacity-70 group-hover:translate-x-1 transition-transform" />}
                 </button>
               ))}
             </div>
           )}
-          
-          <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-white/10 rounded-br-lg pointer-events-none"></div>
         </div>
       </div>
     </div>
