@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 
 export interface MainForgeData {
@@ -6,6 +7,10 @@ export interface MainForgeData {
 }
 
 export default class MainForgeScene extends Phaser.Scene {
+  public add!: Phaser.GameObjects.GameObjectFactory;
+  public tweens!: Phaser.Tweens.TweenManager;
+  public scale!: Phaser.Scale.ScaleManager;
+
   private onInteract?: (type: 'ANVIL' | 'FURNACE' | 'EMPTY_SLOT') => void;
   private hasFurnace: boolean = false;
   private floor?: Phaser.GameObjects.Rectangle;
@@ -14,6 +19,11 @@ export default class MainForgeScene extends Phaser.Scene {
   private anvilContainer?: Phaser.GameObjects.Container;
   private anvilText?: Phaser.GameObjects.Text;
   private furnaceObj?: any;
+
+  private root!: Phaser.GameObjects.Container;
+  private virtualW = 0;
+  private virtualH = 0;
+  private isPortrait = false;
 
   constructor() {
     super('MainForgeScene');
@@ -27,21 +37,42 @@ export default class MainForgeScene extends Phaser.Scene {
   create() {
     if (this.scale.width <= 0 || this.scale.height <= 0) return;
 
-    this.bg = this.add.rectangle(0, 0, 0, 0, 0x1c1917); 
-    this.floor = this.add.rectangle(0, 0, 0, 0, 0x292524); 
+    this.root = this.add.container(0, 0);
+
+    this.bg = this.add.rectangle(0, 0, 0, 0, 0x1c1917);
+    this.root.add(this.bg);
+    
+    this.floor = this.add.rectangle(0, 0, 0, 0, 0x292524);
+    this.root.add(this.floor);
+    
     this.glow = this.add.circle(0, 0, 200, 0x000000, 0.5);
+    this.root.add(this.glow);
     
     this.createAnvil();
     this.createFurnaceSlot();
-    this.createDust();
 
-    this.handleResize();
+    this.handleResize(this.scale.gameSize);
     this.scale.on('resize', this.handleResize, this);
   }
 
-  private handleResize() {
-    const w = this.scale.width;
-    const h = this.scale.height;
+  private handleResize(gameSize?: Phaser.Structs.Size) {
+    const screenW = gameSize?.width ?? this.scale.gameSize.width;
+    const screenH = gameSize?.height ?? this.scale.gameSize.height;
+
+    this.isPortrait = screenH > screenW;
+    this.virtualW = this.isPortrait ? screenH : screenW;
+    this.virtualH = this.isPortrait ? screenW : screenH;
+
+    if (this.isPortrait) {
+      this.root.setRotation(Math.PI / 2);
+      this.root.setPosition(this.virtualH, 0);
+    } else {
+      this.root.setRotation(0);
+      this.root.setPosition(0, 0);
+    }
+
+    const w = this.virtualW;
+    const h = this.virtualH;
     const centerX = w / 2;
     const centerY = h / 2;
     const isCompact = h < 450;
@@ -79,6 +110,7 @@ export default class MainForgeScene extends Phaser.Scene {
     });
 
     this.anvilText = this.add.text(0, 0, 'ANVIL', { fontFamily: 'monospace', fontSize: '12px', color: '#78716c' }).setOrigin(0.5);
+    this.root.add([this.anvilContainer, this.anvilText]);
   }
 
   private createFurnaceSlot() {
@@ -89,18 +121,12 @@ export default class MainForgeScene extends Phaser.Scene {
       this.tweens.add({ targets: this.furnaceObj.fire, alpha: 0.6, scale: 1.1, yoyo: true, repeat: -1, duration: 800, ease: 'Sine.easeInOut' });
       this.furnaceObj.body.setInteractive().on('pointerdown', () => this.onInteract?.('FURNACE'));
       this.furnaceObj.text = this.add.text(0, 0, 'FURNACE', { fontFamily: 'monospace', fontSize: '12px', color: '#ea580c' }).setOrigin(0.5);
+      this.root.add([this.furnaceObj.body, this.furnaceObj.fire, this.furnaceObj.text]);
     } else {
       this.furnaceObj.outline = this.add.rectangle(0, 0, 100, 140).setStrokeStyle(2, 0x44403c, 1);
       this.furnaceObj.text = this.add.text(0, 0, 'EMPTY SLOT', { fontSize: '10px', color: '#44403c' }).setOrigin(0.5);
       this.furnaceObj.outline.setInteractive().on('pointerdown', () => this.onInteract?.('EMPTY_SLOT'));
+      this.root.add([this.furnaceObj.outline, this.furnaceObj.text]);
     }
-  }
-
-  private createDust() {
-    this.add.particles(0, 0, 'white', {
-      x: { min: 0, max: 2000 }, y: { min: 0, max: 2000 },
-      lifespan: 4000, speedY: { min: 5, max: 20 }, scale: { start: 0.2, end: 0 }, alpha: { start: 0.5, end: 0 },
-      quantity: 1, frequency: 500, tint: 0xa8a29e
-    });
   }
 }

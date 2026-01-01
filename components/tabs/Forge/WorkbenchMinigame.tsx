@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { X, Scissors } from 'lucide-react';
@@ -10,6 +11,15 @@ interface WorkbenchMinigameProps {
 }
 
 class WorkbenchScene extends Phaser.Scene {
+  public load!: Phaser.Loader.LoaderPlugin;
+  public add!: Phaser.GameObjects.GameObjectFactory;
+  public tweens!: Phaser.Tweens.TweenManager;
+  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
+  public scale!: Phaser.Scale.ScaleManager;
+  public time!: Phaser.Time.Clock;
+  public textures!: Phaser.Textures.TextureManager;
+  public children!: Phaser.GameObjects.DisplayList;
+
   private targetNodes: Phaser.GameObjects.Arc[] = [];
   private cursor!: Phaser.GameObjects.Rectangle;
   private progressBar!: Phaser.GameObjects.Rectangle;
@@ -36,6 +46,11 @@ class WorkbenchScene extends Phaser.Scene {
   private persistentElements: (Phaser.GameObjects.GameObject)[] = [];
   private isFinished: boolean = false;
   private onComplete?: (score: number, bonus?: number) => void;
+
+  private root!: Phaser.GameObjects.Container;
+  private virtualW = 0;
+  private virtualH = 0;
+  private isPortrait = false;
 
   constructor() {
     super('WorkbenchScene');
@@ -69,29 +84,76 @@ class WorkbenchScene extends Phaser.Scene {
     this.load.image('workbench_table', getAssetUrl('workbench_table.png'));
   }
 
+  private toVirtual(sx: number, sy: number) {
+    if (!this.isPortrait) return { x: sx, y: sy };
+    return { x: sy, y: this.virtualH - sx };
+  }
+
   create() {
     if (this.scale.width <= 0 || this.scale.height <= 0) return;
 
+    this.root = this.add.container(0, 0);
+
     if (this.textures.exists('workbench_table')) {
-        this.add.image(0, 0, 'workbench_table').setName('bgImg').setScale(1.2).setAlpha(0.6);
+        const bgImg = this.add.image(0, 0, 'workbench_table').setName('bgImg').setScale(1.2).setAlpha(0.6);
+        this.root.add(bgImg);
     }
 
     this.progBg = this.add.rectangle(0, 0, 250, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e);
     this.progressBar = this.add.rectangle(0, 0, 0, 12, 0x10b981).setOrigin(0, 0.5);
     this.cycleText = this.add.text(0, 0, `PROGRESS: 0%`, { fontFamily: 'monospace', fontSize: '16px', color: '#10b981', fontStyle: 'bold' }).setOrigin(0.5);
+    this.root.add([this.progBg, this.progressBar, this.cycleText]);
+
     this.wavePathGraphics = this.add.graphics().setDepth(1);
+    this.root.add(this.wavePathGraphics);
+
     this.cursor = this.add.rectangle(0, 0, 4, 35, 0xffffff).setDepth(10).setStrokeStyle(1, 0xcccccc);
+    this.root.add(this.cursor);
+
     this.comboText = this.add.text(0, 0, '', { fontFamily: 'Impact', fontSize: '32px', color: '#10b981', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0).setDepth(20);
     this.instructionText = this.add.text(0, 0, '', { fontFamily: 'monospace', fontSize: '12px', color: '#10b981', stroke: '#000', strokeThickness: 2, align: 'center' }).setOrigin(0.5);
+    this.root.add([this.comboText, this.instructionText]);
 
-    this.handleResize();
+    this.handleResize(this.scale.gameSize);
     this.scale.on('resize', this.handleResize, this);
+    
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        const virtual = this.toVirtual(pointer.x, pointer.y);
+        this.handleScreenClick(virtual.x, virtual.y);
+    });
+
     this.spawnSegmentedNodes();
   }
 
-  private handleResize() {
-    const w = this.scale.width;
-    const h = this.scale.height;
+  private handleScreenClick(vx: number, vy: number) {
+    if (this.isFinished) return;
+    // Find closest node to virtual tap
+    for (const node of this.targetNodes) {
+        if (Phaser.Geom.Circle.Contains(new Phaser.Geom.Circle(node.x, node.y, 40), vx, vy)) {
+            this.handleNodeClick(node);
+            return;
+        }
+    }
+  }
+
+  private handleResize(gameSize?: Phaser.Structs.Size) {
+    const screenW = gameSize?.width ?? this.scale.gameSize.width;
+    const screenH = gameSize?.height ?? this.scale.gameSize.height;
+
+    this.isPortrait = screenH > screenW;
+    this.virtualW = this.isPortrait ? screenH : screenW;
+    this.virtualH = this.isPortrait ? screenW : screenH;
+
+    if (this.isPortrait) {
+      this.root.setRotation(Math.PI / 2);
+      this.root.setPosition(this.virtualH, 0);
+    } else {
+      this.root.setRotation(0);
+      this.root.setPosition(0, 0);
+    }
+
+    const w = this.virtualW;
+    const h = this.virtualH;
     this.centerX = w / 2;
     this.centerY = h / 2;
     const isCompact = h < 450;
@@ -173,15 +235,14 @@ class WorkbenchScene extends Phaser.Scene {
     this.persistentElements.forEach(el => el.destroy());
     this.persistentElements = [];
 
-    const startX = this.centerX - (this.waveWidth / 2);
     const segments = [{ min: 0.1, max: 0.25 }, { min: 0.35, max: 0.5 }, { min: 0.6, max: 0.75 }, { min: 0.85, max: 0.95 }];
     segments.forEach((seg, idx) => {
         const p = seg.min + Math.random() * (seg.max - seg.min);
-        const node = this.add.circle(0, 0, 20, 0x10b981, 0.2).setStrokeStyle(3, 0x10b981).setDepth(5).setInteractive();
+        const node = this.add.circle(0, 0, 20, 0x10b981, 0.2).setStrokeStyle(3, 0x10b981).setDepth(5);
         (node as any).progressPos = p; (node as any).isHit = false; (node as any).isMissed = false;
         this.targetNodes.push(node);
-        node.on('pointerdown', () => this.handleNodeClick(node));
         this.tweens.add({ targets: node, scale: { from: 0, to: 1 }, duration: 300, delay: idx * 50, ease: 'Back.out' });
+        this.root.add(node);
     });
     this.repositionNodes();
   }
@@ -191,12 +252,13 @@ class WorkbenchScene extends Phaser.Scene {
     const diff = Math.abs(this.cursorProgress - (node as any).progressPos);
     if (diff < 0.08) {
         const isPerfect = (1 - (diff / 0.08)) > 0.8;
-        (node as any).isHit = true; this.totalNodesHit++; this.hitsInCurrentCycle++; node.disableInteractive();
+        (node as any).isHit = true; this.totalNodesHit++; this.hitsInCurrentCycle++;
         if (isPerfect) {
             this.perfectCombo++; this.showFeedback('PERFECT!', 0xfbbf24, node.x, node.y);
             if (this.perfectCombo >= 8) {
                 this.bonusStats++;
                 const bonusTxt = this.add.text(node.x, node.y, '+1', { fontFamily: 'monospace', fontSize: '18px', color: '#fbbf24', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+                this.root.add(bonusTxt);
                 this.persistentElements.push(bonusTxt);
             }
         } else { this.perfectCombo = 0; this.showFeedback('GOOD!', 0x10b981, node.x, node.y); }
@@ -207,9 +269,10 @@ class WorkbenchScene extends Phaser.Scene {
 
   handleMiss(node: Phaser.GameObjects.Arc) {
       if ((node as any).isMissed || (node as any).isHit) return;
-      (node as any).isMissed = true; this.perfectCombo = 0; node.disableInteractive();
+      (node as any).isMissed = true; this.perfectCombo = 0;
       node.setFillStyle(0xef4444, 1).setStrokeStyle(0);
       const xMark = this.add.text(node.x, node.y, '×', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+      this.root.add(xMark);
       (node as any).xMark = xMark; 
       this.tweens.add({ targets: node, scale: 0.4, duration: 200 });
       this.showFeedback('MISS', 0xef4444, node.x, node.y);
@@ -218,6 +281,7 @@ class WorkbenchScene extends Phaser.Scene {
 
   showFeedback(text: string, color: number, x: number, y: number) {
       const fb = this.add.text(x, y - 40, text, { fontFamily: 'Arial Black', fontSize: '24px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0'), stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setDepth(20);
+      this.root.add(fb);
       this.tweens.add({ targets: fb, y: fb.y - 30, alpha: 0, duration: 600, onComplete: () => fb.destroy() });
       if (this.perfectCombo > 1) {
           this.comboText.setText(`${this.perfectCombo} PERFECT!`).setAlpha(1).setColor(this.perfectCombo >= 8 ? '#fbbf24' : '#10b981');
@@ -229,8 +293,10 @@ class WorkbenchScene extends Phaser.Scene {
       this.isFinished = true; this.cursor.setVisible(false);
       const quality = Math.round((this.totalNodesSpawned > 0 ? (this.totalNodesHit / this.totalNodesSpawned) : 0) * 100);
       const label = this.getQualityLabel(quality);
-      const bg = this.add.rectangle(this.centerX, this.centerY, this.scale.width, this.scale.height, 0x000000, 0.85).setAlpha(0).setDepth(50);
+      const bg = this.add.rectangle(this.centerX, this.centerY, this.virtualW, this.virtualH, 0x000000, 0.85).setAlpha(0).setDepth(50);
+      this.root.add(bg);
       const txt = this.add.text(this.centerX, this.centerY - 40, quality < 30 ? 'DEFECTIVE' : `${label} CRAFT!`, { fontFamily: 'serif', fontSize: '40px', color: quality < 30 ? '#ef4444' : '#10b981', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setAlpha(0).setDepth(51);
+      this.root.add(txt);
       this.tweens.add({ targets: [bg, txt], alpha: 1, duration: 500, onComplete: () => { this.time.delayedCall(1500, () => { if (this.onComplete) this.onComplete(quality, this.bonusStats); }); } });
   }
 }
@@ -260,7 +326,6 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
     gameRef.current = game;
     game.scene.start('WorkbenchScene', { onComplete, difficulty });
 
-    // ResizeObserver for dynamic container changes, ensuring Phaser knows about viewport-fit and dvh shifts
     const resizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
             const { width, height } = entry.contentRect;
