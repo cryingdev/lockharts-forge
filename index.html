@@ -23,15 +23,6 @@
         -webkit-user-drag: none;
       }
 
-      /* Allow selection in potential input fields (if any added later) */
-      input, textarea {
-        -webkit-user-select: text;
-        -khtml-user-select: text;
-        -moz-user-select: text;
-        -ms-user-select: text;
-        user-select: text;
-      }
-
       body {
         background-color: #0c0a09;
         color: #f5f5f4;
@@ -52,7 +43,38 @@
         overflow: hidden;
       }
 
-      /* Compact UI for short screens (Mobile Landscape) */
+      /* Landscape Lock Overlay */
+      #orientation-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background-color: #0c0a09;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+      }
+
+      /* Only show overlay when in portrait mode on mobile/tablets */
+      @media screen and (orientation: portrait) and (max-width: 1024px) {
+        #orientation-overlay {
+          display: flex;
+        }
+        #root {
+          display: none;
+        }
+      }
+
+      /* Icon Animation */
+      @keyframes rotate-device {
+        0% { transform: rotate(0deg); }
+        50% { transform: rotate(-90deg); }
+        100% { transform: rotate(0deg); }
+      }
+      .animate-rotate { animation: rotate-device 2s ease-in-out infinite; }
+
       @media screen and (max-height: 500px) {
         :root {
           --base-font-size: 13px;
@@ -101,12 +123,39 @@
     </script>
   </head>
   <body>
+    <!-- Orientation Restriction Overlay -->
+    <div id="orientation-overlay">
+      <div class="mb-6 p-6 rounded-full bg-amber-900/20 border-2 border-amber-500/30">
+        <svg class="w-12 h-12 text-amber-500 animate-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+      </div>
+      <h2 style="font-family: serif;" class="text-2xl font-black text-amber-100 mb-2 uppercase tracking-tighter">Landscape Mode Required</h2>
+      <p class="text-stone-500 text-sm max-w-[250px] leading-relaxed font-medium">Please rotate your device to begin your journey at Lockhart's Forge.</p>
+    </div>
+
     <div id="root"></div>
+
     <script>
-      // Disable the context menu (right click / long press menu)
+      // Disable the context menu
       window.addEventListener('contextmenu', function(e) {
         e.preventDefault();
       }, false);
+
+      // Attempt to lock orientation on first user interaction
+      const lockLandscape = async () => {
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape');
+          }
+        } catch (err) {
+          console.warn('Orientation lock not supported or failed:', err);
+        }
+      };
+
+      window.addEventListener('touchstart', lockLandscape, { once: true });
+      window.addEventListener('mousedown', lockLandscape, { once: true });
     </script>
     <script type="module" src="/index.tsx"></script>
   </body>

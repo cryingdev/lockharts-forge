@@ -1,4 +1,3 @@
-
 # Lockhart's Forge
 
 > **Version**: 0.1.32
@@ -8,18 +7,13 @@
 
 ## 🔄 Recent Updates (v0.1.32)
 
+*   **Fluid Header Layout**: Optimized the Header UI to make the Journal (Log Ticker) variable in width, pushing essential stats and date information to the edges.
 *   **Global UI Protections**: 
     *   Disabled context menus (long-press/right-click) and text selection globally to provide a seamless "app-like" experience.
     *   Blocked element dragging to prevent accidental browser interactions during gameplay.
 *   **Immersive Tavern Interaction**:
     *   Redesigned the character scale in Tavern mode. Sprites now occupy ~75% of the viewport height in mobile portrait.
     *   Added a foreground Tavern Table and adjusted character depth (bottom-offset) to create a sense of presence and immersion.
-*   **Version Sync**: Updated all system metadata and UI components to v0.1.32.
-
-## 🔄 Previous Updates (v0.1.31)
-
-*   **Forge Ignition Mechanics**: Bellows now only increase heat if the forge is already lit. Fuel is required to start from cold.
-*   **Visual Centering**: Aligned the dynamic heat glow with the anvil position.
 
 ## 🌟 Key Features
 
