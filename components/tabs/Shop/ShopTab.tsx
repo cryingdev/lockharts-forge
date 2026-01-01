@@ -153,31 +153,34 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        {/* Character Placement - Responsive Scaling based on dvh */}
+        {/* Character Placement - MASSIVE SCALE FOR PORTRAIT (~75% of view height) */}
         <div className="absolute inset-0 z-20 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
             {isShopOpen && activeCustomer && (
-               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-500 ease-out">
-                   <div className="relative h-[100dvh] md:h-[110dvh] w-auto flex justify-center translate-y-[20dvh] md:translate-y-[25dvh]">
+               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
+                   <div className="relative h-[75dvh] md:h-[110dvh] w-auto flex justify-center bottom-[12dvh] md:bottom-0 md:translate-y-[20dvh]">
                        <img 
                            src={activeCustomer.mercenary.sprite ? getAssetUrl(activeCustomer.mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
                            alt="Adventurer"
-                           className="h-full object-contain object-bottom filter drop-shadow-[0_0_60px_rgba(0,0,0,0.9)]"
+                           className="h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)]"
                        />
+                       {/* Depth shadow behind character */}
+                       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-black/60 blur-3xl rounded-full -z-10"></div>
                    </div>
                </div>
             )}
         </div>
 
-        <div className="absolute bottom-0 w-full h-24 md:h-40 z-30 flex items-end justify-center pointer-events-none">
+        {/* Shop Counter - Very tall in portrait to frame the massive character */}
+        <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-30 flex items-end justify-center pointer-events-none">
             {!counterImgError ? (
                 <img 
-                    src={getAssetUrl('shop_counter.png')}
+                    src={getAssetUrl('shop_counter.png')} 
                     alt="Shop Counter"
-                    className="w-full h-full object-cover object-top filter drop-shadow-[0_-15px_30px_rgba(0,0,0,0.6)]"
+                    className="w-full h-full object-cover object-top filter drop-shadow-[0_-30px_50px_rgba(0,0,0,0.8)]"
                     onError={() => setCounterImgError(true)}
                 />
             ) : (
-                <div className="w-full h-full bg-[#3f2e22] border-t-2 md:border-t-[8px] border-[#5d4037] shadow-[0_-20px_40px_rgba(0,0,0,0.7)] relative overflow-hidden">
+                <div className="w-full h-full bg-[#3f2e22] border-t-2 md:border-t-[8px] border-[#5d4037] shadow-[0_-40px_60px_rgba(0,0,0,0.85)] relative overflow-hidden">
                     <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 12px)' }}></div>
                 </div>
             )}

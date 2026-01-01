@@ -140,18 +140,26 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* Character Sprite Rendering - DVH BASED SCALING */}
+            {/* Character Sprite Rendering - DVH BASED SCALING AS REQUESTED */}
             <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
                <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                   <div className="relative h-[90dvh] md:h-[110dvh] w-auto flex justify-center translate-y-[12dvh] md:translate-y-[20dvh]">
+                   <div className="relative h-[75dvh] md:h-64 w-auto flex justify-center bottom-[12dvh] md:bottom-0">
                        <img 
                            src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
                            alt={mercenary.name}
-                           className="h-full object-contain object-bottom filter drop-shadow-[0_0_80px_rgba(0,0,0,0.95)]"
+                           className="h-full object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
                        />
-                       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-2xl rounded-full -z-10"></div>
+                       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-3xl rounded-full -z-10"></div>
                    </div>
                </div>
+            </div>
+
+            {/* Tavern Table - Matching shop counter logic for grounding */}
+            <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 flex items-end justify-center pointer-events-none">
+                <div className="w-full h-full bg-[#2a1e16] border-t-4 md:border-t-[8px] border-[#3e2723] shadow-[0_-40px_60px_rgba(0,0,0,0.85)] relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 12px)' }}></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent"></div>
+                </div>
             </div>
 
             {/* INTERACTION MENU */}

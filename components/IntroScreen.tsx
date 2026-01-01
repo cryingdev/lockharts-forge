@@ -1,5 +1,4 @@
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import IntroScene from '../game/IntroScene';
 
@@ -17,6 +16,38 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
+  // --- Effect 1: Phaser Game Lifecycle ---
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const config: Phaser.Types.Core.GameConfig = {
+      type: Phaser.AUTO,
+      parent: el,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: '#000000',
+      scene: [IntroScene],
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+      },
+    };
+
+    const game = new Phaser.Game(config);
+    gameRef.current = game;
+
+    const onIntroComplete = () => onComplete();
+    game.events.on('intro-complete', onIntroComplete);
+
+    return () => {
+      game.events.off('intro-complete', onIntroComplete);
+      game.destroy(true);
+      gameRef.current = null;
+    };
+  }, [onComplete]);
+
+  // --- Effect 2: Resize & Orientation Handling ---
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -38,6 +69,7 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
       if (w <= 0 || h <= 0) return;
 
       game.scale.resize(w, h);
+      // Small delay to let browser finish internal layout shifts
       requestAnimationFrame(() => {
         game.scale.refresh();
       });
@@ -48,65 +80,37 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
       resizePhaserToWrapper();
     };
 
-    if (!gameRef.current) {
-      ensureWrapperSize();
-
-      const config: Phaser.Types.Core.GameConfig = {
-        type: Phaser.AUTO,
-        parent: el,
-        width: 1280,
-        height: 720,
-        backgroundColor: '#000000',
-        scene: [IntroScene],
-        scale: {
-          mode: Phaser.Scale.RESIZE,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
-        },
-      };
-
-      const game = new Phaser.Game(config);
-      gameRef.current = game;
-
-      const onIntroComplete = () => onComplete();
-      game.events.on('intro-complete', onIntroComplete);
-
-      sync();
-
-      // Lifecycle cleanup
-      return () => {
-        game.events.off('intro-complete', onIntroComplete);
-        game.destroy(true);
-        gameRef.current = null;
-      };
-    }
-
     const vv = window.visualViewport;
-    const onOrientationChange = () => {
+    const onDelayedSync = () => {
       sync();
-      setTimeout(sync, 60);
-      setTimeout(sync, 180);
+      // Multiple attempts to capture layout after UI bars (address bar, etc.) settle
+      setTimeout(sync, 100);
+      setTimeout(sync, 300);
     };
 
+    // Initial sync
+    sync();
+
+    // Event listeners
     vv?.addEventListener('resize', sync);
     window.addEventListener('resize', sync);
-    window.addEventListener('orientationchange', onOrientationChange);
+    window.addEventListener('orientationchange', onDelayedSync);
 
+    // Observer for DOM-level changes
     const ro = new ResizeObserver(() => requestAnimationFrame(sync));
     ro.observe(el);
-
-    sync();
 
     return () => {
       ro.disconnect();
       vv?.removeEventListener('resize', sync);
       window.removeEventListener('resize', sync);
-      window.removeEventListener('orientationchange', onOrientationChange);
+      window.removeEventListener('orientationchange', onDelayedSync);
     };
-  }, [onComplete]);
+  }, []);
 
   return (
-    <div className="fixed inset-0 bg-black z-50 overflow-hidden">
-      <div ref={containerRef} />
+    <div className="fixed inset-0 bg-black z-50 overflow-hidden touch-none">
+      <div ref={containerRef} className="w-full h-full" />
     </div>
   );
 }
