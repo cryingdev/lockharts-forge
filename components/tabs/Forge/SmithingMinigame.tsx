@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Phaser from 'phaser';
 import { X } from 'lucide-react';
@@ -18,13 +19,20 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   const [isReady, setIsReady] = useState(false);
   const charcoalCount = state.inventory.find((i) => i.id === MATERIALS.CHARCOAL.id || i.id === 'charcoal')?.quantity || 0;
 
+  // 콜백들을 최신으로 유지하기 위한 Refs
+  const onCompleteRef = useRef(onComplete);
+  const actionsRef = useRef(actions);
+  
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  useEffect(() => { actionsRef.current = actions; }, [actions]);
+
   const handleCancel = useCallback(() => {
     if (gameRef.current) {
       const s = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
-      if (s) actions.updateForgeStatus(s.getTemperature());
+      if (s) actionsRef.current.updateForgeStatus(s.getTemperature());
     }
     onClose();
-  }, [actions, onClose]);
+  }, [onClose]);
 
   useEffect(() => {
     const checkSize = () => {
@@ -40,6 +48,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   useEffect(() => {
     if (!isReady || !containerRef.current) return;
     
+    // 이펙트 내에서 state를 직접 참조하는 대신 초기 값만 사용
     const initialTemp = Math.max(0, (state.forgeTemperature || 0) - ((Date.now() - (state.lastForgeTime || 0)) / 1000) * 5);
     
     const config: Phaser.Types.Core.GameConfig = {
@@ -58,7 +67,6 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     const game = new Phaser.Game(config);
     gameRef.current = game;
 
-    // ResizeObserver for perfect scaling even with dynamic browser UI components
     const resizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
             const { width, height } = entry.contentRect;
@@ -70,17 +78,18 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     if (containerRef.current) resizeObserver.observe(containerRef.current);
 
     const handleHeatUp = () => {
-      actions.consumeItem(MATERIALS.CHARCOAL.id, 1);
+      actionsRef.current.consumeItem(MATERIALS.CHARCOAL.id, 1);
       const scene = game.scene.getScene('SmithingScene') as SmithingScene;
       if (scene) scene.heatUp();
     };
 
+    // 씬 시작 시 Refs를 사용하여 콜백 연결
     game.scene.start('SmithingScene', { 
-      onComplete, 
+      onComplete: (score: number) => onCompleteRef.current(score), 
       difficulty, 
       initialTemp, 
       charcoalCount, 
-      onStatusUpdate: (t: number) => actions.updateForgeStatus(t), 
+      onStatusUpdate: (t: number) => actionsRef.current.updateForgeStatus(t), 
       onHeatUpRequest: handleHeatUp 
     });
 
@@ -91,7 +100,8 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
         gameRef.current = null; 
       }
     };
-  }, [isReady, onComplete, difficulty]);
+    // onComplete와 actions를 의존성에서 제거하여 불필요한 재시작 방지
+  }, [isReady, difficulty]); 
 
   useEffect(() => {
     if (gameRef.current) {

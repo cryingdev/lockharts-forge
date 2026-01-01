@@ -24,6 +24,12 @@ export const useGame = () => {
 
 export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
+  
+  // 최신 상태를 참조하기 위한 Ref (액션 함수 안정화용)
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // --- Helper Trigger ---
   const triggerEnergyHighlight = () => {
@@ -34,9 +40,10 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   };
 
   // --- ACTIONS ---
+  // 의존성 배열을 비워 액션 함수들이 절대 변하지 않도록 설정
   const actions = useMemo(() => ({
     repairItem: () => {
-        if (state.stats.energy < GAME_CONFIG.ENERGY_COST.REPAIR) {
+        if (stateRef.current.stats.energy < GAME_CONFIG.ENERGY_COST.REPAIR) {
             triggerEnergyHighlight();
             return;
         }
@@ -52,9 +59,8 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     },
     closeEvent: () => dispatch({ type: 'CLOSE_EVENT' }),
 
-    // Save & Load
     saveGame: () => {
-        const success = saveToStorage(state);
+        const success = saveToStorage(stateRef.current);
         if (success) {
             dispatch({ type: 'TRIGGER_EVENT', payload: {
                 id: 'NONE',
@@ -68,11 +74,10 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         dispatch({ type: 'LOAD_GAME', payload: loadedState });
     },
 
-    // Crafting
     startCrafting: (item: EquipmentItem) => {
-        const masteryCount = state.craftingMastery[item.id] || 0;
+        const masteryCount = stateRef.current.craftingMastery[item.id] || 0;
         const energyCost = getEnergyCost(item, masteryCount);
-        if (state.stats.energy < energyCost) {
+        if (stateRef.current.stats.energy < energyCost) {
             triggerEnergyHighlight();
             return;
         }
@@ -87,7 +92,7 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) =>
         dispatch({ type: 'SELL_ITEM', payload: { itemId, count, price, equipmentInstanceId, customer } }),
     toggleShop: () => {
-        if (!state.forge.isShopOpen && state.stats.energy < GAME_CONFIG.ENERGY_COST.OPEN_SHOP) {
+        if (!stateRef.current.forge.isShopOpen && stateRef.current.stats.energy < GAME_CONFIG.ENERGY_COST.OPEN_SHOP) {
             triggerEnergyHighlight();
             return;
         }
@@ -115,19 +120,15 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     claimExpedition: (expeditionId: string) => dispatch({ type: 'CLAIM_EXPEDITION', payload: { expeditionId } }),
     dismissDungeonResult: () => dispatch({ type: 'DISMISS_DUNGEON_RESULT' }),
 
-    // Equipment Actions
     equipItem: (mercenaryId: string, inventoryItemId: string) => dispatch({ type: 'EQUIP_ITEM', payload: { mercenaryId, inventoryItemId } }),
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => dispatch({ type: 'UNEQUIP_ITEM', payload: { mercenaryId, slot } }),
 
-    // Item Actions
     useItem: (itemId: string) => dispatch({ type: 'USE_ITEM', payload: { itemId } }),
-
-    // Stat Actions
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
 
     triggerEnergyHighlight
-
-  }), [state]); // 의존성 배열에 state 추가하여 최신 클로저 유지
+    // Fix: Added missing closing parenthesis to correctly terminate the useMemo callback
+  }), []); 
 
   return (
     <GameContext.Provider value={{ state, actions }}>
