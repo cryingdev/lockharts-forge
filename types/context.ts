@@ -1,3 +1,4 @@
+
 import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -14,6 +15,9 @@ export interface GameContextType {
     triggerEvent: (event: GameEvent) => void;
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
+
+    saveGame: () => void;
+    loadGame: (loadedState: GameState) => void;
     
     startCrafting: (item: EquipmentItem) => void;
     cancelCrafting: (item: EquipmentItem) => void;

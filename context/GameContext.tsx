@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
-import { GameContextType } from '../types/index';
+import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
 import { createInitialGameState } from '../state/initial-game-state';
 import { EquipmentItem, EquipmentSlotType } from '../types/inventory';
@@ -9,6 +10,7 @@ import { PrimaryStats } from '../models/Stats';
 import { GAME_CONFIG } from '../config/game-config';
 import { getEnergyCost } from '../utils/craftingLogic';
 import { GameEvent } from '../types/events';
+import { saveToStorage } from '../utils/saveSystem';
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -49,6 +51,22 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       dispatch({ type: 'CLOSE_EVENT' });
     },
     closeEvent: () => dispatch({ type: 'CLOSE_EVENT' }),
+
+    // Save & Load
+    saveGame: () => {
+        const success = saveToStorage(state);
+        if (success) {
+            dispatch({ type: 'TRIGGER_EVENT', payload: {
+                id: 'NONE',
+                title: "Game Saved",
+                description: "Your progress has been recorded in the annals of history.",
+                options: [{ label: "Continue", action: () => {} }]
+            }});
+        }
+    },
+    loadGame: (loadedState: GameState) => {
+        dispatch({ type: 'LOAD_GAME', payload: loadedState });
+    },
 
     // Crafting
     startCrafting: (item: EquipmentItem) => {
@@ -109,7 +127,7 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     triggerEnergyHighlight
 
-  }), [state.stats.energy, state.craftingMastery, state.forge.isShopOpen, state.activeEvent, state.knownMercenaries]);
+  }), [state]); // 의존성 배열에 state 추가하여 최신 클로저 유지
 
   return (
     <GameContext.Provider value={{ state, actions }}>
