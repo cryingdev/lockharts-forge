@@ -153,11 +153,11 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        {/* Character Placement - Even Larger (h-110dvh) and Lower (translate-y-30dvh) */}
+        {/* Character Placement - Responsive Scaling based on dvh */}
         <div className="absolute inset-0 z-20 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
             {isShopOpen && activeCustomer && (
                <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-500 ease-out">
-                   <div className="relative h-[110dvh] md:h-[120dvh] w-auto flex justify-center translate-y-[30dvh]">
+                   <div className="relative h-[100dvh] md:h-[110dvh] w-auto flex justify-center translate-y-[20dvh] md:translate-y-[25dvh]">
                        <img 
                            src={activeCustomer.mercenary.sprite ? getAssetUrl(activeCustomer.mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
                            alt="Adventurer"

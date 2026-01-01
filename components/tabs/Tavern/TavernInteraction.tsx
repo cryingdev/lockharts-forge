@@ -140,24 +140,23 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* Character Sprite Rendering - ENLARGED */}
+            {/* Character Sprite Rendering - DVH BASED SCALING */}
             <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
-               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out translate-y-4 md:translate-y-0">
-                   <div className="relative h-[88vh] md:h-[110vh] w-auto flex justify-center translate-y-16 md:translate-y-28">
+               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
+                   <div className="relative h-[90dvh] md:h-[110dvh] w-auto flex justify-center translate-y-[12dvh] md:translate-y-[20dvh]">
                        <img 
                            src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
                            alt={mercenary.name}
                            className="h-full object-contain object-bottom filter drop-shadow-[0_0_80px_rgba(0,0,0,0.95)]"
                        />
-                       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-2xl rounded-full -z-10"></div>
+                       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-2xl rounded-full -z-10"></div>
                    </div>
                </div>
             </div>
 
-            {/* INTERACTION MENU: Moved to TOP RIGHT (below navigation) */}
+            {/* INTERACTION MENU */}
             <div className={`absolute right-4 top-4 z-50 grid grid-cols-2 gap-2 w-60 md:w-80 animate-in slide-in-from-right-8 duration-700 delay-200 transition-opacity ${pendingGiftItem ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
                 
-                {/* Leave Button - Now at the VERY TOP and spans both columns */}
                 <button 
                     onClick={onBack}
                     className="col-span-2 flex items-center gap-2 p-2 bg-red-950/30 hover:bg-red-900/50 border border-red-900/40 hover:border-red-500 rounded-xl backdrop-blur-md transition-all shadow-xl group"
