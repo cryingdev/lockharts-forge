@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Anvil, Play, Upload, User, Info } from 'lucide-react';
 import { getAssetUrl } from '../utils';
@@ -38,7 +39,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         LOCKHART'S<br/>FORGE
                     </h1>
                     <div className="h-0.5 md:h-1 w-16 md:w-32 bg-amber-800 mx-auto mt-2 md:mt-4 rounded-full"></div>
-                    <p className="mt-1 md:mt-4 text-stone-500 font-mono tracking-widest text-[1.5vh] md:text-sm uppercase">Version 0.1.31</p>
+                    <p className="mt-1 md:mt-4 text-stone-500 font-mono tracking-widest text-[1.5vh] md:text-sm uppercase">Version 0.1.32</p>
                 </div>
 
                 {/* Menu Buttons - Scaled for shorter screens */}

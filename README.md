@@ -1,32 +1,31 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.31
+> **Version**: 0.1.32
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
 
-## 🔄 Recent Updates (v0.1.31)
+## 🔄 Recent Updates (v0.1.32)
 
-*   **Forge Ignition Mechanics**:
-    *   The bellows now only increase heat if the forge is already lit (> 0°C). 
-    *   Players must use fuel (Heat Up) to ignite a completely cold forge.
-*   **Visual Centering**:
-    *   Aligned the dynamic heat glow (Ambient Glow) with the physical anvil position for consistent visual feedback across different screen sizes.
-*   **UI Polish**:
-    *   Removed intrusive "No Ignition" alert text to maintain a cleaner, more immersive forge atmosphere.
+*   **Global UI Protections**: 
+    *   Disabled context menus (long-press/right-click) and text selection globally to provide a seamless "app-like" experience.
+    *   Blocked element dragging to prevent accidental browser interactions during gameplay.
+*   **Immersive Tavern Interaction**:
+    *   Redesigned the character scale in Tavern mode. Sprites now occupy ~75% of the viewport height in mobile portrait.
+    *   Added a foreground Tavern Table and adjusted character depth (bottom-offset) to create a sense of presence and immersion.
+*   **Version Sync**: Updated all system metadata and UI components to v0.1.32.
 
-## 🔄 Previous Updates (v0.1.30)
+## 🔄 Previous Updates (v0.1.31)
 
-*   **Asymmetric Anvil Geometry**: Adjusted anvil perspective where the left side height is 90% of the right side.
-*   **Progressive Blade Forging**: 5 visual stages based on completion score.
+*   **Forge Ignition Mechanics**: Bellows now only increase heat if the forge is already lit. Fuel is required to start from cold.
+*   **Visual Centering**: Aligned the dynamic heat glow with the anvil position.
 
 ## 🌟 Key Features
 
 ### 1. The Forge (Crafting System)
 *   **Smithing**: Manage heat and timing. Watch the billet morph into a blade as you strike the anvil.
 *   **Workbench**: Rhythm-based stitching for leather and wood.
-*   **Mastery**: Increased craft counts unlock quality bonuses and energy discounts.
 
 ## 📜 License
 
