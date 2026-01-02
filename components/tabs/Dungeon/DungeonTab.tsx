@@ -1,0 +1,356 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { useGame } from '../../../context/GameContext';
+import { DUNGEONS } from '../../../data/dungeons';
+import { MATERIALS } from '../../../data/materials';
+import { calculatePartyPower, calculateMercenaryPower, formatDuration } from '../../../utils/dungeonUtils';
+import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box } from 'lucide-react';
+import { getAssetUrl } from '../../../utils';
+
+const DungeonTab = () => {
+    const { state, actions } = useGame();
+    const { activeExpeditions, knownMercenaries, dungeonClearCounts } = state;
+
+    // Index-based selection for paging
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [party, setParty] = useState<string[]>([]);
+    
+    const selectedDungeon = DUNGEONS[selectedIndex];
+
+    const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
+    const currentExpedition = activeExpeditions.find(e => e.dungeonId === selectedDungeon.id);
+    
+    const isMercBusy = (mercId: string) => {
+        return activeExpeditions.some(e => e.partyIds.includes(mercId));
+    };
+
+    const handlePrev = () => {
+        setSelectedIndex(prev => (prev > 0 ? prev - 1 : DUNGEONS.length - 1));
+        setParty([]);
+    };
+
+    const handleNext = () => {
+        setSelectedIndex(prev => (prev < DUNGEONS.length - 1 ? prev + 1 : 0));
+        setParty([]);
+    };
+
+    const toggleMercenary = (mercId: string) => {
+        if (party.includes(mercId)) {
+            setParty(prev => prev.filter(id => id !== mercId));
+        } else {
+            if (party.length < 4) {
+                setParty(prev => [...prev, mercId]);
+            }
+        }
+    };
+
+    const handleStartExpedition = () => {
+        if (party.length === 0 || !selectedDungeon) return;
+        actions.startExpedition(selectedDungeon.id, party);
+    };
+
+    const handleClaim = (expId: string) => {
+        actions.claimExpedition(expId);
+    };
+
+    const currentPartyPower = useMemo(() => {
+        const selectedMercs = knownMercenaries.filter(m => party.includes(m.id));
+        return calculatePartyPower(selectedMercs);
+    }, [party, knownMercenaries]);
+
+    const canStart = useMemo(() => {
+        if (!selectedDungeon) return false;
+        if (party.length === 0) return false;
+        if (currentPartyPower < selectedDungeon.requiredPower) return false;
+        
+        const selectedMercs = knownMercenaries.filter(m => party.includes(m.id));
+        const hasEnergy = selectedMercs.every(m => (m.expeditionEnergy || 0) >= selectedDungeon.energyCost);
+        
+        return hasEnergy;
+    }, [selectedDungeon, party, currentPartyPower, knownMercenaries]);
+
+    const [timeLeft, setTimeLeft] = useState<string>('');
+    const isComplete = currentExpedition?.status === 'COMPLETED';
+
+    useEffect(() => {
+        if (!currentExpedition) return;
+        if (currentExpedition.status === 'COMPLETED') {
+            setTimeLeft('00:00');
+            return;
+        }
+
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const end = currentExpedition.endTime;
+            const diff = end - now;
+            if (diff <= 0) setTimeLeft('00:00');
+            else setTimeLeft(formatDuration(diff));
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [currentExpedition]);
+
+    const isUnlocked = selectedDungeon.tier <= state.stats.tierLevel + 1;
+    const clears = dungeonClearCounts[selectedDungeon.id] || 0;
+    const isBoss = !!selectedDungeon.bossVariantId;
+
+    return (
+        <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans">
+            
+            {/* Left/Upper Panel: Dungeon Selection (Stable Responsive Layout) */}
+            <div className="w-full sm:w-[40%] h-[42%] sm:h-full flex flex-col border-b sm:border-b-0 sm:border-r border-stone-800 bg-stone-900/50 relative overflow-hidden shrink-0 min-h-0">
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                    <img src={getAssetUrl('dungeon_bg.png')} className="w-full h-full object-cover grayscale" />
+                </div>
+
+                {/* Stable Header Area */}
+                <div className="relative flex flex-col items-center pt-3 sm:pt-10 z-10 shrink-0">
+                    <div className="h-14 sm:h-24 flex flex-col items-center justify-center text-center px-10 mb-1 sm:mb-4">
+                        <h1 key={`title-${selectedDungeon.id}`} className="text-base sm:text-2xl lg:text-3xl font-black text-white font-serif tracking-tighter uppercase leading-none animate-in fade-in duration-300">
+                            {selectedDungeon.name}
+                        </h1>
+                        {!isUnlocked && (
+                            <div className="flex items-center justify-center gap-1.5 text-red-500 font-bold text-[8px] sm:text-xs uppercase mt-1">
+                                <Lock className="w-2 sm:w-2.5 h-2 sm:h-2.5" /> Area Locked
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Navigation Area with Fixed Arrows */}
+                    <div className="relative w-full flex items-center justify-center h-20 sm:h-40 mb-1 sm:mb-6">
+                        <button 
+                            onClick={handlePrev} 
+                            className="absolute left-2 sm:left-4 z-30 p-2 sm:p-4 bg-stone-800/80 hover:bg-amber-600 rounded-full border border-stone-700 transition-all active:scale-90 group shadow-2xl backdrop-blur-md"
+                        >
+                            <ChevronLeft className="w-4 h-4 sm:w-8 sm:h-8 text-stone-400 group-hover:text-white" />
+                        </button>
+
+                        <div key={`icon-${selectedDungeon.id}`} className="relative group animate-in fade-in zoom-in duration-300">
+                            <div className={`absolute inset-0 blur-2xl rounded-full opacity-20 ${isBoss ? 'bg-red-500' : 'bg-amber-500'} group-hover:opacity-40 transition-opacity`}></div>
+                            
+                            <div className={`w-16 h-16 sm:w-32 lg:w-40 sm:h-32 lg:h-40 bg-stone-900 rounded-[1.2rem] sm:rounded-[2rem] border-2 sm:border-4 border-stone-700 flex items-center justify-center relative shadow-2xl overflow-hidden ring-4 ring-white/5 ${!isUnlocked ? 'grayscale brightness-50' : ''}`}>
+                                 <div className="text-2xl sm:text-5xl lg:text-6xl drop-shadow-2xl">
+                                    {selectedDungeon.id.includes('rat') ? '🐀' : selectedDungeon.id.includes('goblin') ? '👺' : selectedDungeon.id.includes('mine') ? '⛏️' : '🏰'}
+                                 </div>
+                                 {currentExpedition && (
+                                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
+                                         <Timer className="w-4 h-4 sm:w-8 sm:h-8 text-amber-500 animate-pulse mb-1" />
+                                         <span className="text-[9px] sm:text-sm font-mono text-amber-400 font-bold">{timeLeft}</span>
+                                     </div>
+                                 )}
+                            </div>
+
+                            <div className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded sm:rounded-lg font-black text-[7px] sm:text-xs shadow-xl border sm:border-2 z-30 font-mono tracking-tighter ${isBoss ? 'bg-red-700 border-red-400 text-white' : 'bg-amber-600 border-amber-400 text-amber-50'}`}>
+                                {isBoss ? 'BOSS' : `TIER ${selectedDungeon.tier}`}
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={handleNext} 
+                            className="absolute right-2 sm:right-4 z-30 p-2 sm:p-4 bg-stone-800/80 hover:bg-amber-600 rounded-full border border-stone-700 transition-all active:scale-90 group shadow-2xl backdrop-blur-md"
+                        >
+                            <ChevronRight className="w-4 h-4 sm:w-8 sm:h-8 text-stone-400 group-hover:text-white" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Dynamic Content (Scrollable) */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 sm:p-8 pt-0 z-10 flex flex-col items-center min-h-0">
+                    <div className="w-full max-w-sm space-y-3 sm:space-y-6">
+                        <p key={`desc-${selectedDungeon.id}`} className="text-stone-400 text-[9px] sm:text-sm text-center italic px-4 leading-snug animate-in fade-in duration-500">
+                            "{selectedDungeon.description}"
+                        </p>
+
+                        <div className="bg-stone-950/40 p-2 sm:p-4 rounded-xl border border-stone-800/50">
+                            <div className="flex items-center justify-center gap-1.5 mb-1.5 sm:mb-3">
+                                <Box className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-stone-600" />
+                                <h4 className="text-[7px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">Expected Loot</h4>
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-1 sm:gap-3">
+                                {selectedDungeon.rewards.map((reward, ridx) => {
+                                    const mat = Object.values(MATERIALS).find(m => m.id === reward.itemId);
+                                    return (
+                                        <div key={`${selectedDungeon.id}-reward-${ridx}`} className="group relative w-7 h-7 sm:w-12 sm:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center hover:border-amber-500/50 transition-colors shadow-inner">
+                                            <img 
+                                                src={getAssetUrl(`${reward.itemId}.png`)} 
+                                                className="w-4 h-4 sm:w-8 sm:h-8 object-contain opacity-70 group-hover:opacity-100 transition-opacity"
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                            />
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-950 border border-stone-700 rounded text-[7px] sm:text-[9px] font-bold text-stone-300 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-2xl">
+                                                {mat?.name || reward.itemId}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        
+                        {selectedDungeon.bossUnlockReq && (
+                            <div className="bg-stone-950/80 p-2 sm:p-4 rounded-xl border border-stone-800 shadow-xl">
+                                <div className="flex justify-between text-[7px] sm:text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1.5 sm:mb-2">
+                                    <span>Area Progress</span>
+                                    <span className="text-red-500">{clears}/{selectedDungeon.bossUnlockReq} CLEARS</span>
+                                </div>
+                                <div className="h-1 sm:h-2 bg-stone-900 rounded-full overflow-hidden border border-stone-800">
+                                    <div className="h-full bg-gradient-to-r from-red-900 to-red-600 transition-all duration-1000" style={{ width: `${Math.min(100, (clears / selectedDungeon.bossUnlockReq) * 100)}%` }}></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="hidden sm:block p-3 sm:p-4 bg-stone-950/80 border-t border-stone-800 text-center font-mono text-[9px] sm:text-[10px] text-stone-600 uppercase tracking-[0.3em] shrink-0">
+                    Location Index {selectedIndex + 1} of {DUNGEONS.length}
+                </div>
+            </div>
+
+            {/* Right/Lower Panel: Deployment & Squad (Responsive flex space) */}
+            <div className="flex-1 flex flex-col bg-stone-925 relative overflow-hidden min-h-0 min-w-0">
+                {currentExpedition ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center animate-in fade-in duration-700">
+                        <Trophy className={`w-10 h-10 sm:w-24 lg:w-28 mb-4 sm:mb-8 ${isComplete ? 'text-emerald-500 animate-bounce' : 'text-stone-800 opacity-30'}`} />
+                        <h2 className="text-lg sm:text-3xl lg:text-4xl font-black text-stone-100 mb-2 uppercase tracking-tighter font-serif italic">Mission Underway</h2>
+                        <p className="text-stone-500 text-[10px] sm:text-base lg:text-lg max-w-lg mb-6 sm:mb-12 leading-relaxed px-4">The squad is currently navigating the hazards of <span className="text-amber-500 font-bold">{selectedDungeon.name}</span>. Stand by for status updates.</p>
+                        
+                        {isComplete ? (
+                            <button onClick={() => handleClaim(currentExpedition.id)} className="px-8 sm:px-16 lg:px-20 py-3 sm:py-5 lg:py-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl md:rounded-2xl shadow-2xl flex items-center gap-3 sm:gap-4 border-b-4 border-emerald-800 active:scale-95 transition-all">
+                                <CheckCircle className="w-4 h-4 sm:w-7 lg:w-8" /> 
+                                <span className="text-xs sm:text-lg lg:text-xl uppercase tracking-widest">Secure Loot & Return</span>
+                            </button>
+                        ) : (
+                            <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-500 shadow-2xl backdrop-blur-md">
+                                ETA: {timeLeft}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        {/* Requirement Banner */}
+                        <div className="p-2 sm:p-5 lg:p-6 bg-stone-900/80 border-b border-stone-800 grid grid-cols-3 gap-2 sm:gap-6 shrink-0">
+                            <div className="bg-stone-950 p-1.5 sm:p-4 rounded-xl border border-stone-800 flex flex-col items-center justify-center">
+                                <span className="text-[6px] sm:text-[9px] lg:text-[10px] text-stone-500 font-black uppercase tracking-tighter mb-0.5">Time</span>
+                                <div className="flex items-center gap-1 text-[10px] sm:text-lg lg:text-xl font-black text-stone-200 font-mono"><Timer className="w-2.5 h-2.5 sm:w-4 lg:w-5 text-stone-500" /> {selectedDungeon.durationMinutes}m</div>
+                            </div>
+                            <div className="bg-stone-950 p-1.5 sm:p-4 rounded-xl border border-stone-800 flex flex-col items-center justify-center">
+                                <span className="text-[6px] sm:text-[9px] lg:text-[10px] text-stone-500 font-black uppercase tracking-tighter mb-0.5">Energy</span>
+                                <div className="flex items-center gap-1 text-[10px] sm:text-lg lg:text-xl font-black text-blue-400 font-mono"><Zap className="w-2.5 h-2.5 sm:w-4 lg:w-5" /> -{selectedDungeon.energyCost}</div>
+                            </div>
+                            <div className="bg-stone-950 p-1.5 sm:p-4 rounded-xl border border-stone-800 flex flex-col items-center justify-center">
+                                <span className="text-[6px] sm:text-[9px] lg:text-[10px] text-stone-500 font-black uppercase tracking-tighter mb-0.5">Squad Power</span>
+                                <div className={`flex items-center gap-1 text-[10px] sm:text-lg lg:text-xl font-black font-mono ${currentPartyPower >= selectedDungeon.requiredPower ? 'text-emerald-400' : 'text-red-500'}`}>
+                                    <Sword className="w-2.5 h-2.5 sm:w-4 lg:w-5" /> {currentPartyPower} / {selectedDungeon.requiredPower}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Squad Grid & Tavern List */}
+                        <div className="flex-1 flex flex-col sm:flex-row overflow-hidden p-2 sm:p-5 lg:p-6 gap-2 sm:gap-6 min-h-0 min-w-0">
+                            {/* Selected Squad Slot Area */}
+                            <div className="w-full sm:w-[45%] flex flex-col gap-2 shrink-0">
+                                <h3 className="text-[8px] sm:text-xs font-black text-stone-500 uppercase tracking-widest px-1 flex justify-between">
+                                    <span>Deployment Slots</span>
+                                    <span>{party.length} / 4</span>
+                                </h3>
+                                <div className="grid grid-cols-4 sm:grid-cols-2 gap-1.5 sm:gap-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                                    {[0, 1, 2, 3].map(idx => {
+                                        const mercId = party[idx];
+                                        const merc = knownMercenaries.find(m => m.id === mercId);
+                                        return (
+                                            <div key={idx} className="h-16 xs:h-20 sm:h-auto sm:aspect-square bg-stone-900 border-2 border-dashed border-stone-800 rounded-xl sm:rounded-2xl flex items-center justify-center relative overflow-hidden group hover:bg-stone-850 transition-all">
+                                                {merc ? (
+                                                    <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 sm:p-2 relative animate-in zoom-in-95 duration-200">
+                                                        <div className="text-xl sm:text-5xl lg:text-6xl group-hover:scale-110 transition-transform mb-0.5">{merc.icon}</div>
+                                                        <div className="text-[7px] sm:text-[10px] lg:text-sm font-black text-stone-200 truncate w-full text-center">{merc.name.split(' ')[0]}</div>
+                                                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 shadow-2xl" />
+                                                        </div>
+                                                    </button>
+                                                ) : (
+                                                    <User className="w-4 h-4 sm:w-10 lg:w-12 text-stone-800/40" />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Roster Selection Area */}
+                            <div className="flex-1 flex flex-col gap-2 sm:gap-3 bg-stone-950/40 rounded-xl sm:rounded-2xl border border-stone-800 shadow-inner min-h-0 min-w-0 overflow-hidden">
+                                <div className="p-2 sm:p-3 lg:p-4 border-b border-stone-800 bg-stone-900/40 flex justify-between items-center shrink-0">
+                                    <span className="text-[8px] sm:text-[10px] lg:text-xs font-black text-stone-400 uppercase tracking-widest">Available Units</span>
+                                    <span className="text-[7px] sm:text-[9px] lg:text-[10px] font-mono text-stone-600 bg-stone-950 px-2 py-0.5 rounded-full">{hiredMercs.length} Hired</span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto custom-scrollbar p-1.5 sm:p-3 space-y-1.5 sm:space-y-2">
+                                    {hiredMercs.length === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center text-stone-700 italic text-[10px] sm:text-[11px] p-6 text-center opacity-50">
+                                            No combat-ready mercenaries available. Visit the Tavern.
+                                        </div>
+                                    ) : (
+                                        hiredMercs.map(merc => {
+                                            const isSelected = party.includes(merc.id);
+                                            const isBusy = isMercBusy(merc.id);
+                                            const power = calculateMercenaryPower(merc);
+                                            const energy = merc.expeditionEnergy || 0;
+                                            const hasEnoughEnergy = energy >= selectedDungeon.energyCost;
+
+                                            return (
+                                                <button 
+                                                    key={merc.id} 
+                                                    onClick={() => !isBusy && toggleMercenary(merc.id)} 
+                                                    disabled={isBusy} 
+                                                    className={`w-full flex items-center justify-between p-1.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${isSelected ? 'bg-amber-900/30 border-amber-600 shadow-[0_0_20px_rgba(217,119,6,0.1)]' : 'bg-stone-900 border-stone-800 hover:border-stone-600'} ${isBusy ? 'opacity-40 grayscale cursor-not-allowed border-dashed' : ''}`}
+                                                >
+                                                    <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0">
+                                                        <div className="text-base sm:text-2xl lg:text-4xl">{merc.icon}</div>
+                                                        <div className="text-left leading-tight min-w-0">
+                                                            <div className="font-black text-stone-200 text-[9px] sm:text-xs lg:text-base truncate">{merc.name}</div>
+                                                            <div className="text-[7px] sm:text-[9px] lg:text-[11px] text-amber-500 font-mono font-bold mt-0.5">POW {power}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-1 sm:gap-1.5 shrink-0">
+                                                        {isBusy ? (
+                                                            <span className="text-[6px] sm:text-[8px] lg:text-[9px] font-black uppercase text-stone-500 bg-stone-950 px-1.5 py-0.5 rounded border border-stone-800">Deploying</span>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1 sm:gap-1.5">
+                                                                <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-0.5 sm:h-1 lg:h-1.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800">
+                                                                    <div className={`h-full transition-all duration-700 ${hasEnoughEnergy ? 'bg-blue-600' : 'bg-red-600'}`} style={{ width: `${energy}%` }}></div>
+                                                                </div>
+                                                                <Zap className={`w-2.5 h-2.5 sm:w-3.5 lg:w-4 ${hasEnoughEnergy ? 'text-blue-500' : 'text-red-600'}`} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer Action Bar */}
+                        <div className="p-2 sm:p-5 lg:p-6 bg-stone-900/50 border-t border-stone-800 flex items-center justify-between gap-4 shrink-0">
+                            <div className="text-[7px] sm:text-[10px] lg:text-xs text-stone-600 font-bold uppercase italic hidden xs:block">
+                                * Ensure squad capacity and energy requirements.
+                            </div>
+                            <button 
+                                onClick={handleStartExpedition} 
+                                disabled={!canStart || !isUnlocked} 
+                                className={`flex-1 sm:flex-none px-6 sm:px-14 lg:px-20 py-2 sm:py-3 lg:py-5 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-base lg:text-xl shadow-2xl flex items-center justify-center gap-2 sm:gap-3 border-b-4 transition-all transform active:scale-95 ${canStart && isUnlocked ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-800' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
+                            >
+                                {isUnlocked ? (
+                                    <>
+                                        {canStart ? <Sword className="w-3 h-3 sm:w-6 lg:w-7" /> : <Lock className="w-3 h-3 sm:w-6 lg:w-7" />}
+                                        Deploy Squad
+                                    </>
+                                ) : (
+                                    "Area Locked"
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default DungeonTab;

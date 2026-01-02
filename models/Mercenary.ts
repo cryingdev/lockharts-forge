@@ -1,7 +1,12 @@
-import { BaseStats } from './Stats';
+import { PrimaryStats } from './Stats';
 import { JobClass } from './JobClass';
+import { Equipment, EquipmentSlotType } from './Equipment';
 
 export type Gender = 'Male' | 'Female';
+
+export type MercenaryStatus = 'VISITOR' | 'HIRED' | 'ON_EXPEDITION' | 'INJURED' | 'DEAD';
+
+export type MercenaryEquipment = Record<EquipmentSlotType, Equipment | null>;
 
 export interface Mercenary {
   id: string;
@@ -9,7 +14,8 @@ export interface Mercenary {
   gender: Gender;
   job: JobClass;
   level: number;
-  stats: BaseStats;
+  stats: PrimaryStats; // Base/Initial attributes
+  allocatedStats: PrimaryStats; // Points from leveling up
   
   // Vitals
   currentHp: number;
@@ -18,14 +24,26 @@ export interface Mercenary {
   maxMp: number;
 
   // Visuals
-  icon?: string; // Emoji
-  sprite?: string; // Asset filename
+  icon?: string;
+  sprite?: string;
 
   // Relationships
-  affinity: number; // 0 to 100
+  affinity: number;
   visitCount: number;
-  isUnique: boolean; // True if this is a named/special character
+  isUnique: boolean;
   
   // State
   lastVisitDay?: number;
+  status: MercenaryStatus;
+  assignedExpeditionId?: string;
+  
+  // Dungeon System
+  expeditionEnergy: number;
+  
+  // Progression
+  currentXp: number;
+  xpToNextLevel: number;
+
+  // Equipment
+  equipment: MercenaryEquipment;
 }

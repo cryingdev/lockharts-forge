@@ -1,8 +1,8 @@
 
+const SESSION_VERSION = Date.now();
+
 export const getAssetUrl = (filename: string): string => {
-  const baseUrl = 'https://raw.githubusercontent.com/cryingdev/lockharts-forge/main/assets/';
-  // Add cache busting to ensure we get the latest version if updated
-  // In production, we might want to remove this or use version numbers
-  const timestamp = Date.now(); 
-  return `${baseUrl}${filename}?v=${timestamp}`;
+  const baseUrl = 'https://raw.githubusercontent.com/cryingdev/lockharts-forge/sub/assets/';
+  // Use the static session version to cache images for the duration of the session
+  return `${baseUrl}${filename}?v=${SESSION_VERSION}`;
 };

@@ -1,0 +1,121 @@
+
+import React, { useState, useEffect } from 'react';
+import { Save, Upload, X, Trash2, Clock, Coins, Calendar, ChevronRight } from 'lucide-react';
+import { getSaveMetadataList, SaveMetadata, deleteSlot } from '../../utils/saveSystem';
+
+interface SaveLoadModalProps {
+    isOpen: boolean;
+    mode: 'SAVE' | 'LOAD';
+    onClose: () => void;
+    onAction: (slotIndex: number) => void;
+}
+
+const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, onAction }) => {
+    const [metaList, setMetaList] = useState<SaveMetadata[]>([]);
+    
+    useEffect(() => {
+        if (isOpen) {
+            setMetaList(getSaveMetadataList());
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const slots = [0, 1, 2]; // 3개의 슬롯 지원
+
+    const formatDate = (ts: number) => {
+        return new Intl.DateTimeFormat('ko-KR', {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        }).format(new Date(ts));
+    };
+
+    const handleDelete = (e: React.MouseEvent, index: number) => {
+        e.stopPropagation();
+        if (confirm("이 저장 데이터를 삭제하시겠습니까?")) {
+            deleteSlot(index);
+            setMetaList(getSaveMetadataList());
+        }
+    };
+
+    return (
+        <div className="absolute inset-0 z-[250] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                
+                {/* Header */}
+                <div className="p-4 border-b border-stone-800 bg-stone-850 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-stone-800 p-2 rounded-lg border border-stone-700 text-amber-500">
+                            {mode === 'SAVE' ? <Save className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
+                        </div>
+                        <h3 className="font-bold font-serif text-lg text-stone-200 tracking-wide uppercase">
+                            {mode === 'SAVE' ? 'Save Game' : 'Load Game'}
+                        </h3>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Slot List */}
+                <div className="p-4 space-y-3 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                    {slots.map(index => {
+                        const meta = metaList.find(m => m.index === index);
+                        return (
+                            <div 
+                                key={index}
+                                onClick={() => onAction(index)}
+                                className={`group relative p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col gap-2 ${
+                                    meta 
+                                    ? 'bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750' 
+                                    : mode === 'SAVE' 
+                                        ? 'bg-stone-900 border-stone-800 border-dashed hover:border-stone-600 text-stone-600'
+                                        : 'bg-stone-950 border-stone-900 text-stone-800 cursor-not-allowed opacity-50'
+                                }`}
+                            >
+                                <div className="flex justify-between items-center">
+                                    <span className="font-black text-xs uppercase tracking-widest text-stone-500 group-hover:text-amber-500">Slot {index + 1}</span>
+                                    {meta && (
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1 text-[10px] text-stone-500 font-mono">
+                                                <Clock className="w-3 h-3" /> {formatDate(meta.timestamp)}
+                                            </div>
+                                            <button onClick={(e) => handleDelete(e, index)} className="p-1 hover:text-red-500 transition-colors">
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {meta ? (
+                                    <div className="flex items-center justify-between mt-1">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5 text-stone-500" />
+                                                <span className="text-sm font-bold text-stone-200">Day {meta.day}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <Coins className="w-3.5 h-3.5 text-amber-500" />
+                                                <span className="text-sm font-bold text-amber-400 font-mono">{meta.gold}G</span>
+                                            </div>
+                                        </div>
+                                        <ChevronRight className="w-5 h-5 text-stone-600 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" />
+                                    </div>
+                                ) : (
+                                    <div className="py-4 text-center text-xs font-bold uppercase tracking-widest italic">
+                                        {mode === 'SAVE' ? 'Empty Slot - Click to Save' : 'No Data'}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="p-3 bg-stone-950 text-center border-t border-stone-800">
+                    <p className="text-[10px] text-stone-600 font-mono uppercase tracking-tighter">Your progress is kept in browser local storage.</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default SaveLoadModal;
