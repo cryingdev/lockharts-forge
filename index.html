@@ -20,31 +20,42 @@
         user-select: none;
         -webkit-tap-highlight-color: transparent;
         -webkit-user-drag: none;
+        box-sizing: border-box;
       }
 
-      body {
+      html, body {
         background-color: #0c0a09;
         color: #f5f5f4;
         margin: 0;
         padding: 0;
-        overflow: hidden;
-        width: 100vw;
+        width: 100%;
+        /* dvh 지원 브라우저는 dvh 사용, 미지원 시 vh 대체 */
         height: 100vh;
         height: 100dvh;
+        min-height: -webkit-fill-available;
+        overflow: hidden;
         position: fixed;
         font-size: var(--base-font-size);
+        /* 모바일 바운스 방지 */
+        overscroll-behavior: none;
       }
       
       #root {
         width: 100%;
         height: 100%;
+        height: 100dvh;
         position: relative;
         overflow: hidden;
-        transition: transform 0.3s ease-in-out;
       }
 
-      /* 제거됨: @media screen and (orientation: portrait) { #root { ... transform: rotate(90deg); ... } } */
-      /* 이제 Phaser 내부 로직이 portrait 감지 및 회전을 수동으로 처리합니다. */
+      /* Safe Area Helper Classes */
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .px-safe {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
 
       @media screen and (max-height: 500px) {
         :root {
@@ -103,6 +114,12 @@
       window.addEventListener('contextmenu', function(e) {
         e.preventDefault();
       }, false);
+
+      // 모바일 주소창 높이 변화 대응을 위한 팁:
+      // 브라우저 윈도우 크기가 변경될 때 스크롤 상단을 강제하여 주소창이 튀는 것을 방지
+      window.addEventListener('resize', () => {
+        window.scrollTo(0, 0);
+      });
     </script>
     <script type="module" src="/index.tsx"></script>
   </body>

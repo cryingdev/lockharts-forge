@@ -45,7 +45,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
   const isCrafting = state.isCrafting;
   
   return (
-    <div className="h-full w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500">
+    <div className="h-[100dvh] w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500 px-safe">
       
       {/* Top Section Wrapper - Handles sliding up/down during crafting */}
       <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ease-in-out ${isCrafting ? '-translate-y-full h-0 opacity-0 pointer-events-none' : 'translate-y-0 h-auto opacity-100'}`}>
@@ -142,7 +142,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
         </div>
       </div>
 
-      <main className="flex-1 overflow-hidden relative bg-stone-925 flex flex-col">
+      <main className="flex-1 overflow-hidden relative bg-stone-925 flex flex-col min-h-0">
         <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}>
             <ForgeTab onNavigate={setActiveTab} />
         </div>
@@ -155,6 +155,9 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
         {activeTab === 'DUNGEON' && <DungeonTab />}
         {activeTab === 'SIMULATION' && <SimulationTab />}
       </main>
+
+      {/* Navigation Padding for Bottom Edge Devices */}
+      <div className="h-[env(safe-area-inset-bottom)] bg-stone-900 shrink-0"></div>
 
       <EventModal />
       <SleepModal />

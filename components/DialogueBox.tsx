@@ -119,7 +119,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   };
 
   return (
-    <div className="absolute bottom-2 md:bottom-6 left-1/2 -translate-x-1/2 w-[96vw] md:w-[90vw] max-w-6xl z-40">
+    <div className="absolute bottom-2 md:bottom-6 left-1/2 -translate-x-1/2 w-[96vw] md:w-[90vw] max-w-6xl z-40 pb-[env(safe-area-inset-bottom)]">
       <div 
         className="w-full h-[30vh] min-h-[120px] bg-stone-950/20 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_40px_80px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-500 ring-1 ring-white/10"
       >
