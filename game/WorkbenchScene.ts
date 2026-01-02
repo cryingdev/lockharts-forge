@@ -9,7 +9,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   public time!: Phaser.Time.Clock;
 
   private targetNodes: Phaser.GameObjects.Arc[] = [];
-  private cursor!: Phaser.GameObjects.Rectangle;
+  private cursor!: Phaser.GameObjects.Image; // Rectangle에서 Image로 변경
   private comboText!: Phaser.GameObjects.Text;
 
   private progBg!: Phaser.GameObjects.Rectangle;
@@ -78,13 +78,14 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('workbench_table', getAssetUrl('workbench_table.png'));
+    this.load.image('workbench_bg', getAssetUrl('workbench_bg.png'));
+    this.load.image('niddle', getAssetUrl('niddle.png'));
   }
 
   create() {
     this.root = this.add.container(0, 0);
 
-    this.bgImage = this.add.image(0, 0, 'workbench_table').setAlpha(0.6).setOrigin(0.5);
+    this.bgImage = this.add.image(0, 0, 'workbench_bg').setAlpha(0.8).setOrigin(0.5);
     this.root.add(this.bgImage);
 
     this.progBg = this.add.rectangle(0, 0, 250, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e).setName('progBg');
@@ -98,7 +99,8 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.wavePathGraphics = this.add.graphics();
     this.root.add(this.wavePathGraphics);
 
-    this.cursor = this.add.rectangle(0, 0, 4, 35, 0xffffff).setDepth(10);
+    // 커서(바늘) 생성 및 오리진 설정
+    this.cursor = this.add.image(0, 0, 'niddle').setDepth(10).setOrigin(0.5, 0.9);
     this.root.add(this.cursor);
 
     this.comboText = this.add.text(0, 0, '', { 
@@ -119,7 +121,6 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (this.isFinished) return;
       for (const node of this.targetNodes) {
-        // 노드 타격 영역 판정
         if (Phaser.Math.Distance.Between(p.x, p.y, node.x, node.y) < 60 * this.uiScale) {
           this.handleHit(node as any);
         }
@@ -169,12 +170,38 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   private drawPath() {
-    this.wavePathGraphics.clear().lineStyle(4, 0x10b981, 0.25).beginPath();
-    for (let i = 0; i <= 100; i++) {
-      const p = i / 100;
+    // 점선 그리기 설정 - 색상을 짙은 갈색(0x3e2723)으로 변경, 투명도 0.4 유지
+    this.wavePathGraphics.clear().lineStyle(4, 0x3e2723, 0.8).beginPath();
+    
+    const steps = 400; // 해상도 상향
+    const dashLen = 8; // 그릴 단계 수
+    const gapLen = 6;  // 건너뛸 단계 수
+    
+    let isDrawing = true;
+    let counter = 0;
+
+    for (let i = 0; i <= steps; i++) {
+      const p = i / steps;
       const pos = this.getPathPosition(p);
-      if (i === 0) this.wavePathGraphics.moveTo(pos.x, pos.y);
-      else this.wavePathGraphics.lineTo(pos.x, pos.y);
+
+      if (i === 0) {
+        this.wavePathGraphics.moveTo(pos.x, pos.y);
+      } else {
+        if (isDrawing) {
+          this.wavePathGraphics.lineTo(pos.x, pos.y);
+        } else {
+          this.wavePathGraphics.moveTo(pos.x, pos.y);
+        }
+      }
+
+      counter++;
+      if (isDrawing && counter >= dashLen) {
+        isDrawing = false;
+        counter = 0;
+      } else if (!isDrawing && counter >= gapLen) {
+        isDrawing = true;
+        counter = 0;
+      }
     }
     this.wavePathGraphics.strokePath();
   }
@@ -183,7 +210,6 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.targetNodes.forEach((n) => n.destroy());
     this.targetNodes = [];
 
-    // 구간 내 랜덤 위치 생성 (0.1~0.25, 0.35~0.5, 0.6~0.75, 0.85~0.95)
     const segments = [
         [0.10, 0.22],
         [0.35, 0.47],
@@ -225,7 +251,6 @@ export default class WorkbenchScene extends Phaser.Scene {
 
     this.cursorProgress += this.cursorSpeed * delta;
 
-    // MISS 체크: 커서가 노드 위치를 일정 이상 지났을 때
     this.targetNodes.forEach((node: any) => {
       if (!node.hit && !node.missed && this.cursorProgress > node.p + 0.06) {
         node.missed = true;
@@ -235,7 +260,6 @@ export default class WorkbenchScene extends Phaser.Scene {
 
     if (this.cursorProgress > 1) {
       this.cursorProgress = 0;
-      // 1사이클당 25%씩 증가
       this.confirmedProgress = Math.min(100, this.confirmedProgress + 25);
       this.updateProgressBar();
 
@@ -249,9 +273,12 @@ export default class WorkbenchScene extends Phaser.Scene {
     const pos = this.getPathPosition(this.cursorProgress);
     const nextPos = this.getPathPosition(this.cursorProgress + 0.005);
     
-    // 경로의 기울기에 따라 커서 회전 (Tangent follow)
     const angle = Math.atan2(nextPos.y - pos.y, nextPos.x - pos.x);
-    this.cursor.setPosition(pos.x, pos.y).setScale(this.uiScale).setRotation(angle + Math.PI / 2);
+    
+    // 바늘 방향을 반대로 하기 위해 오프셋을 +PI/2에서 -PI/2로 변경
+    this.cursor.setPosition(pos.x, pos.y)
+        .setScale(this.uiScale * 0.3) 
+        .setRotation(angle - Math.PI / 2);
 
     this.qualityText
       .setText(this.getQualityLabel(this.currentQuality))
@@ -274,7 +301,6 @@ export default class WorkbenchScene extends Phaser.Scene {
       this.perfectStreak++;
       this.combo++;
       
-      // 8연속 퍼펙트 시 퀄리티 보너스 (+1) - SmithingScene 로직 차용
       if (this.perfectStreak > 0 && this.perfectStreak % 8 === 0) {
         this.currentQuality += 1;
       }
