@@ -1,25 +1,20 @@
-# Lockhart's Forge
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-> **Version**: 0.1.34
-> **Status**: Alpha / Active Development
+# Run and deploy your AI Studio app
 
-**Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
+This contains everything you need to run your app locally.
 
-## 🔄 Recent Updates (v0.1.34)
+View your app in AI Studio: https://ai.studio/apps/drive/1nXDh6GNutZZ9TvhgVjl9SCbjk-6YtPzR
 
-*   **Dynamic UI Versioning**: Integrated `package.json` into the React layer to ensure version strings across the Title Screen and Settings Menu are always in sync.
-*   **Workbench Visual Overhaul**: 
-    *   **Needle Orientation**: Inverted the needle sprite rotation for a more natural "stitching" feel.
-    *   **Stitch Guide**: Replaced the solid green guide line with a leather-themed dark brown dashed line, simulating actual stitching points.
-*   **Multi-Slot Save System**: (v0.1.33 Legacy) Support for up to 3 independent save slots with metadata previews.
-*   **Fluid Header Layout**: Optimized the Header UI to make the Journal (Log Ticker) variable in width.
+## Run Locally
 
-## 🌟 Key Features
+**Prerequisites:**  Node.js
 
-### 1. The Forge (Crafting System)
-*   **Smithing**: Manage heat and timing. Watch the billet morph into a blade as you strike the anvil.
-*   **Workbench**: Rhythm-based stitching for leather and wood using the refined dashed-line guide.
 
-## 📜 License
-
-Private / Proprietary (Lockhart's Forge Team)
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

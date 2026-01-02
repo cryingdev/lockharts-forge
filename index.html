@@ -2,125 +2,39 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lockhart's Forge</title>
+    <!-- We keep Tailwind CDN for simplicity, or we could move to postcss -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      :root {
-        --base-font-size: 16px;
+      body {
+        background-color: #0c0a09; /* Stone 950 */
+        color: #f5f5f4; /* Stone 100 */
       }
-
-      /* 텍스트 선택 및 컨텍스트 메뉴 방지 */
-      * {
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        -webkit-user-drag: none;
-        box-sizing: border-box;
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
       }
-
-      html, body {
-        background-color: #0c0a09;
-        color: #f5f5f4;
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        /* dvh 지원 브라우저는 dvh 사용, 미지원 시 vh 대체 */
-        height: 100vh;
-        height: 100dvh;
-        min-height: -webkit-fill-available;
-        overflow: hidden;
-        position: fixed;
-        font-size: var(--base-font-size);
-        /* 모바일 바운스 방지 */
-        overscroll-behavior: none;
+      .animate-in {
+        animation: fadeIn 0.3s ease-out forwards;
       }
-      
-      #root {
-        width: 100%;
-        height: 100%;
-        height: 100dvh;
-        position: relative;
-        overflow: hidden;
-      }
-
-      /* Safe Area Helper Classes */
-      .pb-safe {
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-      .px-safe {
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
-      }
-
-      @media screen and (max-height: 500px) {
-        :root {
-          --base-font-size: 13px;
-        }
-      }
-
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      .animate-in { animation: fadeIn 0.3s ease-out forwards; }
-
-      @keyframes shake-hard {
-        0% { transform: translate(1px, 1px) rotate(0deg); }
-        10% { transform: translate(-1px, -2px) rotate(-1deg); }
-        20% { transform: translate(-3px, 0px) rotate(1deg); }
-        30% { transform: translate(3px, 2px) rotate(0deg); }
-        40% { transform: translate(1px, -1px) rotate(1deg); }
-        50% { transform: translate(-1px, 2px) rotate(-1deg); }
-        60% { transform: translate(-3px, 1px) rotate(0deg); }
-        70% { transform: translate(3px, 1px) rotate(-1deg); }
-        80% { transform: translate(-1px, -1px) rotate(1deg); }
-        90% { transform: translate(1px, 2px) rotate(0deg); }
-        100% { transform: translate(1px, -2px) rotate(-1deg); }
-      }
-      .animate-shake-hard { animation: shake-hard 0.2s ease-in-out infinite; }
-
-      .preserve-3d { transform-style: preserve-3d; }
-      .backface-hidden { backface-visibility: hidden; }
-      .rotate-y-180 { transform: rotateY(180deg); }
-      
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #44403c; border-radius: 10px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #57534e; }
     </style>
-    <script type="importmap">
+  <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "lucide-react": "https://esm.sh/lucide-react@0.454.0",
-    "phaser": "https://esm.sh/phaser@3.80.1",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "phaser": "https://aistudiocdn.com/phaser@^3.90.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
-  </head>
+</head>
   <body>
     <div id="root"></div>
-
-    <script>
-      // 우클릭 방지
-      window.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-      }, false);
-
-      // 모바일 주소창 높이 변화 대응을 위한 팁:
-      // 브라우저 윈도우 크기가 변경될 때 스크롤 상단을 강제하여 주소창이 튀는 것을 방지
-      window.addEventListener('resize', () => {
-        window.scrollTo(0, 0);
-      });
-    </script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
