@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -141,14 +140,14 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* Character Sprite Rendering - DVH BASED SCALING AS REQUESTED */}
+            {/* Character Sprite Rendering */}
             <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
                <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                   <div className="relative h-[75dvh] md:h-64 w-auto flex justify-center bottom-[12dvh] md:bottom-0">
+                   <div className="relative h-[75dvh] md:h-[110dvh] w-auto flex justify-center bottom-[12dvh] md:bottom-0 md:translate-y-[20dvh]">
                        <img 
                            src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
                            alt={mercenary.name}
-                           className="h-full object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
+                           className="h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
                        />
                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-3xl rounded-full -z-10"></div>
                    </div>
