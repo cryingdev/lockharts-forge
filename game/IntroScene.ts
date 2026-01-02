@@ -10,10 +10,8 @@ export default class IntroScene extends Phaser.Scene {
   private fireEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
   private breathOverlay?: Phaser.GameObjects.Rectangle;
 
-  // Root container (no forced rotation; we relayout on orientation changes)
   private root!: Phaser.GameObjects.Container;
 
-  private isPortrait = false;
   private lastPortrait?: boolean;
   private isRelayouting = false;
 
@@ -55,17 +53,11 @@ export default class IntroScene extends Phaser.Scene {
 
     this.root = this.add.container(0, 0);
 
-    // particle texture
     if (!this.textures.exists('intro_flame')) {
-      const graphics = this.make.graphics({ x: 0, y: 0 });
-      graphics
-        .fillStyle(0xff5500, 1)
-        .fillCircle(16, 16, 16)
-        .generateTexture('intro_flame', 32, 32)
-        .destroy();
+      const g = this.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xff5500, 1).fillCircle(16, 16, 16).generateTexture('intro_flame', 32, 32).destroy();
     }
 
-    // skip
     this.input.once('pointerdown', () => {
       this.game.events.emit('intro-complete');
     });
@@ -80,7 +72,6 @@ export default class IntroScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0)
       .setDepth(20);
-
     this.root.add(this.skipHint);
 
     const keys = ['intro_bg', 'intro_bg_02', 'intro_bg_03', 'intro_bg_04', 'intro_bg_05'];
@@ -104,7 +95,6 @@ export default class IntroScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0)
       .setDepth(10);
-
     this.root.add(this.devText);
 
     const n1 = this.createNarrativeText('FIASCO,\nA MASTER OF DISASTER...', '#ef4444');
@@ -118,7 +108,6 @@ export default class IntroScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(5)
       .setBlendMode(Phaser.BlendModes.ADD);
-
     this.root.add(this.breathOverlay);
 
     this.fireEmitter = this.add.particles(0, 0, 'intro_flame', {
@@ -134,61 +123,51 @@ export default class IntroScene extends Phaser.Scene {
     this.fireEmitter.setDepth(4);
     this.root.add(this.fireEmitter);
 
-    // first layout + listeners
+    // layout + resize listeners
     this.handleResize(this.scale.gameSize);
     this.scale.on('resize', this.handleResize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off('resize', this.handleResize, this);
     });
 
-    // iOS: 첫 렌더 직후 viewport 값이 늦게 안정되는 경우가 있어 약간 지연해서 한 번 더 레이아웃
+    // iOS: 첫 렌더 직후 viewport 안정화 타이밍 보정
     this.time.delayedCall(80, () => this.handleResize());
+    this.time.delayedCall(180, () => this.handleResize());
 
     this.startSequence(n1, n2, n3, nD, nV);
   }
 
   private handleResize(gameSize?: Phaser.Structs.Size) {
-    const screenW = gameSize?.width ?? this.scale.gameSize.width;
-    const screenH = gameSize?.height ?? this.scale.gameSize.height;
+    const w = gameSize?.width ?? this.scale.gameSize.width;
+    const h = gameSize?.height ?? this.scale.gameSize.height;
 
-    const nextPortrait = screenH > screenW;
+    // 카메라 viewport는 항상 실제 화면으로
+    this.cameras.main.setViewport(0, 0, w, h);
 
-    // Always keep the camera viewport matching the actual screen
-    this.cameras.main.setViewport(0, 0, screenW, screenH);
+    const isPortrait = h > w;
 
-    // Root is never rotated in this mode
-    this.root.setRotation(0);
-    this.root.setPosition(0, 0);
-
-    // First layout
     if (this.lastPortrait === undefined) {
-      this.isPortrait = nextPortrait;
-      this.lastPortrait = nextPortrait;
-      if (nextPortrait) this.layoutPortrait(screenW, screenH);
-      else this.layoutLandscape(screenW, screenH);
+      this.lastPortrait = isPortrait;
+      isPortrait ? this.layoutPortrait(w, h) : this.layoutLandscape(w, h);
       return;
     }
 
-    const changed = this.lastPortrait !== nextPortrait;
-    this.isPortrait = nextPortrait;
-    this.lastPortrait = nextPortrait;
+    const changed = this.lastPortrait !== isPortrait;
+    this.lastPortrait = isPortrait;
 
-    // If orientation changed, do a short fade to avoid iOS resize jitter
+    // 방향 전환 시 iOS 중간 사이즈 튐 완화: 짧은 페이드 + 지연 레이아웃
     if (changed && !this.isRelayouting) {
       this.isRelayouting = true;
-
       const cam = this.cameras.main;
+
       cam.fadeOut(120, 0, 0, 0);
 
-      // iOS sometimes reports intermediate sizes; wait a tick
       this.time.delayedCall(140, () => {
-        const w = this.scale.gameSize.width;
-        const h = this.scale.gameSize.height;
+        const ww = this.scale.gameSize.width;
+        const hh = this.scale.gameSize.height;
 
-        cam.setViewport(0, 0, w, h);
-
-        if (this.isPortrait) this.layoutPortrait(w, h);
-        else this.layoutLandscape(w, h);
+        cam.setViewport(0, 0, ww, hh);
+        (hh > ww) ? this.layoutPortrait(ww, hh) : this.layoutLandscape(ww, hh);
 
         cam.fadeIn(120, 0, 0, 0);
 
@@ -200,112 +179,81 @@ export default class IntroScene extends Phaser.Scene {
       return;
     }
 
-    // Normal resize (same orientation)
-    if (this.isPortrait) this.layoutPortrait(screenW, screenH);
-    else this.layoutLandscape(screenW, screenH);
+    isPortrait ? this.layoutPortrait(w, h) : this.layoutLandscape(w, h);
   }
 
   private layoutLandscape(w: number, h: number) {
-    const centerX = w / 2;
-    const centerY = h / 2;
+    const cx = w / 2;
+    const cy = h / 2;
 
-    // More aggressive scaling for small heights
     const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.4, 1.2);
 
-    // BG cover
     this.bgs.forEach((img) => {
-      img.setPosition(centerX, centerY);
-      const s = Math.max(w / img.width, h / img.height);
-      img.setScale(s);
+      img.setPosition(cx, cy);
+      img.setScale(Math.max(w / img.width, h / img.height));
     });
 
     if (this.dragon) {
-      const dScaleByHeight = (h * 0.55) / this.dragon.height;
-      const dScaleByWidth = (w * 0.9) / this.dragon.width;
-      const dScale = Math.min(dScaleByHeight, dScaleByWidth);
-
-      this.dragon.setScale(dScale);
-      this.dragon.setPosition(centerX, centerY - h * 0.22);
+      const s = Math.min((h * 0.55) / this.dragon.height, (w * 0.9) / this.dragon.width);
+      this.dragon.setScale(s);
+      this.dragon.setPosition(cx, cy - h * 0.22);
     }
 
-    if (this.devText) {
-      this.devText.setPosition(centerX, centerY);
-      this.devText.setFontSize(Math.round(45 * uiScale));
-    }
+    this.devText?.setPosition(cx, cy).setFontSize(Math.round(45 * uiScale));
 
     if (this.skipHint) {
-      this.skipHint.setPosition(centerX, h - Math.max(24, h * 0.05));
+      this.skipHint.setPosition(cx, h - Math.max(24, h * 0.05));
       this.skipHint.setFontSize(Math.round(12 * uiScale));
     }
 
-    if (this.breathOverlay) {
-      this.breathOverlay.setPosition(centerX, centerY).setSize(w, h);
-    }
+    this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
 
     this.narrativeTexts.forEach((t) => {
-      t.setPosition(centerX, centerY);
+      t.setPosition(cx, cy);
       t.setFontSize(Math.round(40 * uiScale));
     });
 
     const despairIdx = this.narrativeTexts.length - 2;
     const gap = Math.max(20, h * 0.08);
-    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = centerY - gap / 2;
-    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = centerY + gap / 2;
+    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
+    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
 
     if (this.fireEmitter) {
-      if (this.dragon) {
-        const mouthY = this.dragon.y + this.dragon.displayHeight * 0.12;
-        this.fireEmitter.setPosition(centerX, mouthY);
-      } else {
-        this.fireEmitter.setPosition(centerX, h * 0.35);
-      }
+      const y = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.12 : h * 0.35;
+      this.fireEmitter.setPosition(cx, y);
     }
   }
 
   private layoutPortrait(w: number, h: number) {
-    const centerX = w / 2;
-    const centerY = h / 2;
+    const cx = w / 2;
+    const cy = h / 2;
 
-    // Portrait: use full height, avoid oversized text
     const uiScale = Phaser.Math.Clamp(h / 900, 0.7, 1.15);
 
-    // BG cover (height-full; width may crop)
     this.bgs.forEach((img) => {
-      img.setPosition(centerX, centerY);
-      const s = Math.max(w / img.width, h / img.height);
-      img.setScale(s);
+      img.setPosition(cx, cy);
+      img.setScale(Math.max(w / img.width, h / img.height));
     });
 
     if (this.dragon) {
-      // Portrait: keep dragon in top area
-      const maxW = w * 0.95;
-      const maxH = h * 0.38;
-      const s = Math.min(maxW / this.dragon.width, maxH / this.dragon.height);
-
+      const s = Math.min((w * 0.95) / this.dragon.width, (h * 0.38) / this.dragon.height);
       this.dragon.setScale(s);
-      this.dragon.setPosition(centerX, h * 0.28);
+      this.dragon.setPosition(cx, h * 0.28);
     }
 
-    if (this.devText) {
-      // Slightly above center in portrait
-      this.devText.setPosition(centerX, h * 0.42);
-      this.devText.setFontSize(Math.round(40 * uiScale));
-    }
+    this.devText?.setPosition(cx, h * 0.42).setFontSize(Math.round(40 * uiScale));
 
     if (this.skipHint) {
-      this.skipHint.setPosition(centerX, h - Math.max(28, h * 0.04));
+      this.skipHint.setPosition(cx, h - Math.max(28, h * 0.04));
       this.skipHint.setFontSize(Math.round(12 * uiScale));
     }
 
-    if (this.breathOverlay) {
-      this.breathOverlay.setPosition(centerX, centerY).setSize(w, h);
-    }
+    this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
 
-    // Narrative sits lower in portrait
     const textBaseY = h * 0.62;
 
     this.narrativeTexts.forEach((t) => {
-      t.setPosition(centerX, textBaseY);
+      t.setPosition(cx, textBaseY);
       t.setFontSize(Math.round(34 * uiScale));
     });
 
@@ -315,12 +263,8 @@ export default class IntroScene extends Phaser.Scene {
     if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = textBaseY + gap / 2;
 
     if (this.fireEmitter) {
-      if (this.dragon) {
-        const mouthY = this.dragon.y + this.dragon.displayHeight * 0.12;
-        this.fireEmitter.setPosition(centerX, mouthY);
-      } else {
-        this.fireEmitter.setPosition(centerX, h * 0.35);
-      }
+      const y = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.12 : h * 0.35;
+      this.fireEmitter.setPosition(cx, y);
     }
   }
 
