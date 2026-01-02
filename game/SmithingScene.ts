@@ -680,7 +680,6 @@ export default class SmithingScene extends Phaser.Scene {
       this.perfectCount++;
       if (this.perfectCount >= 6) {
         this.currentQuality += 1;
-        this.showFeedback('QUALITY UP!', 0xfbbf24, 1.3, this.hitX, this.hitY - 60);
       }
       this.createSparks(30, 0xffaa00, 1.5, 'spark_perfect', x, y);
       this.showFeedback('PERFECT!', 0xffb300, 1.4, this.hitX, this.hitY);

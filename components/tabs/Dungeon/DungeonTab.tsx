@@ -3,7 +3,7 @@ import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
 import { MATERIALS } from '../../../data/materials';
 import { calculatePartyPower, calculateMercenaryPower, formatDuration } from '../../../utils/dungeonUtils';
-import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box } from 'lucide-react';
+import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 
 const DungeonTab = () => {
@@ -13,6 +13,8 @@ const DungeonTab = () => {
     // Index-based selection for paging
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [party, setParty] = useState<string[]>([]);
+    const [failedMercs, setFailedMercs] = useState<string[]>([]);
+    const [failedPowerHighlight, setFailedPowerHighlight] = useState(false);
     
     const selectedDungeon = DUNGEONS[selectedIndex];
 
@@ -26,11 +28,15 @@ const DungeonTab = () => {
     const handlePrev = () => {
         setSelectedIndex(prev => (prev > 0 ? prev - 1 : DUNGEONS.length - 1));
         setParty([]);
+        setFailedMercs([]);
+        setFailedPowerHighlight(false);
     };
 
     const handleNext = () => {
         setSelectedIndex(prev => (prev < DUNGEONS.length - 1 ? prev + 1 : 0));
         setParty([]);
+        setFailedMercs([]);
+        setFailedPowerHighlight(false);
     };
 
     const toggleMercenary = (mercId: string) => {
@@ -41,10 +47,34 @@ const DungeonTab = () => {
                 setParty(prev => [...prev, mercId]);
             }
         }
+        // 에러 표시 중이었다면 제거
+        if (failedMercs.includes(mercId)) {
+            setFailedMercs(prev => prev.filter(id => id !== mercId));
+        }
     };
 
     const handleStartExpedition = () => {
         if (party.length === 0 || !selectedDungeon) return;
+
+        // 에너지 체크
+        const selectedMercs = knownMercenaries.filter(m => party.includes(m.id));
+        const lowEnergyIds = selectedMercs
+            .filter(m => (m.expeditionEnergy || 0) < selectedDungeon.energyCost)
+            .map(m => m.id);
+
+        if (lowEnergyIds.length > 0) {
+            setFailedMercs(lowEnergyIds);
+            setTimeout(() => setFailedMercs([]), 2000);
+            return;
+        }
+
+        // 전투력 체크
+        if (currentPartyPower < selectedDungeon.requiredPower) {
+            setFailedPowerHighlight(true);
+            setTimeout(() => setFailedPowerHighlight(false), 2000);
+            return;
+        }
+
         actions.startExpedition(selectedDungeon.id, party);
     };
 
@@ -57,7 +87,7 @@ const DungeonTab = () => {
         return calculatePartyPower(selectedMercs);
     }, [party, knownMercenaries]);
 
-    const canStart = useMemo(() => {
+    const canStartStatus = useMemo(() => {
         if (!selectedDungeon) return false;
         if (party.length === 0) return false;
         if (currentPartyPower < selectedDungeon.requiredPower) return false;
@@ -214,7 +244,7 @@ const DungeonTab = () => {
                         {isComplete ? (
                             <button onClick={() => handleClaim(currentExpedition.id)} className="px-8 sm:px-16 lg:px-20 py-3 sm:py-5 lg:py-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl md:rounded-2xl shadow-2xl flex items-center gap-3 sm:gap-4 border-b-4 border-emerald-800 active:scale-95 transition-all">
                                 <CheckCircle className="w-4 h-4 sm:w-7 lg:w-8" /> 
-                                <span className="text-xs sm:text-lg lg:text-xl uppercase tracking-widest">Secure Loot & Return</span>
+                                <span className="text-xs sm:lg lg:text-xl uppercase tracking-widest">Secure Loot & Return</span>
                             </button>
                         ) : (
                             <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-500 shadow-2xl backdrop-blur-md">
@@ -234,11 +264,16 @@ const DungeonTab = () => {
                                 <span className="text-[6px] sm:text-[9px] lg:text-[10px] text-stone-500 font-black uppercase tracking-tighter mb-0.5">Energy</span>
                                 <div className="flex items-center gap-1 text-[10px] sm:text-lg lg:text-xl font-black text-blue-400 font-mono"><Zap className="w-2.5 h-2.5 sm:w-4 lg:w-5" /> -{selectedDungeon.energyCost}</div>
                             </div>
-                            <div className="bg-stone-950 p-1.5 sm:p-4 rounded-xl border border-stone-800 flex flex-col items-center justify-center">
+                            <div className={`bg-stone-950 p-1.5 sm:p-4 rounded-xl border flex flex-col items-center justify-center transition-all duration-300 relative ${failedPowerHighlight ? 'border-red-500 ring-2 ring-red-500/50 animate-shake-hard shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'border-stone-800'}`}>
                                 <span className="text-[6px] sm:text-[9px] lg:text-[10px] text-stone-500 font-black uppercase tracking-tighter mb-0.5">Squad Power</span>
                                 <div className={`flex items-center gap-1 text-[10px] sm:text-lg lg:text-xl font-black font-mono ${currentPartyPower >= selectedDungeon.requiredPower ? 'text-emerald-400' : 'text-red-500'}`}>
                                     <Sword className="w-2.5 h-2.5 sm:w-4 lg:w-5" /> {currentPartyPower} / {selectedDungeon.requiredPower}
                                 </div>
+                                {failedPowerHighlight && (
+                                    <div className="absolute -top-10 sm:-top-12 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[7px] sm:text-[10px] font-black px-2 py-1 rounded shadow-2xl animate-in fade-in zoom-in slide-in-from-bottom-2 whitespace-nowrap z-50 ring-1 ring-red-400">
+                                        INSUFFICIENT POWER
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -254,8 +289,9 @@ const DungeonTab = () => {
                                     {[0, 1, 2, 3].map(idx => {
                                         const mercId = party[idx];
                                         const merc = knownMercenaries.find(m => m.id === mercId);
+                                        const hasError = mercId ? failedMercs.includes(mercId) : false;
                                         return (
-                                            <div key={idx} className="h-16 xs:h-20 sm:h-auto sm:aspect-square bg-stone-900 border-2 border-dashed border-stone-800 rounded-xl sm:rounded-2xl flex items-center justify-center relative overflow-hidden group hover:bg-stone-850 transition-all">
+                                            <div key={idx} className={`h-16 xs:h-20 sm:h-auto sm:aspect-square bg-stone-900 border-2 rounded-xl sm:rounded-2xl flex items-center justify-center relative overflow-hidden group hover:bg-stone-850 transition-all ${hasError ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
                                                 {merc ? (
                                                     <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 sm:p-2 relative animate-in zoom-in-95 duration-200">
                                                         <div className="text-xl sm:text-5xl lg:text-6xl group-hover:scale-110 transition-transform mb-0.5">{merc.icon}</div>
@@ -263,6 +299,11 @@ const DungeonTab = () => {
                                                         <div className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 shadow-2xl" />
                                                         </div>
+                                                        {hasError && (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-red-900/40 backdrop-blur-[1px] animate-in fade-in">
+                                                                <AlertCircle className="w-6 h-6 sm:w-10 text-white drop-shadow-[0_0_8px_rgba(0,0,0,1)]" />
+                                                            </div>
+                                                        )}
                                                     </button>
                                                 ) : (
                                                     <User className="w-4 h-4 sm:w-10 lg:w-12 text-stone-800/40" />
@@ -291,13 +332,14 @@ const DungeonTab = () => {
                                             const power = calculateMercenaryPower(merc);
                                             const energy = merc.expeditionEnergy || 0;
                                             const hasEnoughEnergy = energy >= selectedDungeon.energyCost;
+                                            const hasError = failedMercs.includes(merc.id);
 
                                             return (
                                                 <button 
                                                     key={merc.id} 
                                                     onClick={() => !isBusy && toggleMercenary(merc.id)} 
                                                     disabled={isBusy} 
-                                                    className={`w-full flex items-center justify-between p-1.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${isSelected ? 'bg-amber-900/30 border-amber-600 shadow-[0_0_20px_rgba(217,119,6,0.1)]' : 'bg-stone-900 border-stone-800 hover:border-stone-600'} ${isBusy ? 'opacity-40 grayscale cursor-not-allowed border-dashed' : ''}`}
+                                                    className={`w-full flex items-center justify-between p-1.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${isSelected ? 'bg-amber-900/30 border-amber-600 shadow-[0_0_20px_rgba(217,119,6,0.1)]' : 'bg-stone-900 border-stone-800 hover:border-stone-600'} ${isBusy ? 'opacity-40 grayscale cursor-not-allowed border-dashed' : ''} ${hasError ? 'border-red-600 animate-shake-hard' : ''}`}
                                                 >
                                                     <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0">
                                                         <div className="text-base sm:text-2xl lg:text-4xl">{merc.icon}</div>
@@ -315,6 +357,7 @@ const DungeonTab = () => {
                                                                     <div className={`h-full transition-all duration-700 ${hasEnoughEnergy ? 'bg-blue-600' : 'bg-red-600'}`} style={{ width: `${energy}%` }}></div>
                                                                 </div>
                                                                 <Zap className={`w-2.5 h-2.5 sm:w-3.5 lg:w-4 ${hasEnoughEnergy ? 'text-blue-500' : 'text-red-600'}`} />
+                                                                {hasError && <AlertCircle className="w-3.5 h-3.5 sm:w-5 text-red-500 animate-pulse" />}
                                                             </div>
                                                         )}
                                                     </div>
@@ -333,12 +376,12 @@ const DungeonTab = () => {
                             </div>
                             <button 
                                 onClick={handleStartExpedition} 
-                                disabled={!canStart || !isUnlocked} 
-                                className={`flex-1 sm:flex-none px-6 sm:px-14 lg:px-20 py-2 sm:py-3 lg:py-5 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-base lg:text-xl shadow-2xl flex items-center justify-center gap-2 sm:gap-3 border-b-4 transition-all transform active:scale-95 ${canStart && isUnlocked ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-800' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
+                                disabled={!isUnlocked || party.length === 0} 
+                                className={`flex-1 sm:flex-none px-6 sm:px-14 lg:px-20 py-2 sm:py-3 lg:py-5 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-base lg:text-xl shadow-2xl flex items-center justify-center gap-2 sm:gap-3 border-b-4 transition-all transform active:scale-95 ${isUnlocked ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-800' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
                             >
                                 {isUnlocked ? (
                                     <>
-                                        {canStart ? <Sword className="w-3 h-3 sm:w-6 lg:w-7" /> : <Lock className="w-3 h-3 sm:w-6 lg:w-7" />}
+                                        {canStartStatus ? <Sword className="w-3 h-3 sm:w-6 lg:w-7" /> : <Lock className="w-3 h-3 sm:w-6 lg:w-7" />}
                                         Deploy Squad
                                     </>
                                 ) : (
