@@ -1,4 +1,3 @@
-
 export const MARKET_CATALOG = [
   // --- KEY ITEMS ---
   { id: 'furnace', price: 500 },
@@ -6,6 +5,7 @@ export const MARKET_CATALOG = [
 
   // --- CONSUMABLES ---
   { id: 'energy_potion', price: 100 },
+  { id: 'affinity_debug_gift', price: 500 },
 
   // --- TIER 1 MATERIALS ---
   { id: 'charcoal', price: 25 },

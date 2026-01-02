@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { X, Scissors } from 'lucide-react';
@@ -10,6 +11,18 @@ interface WorkbenchMinigameProps {
 }
 
 class WorkbenchScene extends Phaser.Scene {
+  // Fix: Added explicit declarations for Phaser built-in properties
+  public load!: Phaser.Loader.LoaderPlugin;
+  public add!: Phaser.GameObjects.GameObjectFactory;
+  public make!: Phaser.GameObjects.GameObjectCreator;
+  public tweens!: Phaser.Tweens.TweenManager;
+  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
+  public scale!: Phaser.Scale.ScaleManager;
+  public input!: Phaser.Input.InputPlugin;
+  public anims!: Phaser.Animations.AnimationManager;
+  public time!: Phaser.Time.Clock;
+  public textures!: Phaser.Textures.TextureManager;
+
   private targetNodes: Phaser.GameObjects.Arc[] = [];
   private cursor!: Phaser.GameObjects.Rectangle;
   private progressBar!: Phaser.GameObjects.Rectangle;

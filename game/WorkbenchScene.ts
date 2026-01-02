@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -11,6 +12,18 @@ export interface SmithingSceneData {
 }
 
 export default class SmithingScene extends Phaser.Scene {
+  // Fix: Added explicit declarations for Phaser built-in properties
+  public load!: Phaser.Loader.LoaderPlugin;
+  public add!: Phaser.GameObjects.GameObjectFactory;
+  public make!: Phaser.GameObjects.GameObjectCreator;
+  public tweens!: Phaser.Tweens.TweenManager;
+  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
+  public scale!: Phaser.Scale.ScaleManager;
+  public input!: Phaser.Input.InputPlugin;
+  public anims!: Phaser.Animations.AnimationManager;
+  public time!: Phaser.Time.Clock;
+  public textures!: Phaser.Textures.TextureManager;
+
   private backgroundTile!: Phaser.GameObjects.TileSprite;
   private bgOverlay!: Phaser.GameObjects.Rectangle;
   private anvilImage!: Phaser.GameObjects.Image;

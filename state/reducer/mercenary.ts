@@ -63,7 +63,10 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
     const mercenary = { ...state.knownMercenaries[mercIndex] };
     let affinityGain = 3; // Default for resources/consumables
 
-    if (inventoryItem.type === 'EQUIPMENT' && inventoryItem.equipmentData) {
+    // Special handling for debug items
+    if (itemId === 'affinity_debug_gift') {
+        affinityGain = 50;
+    } else if (inventoryItem.type === 'EQUIPMENT' && inventoryItem.equipmentData) {
         affinityGain = 5; // Base for gear
         // Rarity bonus
         switch (inventoryItem.equipmentData.rarity) {
