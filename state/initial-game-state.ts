@@ -11,6 +11,7 @@ const createInitialInventory = (): InventoryItem[] => [
     { ...MATERIALS.COPPER_ORE, quantity: 2 },
     { ...MATERIALS.TIN_ORE, quantity: 1 },
     { ...MATERIALS.OAK_LOG, quantity: 1 },
+    { ...MATERIALS.EMERGENCY_GOLD, quantity: 1 },
 ];
 
 export const createInitialGameState = (): GameState => ({

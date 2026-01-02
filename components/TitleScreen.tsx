@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Anvil, Play, Upload, User, Info, FastForward } from 'lucide-react';
 import { getAssetUrl } from '../utils';
@@ -14,6 +13,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showCredits, setShowCredits] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
+    const VERSION = "0.1.34";
 
     useEffect(() => {
         setHasSaves(getSaveMetadataList().length > 0);
@@ -33,7 +33,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     };
 
     return (
-        <div className="relative h-full w-full bg-stone-950 overflow-hidden flex flex-col items-center justify-center">
+        <div className="relative h-[100dvh] w-full bg-stone-950 overflow-hidden flex flex-col items-center justify-center">
             
             {/* Background Layer */}
             <div className="absolute inset-0 z-0">
@@ -50,57 +50,57 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
             </div>
 
             {/* Content Layer */}
-            <div className="relative z-10 flex flex-col items-center animate-in fade-in zoom-in duration-1000 p-4 md:p-6 w-full max-h-full overflow-hidden">
-                {/* Logo Area */}
-                <div className="mb-[3vh] md:mb-12 text-center shrink-0">
-                    <div className="w-[15vh] h-[15vh] min-w-[60px] min-h-[60px] max-w-[120px] max-h-[120px] md:w-32 md:h-32 bg-amber-900/20 rounded-full flex items-center justify-center border-2 md:border-4 border-amber-700/50 mb-[2vh] md:mb-6 mx-auto shadow-[0_0_50px_rgba(180,83,9,0.3)]">
-                        <Anvil className="w-[8vh] h-[8vh] min-w-[30px] min-h-[30px] md:w-16 md:h-16 text-amber-500 drop-shadow-lg" />
+            <div className="relative z-10 flex flex-col items-center animate-in fade-in zoom-in duration-1000 p-4 md:p-6 w-full max-h-full overflow-hidden px-safe">
+                {/* Logo Area - Using dvh and clamp for robust sizing */}
+                <div className="mb-[2dvh] md:mb-12 text-center shrink-0">
+                    <div className="w-[clamp(60px,15dvh,120px)] h-[clamp(60px,15dvh,120px)] md:w-32 md:h-32 bg-amber-900/20 rounded-full flex items-center justify-center border-2 md:border-4 border-amber-700/50 mb-[1.5dvh] md:mb-6 mx-auto shadow-[0_0_50px_rgba(180,83,9,0.3)]">
+                        <Anvil className="w-[50%] h-[50%] text-amber-500 drop-shadow-lg" />
                     </div>
-                    <h1 className="text-[6vh] md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-400 to-amber-700 font-serif tracking-tighter drop-shadow-sm leading-[1.1]">
+                    <h1 className="text-[clamp(24px,6dvh,64px)] md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-400 to-amber-700 font-serif tracking-tighter drop-shadow-sm leading-[1.1]">
                         LOCKHART'S<br/>FORGE
                     </h1>
-                    <div className="h-0.5 md:h-1 w-16 md:w-32 bg-amber-800 mx-auto mt-2 md:mt-4 rounded-full"></div>
-                    <p className="mt-1 md:mt-4 text-stone-500 font-mono tracking-widest text-[1.5vh] md:text-sm uppercase">Version 0.1.33</p>
+                    <div className="h-0.5 md:h-1 w-16 md:w-32 bg-amber-800 mx-auto mt-[1dvh] md:mt-4 rounded-full"></div>
+                    <p className="mt-[0.5dvh] md:mt-4 text-stone-500 font-mono tracking-widest text-[clamp(10px,1.2dvh,14px)] md:text-sm uppercase">Version {VERSION}</p>
                 </div>
 
-                {/* Menu Buttons */}
-                <div className="flex flex-col gap-2 md:gap-4 w-48 md:w-64 shrink-0">
+                {/* Menu Buttons - Slightly tighter spacing for small heights */}
+                <div className="flex flex-col gap-1.5 md:gap-4 w-48 md:w-64 shrink-0">
                     {hasSaves && (
                         <button 
                             onClick={handleContinue}
-                            className="group relative px-4 md:px-8 py-2 md:py-4 bg-amber-700/20 border border-amber-500 hover:bg-amber-600 transition-all rounded-lg shadow-xl animate-pulse hover:animate-none"
+                            className="group relative px-4 md:px-8 py-1.5 md:py-4 bg-amber-700/20 border border-amber-500 hover:bg-amber-600 transition-all rounded-lg shadow-xl animate-pulse hover:animate-none"
                         >
                             <div className="flex items-center justify-center gap-2 md:gap-3">
-                                <FastForward className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-400" />
-                                <span className="font-bold text-amber-50 tracking-wide text-xs md:text-base">CONTINUE</span>
+                                <FastForward className="w-3 h-3 md:w-5 md:h-5 text-amber-400" />
+                                <span className="font-bold text-amber-50 tracking-wide text-[10px] md:text-base">CONTINUE</span>
                             </div>
                         </button>
                     )}
 
                     <button 
                         onClick={onNewGame}
-                        className="group relative px-4 md:px-8 py-2 md:py-4 bg-stone-900/80 border border-stone-700 hover:border-amber-500 rounded-lg overflow-hidden transition-all hover:bg-stone-800 shadow-lg"
+                        className="group relative px-4 md:px-8 py-1.5 md:py-4 bg-stone-900/80 border border-stone-700 hover:border-amber-500 rounded-lg overflow-hidden transition-all hover:bg-stone-800 shadow-lg"
                     >
                         <div className="absolute inset-0 w-1 bg-amber-500 transition-all group-hover:w-full opacity-10"></div>
                         <div className="flex items-center justify-center gap-2 md:gap-3">
-                            <Play className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-500 group-hover:scale-110 transition-transform" />
-                            <span className="font-bold text-stone-200 tracking-wide text-xs md:text-base">NEW GAME</span>
+                            <Play className="w-3 h-3 md:w-5 md:h-5 text-amber-500 group-hover:scale-110 transition-transform" />
+                            <span className="font-bold text-stone-200 tracking-wide text-[10px] md:text-base">NEW GAME</span>
                         </div>
                     </button>
 
                     <button 
                         onClick={() => setShowLoadModal(true)}
-                        className={`group px-4 md:px-8 py-2 md:py-4 border rounded-lg transition-all flex items-center justify-center gap-2 md:gap-3 bg-stone-900/80 border-stone-700 hover:border-stone-500 hover:bg-stone-800 text-stone-300`}
+                        className={`group px-4 md:px-8 py-1.5 md:py-4 border rounded-lg transition-all flex items-center justify-center gap-2 md:gap-3 bg-stone-900/80 border-stone-700 hover:border-stone-500 hover:bg-stone-800 text-stone-300`}
                     >
                          <div className="flex items-center justify-center gap-2 md:gap-3">
-                            <Upload className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                            <span className="font-bold tracking-wide text-xs md:text-base">LOAD GAME</span>
+                            <Upload className="w-3 h-3 md:w-5 md:h-5" />
+                            <span className="font-bold tracking-wide text-[10px] md:text-base">LOAD GAME</span>
                         </div>
                     </button>
 
                     <button 
                         onClick={() => setShowCredits(true)}
-                        className="px-6 py-1 md:py-2 mt-1 md:mt-4 text-stone-600 hover:text-amber-600 text-[8px] md:text-xs font-bold tracking-widest transition-colors flex items-center justify-center gap-2"
+                        className="px-6 py-1 md:py-2 mt-0.5 md:mt-4 text-stone-600 hover:text-amber-600 text-[8px] md:text-xs font-bold tracking-widest transition-colors flex items-center justify-center gap-2"
                     >
                         <User className="w-2.5 h-2.5" /> CREDITS
                     </button>

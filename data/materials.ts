@@ -1,4 +1,3 @@
-
 export const MATERIALS = {
     // --- 1. METALS (금속) ---
     COPPER_ORE: {
@@ -87,4 +86,14 @@ export const MATERIALS = {
     WORKBENCH: { id: 'workbench', name: 'Workbench', type: 'KEY_ITEM', description: 'Required for leatherworking and woodworking.', baseValue: 300 },
     SCROLL_T2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', description: 'Enhances equipment quality.', baseValue: 1250 },
     SCROLL_T3: { id: 'scroll_t3', name: 'Upgrade Scroll (Tier 3)', type: 'SCROLL', description: 'Unlock expert craftsmanship.', baseValue: 2500 },
+
+    // --- 8. DEBUG & SPECIAL ---
+    AFFINITY_DEBUG_GIFT: {
+        id: 'affinity_debug_gift', name: 'Sparkling Heart', type: 'RESOURCE', category: 'GEM', tier: 1,
+        description: 'A magical debug item that increases affinity by 50.', baseValue: 250, icon: '❤️'
+    },
+    EMERGENCY_GOLD: {
+        id: 'emergency_gold', name: 'Emergency Fund', type: 'RESOURCE', category: 'METAL', tier: 1,
+        description: 'A hidden pouch of gold. Sell it when you are in trouble.', baseValue: 1000, icon: '💰'
+    },
 } as const;

@@ -308,7 +308,7 @@ const EquipmentInventoryList = ({
     }, [inventory, selectedSlotFilter]);
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-stone-950/40">
+        <div className="flex-1 flex flex-col min-h-0 bg-stone-950/40 px-safe">
             {/* List Header */}
             <div className="p-4 md:p-6 bg-stone-900/60 border-b border-stone-800/80 flex justify-between items-center shrink-0 z-10 backdrop-blur-2xl">
                 <h3 className="text-[10px] md:text-xs font-black text-stone-300 uppercase tracking-widest flex items-center gap-3">
@@ -456,22 +456,22 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
                 />
 
                 <div className="flex-1 bg-stone-900/40 flex flex-col h-full overflow-hidden">
-                    <div className="flex border-b border-stone-800 bg-stone-950/80 shrink-0 z-20 backdrop-blur-3xl">
+                    <div className="flex border-b border-stone-800 bg-stone-950/80 shrink-0 z-20 backdrop-blur-3xl px-safe">
                         <button 
                             onClick={() => setActiveTab('STATS')}
-                            className={`flex-1 py-5 md:py-7 text-xs md:text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeTab === 'STATS' ? 'text-amber-400 bg-stone-900/60 border-b-4 border-amber-500' : 'text-stone-600 hover:text-stone-300 hover:bg-white/5'}`}
+                            className={`flex-1 py-5 md:py-7 text-xs md:sm font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeTab === 'STATS' ? 'text-amber-400 bg-stone-900/60 border-b-4 border-amber-500' : 'text-stone-600 hover:text-stone-300 hover:bg-white/5'}`}
                         >
                             <Activity className="w-4 h-4 md:w-6 md:h-6" /> <span>Statistics</span>
                         </button>
                         <button 
                             onClick={() => setActiveTab('STORAGE')}
-                            className={`flex-1 py-5 md:py-7 text-xs md:text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeTab === 'STORAGE' ? 'text-amber-400 bg-stone-900/60 border-b-4 border-amber-500' : 'text-stone-600 hover:text-stone-300 hover:bg-white/5'}`}
+                            className={`flex-1 py-5 md:py-7 text-xs md:sm font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeTab === 'STORAGE' ? 'text-amber-400 bg-stone-900/60 border-b-4 border-amber-500' : 'text-stone-600 hover:text-stone-300 hover:bg-white/5'}`}
                         >
                             <Box className="w-4 h-4 md:w-6 md:h-6" /> <span>Equipment Bag</span>
                         </button>
                     </div>
 
-                    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-safe pb-[env(safe-area-inset-bottom)]">
                         {activeTab === 'STATS' ? (
                             <MercenaryStatsPanel 
                                 mercenary={mercenary} 
