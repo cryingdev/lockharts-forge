@@ -2,11 +2,15 @@ import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
 export default class WorkbenchScene extends Phaser.Scene {
+  // Fix: Explicitly declare Phaser Scene properties to resolve TypeScript "Property does not exist" errors
   public add!: Phaser.GameObjects.GameObjectFactory;
   public tweens!: Phaser.Tweens.TweenManager;
   public scale!: Phaser.Scale.ScaleManager;
   public input!: Phaser.Input.InputPlugin;
   public time!: Phaser.Time.Clock;
+  public load!: Phaser.Loader.LoaderPlugin;
+  public events!: Phaser.Events.EventEmitter;
+  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
 
   private targetNodes: Phaser.GameObjects.Arc[] = [];
   private cursor!: Phaser.GameObjects.Image; // Rectangle에서 Image로 변경

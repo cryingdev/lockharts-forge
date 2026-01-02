@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Save, Upload, Volume2, LogOut, X, Settings } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
@@ -14,6 +13,7 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit }) => {
     const { state, actions } = useGame();
     const [slModal, setSlModal] = useState<{ isOpen: boolean, mode: 'SAVE' | 'LOAD' }>({ isOpen: false, mode: 'SAVE' });
+    const VERSION = "0.1.34";
     
     if (!isOpen) return null;
 
@@ -108,7 +108,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit }
 
                     {/* Footer Info */}
                     <div className="p-3 bg-stone-950 text-center border-t border-stone-800">
-                        <span className="text-[10px] text-stone-600 font-mono uppercase">Lockhart's Forge v0.1.33</span>
+                        <span className="text-[10px] text-stone-600 font-mono uppercase">Lockhart's Forge v{VERSION}</span>
                     </div>
                 </div>
             </div>

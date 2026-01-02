@@ -11,6 +11,18 @@ export interface SmithingSceneData {
 }
 
 export default class SmithingScene extends Phaser.Scene {
+  // Fix: Explicitly declare Phaser Scene properties to resolve TypeScript "Property does not exist" errors
+  public add!: Phaser.GameObjects.GameObjectFactory;
+  public tweens!: Phaser.Tweens.TweenManager;
+  public scale!: Phaser.Scale.ScaleManager;
+  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
+  public input!: Phaser.Input.InputPlugin;
+  public time!: Phaser.Time.Clock;
+  public events!: Phaser.Events.EventEmitter;
+  public load!: Phaser.Loader.LoaderPlugin;
+  public textures!: Phaser.Textures.TextureManager;
+  public anims!: Phaser.Animations.AnimationManager;
+
   private backgroundTile!: Phaser.GameObjects.TileSprite;
   private bgOverlay!: Phaser.GameObjects.Rectangle;
   private anvilImage!: Phaser.GameObjects.Image;

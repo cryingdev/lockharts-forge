@@ -13,6 +13,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showCredits, setShowCredits] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
+    const VERSION = "0.1.34";
 
     useEffect(() => {
         setHasSaves(getSaveMetadataList().length > 0);
@@ -59,7 +60,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         LOCKHART'S<br/>FORGE
                     </h1>
                     <div className="h-0.5 md:h-1 w-16 md:w-32 bg-amber-800 mx-auto mt-[1dvh] md:mt-4 rounded-full"></div>
-                    <p className="mt-[0.5dvh] md:mt-4 text-stone-500 font-mono tracking-widest text-[clamp(10px,1.2dvh,14px)] md:text-sm uppercase">Version 0.1.33</p>
+                    <p className="mt-[0.5dvh] md:mt-4 text-stone-500 font-mono tracking-widest text-[clamp(10px,1.2dvh,14px)] md:text-sm uppercase">Version {VERSION}</p>
                 </div>
 
                 {/* Menu Buttons - Slightly tighter spacing for small heights */}
