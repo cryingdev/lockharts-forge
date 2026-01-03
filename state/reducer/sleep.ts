@@ -1,3 +1,4 @@
+
 import { GameState } from '../../types/index';
 import { calculateDailyWage } from '../../config/contract-config';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -38,9 +39,9 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         return merc;
     });
 
-    let logMsg = `Day ${nextDay} begins. You feel refreshed.`;
-    if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. Balance: ${newGold} G.`;
-    if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G).`;
+    let logMsg = `Day ${nextDay} begins. You feel refreshed. (Auto-saved)`;
+    if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. (Auto-saved)`;
+    if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G). (Auto-saved)`;
 
     return {
         ...state,

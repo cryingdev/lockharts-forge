@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -29,6 +30,16 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // --- AUTO-SAVE LOGIC ---
+  const prevDayRef = useRef(state.stats.day);
+  useEffect(() => {
+    // 날짜가 정확히 1만큼 증가했을 때(휴식 후) 자동 저장 수행
+    if (state.stats.day === prevDayRef.current + 1) {
+      saveToStorage(state);
+    }
+    prevDayRef.current = state.stats.day;
+  }, [state.stats.day, state]);
 
   // --- Helper Trigger ---
   const triggerEnergyHighlight = () => {
