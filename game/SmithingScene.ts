@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -900,13 +901,18 @@ export default class SmithingScene extends Phaser.Scene {
     this.root.add(bg);
     this.tweens.add({ targets: bg, alpha: 0.8, duration: 500 });
 
+    const label = this.getQualityLabel(this.currentQuality);
+    const textContent = this.isPortrait ? `${label}\nCRAFT!` : `${label} CRAFT!`;
+    const fontSize = this.isPortrait ? `${Math.min(32, this.viewW * 0.08)}px` : '48px';
+
     const txt = this.add
-      .text(this.centerX, this.centerY, `${this.getQualityLabel(this.currentQuality)} CRAFT!`, {
+      .text(this.centerX, this.centerY, textContent, {
         fontFamily: 'Georgia',
-        fontSize: '48px',
+        fontSize: fontSize,
         color: this.getLabelColor(this.currentQuality),
         stroke: '#000',
-        strokeThickness: 3,
+        strokeThickness: 4,
+        align: 'center',
       })
       .setOrigin(0.5)
       .setAlpha(0)
@@ -916,7 +922,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.tweens.add({
       targets: txt,
       alpha: 1,
-      scale: { from: 0.5, to: 1.1 },
+      scale: { from: 0.5, to: this.isPortrait ? 1.0 : 1.1 },
       duration: 600,
       ease: 'Back.out',
       onComplete: () => {

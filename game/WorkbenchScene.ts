@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -380,13 +381,18 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.root.add(bg);
     this.tweens.add({ targets: bg, alpha: 0.7, duration: 400 });
 
-    const txt = this.add.text(this.centerX, this.centerY, `${this.getQualityLabel(this.currentQuality)} CRAFT!`, {
+    const label = this.getQualityLabel(this.currentQuality);
+    const textContent = this.isPortrait ? `${label}\nCRAFT!` : `${label} CRAFT!`;
+    const fontSize = `${Math.round(this.isPortrait ? 36 * this.uiScale : 42 * this.uiScale)}px`;
+
+    const txt = this.add.text(this.centerX, this.centerY, textContent, {
       fontFamily: 'serif',
-      fontSize: `${Math.round(42 * this.uiScale)}px`,
+      fontSize: fontSize,
       color: this.getLabelColor(this.currentQuality),
       stroke: '#000',
       strokeThickness: 4,
-      fontStyle: 'italic'
+      fontStyle: 'italic',
+      align: 'center'
     }).setOrigin(0.5).setAlpha(0).setDepth(101).setScale(0.5);
 
     this.root.add(txt);
