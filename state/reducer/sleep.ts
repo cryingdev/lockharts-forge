@@ -1,4 +1,3 @@
-
 import { GameState } from '../../types/index';
 import { calculateDailyWage } from '../../config/contract-config';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -55,6 +54,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         knownMercenaries: updatedMercenaries,
         forge: { ...state.forge, isShopOpen: false },
         visitorsToday: [],
+        talkedToToday: [],
         activeCustomer: null,
         shopQueue: [],
         isCrafting: false,

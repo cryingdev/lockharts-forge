@@ -13,12 +13,20 @@ interface TavernInteractionProps {
     onBack: () => void;
 }
 
+interface FloatingHeart {
+    id: number;
+    left: number;
+    delay: number;
+    size: number;
+}
+
 const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack }) => {
     const { state, actions } = useGame();
     const [dialogue, setDialogue] = useState(`(You sit across from ${mercenary.name}.)`);
     const [showGiftMenu, setShowGiftMenu] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
+    const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     
     const isHired = mercenary.status === 'HIRED' || mercenary.status === 'ON_EXPEDITION' || mercenary.status === 'INJURED';
     const hiringCost = calculateHiringCost(mercenary.level, mercenary.job);
@@ -27,6 +35,21 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
 
     const handleTalk = () => {
         if (pendingGiftItem) return;
+
+        // Daily Affinity Bonus
+        if (!state.talkedToToday.includes(mercenary.id)) {
+            actions.talkMercenary(mercenary.id);
+            // Trigger heart animation
+            const newHearts = Array.from({ length: 5 }).map((_, i) => ({
+                id: Date.now() + i,
+                left: 40 + Math.random() * 20, // Spread around character
+                delay: Math.random() * 0.5,
+                size: 16 + Math.random() * 12
+            }));
+            setFloatingHearts(prev => [...prev, ...newHearts]);
+            setTimeout(() => setFloatingHearts([]), 3000);
+        }
+
         const lines = [
             "The road is long, but a warm fire makes it easier.",
             "I heard rumors of rare ores in the Rat Cellar...",
@@ -80,7 +103,8 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const giftableItems = state.inventory.filter(i => 
         i.type === 'RESOURCE' || 
         i.type === 'CONSUMABLE' || 
-        i.type === 'EQUIPMENT'
+        i.type === 'EQUIPMENT' ||
+        i.type === 'SCROLL'
     );
 
     const getRarityColor = (rarity?: string) => {
@@ -94,9 +118,32 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
         }
     };
 
+    const getItemImageUrl = (item: InventoryItem) => {
+        if (item.type === 'SCROLL') return getAssetUrl('scroll.png');
+        if (item.id.startsWith('scroll_') || item.id.startsWith('recipe_scroll_')) return getAssetUrl('scroll.png');
+        if (item.type === 'EQUIPMENT' && item.equipmentData) {
+            if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
+            return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
+        }
+        return getAssetUrl(`${item.id}.png`);
+    };
+
     return (
         <div className="relative h-full w-full bg-stone-950 overflow-hidden flex flex-col items-center justify-center">
             
+            <style>
+                {`
+                    @keyframes heartFloatUp {
+                        0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+                        20% { opacity: 1; }
+                        100% { transform: translateY(-300px) translateX(var(--wobble)) scale(1.2); opacity: 0; }
+                    }
+                    .animate-heart {
+                        animation: heartFloatUp 2.5s ease-out forwards;
+                    }
+                `}
+            </style>
+
             {/* Background */}
             <div className="absolute inset-0 z-0">
                 <img 
@@ -150,6 +197,22 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                            className="h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
                        />
                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-3xl rounded-full -z-10"></div>
+                       
+                       {/* Floating Hearts Container */}
+                       {floatingHearts.map(heart => (
+                           <Heart 
+                                key={heart.id}
+                                className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]"
+                                style={{
+                                    left: `${heart.left}%`,
+                                    bottom: '30%',
+                                    width: heart.size,
+                                    height: heart.size,
+                                    animationDelay: `${heart.delay}s`,
+                                    '--wobble': `${(Math.random() - 0.5) * 40}px`
+                                } as React.CSSProperties}
+                           />
+                       ))}
                    </div>
                </div>
             </div>
@@ -274,7 +337,8 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                                             className={`flex items-center gap-2 p-2 bg-stone-800 hover:bg-stone-750 border rounded-xl transition-all group text-left ${isEquipment ? 'border-amber-900/30' : 'border-stone-700'}`}
                                         >
                                             <div className="w-8 h-8 bg-stone-950 rounded-lg border border-stone-800 flex items-center justify-center text-lg shrink-0">
-                                                {item.icon || (isEquipment ? '⚔️' : '🎁')}
+                                                <img src={getItemImageUrl(item)} className="w-6 h-6 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                                                <span className="hidden text-xl">📦</span>
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className={`text-[10px] font-bold truncate ${isEquipment ? 'text-stone-200' : 'text-stone-300'}`}>{item.name}</div>

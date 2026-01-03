@@ -47,6 +47,7 @@ export interface GameState {
   activeCustomer: ShopCustomer | null; // The person currently at the counter
   shopQueue: ShopCustomer[]; // People waiting in line
   visitorsToday: string[]; // List of Mercenary IDs who have visited today
+  talkedToToday: string[]; // List of Mercenary IDs who have been talked to today for affinity bonus
 
   // Game Logic Control
   isCrafting: boolean; // Is the player currently in the minigame?

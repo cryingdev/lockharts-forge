@@ -44,6 +44,7 @@ export const createInitialGameState = (): GameState => ({
     activeCustomer: null,
     shopQueue: [],
     visitorsToday: [],
+    talkedToToday: [],
 
     // Game Logic State
     isCrafting: false,
