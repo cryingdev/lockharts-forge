@@ -31,6 +31,16 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     stateRef.current = state;
   }, [state]);
 
+  // --- AUTO-SAVE LOGIC ---
+  const prevDayRef = useRef(state.stats.day);
+  useEffect(() => {
+    // 날짜가 정확히 1만큼 증가했을 때(휴식 후) 자동 저장 수행
+    if (state.stats.day === prevDayRef.current + 1) {
+      saveToStorage(state);
+    }
+    prevDayRef.current = state.stats.day;
+  }, [state.stats.day, state]);
+
   // --- Helper Trigger ---
   const triggerEnergyHighlight = () => {
       dispatch({ type: 'SET_UI_EFFECT', payload: { effect: 'energyHighlight', value: true } });
@@ -114,6 +124,7 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     hireMercenary: (mercenaryId: string, cost: number) => dispatch({ type: 'HIRE_MERCENARY', payload: { mercenaryId, cost } }),
     fireMercenary: (mercenaryId: string) => dispatch({ type: 'FIRE_MERCENARY', payload: { mercenaryId } }),
     giveGift: (mercenaryId: string, itemId: string) => dispatch({ type: 'GIVE_GIFT', payload: { mercenaryId, itemId } }),
+    talkMercenary: (mercenaryId: string) => dispatch({ type: 'TALK_MERCENARY', payload: { mercenaryId } }),
 
     startExpedition: (dungeonId: string, partyIds: string[]) => dispatch({ type: 'START_EXPEDITION', payload: { dungeonId, partyIds } }),
     completeExpedition: (expeditionId: string) => dispatch({ type: 'COMPLETE_EXPEDITION', payload: { expeditionId } }),
@@ -127,7 +138,6 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
 
     triggerEnergyHighlight
-    // Fix: Added missing closing parenthesis to correctly terminate the useMemo callback
   }), []); 
 
   return (

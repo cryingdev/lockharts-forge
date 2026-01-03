@@ -39,9 +39,9 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         return merc;
     });
 
-    let logMsg = `Day ${nextDay} begins. You feel refreshed.`;
-    if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. Balance: ${newGold} G.`;
-    if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G).`;
+    let logMsg = `Day ${nextDay} begins. You feel refreshed. (Auto-saved)`;
+    if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. (Auto-saved)`;
+    if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G). (Auto-saved)`;
 
     return {
         ...state,
@@ -55,6 +55,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         knownMercenaries: updatedMercenaries,
         forge: { ...state.forge, isShopOpen: false },
         visitorsToday: [],
+        talkedToToday: [],
         activeCustomer: null,
         shopQueue: [],
         isCrafting: false,

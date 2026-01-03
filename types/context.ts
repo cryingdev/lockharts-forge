@@ -1,4 +1,3 @@
-
 import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -42,6 +41,7 @@ export interface GameContextType {
     hireMercenary: (mercenaryId: string, cost: number) => void;
     fireMercenary: (mercenaryId: string) => void;
     giveGift: (mercenaryId: string, itemId: string) => void;
+    talkMercenary: (mercenaryId: string) => void;
 
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
     completeExpedition: (expeditionId: string) => void;

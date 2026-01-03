@@ -1,4 +1,3 @@
-
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -9,7 +8,7 @@ import { handleTriggerEvent, handleCloseEvent, handleToggleJournal } from './red
 import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem } from './reducer/inventory';
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
 import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer } from './reducer/shop';
-import { handleAddKnownMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift } from './reducer/mercenary';
+import { handleAddKnownMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 
@@ -57,6 +56,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'HIRE_MERCENARY': return handleHireMercenary(state, action.payload);
     case 'FIRE_MERCENARY': return handleFireMercenary(state, action.payload);
     case 'GIVE_GIFT': return handleGiveGift(state, action.payload);
+    case 'TALK_MERCENARY': return handleTalkMercenary(state, action.payload);
     case 'ALLOCATE_STAT': return handleAllocateStat(state, action.payload);
     case 'UPDATE_MERCENARY_STATS': return handleUpdateMercenaryStats(state, action.payload);
 

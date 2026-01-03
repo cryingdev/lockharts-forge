@@ -97,6 +97,26 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
     };
 };
 
+export const handleTalkMercenary = (state: GameState, payload: { mercenaryId: string }): GameState => {
+    const { mercenaryId } = payload;
+    if (state.talkedToToday.includes(mercenaryId)) return state;
+
+    const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
+    if (mercIndex === -1) return state;
+
+    const newMercenaries = [...state.knownMercenaries];
+    const merc = { ...newMercenaries[mercIndex] };
+    merc.affinity = Math.min(100, (merc.affinity || 0) + 1);
+    newMercenaries[mercIndex] = merc;
+
+    return {
+        ...state,
+        knownMercenaries: newMercenaries,
+        talkedToToday: [...state.talkedToToday, mercenaryId],
+        logs: [`Talked with ${merc.name}. Affinity +1.`, ...state.logs]
+    };
+};
+
 export const handleAllocateStat = (state: GameState, payload: { mercenaryId: string; stat: keyof PrimaryStats }): GameState => {
     const { mercenaryId, stat } = payload;
     const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
