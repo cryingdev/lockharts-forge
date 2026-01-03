@@ -41,6 +41,9 @@ export interface EquipmentItem {
   requirements: { id: string; count: number }[];
   baseStats?: EquipmentStats;
   
+  // Unlock logic
+  unlockedByDefault?: boolean; // If false, requires a recipe scroll to show in Forge
+
   // Durability & Requirements Template
   maxDurability: number;
   isRepairable: boolean;

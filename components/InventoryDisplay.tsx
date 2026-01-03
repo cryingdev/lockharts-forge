@@ -132,7 +132,11 @@ export const InventoryDisplay = () => {
                         {renderEquipmentStats(currentSelectedItem)}
 
                         <div className="mt-auto space-y-2 pt-2">
-                            {currentSelectedItem.type === 'CONSUMABLE' && <button onClick={handleConsume} className="w-full py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 rounded text-[10px] md:text-sm font-bold transition-all">Use Item</button>}
+                            {(currentSelectedItem.type === 'CONSUMABLE' || currentSelectedItem.type === 'SCROLL') && (
+                                <button onClick={handleConsume} className="w-full py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 rounded text-[10px] md:text-sm font-bold transition-all">
+                                    {currentSelectedItem.type === 'SCROLL' ? 'Study Scroll' : 'Use Item'}
+                                </button>
+                            )}
                             {currentSelectedItem.baseValue > 0 && currentSelectedItem.type !== 'KEY_ITEM' && (
                                 <button onClick={handleQuickSell} className="w-full py-2 bg-stone-800 hover:bg-red-900/30 text-stone-300 rounded text-[10px] md:text-sm font-bold border border-stone-700 transition-all">
                                     Sell ({Math.floor(currentSelectedItem.baseValue * 0.5)}G)

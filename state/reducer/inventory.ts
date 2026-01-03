@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../../types/index';
 import { MATERIALS } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -183,6 +182,7 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
     if (!inventoryItem || inventoryItem.quantity <= 0) return state;
 
     let newStats = { ...state.stats };
+    let newUnlockedRecipes = [...(state.unlockedRecipes || [])];
     let logMsg = '';
     let itemUsed = false;
 
@@ -190,7 +190,6 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
     if (itemId === 'energy_potion') {
         const recoverAmount = 25;
         if (newStats.energy >= newStats.maxEnergy) {
-            // Can't use if full? Or allow waste? Let's prevent waste for better UX.
             return {
                 ...state,
                 logs: [`Energy is already full!`, ...state.logs]
@@ -198,6 +197,18 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
         }
         newStats.energy = Math.min(newStats.maxEnergy, newStats.energy + recoverAmount);
         logMsg = `Consumed Energy Potion. +${recoverAmount} Energy.`;
+        itemUsed = true;
+    } 
+    else if (itemId === 'recipe_scroll_bronze_longsword') {
+        const targetRecipeId = 'sword_bronze_long_t1';
+        if (newUnlockedRecipes.includes(targetRecipeId)) {
+            return {
+                ...state,
+                logs: [`You already know the techniques in this scroll.`, ...state.logs]
+            };
+        }
+        newUnlockedRecipes.push(targetRecipeId);
+        logMsg = `Studied the scroll. Bronze Longsword recipe unlocked!`;
         itemUsed = true;
     }
 
@@ -215,6 +226,7 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
         ...state,
         stats: newStats,
         inventory: newInventory,
+        unlockedRecipes: newUnlockedRecipes,
         logs: [logMsg, ...state.logs]
     };
 };

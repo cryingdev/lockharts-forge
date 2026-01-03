@@ -71,7 +71,8 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 60,
     isRepairable: true,
-    equipRequirements: { str: 8 }
+    equipRequirements: { str: 8 },
+    unlockedByDefault: false // Requires recipe scroll
   },
   {
     id: 'mace_wood_t1',
@@ -88,7 +89,7 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     isTwoHanded: false,
     craftingType: 'WORKBENCH',
     maxDurability: 25,
-    isRepairable: false, // Wooden club is usually not repairable
+    isRepairable: false,
     equipRequirements: { str: 6 }
   },
   {
@@ -473,7 +474,7 @@ export const EQUIPMENT_ITEMS: EquipmentItem[] = [
     slotType: 'MAIN_HAND',
     isTwoHanded: false,
     craftingType: 'FORGE',
-    maxDurability: 500, // Mithril is extremely durable
+    maxDurability: 500,
     isRepairable: true,
     equipRequirements: { str: 20, dex: 25 }
   },

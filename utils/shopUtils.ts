@@ -6,11 +6,11 @@ import { JobClass } from '../models/JobClass';
 
 // Define what kind of equipment each job is interested in
 const JOB_PREFERENCES: Record<JobClass, string[]> = {
-    [JobClass.NOVICE]: ['SWORD', 'AXE', 'HELMET', 'CHESTPLATE'], // Can use basics
-    [JobClass.FIGHTER]: ['SWORD', 'AXE', 'HELMET', 'CHESTPLATE'], // Heavy user
-    [JobClass.ROGUE]: ['SWORD', 'HELMET'], // Light weapons (using Sword as dagger proxy)
-    [JobClass.MAGE]: ['HELMET'], // Limited options currently
-    [JobClass.CLERIC]: ['HELMET', 'CHESTPLATE'], // Protective gear
+    [JobClass.NOVICE]: ['SWORD', 'DAGGER', 'HELMET', 'CHESTPLATE', 'GLOVES', 'BOOTS'], // Can use basics
+    [JobClass.FIGHTER]: ['SWORD', 'AXE', 'SHIELD', 'HELMET', 'CHESTPLATE', 'GLOVES', 'BOOTS'], // Heavy user
+    [JobClass.ROGUE]: ['SWORD', 'DAGGER', 'GLOVES', 'BOOTS'], // Light weapons (using Sword as dagger proxy)
+    [JobClass.MAGE]: ['STAFF', 'HELMET', 'GLOVES', 'BOOTS'], // Limited options currently
+    [JobClass.CLERIC]: ['MACE', 'HELMET', 'CHESTPLATE', 'GLOVES', 'BOOTS'], // Protective gear
 };
 
 export const generateShopRequest = (merc: Mercenary): ShopCustomer => {
