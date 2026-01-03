@@ -86,8 +86,14 @@ export const MATERIALS = {
     WORKBENCH: { id: 'workbench', name: 'Workbench', type: 'KEY_ITEM', description: 'Required for leatherworking and woodworking.', baseValue: 300 },
     SCROLL_T2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', description: 'Enhances equipment quality.', baseValue: 1250 },
     SCROLL_T3: { id: 'scroll_t3', name: 'Upgrade Scroll (Tier 3)', type: 'SCROLL', description: 'Unlock expert craftsmanship.', baseValue: 2500 },
+    
+    // --- 8. RECIPES (QUEST REWARDS) ---
+    RECIPE_SCROLL_BRONZE_LONGSWORD: {
+        id: 'recipe_scroll_bronze_longsword', name: 'Scroll: Bronze Longsword', type: 'SCROLL',
+        description: 'An ancient parchment detailing the techniques to forge a Bronze Longsword.', baseValue: 0
+    },
 
-    // --- 8. DEBUG & SPECIAL ---
+    // --- 9. DEBUG & SPECIAL ---
     AFFINITY_DEBUG_GIFT: {
         id: 'affinity_debug_gift', name: 'Sparkling Heart', type: 'RESOURCE', category: 'GEM', tier: 1,
         description: 'A magical debug item that increases affinity by 50.', baseValue: 250, icon: '❤️'

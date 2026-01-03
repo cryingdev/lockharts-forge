@@ -98,6 +98,20 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
             }
     });
 
+    // Special Reward: Recipe Scroll for First Clear of Rats Dungeon
+    const isFirstClear = (state.dungeonClearCounts[dungeon.id] || 0) === 0;
+    if (isFirstClear && dungeon.id === 'dungeon_t1_rats') {
+        const scrollDef = MATERIALS.RECIPE_SCROLL_BRONZE_LONGSWORD;
+        // Check if player somehow already has it (unlikely but safe)
+        const alreadyHasScroll = newInventory.some(i => i.id === scrollDef.id);
+        const alreadyHasRecipe = state.unlockedRecipes.includes('sword_bronze_long_t1');
+        
+        if (!alreadyHasScroll && !alreadyHasRecipe) {
+            newInventory.push({ ...scrollDef, quantity: 1 } as InventoryItem);
+            gainedItems.push({ id: scrollDef.id, count: 1, name: scrollDef.name });
+        }
+    }
+
     const mercenaryResults: DungeonResult['mercenaryResults'] = [];
     let newKnownMercenaries = [...state.knownMercenaries];
 
@@ -155,7 +169,6 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     });
 
     const newClearCounts = { ...state.dungeonClearCounts };
-    const isFirstClear = !newClearCounts[dungeon.id];
     newClearCounts[dungeon.id] = (newClearCounts[dungeon.id] || 0) + 1;
     const remainingExpeditions = state.activeExpeditions.filter(e => e.id !== expeditionId);
 
@@ -170,26 +183,14 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
         ? `Returned from ${dungeon.name}${luckMsg}. Gained: ${gainedItems.map(i => `${i.name} x${i.count}`).join(', ')}`
         : `Returned from ${dungeon.name}. No loot found.`;
 
-    const finalLogs = [logStr, ...state.logs];
-    let newUnlockedRecipes = [...(state.unlockedRecipes || [])];
-
-    // Specific logic for Rat Cellar unlock
-    if (isFirstClear && dungeon.id === 'dungeon_t1_rats') {
-        if (!newUnlockedRecipes.includes('sword_bronze_long_t1')) {
-            newUnlockedRecipes.push('sword_bronze_long_t1');
-            finalLogs.unshift("📜 New Recipe Discovered: Bronze Longsword!");
-        }
-    }
-
     return {
         ...state,
         inventory: newInventory,
         knownMercenaries: newKnownMercenaries,
         activeExpeditions: remainingExpeditions,
         dungeonClearCounts: newClearCounts,
-        unlockedRecipes: newUnlockedRecipes,
         dungeonResult: resultData,
-        logs: finalLogs
+        logs: [logStr, ...state.logs]
     };
 };
 

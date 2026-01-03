@@ -2,13 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
 import { MATERIALS } from '../../../data/materials';
+import { EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { calculatePartyPower, calculateMercenaryPower, formatDuration } from '../../../utils/dungeonUtils';
 import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 
 const DungeonTab = () => {
     const { state, actions } = useGame();
-    const { activeExpeditions, knownMercenaries, dungeonClearCounts } = state;
+    const { activeExpeditions, knownMercenaries, dungeonClearCounts, unlockedRecipes, inventory } = state;
 
     // Index-based selection for paging
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -102,19 +103,25 @@ const DungeonTab = () => {
     const isComplete = currentExpedition?.status === 'COMPLETED';
 
     useEffect(() => {
-        if (!currentExpedition) return;
+        if (!currentExpedition) {
+            setTimeLeft('');
+            return;
+        }
         if (currentExpedition.status === 'COMPLETED') {
             setTimeLeft('00:00');
             return;
         }
 
-        const interval = setInterval(() => {
+        const updateTimer = () => {
             const now = Date.now();
             const end = currentExpedition.endTime;
             const diff = end - now;
             if (diff <= 0) setTimeLeft('00:00');
             else setTimeLeft(formatDuration(diff));
-        }, 1000);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
 
         return () => clearInterval(interval);
     }, [currentExpedition]);
@@ -122,6 +129,22 @@ const DungeonTab = () => {
     const isUnlocked = selectedDungeon.tier <= state.stats.tierLevel + 1;
     const clears = dungeonClearCounts[selectedDungeon.id] || 0;
     const isBoss = !!selectedDungeon.bossVariantId;
+
+    // Display Rewards including Quest Rewards (like Recipe Scrolls)
+    const displayRewards = useMemo(() => {
+        const base = [...selectedDungeon.rewards];
+        if (selectedDungeon.id === 'dungeon_t1_rats') {
+            const targetId = 'sword_bronze_long_t1';
+            const itemDef = EQUIPMENT_ITEMS.find(i => i.id === targetId);
+            const isItemAlreadyUnlocked = itemDef?.unlockedByDefault !== false || unlockedRecipes.includes(targetId);
+            const hasScroll = inventory.some(i => i.id === 'recipe_scroll_bronze_longsword');
+            
+            if (clears === 0 && !isItemAlreadyUnlocked && !hasScroll) {
+                base.push({ itemId: 'recipe_scroll_bronze_longsword', minQuantity: 1, maxQuantity: 1, chance: 1.0 });
+            }
+        }
+        return base;
+    }, [selectedDungeon, clears, unlockedRecipes, inventory]);
 
     return (
         <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans">
@@ -161,9 +184,9 @@ const DungeonTab = () => {
                                  <div className="text-2xl sm:text-5xl lg:text-6xl drop-shadow-2xl">
                                     {selectedDungeon.id.includes('rat') ? '🐀' : selectedDungeon.id.includes('goblin') ? '👺' : selectedDungeon.id.includes('mine') ? '⛏️' : '🏰'}
                                  </div>
-                                 {currentExpedition && (
+                                 {currentExpedition && timeLeft && (
                                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
-                                         <Timer className="w-4 h-4 sm:w-8 sm:h-8 text-amber-500 animate-pulse mb-1" />
+                                         <Timer className="w-4 h-4 sm:w-8 sm:h-8 text-amber-500 animate-pulse" />
                                          <span className="text-[9px] sm:text-sm font-mono text-amber-400 font-bold">{timeLeft}</span>
                                      </div>
                                  )}
@@ -196,7 +219,7 @@ const DungeonTab = () => {
                                 <h4 className="text-[7px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">Expected Loot</h4>
                             </div>
                             <div className="flex flex-wrap justify-center gap-1 sm:gap-3">
-                                {selectedDungeon.rewards.map((reward, ridx) => {
+                                {displayRewards.map((reward, ridx) => {
                                     const mat = Object.values(MATERIALS).find(m => m.id === reward.itemId);
                                     return (
                                         <div key={`${selectedDungeon.id}-reward-${ridx}`} className="group relative w-7 h-7 sm:w-12 sm:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center hover:border-amber-500/50 transition-colors shadow-inner">
@@ -247,9 +270,12 @@ const DungeonTab = () => {
                                 <span className="text-xs sm:lg lg:text-xl uppercase tracking-widest">Secure Loot & Return</span>
                             </button>
                         ) : (
-                            <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-500 shadow-2xl backdrop-blur-md">
-                                ETA: {timeLeft}
-                            </div>
+                            timeLeft && (
+                                <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-500 shadow-2xl backdrop-blur-md flex items-center gap-0">
+                                    <Timer className="w-5 h-5 sm:w-8 lg:w-10 animate-pulse text-amber-600 shrink-0" />
+                                    <span>{timeLeft}</span>
+                                </div>
+                            )
                         )}
                     </div>
                 ) : (
