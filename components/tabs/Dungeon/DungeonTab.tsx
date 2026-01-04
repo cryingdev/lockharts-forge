@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
@@ -149,105 +150,109 @@ const DungeonTab = () => {
     return (
         <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans">
             
-            {/* Left/Upper Panel: Dungeon Selection (Stable Responsive Layout) */}
+            {/* Left/Upper Panel: Dungeon Selection */}
             <div className="w-full sm:w-[40%] h-[42%] sm:h-full flex flex-col border-b sm:border-b-0 sm:border-r border-stone-800 bg-stone-900/50 relative overflow-hidden shrink-0 min-h-0">
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                     <img src={getAssetUrl('dungeon_bg.png')} className="w-full h-full object-cover grayscale" />
                 </div>
 
-                {/* Stable Header Area */}
-                <div className="relative flex flex-col items-center pt-3 sm:pt-10 z-10 shrink-0">
-                    <div className="h-14 sm:h-24 flex flex-col items-center justify-center text-center px-10 mb-1 sm:mb-4">
-                        <h1 key={`title-${selectedDungeon.id}`} className="text-base sm:text-2xl lg:text-3xl font-black text-white font-serif tracking-tighter uppercase leading-none animate-in fade-in duration-300">
-                            {selectedDungeon.name}
-                        </h1>
-                        {!isUnlocked && (
-                            <div className="flex items-center justify-center gap-1.5 text-red-500 font-bold text-[8px] sm:text-xs uppercase mt-1">
-                                <Lock className="w-2 sm:w-2.5 h-2 sm:h-2.5" /> Area Locked
-                            </div>
-                        )}
-                    </div>
+                {/* Content Container with unique key to prevent afterimages */}
+                <div key={selectedDungeon.id} className="flex-1 flex flex-col items-center z-10 min-h-0 transform-gpu backface-hidden">
+                    
+                    {/* Header Area */}
+                    <div className="relative flex flex-col items-center pt-3 sm:pt-10 z-10 shrink-0 w-full">
+                        <div className="h-14 sm:h-24 flex flex-col items-center justify-center text-center px-10 mb-1 sm:mb-4">
+                            <h1 className="text-base sm:text-2xl lg:text-3xl font-black text-white font-serif tracking-tighter uppercase leading-none animate-in fade-in duration-300">
+                                {selectedDungeon.name}
+                            </h1>
+                            {!isUnlocked && (
+                                <div className="flex items-center justify-center gap-1.5 text-red-500 font-bold text-[8px] sm:text-xs uppercase mt-1">
+                                    <Lock className="w-2 sm:w-2.5 h-2 sm:h-2.5" /> Area Locked
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Navigation Area with Fixed Arrows */}
-                    <div className="relative w-full flex items-center justify-center h-20 sm:h-40 mb-1 sm:mb-6">
-                        <button 
-                            onClick={handlePrev} 
-                            className="absolute left-2 sm:left-4 z-30 p-2 sm:p-4 bg-stone-800/80 hover:bg-amber-600 rounded-full border border-stone-700 transition-all active:scale-90 group shadow-2xl backdrop-blur-md"
-                        >
-                            <ChevronLeft className="w-4 h-4 sm:w-8 sm:h-8 text-stone-400 group-hover:text-white" />
-                        </button>
+                        {/* Navigation Area with Fixed Arrows */}
+                        <div className="relative w-full flex items-center justify-center h-20 sm:h-40 mb-1 sm:mb-6">
+                            <button 
+                                onClick={handlePrev} 
+                                className="absolute left-2 sm:left-4 z-30 p-2 sm:p-4 bg-stone-800/80 hover:bg-amber-600 rounded-full border border-stone-700 transition-all active:scale-90 group shadow-2xl backdrop-blur-md"
+                            >
+                                <ChevronLeft className="w-4 h-4 sm:w-8 sm:h-8 text-stone-400 group-hover:text-white" />
+                            </button>
 
-                        <div key={`icon-${selectedDungeon.id}`} className="relative group animate-in fade-in zoom-in duration-300">
-                            <div className={`absolute inset-0 blur-2xl rounded-full opacity-20 ${isBoss ? 'bg-red-500' : 'bg-amber-500'} group-hover:opacity-40 transition-opacity`}></div>
-                            
-                            <div className={`w-16 h-16 sm:w-32 lg:w-40 sm:h-32 lg:h-40 bg-stone-900 rounded-[1.2rem] sm:rounded-[2rem] border-2 sm:border-4 border-stone-700 flex items-center justify-center relative shadow-2xl overflow-hidden ring-4 ring-white/5 ${!isUnlocked ? 'grayscale brightness-50' : ''}`}>
-                                 <div className="text-2xl sm:text-5xl lg:text-6xl drop-shadow-2xl">
-                                    {selectedDungeon.id.includes('rat') ? '🐀' : selectedDungeon.id.includes('goblin') ? '👺' : selectedDungeon.id.includes('mine') ? '⛏️' : '🏰'}
-                                 </div>
-                                 {currentExpedition && timeLeft && (
-                                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
-                                         <Timer className="w-4 h-4 sm:w-8 sm:h-8 text-amber-500 animate-pulse" />
-                                         <span className="text-[9px] sm:text-sm font-mono text-amber-400 font-bold">{timeLeft}</span>
+                            <div className="relative group animate-in fade-in zoom-in duration-300">
+                                <div className={`absolute inset-0 blur-2xl rounded-full opacity-20 ${isBoss ? 'bg-red-500' : 'bg-amber-500'} group-hover:opacity-40 transition-opacity`}></div>
+                                
+                                <div className={`w-16 h-16 sm:w-32 lg:w-40 sm:h-32 lg:h-40 bg-stone-900 rounded-[1.2rem] sm:rounded-[2rem] border-2 sm:border-4 border-stone-700 flex items-center justify-center relative shadow-2xl overflow-hidden ring-4 ring-white/5 ${!isUnlocked ? 'grayscale brightness-50' : ''}`}>
+                                     <div className="text-2xl sm:text-5xl lg:text-6xl drop-shadow-2xl">
+                                        {selectedDungeon.id.includes('rat') ? '🐀' : selectedDungeon.id.includes('goblin') ? '👺' : selectedDungeon.id.includes('mine') ? '⛏️' : '🏰'}
                                      </div>
-                                 )}
+                                     {currentExpedition && timeLeft && (
+                                         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
+                                             <Timer className="w-4 h-4 sm:w-8 sm:h-8 text-amber-500 animate-pulse" />
+                                             <span className="text-[9px] sm:text-sm font-mono text-amber-400 font-bold">{timeLeft}</span>
+                                         </div>
+                                     )}
+                                </div>
+
+                                <div className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded sm:rounded-lg font-black text-[7px] sm:text-xs shadow-xl border sm:border-2 z-30 font-mono tracking-tighter ${isBoss ? 'bg-red-700 border-red-400 text-white' : 'bg-amber-600 border-amber-400 text-amber-50'}`}>
+                                    {isBoss ? 'BOSS' : `TIER ${selectedDungeon.tier}`}
+                                </div>
                             </div>
 
-                            <div className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded sm:rounded-lg font-black text-[7px] sm:text-xs shadow-xl border sm:border-2 z-30 font-mono tracking-tighter ${isBoss ? 'bg-red-700 border-red-400 text-white' : 'bg-amber-600 border-amber-400 text-amber-50'}`}>
-                                {isBoss ? 'BOSS' : `TIER ${selectedDungeon.tier}`}
-                            </div>
+                            <button 
+                                onClick={handleNext} 
+                                className="absolute right-2 sm:right-4 z-30 p-2 sm:p-4 bg-stone-800/80 hover:bg-amber-600 rounded-full border border-stone-700 transition-all active:scale-90 group shadow-2xl backdrop-blur-md"
+                            >
+                                <ChevronRight className="w-4 h-4 sm:w-8 sm:h-8 text-stone-400 group-hover:text-white" />
+                            </button>
                         </div>
-
-                        <button 
-                            onClick={handleNext} 
-                            className="absolute right-2 sm:right-4 z-30 p-2 sm:p-4 bg-stone-800/80 hover:bg-amber-600 rounded-full border border-stone-700 transition-all active:scale-90 group shadow-2xl backdrop-blur-md"
-                        >
-                            <ChevronRight className="w-4 h-4 sm:w-8 sm:h-8 text-stone-400 group-hover:text-white" />
-                        </button>
                     </div>
-                </div>
 
-                {/* Dynamic Content (Scrollable) */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 sm:p-8 pt-0 z-10 flex flex-col items-center min-h-0">
-                    <div className="w-full max-w-sm space-y-3 sm:space-y-6">
-                        <p key={`desc-${selectedDungeon.id}`} className="text-stone-400 text-[9px] sm:text-sm text-center italic px-4 leading-snug animate-in fade-in duration-500">
-                            "{selectedDungeon.description}"
-                        </p>
+                    {/* Dynamic Content (Scrollable) */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2 sm:p-8 pt-0 z-10 flex flex-col items-center min-h-0 w-full">
+                        <div className="w-full max-w-sm space-y-3 sm:space-y-6">
+                            <p className="text-stone-400 text-[9px] sm:text-sm text-center italic px-4 leading-snug animate-in fade-in duration-500">
+                                "{selectedDungeon.description}"
+                            </p>
 
-                        <div className="bg-stone-950/40 p-2 sm:p-4 rounded-xl border border-stone-800/50">
-                            <div className="flex items-center justify-center gap-1.5 mb-1.5 sm:mb-3">
-                                <Box className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-stone-600" />
-                                <h4 className="text-[7px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">Expected Loot</h4>
-                            </div>
-                            <div className="flex flex-wrap justify-center gap-1 sm:gap-3">
-                                {displayRewards.map((reward, ridx) => {
-                                    const mat = Object.values(MATERIALS).find(m => m.id === reward.itemId);
-                                    return (
-                                        <div key={`${selectedDungeon.id}-reward-${ridx}`} className="group relative w-7 h-7 sm:w-12 sm:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center hover:border-amber-500/50 transition-colors shadow-inner">
-                                            <img 
-                                                src={getAssetUrl(`${reward.itemId}.png`)} 
-                                                className="w-4 h-4 sm:w-8 sm:h-8 object-contain opacity-70 group-hover:opacity-100 transition-opacity"
-                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                            />
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-950 border border-stone-700 rounded text-[7px] sm:text-[9px] font-bold text-stone-300 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-2xl">
-                                                {mat?.name || reward.itemId}
+                            <div className="bg-stone-950/40 p-2 sm:p-4 rounded-xl border border-stone-800/50">
+                                <div className="flex items-center justify-center gap-1.5 mb-1.5 sm:mb-3">
+                                    <Box className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-stone-600" />
+                                    <h4 className="text-[7px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">Expected Loot</h4>
+                                </div>
+                                <div className="flex flex-wrap justify-center gap-1 sm:gap-3">
+                                    {displayRewards.map((reward, ridx) => {
+                                        const mat = Object.values(MATERIALS).find(m => m.id === reward.itemId);
+                                        return (
+                                            <div key={`${selectedDungeon.id}-reward-${ridx}`} className="group relative w-7 h-7 sm:w-12 sm:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center hover:border-amber-500/50 transition-colors shadow-inner">
+                                                <img 
+                                                    src={getAssetUrl(`${reward.itemId}.png`)} 
+                                                    className="w-4 h-4 sm:w-8 sm:h-8 object-contain opacity-70 group-hover:opacity-100 transition-opacity"
+                                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                />
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-950 border border-stone-700 rounded text-[7px] sm:text-[9px] font-bold text-stone-300 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-2xl">
+                                                    {mat?.name || reward.itemId}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
+                            
+                            {selectedDungeon.bossUnlockReq && (
+                                <div className="bg-stone-950/80 p-2 sm:p-4 rounded-xl border border-stone-800 shadow-xl">
+                                    <div className="flex justify-between text-[7px] sm:text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1.5 sm:mb-2">
+                                        <span>Area Progress</span>
+                                        <span className="text-red-500">{clears}/{selectedDungeon.bossUnlockReq} CLEARS</span>
+                                    </div>
+                                    <div className="h-1 sm:h-2 bg-stone-900 rounded-full overflow-hidden border border-stone-800">
+                                        <div className="h-full bg-gradient-to-r from-red-900 to-red-600 transition-all duration-1000" style={{ width: `${Math.min(100, (clears / selectedDungeon.bossUnlockReq) * 100)}%` }}></div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        
-                        {selectedDungeon.bossUnlockReq && (
-                            <div className="bg-stone-950/80 p-2 sm:p-4 rounded-xl border border-stone-800 shadow-xl">
-                                <div className="flex justify-between text-[7px] sm:text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1.5 sm:mb-2">
-                                    <span>Area Progress</span>
-                                    <span className="text-red-500">{clears}/{selectedDungeon.bossUnlockReq} CLEARS</span>
-                                </div>
-                                <div className="h-1 sm:h-2 bg-stone-900 rounded-full overflow-hidden border border-stone-800">
-                                    <div className="h-full bg-gradient-to-r from-red-900 to-red-600 transition-all duration-1000" style={{ width: `${Math.min(100, (clears / selectedDungeon.bossUnlockReq) * 100)}%` }}></div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -256,7 +261,7 @@ const DungeonTab = () => {
                 </div>
             </div>
 
-            {/* Right/Lower Panel: Deployment & Squad (Responsive flex space) */}
+            {/* Right/Lower Panel: Deployment & Squad */}
             <div className="flex-1 flex flex-col bg-stone-925 relative overflow-hidden min-h-0 min-w-0">
                 {currentExpedition ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center animate-in fade-in duration-700">
@@ -322,7 +327,7 @@ const DungeonTab = () => {
                                                     <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 sm:p-2 relative animate-in zoom-in-95 duration-200">
                                                         <div className="text-xl sm:text-5xl lg:text-6xl group-hover:scale-110 transition-transform mb-0.5">{merc.icon}</div>
                                                         <div className="text-[7px] sm:text-[10px] lg:text-sm font-black text-stone-200 truncate w-full text-center">{merc.name.split(' ')[0]}</div>
-                                                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-10 transition-opacity">
                                                             <XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 shadow-2xl" />
                                                         </div>
                                                         {hasError && (
