@@ -1,3 +1,4 @@
+
 import { GameEvent } from '../types/events';
 import { EquipmentItem, InventoryItem } from '../types/inventory';
 import { EquipmentSlotType } from '../models/Equipment';
@@ -10,6 +11,7 @@ export type GameAction =
   | { type: 'REPAIR_WORK' }
   | { type: 'SLEEP' }        
   | { type: 'CONFIRM_SLEEP' } 
+  | { type: 'CLOSE_SLEEP_MODAL' }
   | { type: 'TRIGGER_EVENT'; payload: GameEvent }
   | { type: 'CLOSE_EVENT' }
   | { type: 'ACQUIRE_ITEM'; payload: { id: string; quantity: number } }

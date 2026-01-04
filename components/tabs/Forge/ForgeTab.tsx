@@ -3,7 +3,7 @@ import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipmen
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import WorkbenchMinigame from './WorkbenchMinigame';
-import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain, AlertCircle, TrendingUp } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain, AlertCircle, TrendingUp, Sparkles } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
@@ -260,6 +260,43 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       );
   };
 
+  // --- Mastery Radial Logic ---
+  const masteryInfo = useMemo(() => {
+    if (!selectedItem) return null;
+    const count = craftingMastery[selectedItem.id] || 0;
+    let label = "Novice";
+    let colorClass = "stroke-stone-500";
+    let glowClass = "shadow-[0_0_20px_rgba(120,113,108,0.2)]";
+    let progress = 0;
+    let nextMax = MASTERY_THRESHOLDS.ADEPT;
+
+    if (count >= MASTERY_THRESHOLDS.ARTISAN) {
+      label = "Artisan";
+      colorClass = "stroke-amber-500";
+      glowClass = "shadow-[0_0_40px_rgba(245,158,11,0.3)]";
+      progress = Math.min(100, ((count - MASTERY_THRESHOLDS.ARTISAN) / 20) * 100);
+      nextMax = 50; 
+    } else if (count >= MASTERY_THRESHOLDS.ADEPT) {
+      label = "Adept";
+      colorClass = "stroke-emerald-500";
+      glowClass = "shadow-[0_0_30px_rgba(16,185,129,0.2)]";
+      progress = ((count - MASTERY_THRESHOLDS.ADEPT) / (MASTERY_THRESHOLDS.ARTISAN - MASTERY_THRESHOLDS.ADEPT)) * 100;
+      nextMax = MASTERY_THRESHOLDS.ARTISAN;
+    } else {
+      label = "Novice";
+      colorClass = "stroke-stone-400";
+      glowClass = "shadow-[0_0_20px_rgba(168,162,158,0.15)]";
+      progress = (count / MASTERY_THRESHOLDS.ADEPT) * 100;
+      nextMax = MASTERY_THRESHOLDS.ADEPT;
+    }
+
+    const radius = 46;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (progress / 100) * circumference;
+
+    return { label, colorClass, glowClass, progress, circumference, offset, count, nextMax };
+  }, [selectedItem, craftingMastery]);
+
   const content = useMemo(() => {
     const canCraft = selectedItem && canAffordResources(selectedItem) && (selectedItem.craftingType === 'WORKBENCH' || canEnterForge) && hasEnergy && isRequirementMet;
     const isMissingFuelOnly = selectedItem && selectedItem.craftingType === 'FORGE' && canAffordResources(selectedItem) && !canEnterForge && hasEnergy && isRequirementMet;
@@ -284,15 +321,47 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">{selectedItem?.craftingType === 'FORGE' ? <Hammer className="w-64 h-64 md:w-96 md:h-96 text-stone-500" /> : <Wrench className="w-64 h-64 md:w-96 md:h-96 text-stone-500" />}</div>
                     {selectedItem ? (
                         <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg">
-                            <div className={`w-20 h-20 md:w-40 md:h-40 bg-stone-900 rounded-full border-4 flex items-center justify-center transition-all duration-500 ${selectedItem.craftingType === 'FORGE' ? 'border-amber-600 shadow-[0_0_40px_rgba(217,119,6,0.15)]' : 'border-emerald-600 shadow-[0_0_40px_rgba(16,185,129,0.15)]'} mb-3 md:mb-6`}><img src={getItemImageUrl(selectedItem)} className="w-10 h-10 md:w-28 md:h-28 object-contain drop-shadow-xl" /></div>
+                            
+                            {/* NEW: Mastery Radial Indicator around item image */}
+                            <div className="relative mb-3 md:mb-6 group">
+                                <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-full flex items-center justify-center relative z-10 p-2 md:p-4 border border-stone-800/50 ${masteryInfo?.glowClass} transition-all duration-700`}>
+                                    {/* Radial SVG Gauge */}
+                                    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                                        {/* Background Track */}
+                                        <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-stone-950/40" />
+                                        {/* Progress Arc */}
+                                        <circle 
+                                            cx="50" cy="50" r="46" 
+                                            stroke="currentColor" strokeWidth="4" fill="transparent"
+                                            strokeDasharray={masteryInfo?.circumference}
+                                            strokeDashoffset={masteryInfo?.offset}
+                                            strokeLinecap="round"
+                                            className={`${masteryInfo?.colorClass} transition-all duration-1000 ease-out`}
+                                        />
+                                    </svg>
+                                    <img src={getItemImageUrl(selectedItem)} className="w-14 h-14 md:w-32 md:h-32 object-contain drop-shadow-2xl z-20 relative transform group-hover:scale-110 transition-transform duration-500" />
+                                    
+                                    {/* Small Rank Badge */}
+                                    <div className={`absolute -bottom-1 -right-1 md:bottom-2 md:right-2 z-30 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-full border border-stone-700 bg-stone-900 shadow-xl flex items-center gap-1 animate-in slide-in-from-right-2 duration-700`}>
+                                        <Star className={`w-2 h-2 md:w-3 md:h-3 ${masteryInfo?.colorClass.replace('stroke-', 'fill-')}`} />
+                                        <span className={`text-[7px] md:text-[10px] font-black uppercase tracking-tighter ${masteryInfo?.colorClass.replace('stroke-', 'text-')}`}>{masteryInfo?.label}</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1 md:mb-1.5 font-serif tracking-wide">{selectedItem.name}</h2>
                             <p className="text-stone-500 text-center max-w-md mb-4 md:mb-6 italic text-[9px] md:text-sm leading-tight px-6">"{selectedItem.description}"</p>
                             
                             {/* REINSTATED: Stats Block */}
                             {renderStats(selectedItem)}
 
-                            {/* REINSTATED: Mastery Block */}
-                            {renderMasteryProgress(selectedItem)}
+                            {/* Modified Mastery Info (Simplified Text since circle handles visual) */}
+                            <div className="w-full max-w-xs mb-6 md:mb-8 flex flex-col items-center">
+                                <div className="flex items-center gap-1.5 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-stone-500 mb-1">
+                                    <Award className="w-3 h-3 md:w-4 md:h-4 text-amber-600" />
+                                    <span>Experience: {masteryInfo?.count} / {masteryInfo?.nextMax}</span>
+                                </div>
+                            </div>
 
                             <div className="relative group flex flex-col items-center">
                                 {/* Persistent Fuel Warning */}
@@ -356,7 +425,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
         )}
         </div>
     );
-  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, hasPromptedFurnace, activeEvent, unlockedRecipes, failedFuelHighlight]);
+  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, hasPromptedFurnace, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo]);
   return content;
 };
 

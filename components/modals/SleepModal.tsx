@@ -1,6 +1,7 @@
+
 import React, { useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
-import { Moon, BedDouble, ChevronRight, Coins, TrendingUp, TrendingDown, Users } from 'lucide-react';
+import { Moon, BedDouble, ChevronRight, X, TrendingUp, Users } from 'lucide-react';
 import { calculateDailyWage } from '../../config/contract-config';
 
 const SleepModal = () => {
@@ -25,6 +26,15 @@ const SleepModal = () => {
     <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-1000 overflow-hidden">
       <div className="relative z-10 p-5 md:p-10 max-w-md w-full max-h-[95vh] flex flex-col items-center text-center animate-in zoom-in-95 duration-700 overflow-y-auto custom-scrollbar">
         
+        {/* Close Button - Top Left */}
+        <button 
+            onClick={actions.closeRest}
+            className="absolute top-4 left-4 p-2 bg-stone-900/50 hover:bg-stone-800 rounded-full text-stone-500 hover:text-stone-300 transition-colors z-20 border border-stone-800"
+            title="Cancel"
+        >
+            <X className="w-5 h-5" />
+        </button>
+
         {/* Moon Icon - hidden on extremely short screens to save space */}
         <div className="relative mb-4 md:mb-6 shrink-0 hidden xs:block">
             <div className="absolute inset-0 bg-indigo-500/30 blur-2xl rounded-full"></div>
