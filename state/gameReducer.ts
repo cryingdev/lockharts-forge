@@ -1,3 +1,4 @@
+
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -23,6 +24,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     // Sleep
     case 'SLEEP': return handleSleep(state);
     case 'CONFIRM_SLEEP': return handleConfirmSleep(state);
+    case 'CLOSE_SLEEP_MODAL': return { ...state, showSleepModal: false };
 
     // Events
     case 'TRIGGER_EVENT': return handleTriggerEvent(state, action.payload);

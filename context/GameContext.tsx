@@ -61,6 +61,7 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     },
     rest: () => dispatch({ type: 'SLEEP' }),
     confirmSleep: () => dispatch({ type: 'CONFIRM_SLEEP' }),
+    closeRest: () => dispatch({ type: 'CLOSE_SLEEP_MODAL' }),
     
     triggerEvent: (event: GameEvent) => dispatch({ type: 'TRIGGER_EVENT', payload: event }),
     handleEventOption: (action: () => void) => {

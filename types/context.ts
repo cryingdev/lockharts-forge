@@ -1,3 +1,4 @@
+
 import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -11,6 +12,7 @@ export interface GameContextType {
     repairItem: () => void;
     rest: () => void;
     confirmSleep: () => void;
+    closeRest: () => void;
     triggerEvent: (event: GameEvent) => void;
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
