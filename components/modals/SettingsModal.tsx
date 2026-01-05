@@ -1,16 +1,18 @@
+
 import React, { useState } from 'react';
 import { Save, Upload, Volume2, LogOut, X, Settings } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
 import SaveLoadModal from './SaveLoadModal';
-import { saveToSlot, loadFromSlot } from '../../utils/saveSystem';
+import { loadFromSlot } from '../../utils/saveSystem';
 
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     onQuit: () => void;
+    onLoadRequest: (data: any, index: number) => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, onLoadRequest }) => {
     const { state, actions } = useGame();
     const [slModal, setSlModal] = useState<{ isOpen: boolean, mode: 'SAVE' | 'LOAD' }>({ isOpen: false, mode: 'SAVE' });
     const VERSION = "0.1.34";
@@ -19,18 +21,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit }
 
     const handleSlotAction = (index: number) => {
         if (slModal.mode === 'SAVE') {
-            const success = saveToSlot(index, state);
-            if (success) {
-                alert("Progress saved to Slot " + (index + 1));
-                setSlModal({ ...slModal, isOpen: false });
-            }
+            // context의 saveGame 액션을 호출하여 활성 슬롯 동기화 처리
+            actions.saveGame(index);
+            setSlModal({ ...slModal, isOpen: false });
         } else {
             const data = loadFromSlot(index);
             if (data) {
-                if (confirm("저장된 데이터를 불러오시겠습니까? 현재 진행 상황은 사라집니다.")) {
-                    actions.loadGame(data);
+                if (confirm("저장된 데이터를 불러오시겠습니까? 현재 진행 상황은 사라집니다.\n(안전한 로딩을 위해 타이틀 화면으로 이동합니다.)")) {
                     setSlModal({ ...slModal, isOpen: false });
                     onClose();
+                    // App.tsx의 핸들러를 통해 로드 프로세스 시작
+                    onLoadRequest(data, index);
                 }
             }
         }

@@ -21,6 +21,15 @@ export const getSaveMetadataList = (): SaveMetadata[] => {
     }
 };
 
+export const getNextAvailableSlot = (): number => {
+    const metaList = getSaveMetadataList();
+    const usedIndices = metaList.map(m => m.index);
+    for (let i = 0; i < 3; i++) {
+        if (!usedIndices.includes(i)) return i;
+    }
+    return 0; // 모두 차있으면 첫 번째 슬롯 리턴
+};
+
 export const saveToSlot = (slotIndex: number, state: GameState) => {
     try {
         const dataToSave = {
@@ -57,7 +66,7 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
     }
 };
 
-// Added saveToStorage as an alias for saveToSlot(0) for generic saving
+// 특정 슬롯을 지정하지 않았을 때 사용하는 기본 저장 (이제 context에서 관리됨)
 export const saveToStorage = (state: GameState) => {
     return saveToSlot(0, state);
 };
@@ -71,16 +80,18 @@ export const loadFromSlot = (slotIndex: number): GameState | null => {
     }
 };
 
-// Added loadFromStorage to return the latest available save
-export const loadFromStorage = (): GameState | null => {
-    return getLatestSave();
-};
-
-export const getLatestSave = (): GameState | null => {
+// 불러올 때 마지막 저장된 데이터와 그 인덱스를 함께 리턴하는 헬퍼
+export const getLatestSaveInfo = (): { data: GameState, index: number } | null => {
     const meta = getSaveMetadataList();
     if (meta.length === 0) return null;
-    // 메타데이터가 이미 timestamp 기준 내림차순 정렬되어 있음
-    return loadFromSlot(meta[0].index);
+    const index = meta[0].index;
+    const data = loadFromSlot(index);
+    return data ? { data, index } : null;
+};
+
+export const loadFromStorage = (): GameState | null => {
+    const info = getLatestSaveInfo();
+    return info ? info.data : null;
 };
 
 export const deleteSlot = (slotIndex: number) => {

@@ -10,7 +10,7 @@ import { PrimaryStats } from '../models/Stats';
 import { GAME_CONFIG } from '../config/game-config';
 import { getEnergyCost } from '../utils/craftingLogic';
 import { GameEvent } from '../types/events';
-import { saveToStorage } from '../utils/saveSystem';
+import { saveToSlot } from '../utils/saveSystem';
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -22,9 +22,17 @@ export const useGame = () => {
   return context;
 };
 
-export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+interface GameProviderProps {
+    initialSlotIndex?: number;
+    children: React.ReactNode;
+}
+
+export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlotIndex = 0 }) => {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
   
+  // 현재 활성화된 슬롯 인덱스 관리
+  const currentSlotRef = useRef(initialSlotIndex);
+
   // 최신 상태를 참조하기 위한 Ref (액션 함수 안정화용)
   const stateRef = useRef(state);
   useEffect(() => {
@@ -36,7 +44,7 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   useEffect(() => {
     // 날짜가 정확히 1만큼 증가했을 때(휴식 후) 자동 저장 수행
     if (state.stats.day === prevDayRef.current + 1) {
-      saveToStorage(state);
+      saveToSlot(currentSlotRef.current, state);
     }
     prevDayRef.current = state.stats.day;
   }, [state.stats.day, state]);
@@ -50,7 +58,6 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   };
 
   // --- ACTIONS ---
-  // 의존성 배열을 비워 액션 함수들이 절대 변하지 않도록 설정
   const actions = useMemo(() => ({
     repairItem: () => {
         if (stateRef.current.stats.energy < GAME_CONFIG.ENERGY_COST.REPAIR) {
@@ -70,13 +77,16 @@ export const GameProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     },
     closeEvent: () => dispatch({ type: 'CLOSE_EVENT' }),
 
-    saveGame: () => {
-        const success = saveToStorage(stateRef.current);
+    // 수동 저장 액션: 슬롯 번호를 인자로 받아 currentSlotRef를 갱신
+    saveGame: (slotIndex?: number) => {
+        const targetSlot = slotIndex !== undefined ? slotIndex : currentSlotRef.current;
+        const success = saveToSlot(targetSlot, stateRef.current);
         if (success) {
+            currentSlotRef.current = targetSlot; // 수동 저장된 슬롯으로 활성 슬롯 변경
             dispatch({ type: 'TRIGGER_EVENT', payload: {
                 id: 'NONE',
                 title: "Game Saved",
-                description: "Your progress has been recorded in the annals of history.",
+                description: `Your progress has been recorded in slot ${targetSlot + 1}.`,
                 options: [{ label: "Continue", action: () => {} }]
             }});
         }

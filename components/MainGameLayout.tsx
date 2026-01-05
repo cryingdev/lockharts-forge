@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
@@ -26,9 +27,10 @@ import SettingsModal from './modals/SettingsModal';
 
 interface MainGameLayoutProps {
     onQuit: () => void;
+    onLoadFromSettings: (data: any, index: number) => void;
 }
 
-const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
+const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSettings }) => {
   const [activeTab, setActiveTab] = useState<'FORGE' | 'INVENTORY' | 'MARKET' | 'SHOP' | 'TAVERN' | 'DUNGEON' | 'SIMULATION'>('FORGE');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { state } = useGame();
@@ -168,6 +170,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit }) => {
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
         onQuit={onQuit} 
+        onLoadRequest={onLoadFromSettings}
       />
     </div>
   );
