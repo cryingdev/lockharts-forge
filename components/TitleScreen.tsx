@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { Anvil, Play, Upload, User, Info, FastForward } from 'lucide-react';
 import { getAssetUrl } from '../utils';
-import { getLatestSave, getSaveMetadataList, loadFromSlot } from '../utils/saveSystem';
+import { getLatestSaveInfo, getSaveMetadataList, loadFromSlot } from '../utils/saveSystem';
 import SaveLoadModal from './modals/SaveLoadModal';
 
 interface TitleScreenProps {
     onNewGame: () => void;
-    onLoadGame: (data: any) => void;
+    onLoadGame: (data: any, slotIndex: number) => void;
 }
 
 const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
@@ -20,14 +21,14 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     }, []);
 
     const handleContinue = () => {
-        const latest = getLatestSave();
-        if (latest) onLoadGame(latest);
+        const info = getLatestSaveInfo();
+        if (info) onLoadGame(info.data, info.index);
     };
 
     const handleLoadFromSlot = (index: number) => {
         const data = loadFromSlot(index);
         if (data) {
-            onLoadGame(data);
+            onLoadGame(data, index);
             setShowLoadModal(false);
         }
     };
