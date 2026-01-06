@@ -41,16 +41,18 @@ export default class IntroScene extends Phaser.Scene {
     this.load.image('intro_dragon', getAssetUrl('intro_dragon_02.png'));
   }
 
-  private createNarrativeText(text: string, color: string = '#ef4444') {
+  private createNarrativeText(text: string, color: string = '#b91c1c') {
     const t = this.add
       .text(0, 0, text, {
-        fontFamily: 'Grenze Gotisch',
-        fontSize: '40px',
+        fontFamily: '"Grenze Gotisch"',
+        fontSize: '40px', // 기본 크기 상향 (32px -> 40px)
         color,
         align: 'center',
-        fontStyle: 'italic',
+        fontStyle: '900',
         stroke: '#000000',
-        strokeThickness: 4,
+        strokeThickness: 5,
+        shadow: { color: '#000', fill: true, offsetX: 0, offsetY: 4, blur: 15 },
+        wordWrap: { width: 320, useAdvancedWrap: true }
       })
       .setOrigin(0.5)
       .setAlpha(0)
@@ -76,11 +78,13 @@ export default class IntroScene extends Phaser.Scene {
     });
 
     this.skipHint = this.add
-      .text(0, 0, 'Touch anywhere to skip', {
-        fontFamily: 'Grenze',
-        fontSize: '12px',
-        color: '#57534e',
+      .text(0, 0, 'TOUCH TO SKIP', {
+        fontFamily: '"Grenze"',
+        fontSize: '14px', // 12px -> 14px
+        color: '#a8a29e',
         fontStyle: 'bold',
+        letterSpacing: 2,
+        shadow: { color: '#000', fill: true, blur: 6 }
       })
       .setOrigin(0.5)
       .setAlpha(0)
@@ -99,22 +103,25 @@ export default class IntroScene extends Phaser.Scene {
 
     this.devText = this.add
       .text(0, 0, 'CRYINGDEV STUDIO\nPRESENTS', {
-        fontFamily: 'Grenze Gotisch',
-        fontSize: '45px',
-        color: '#a8a29e',
+        fontFamily: '"Grenze Gotisch"',
+        fontSize: '48px', // 40px -> 48px
+        color: '#f5f5f4',
         align: 'center',
-        fontStyle: 'bold',
+        fontStyle: '900',
+        stroke: '#000000',
+        strokeThickness: 6,
+        shadow: { color: '#000', fill: true, blur: 20 }
       })
       .setOrigin(0.5)
       .setAlpha(0)
       .setDepth(10);
     this.root.add(this.devText);
 
-    const n1 = this.createNarrativeText('FIASCO,\nA MASTER OF DISASTER...', '#ef4444');
-    const n2 = this.createNarrativeText('EVERTHING WE LOVED IS LOST...', '#ef4444');
-    const n3 = this.createNarrativeText('BUT THE HAMMER IS STILL HERE.', '#ef4444');
-    const nD = this.createNarrativeText('NEVER FORGET...', '#ef4444');
-    const nV = this.createNarrativeText('AND FORGED A VENGEANCE.', '#f59e0b');
+    const n1 = this.createNarrativeText('FIASCO,\nA MASTER OF DISASTER...', '#b91c1c');
+    const n2 = this.createNarrativeText('EVERYTHING WE LOVED\nIS LOST...', '#b91c1c');
+    const n3 = this.createNarrativeText('BUT THE HAMMER\nIS STILL HERE.', '#b91c1c');
+    const nD = this.createNarrativeText('NEVER FORGET...', '#b91c1c');
+    const nV = this.createNarrativeText('AND FORGED\nA VENGEANCE.', '#d97706');
 
     this.breathOverlay = this.add
       .rectangle(0, 0, 10, 10, 0xff4400)
@@ -183,28 +190,29 @@ export default class IntroScene extends Phaser.Scene {
   private layoutLandscape(w: number, h: number) {
     const cx = w / 2;
     const cy = h / 2;
-    const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.4, 1.2);
+    const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.6, 1.2);
     this.bgs.forEach((img) => {
       img.setPosition(cx, cy);
       img.setScale(Math.max(w / img.width, h / img.height));
     });
     if (this.dragon) {
-      const s = Math.min((h * 0.55) / this.dragon.height, (w * 0.9) / this.dragon.width);
+      const s = Math.min((h * 0.5) / this.dragon.height, (w * 0.8) / this.dragon.width);
       this.dragon.setScale(s);
-      this.dragon.setPosition(cx, cy - h * 0.22);
+      this.dragon.setPosition(cx, cy - h * 0.2);
     }
-    this.devText?.setPosition(cx, cy).setFontSize(Math.round(45 * uiScale));
+    this.devText?.setPosition(cx, cy).setFontSize(Math.round(48 * uiScale));
     if (this.skipHint) {
-      this.skipHint.setPosition(cx, h - Math.max(24, h * 0.05));
-      this.skipHint.setFontSize(Math.round(12 * uiScale));
+      this.skipHint.setPosition(cx, h - 24);
+      this.skipHint.setFontSize(Math.round(14 * uiScale));
     }
     this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
     this.narrativeTexts.forEach((t) => {
       t.setPosition(cx, cy);
       t.setFontSize(Math.round(40 * uiScale));
+      t.setWordWrapWidth(w * 0.75);
     });
     const despairIdx = this.narrativeTexts.length - 2;
-    const gap = Math.max(20, h * 0.08);
+    const gap = h * 0.12;
     if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
     if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
     if (this.fireEmitter) {
@@ -216,31 +224,35 @@ export default class IntroScene extends Phaser.Scene {
   private layoutPortrait(w: number, h: number) {
     const cx = w / 2;
     const cy = h / 2;
-    const uiScale = Phaser.Math.Clamp(h / 900, 0.7, 1.15);
+    const uiScale = Phaser.Math.Clamp(w / 400, 0.7, 1.0); // 스케일 조정 (0.6 -> 0.7)
     this.bgs.forEach((img) => {
       img.setPosition(cx, cy);
       img.setScale(Math.max(w / img.width, h / img.height));
     });
     if (this.dragon) {
-      const s = Math.min((w * 0.95) / this.dragon.width, (h * 0.38) / this.dragon.height);
+      const s = Math.min((w * 0.8) / this.dragon.width, (h * 0.3) / this.dragon.height);
       this.dragon.setScale(s);
-      this.dragon.setPosition(cx, h * 0.28);
+      this.dragon.setPosition(cx, h * 0.25);
     }
-    this.devText?.setPosition(cx, h * 0.42).setFontSize(Math.round(40 * uiScale));
+    this.devText?.setPosition(cx, h * 0.45).setFontSize(Math.round(44 * uiScale));
     if (this.skipHint) {
-      this.skipHint.setPosition(cx, h - Math.max(28, h * 0.04));
-      this.skipHint.setFontSize(Math.round(12 * uiScale));
+      this.skipHint.setPosition(cx, h - 36);
+      this.skipHint.setFontSize(Math.round(14 * uiScale));
     }
     this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
-    const textBaseY = h * 0.62;
+    
+    const textBaseY = h * 0.55;
     this.narrativeTexts.forEach((t) => {
       t.setPosition(cx, textBaseY);
-      t.setFontSize(Math.round(34 * uiScale));
+      t.setFontSize(Math.round(36 * uiScale)); // 28 -> 36 상향
+      t.setWordWrapWidth(w * 0.9);
     });
+    
     const despairIdx = this.narrativeTexts.length - 2;
-    const gap = Math.max(28, h * 0.06);
+    const gap = h * 0.1;
     if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = textBaseY - gap / 2;
     if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = textBaseY + gap / 2;
+    
     if (this.fireEmitter) {
       const y = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.12 : h * 0.35;
       this.fireEmitter.setPosition(cx, y);

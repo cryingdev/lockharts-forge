@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -36,13 +37,11 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const handleTalk = () => {
         if (pendingGiftItem) return;
 
-        // Daily Affinity Bonus
         if (!state.talkedToToday.includes(mercenary.id)) {
             actions.talkMercenary(mercenary.id);
-            // Trigger heart animation
             const newHearts = Array.from({ length: 5 }).map((_, i) => ({
                 id: Date.now() + i,
-                left: 40 + Math.random() * 20, // Spread around character
+                left: 40 + Math.random() * 20,
                 delay: Math.random() * 0.5,
                 size: 16 + Math.random() * 12
             }));
@@ -144,7 +143,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 `}
             </style>
 
-            {/* Background */}
             <div className="absolute inset-0 z-0">
                 <img 
                     src={getAssetUrl('tavern_bg.jpeg')} 
@@ -158,7 +156,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            {/* Mercenary Vitals - TOP LEFT */}
             <div className="absolute top-4 left-4 z-40 animate-in slide-in-from-left-4 duration-500">
                 <div className="bg-stone-900/90 border border-stone-700 p-3 rounded-xl backdrop-blur-md shadow-2xl min-w-[180px]">
                     <div className="flex justify-between items-center mb-2">
@@ -187,7 +184,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* Character Sprite Rendering */}
             <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
                <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
                    <div className="relative h-[75dvh] md:h-[110dvh] w-auto flex justify-center bottom-[12dvh] md:bottom-0 md:translate-y-[20dvh]">
@@ -198,7 +194,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                        />
                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-3xl rounded-full -z-10"></div>
                        
-                       {/* Floating Hearts Container */}
                        {floatingHearts.map(heart => (
                            <Heart 
                                 key={heart.id}
@@ -217,7 +212,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                </div>
             </div>
 
-            {/* Tavern Table - Matching shop counter logic for grounding */}
             <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 flex items-end justify-center pointer-events-none">
                 <div className="w-full h-full bg-[#2a1e16] border-t-4 md:border-t-[8px] border-[#3e2723] shadow-[0_-40px_60px_rgba(0,0,0,0.85)] relative overflow-hidden">
                     <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 12px)' }}></div>
@@ -225,75 +219,69 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* INTERACTION MENU */}
-            <div className={`absolute right-4 top-4 z-50 grid grid-cols-2 gap-2 w-60 md:w-80 animate-in slide-in-from-right-8 duration-700 delay-200 transition-opacity ${pendingGiftItem ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
-                
-                <button 
-                    onClick={onBack}
-                    className="col-span-2 flex items-center gap-2 p-2 bg-red-950/30 hover:bg-red-900/50 border border-red-900/40 hover:border-red-500 rounded-xl backdrop-blur-md transition-all shadow-xl group"
-                >
-                    <div className="bg-red-900/20 p-1.5 rounded-lg group-hover:text-red-400 transition-colors text-red-700 border border-red-900/30">
-                        <LogOut className="w-4 h-4" />
-                    </div>
-                    <span className="font-bold text-[11px] md:text-xs text-red-200 group-hover:text-white uppercase tracking-widest">Leave</span>
-                </button>
-
-                <button 
-                    onClick={handleTalk}
-                    className="flex items-center gap-2 p-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-xl group"
-                >
-                    <div className="bg-stone-800 p-1.5 rounded-lg group-hover:bg-amber-900/30 group-hover:text-amber-500 transition-colors text-stone-500 group-hover:text-amber-500">
-                        <MessageSquare className="w-4 h-4" />
-                    </div>
-                    <span className="font-bold text-[11px] md:text-xs text-stone-300">Talk</span>
-                </button>
-
-                <button 
-                    onClick={() => setShowGiftMenu(true)}
-                    className="flex items-center gap-2 p-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-xl group"
-                >
-                    <div className="bg-stone-800 p-1.5 rounded-lg group-hover:bg-pink-900/30 group-hover:text-pink-500 transition-colors text-stone-500 group-hover:text-pink-500">
-                        <Gift className="w-4 h-4" />
-                    </div>
-                    <span className="font-bold text-[11px] md:text-xs text-stone-300">Gift</span>
-                </button>
-
-                {!isHired && (
+            {/* Interaction Action Bar - Perfectly Centered, Leave at far right */}
+            <div 
+                className={`absolute bottom-[calc(22dvh+1.5rem)] md:bottom-[calc(28vh+4rem)] left-0 right-0 z-50 flex flex-row items-center justify-center transition-opacity duration-500 ${pendingGiftItem ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}
+            >
+                <div className="flex flex-row items-center justify-center gap-1.5 md:gap-3 px-4 max-w-full overflow-x-auto no-scrollbar py-2">
+                    {/* Talk Button */}
                     <button 
-                        onClick={handleRecruit}
-                        disabled={!canAfford || !hasAffinity}
-                        className={`flex items-center gap-2 p-2 border rounded-xl backdrop-blur-md transition-all shadow-xl group relative overflow-hidden ${
-                            (!canAfford || !hasAffinity) 
-                            ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' 
-                            : 'bg-amber-900/40 hover:bg-amber-800/60 border-amber-600/50 hover:border-amber-400 text-amber-100'
-                        }`}
+                        onClick={handleTalk}
+                        className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
                     >
-                        <div className={`p-1.5 rounded-lg transition-colors ${(!canAfford || !hasAffinity) ? 'bg-stone-900 text-stone-700' : 'bg-amber-950/50 group-hover:text-amber-400 text-amber-600'}`}>
-                            <UserPlus className="w-4 h-4" />
-                        </div>
-                        <div className="flex flex-col items-start leading-tight">
-                            <span className="font-bold text-[10px] md:text-xs uppercase">Recruit</span>
-                            <span className={`text-[8px] md:text-[9px] font-mono ${(!canAfford || !hasAffinity) ? 'text-stone-700' : 'text-amber-500/70'}`}>
-                                {hiringCost}G
-                            </span>
-                        </div>
+                        <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-amber-500" />
+                        <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
                     </button>
-                )}
 
-                <button 
-                    onClick={() => setShowDetail(true)}
-                    className={`flex items-center gap-2 p-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}
-                >
-                    <div className={`bg-stone-800 p-1.5 rounded-lg transition-colors text-stone-500 ${isHired ? 'group-hover:bg-emerald-900/30 group-hover:text-emerald-500' : 'group-hover:bg-blue-900/30 group-hover:text-blue-500'}`}>
-                        {isHired ? <Wrench className="w-4 h-4" /> : <Search className="w-4 h-4" />}
-                    </div>
-                    <span className={`font-bold text-[11px] md:text-xs text-stone-300 ${isHired ? 'group-hover:text-emerald-200' : 'group-hover:text-blue-200'}`}>
-                        {isHired ? 'Manage' : 'Inspect'}
-                    </span>
-                </button>
+                    {/* Gift Button */}
+                    <button 
+                        onClick={() => setShowGiftMenu(true)}
+                        className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
+                    >
+                        <Gift className="w-3 h-3 md:w-4 md:h-4 text-pink-500" />
+                        <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
+                    </button>
+
+                    {/* Recruit Button */}
+                    {!isHired && (
+                        <button 
+                            onClick={handleRecruit}
+                            disabled={!canAfford || !hasAffinity}
+                            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 border rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 ${
+                                (!canAfford || !hasAffinity) 
+                                ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' 
+                                : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'
+                            }`}
+                        >
+                            <UserPlus className="w-3 h-3 md:w-4 md:h-4" />
+                            <div className="flex flex-col items-start leading-none">
+                                <span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Recruit</span>
+                                {hasAffinity && <span className="text-[7px] md:text-[8px] font-mono opacity-70">{hiringCost}G</span>}
+                            </div>
+                        </button>
+                    )}
+
+                    {/* Manage/Inspect Button */}
+                    <button 
+                        onClick={() => setShowDetail(true)}
+                        className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}
+                    >
+                        {isHired ? <Wrench className="w-3 h-3 md:w-4 md:h-4 text-emerald-500" /> : <Search className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />}
+                        <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">
+                            {isHired ? 'Manage' : 'Inspect'}
+                        </span>
+                    </button>
+
+                    {/* Leave Button - Far Right */}
+                    <button 
+                        onClick={onBack}
+                        className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2.5 md:py-3.5 bg-red-950/45 hover:bg-red-900/60 border border-red-900/50 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
+                    >
+                        <LogOut className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
+                    </button>
+                </div>
             </div>
 
-            {/* Interaction Dialogue Area */}
             <DialogueBox 
                 speaker={mercenary.name}
                 text={dialogue}
@@ -303,7 +291,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 ] : []}
             />
 
-            {/* Gift Selection Overlay */}
             {showGiftMenu && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
                     <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[85vh]">
@@ -359,7 +346,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             )}
 
-            {/* Mercenary Detail Modal */}
             {showDetail && (
                 <MercenaryDetailModal 
                     mercenary={mercenary}

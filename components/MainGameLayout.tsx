@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
-import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, Info } from 'lucide-react';
+import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 
 // Import Background Services
@@ -35,6 +35,35 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { state, actions } = useGame();
 
+  // Scroll visibility logic
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftArrow(scrollLeft > 5);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  }, []);
+
+  const scrollTabs = (direction: 'LEFT' | 'RIGHT') => {
+    if (scrollRef.current) {
+      const amount = direction === 'LEFT' ? -200 : 200;
+      scrollRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(updateArrows, 100);
+    window.addEventListener('resize', updateArrows);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateArrows);
+    };
+  }, [updateArrows, state.activeExpeditions, state.shopQueue]);
+
   // --- BACKGROUND SERVICES ---
   useShopService();
   useDungeonService();
@@ -45,13 +74,12 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
   
-  // 미니게임 혹은 던전 오버레이가 켜져있는지 체크
   const isFullscreenOverlay = state.isCrafting || (state.activeManualDungeon && state.showManualDungeonOverlay);
-  
+
   return (
     <div className="h-[100dvh] w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500 px-safe">
       
-      {/* Top Section Wrapper - Handles sliding up/down during crafting or dungeon assault */}
+      {/* Top Section Wrapper */}
       <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ease-in-out ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : 'translate-y-0 h-auto opacity-100'}`}>
         <Header 
           activeTab={activeTab} 
@@ -59,89 +87,117 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
           onSettingsClick={() => setIsSettingsOpen(true)}
         />
         
-        <div className="bg-stone-900 border-b border-stone-800 px-2 md:px-4 flex justify-between items-center z-10">
-          <div className="flex space-x-0.5 md:space-x-1 overflow-x-auto no-scrollbar flex-1">
-            
-            <button 
-              onClick={() => setActiveTab('FORGE')}
-              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === 'FORGE' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
-              }`}
-            >
-              <Anvil className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Forge</span>
-            </button>
+        {/* Tab Navigation with Interactive Scroll Indicators */}
+        <div className="bg-stone-900 border-b border-stone-800 flex items-center relative z-10 overflow-hidden">
+          
+          {/* Clickable Left Indicator */}
+          <div className={`absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center transition-opacity duration-300 pointer-events-none ${showLeftArrow ? 'opacity-100' : 'opacity-0'}`}>
+              <button 
+                onClick={() => scrollTabs('LEFT')}
+                className="h-full w-full bg-gradient-to-r from-stone-900 via-stone-900/80 to-transparent flex items-center pl-2 pointer-events-auto group/arrow"
+                aria-label="Scroll Tabs Left"
+              >
+                <ChevronLeft className="w-5 h-5 text-amber-500/80 group-hover/arrow:text-amber-400 group-hover/arrow:scale-110 transition-all animate-pulse hover:animate-none" />
+              </button>
+          </div>
 
-            <button 
-              onClick={() => setActiveTab('DUNGEON')}
-              className={`relative flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === 'DUNGEON' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
-              }`}
-            >
-              <MapIcon className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Dungeon</span>
-              {completedExpeditionsCount > 0 && (
-                  <div className="absolute top-1 right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-600 text-[8px] md:text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
-                      {completedExpeditionsCount}
-                  </div>
-              )}
-            </button>
+          <div 
+            ref={scrollRef}
+            onScroll={updateArrows}
+            className="flex overflow-x-auto no-scrollbar flex-1 min-w-0 touch-pan-x"
+          >
+            <div className="flex shrink-0">
+                <button 
+                onClick={() => setActiveTab('FORGE')}
+                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
+                    activeTab === 'FORGE' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
+                }`}
+                >
+                <Anvil className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Forge</span>
+                </button>
 
-            <button 
-              onClick={() => setActiveTab('INVENTORY')}
-              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === 'INVENTORY' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
-              }`}
-            >
-              <Package className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Items</span>
-            </button>
+                <button 
+                onClick={() => setActiveTab('DUNGEON')}
+                className={`relative flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
+                    activeTab === 'DUNGEON' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
+                }`}
+                >
+                <MapIcon className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Dungeon</span>
+                {completedExpeditionsCount > 0 && (
+                    <div className="absolute top-1 right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-600 text-[8px] md:text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
+                        {completedExpeditionsCount}
+                    </div>
+                )}
+                </button>
 
-            <button 
-              onClick={() => setActiveTab('MARKET')}
-              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === 'MARKET' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
-              }`}
-            >
-              <ShoppingBag className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Market</span>
-            </button>
+                <button 
+                onClick={() => setActiveTab('INVENTORY')}
+                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
+                    activeTab === 'INVENTORY' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
+                }`}
+                >
+                <Package className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Items</span>
+                </button>
 
-            <button 
-              onClick={() => setActiveTab('SHOP')}
-              className={`relative flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === 'SHOP' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
-              }`}
-            >
-              <Coins className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Shop</span>
-              {activeTab !== 'SHOP' && totalShopVisitors > 0 && (
-                  <div className="absolute top-1 right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-600 text-[8px] md:text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
-                      {totalShopVisitors}
-                  </div>
-              )}
-            </button>
+                <button 
+                onClick={() => setActiveTab('MARKET')}
+                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
+                    activeTab === 'MARKET' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
+                }`}
+                >
+                <ShoppingBag className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Market</span>
+                </button>
 
-            <button 
-              onClick={() => setActiveTab('TAVERN')}
-              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === 'TAVERN' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
-              }`}
-            >
-              <Beer className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Tavern</span>
-            </button>
+                <button 
+                onClick={() => setActiveTab('SHOP')}
+                className={`relative flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
+                    activeTab === 'SHOP' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
+                }`}
+                >
+                <Coins className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Shop</span>
+                {activeTab !== 'SHOP' && totalShopVisitors > 0 && (
+                    <div className="absolute top-1 right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-600 text-[8px] md:text-[10px] font-bold text-white shadow-sm ring-2 ring-stone-900 animate-in zoom-in">
+                        {totalShopVisitors}
+                    </div>
+                )}
+                </button>
 
-            <button 
-              onClick={() => setActiveTab('SIMULATION')}
-              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === 'SIMULATION' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
-              }`}
-            >
-              <Activity className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Sim</span>
-            </button>
+                <button 
+                onClick={() => setActiveTab('TAVERN')}
+                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
+                    activeTab === 'TAVERN' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
+                }`}
+                >
+                <Beer className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Tavern</span>
+                </button>
 
+                <button 
+                onClick={() => setActiveTab('SIMULATION')}
+                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-3 md:py-4 border-b-2 transition-colors whitespace-nowrap ${
+                    activeTab === 'SIMULATION' ? 'border-amber-500 text-amber-500 bg-stone-800/50' : 'border-transparent text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'
+                }`}
+                >
+                <Activity className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="font-bold tracking-wide text-[10px] md:text-sm uppercase md:capitalize">Sim</span>
+                </button>
+            </div>
+          </div>
+
+          {/* Clickable Right Indicator */}
+          <div className={`absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center transition-opacity duration-300 pointer-events-none ${showRightArrow ? 'opacity-100' : 'opacity-0'}`}>
+              <button 
+                onClick={() => scrollTabs('RIGHT')}
+                className="h-full w-full bg-gradient-to-l from-stone-900 via-stone-900/80 to-transparent flex items-center justify-end pr-2 pointer-events-auto group/arrow"
+                aria-label="Scroll Tabs Right"
+              >
+                <ChevronRight className="w-5 h-5 text-amber-500/80 group-hover/arrow:text-amber-400 group-hover/arrow:scale-110 transition-all animate-pulse hover:animate-none" />
+              </button>
           </div>
         </div>
       </div>
@@ -160,7 +216,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         {activeTab === 'SIMULATION' && <SimulationTab />}
       </main>
 
-      {/* Toast Notification Container - Enhanced Golden Ratio Layout */}
+      {/* Toast Notification Container */}
       {state.toast?.visible && (
         <div 
             onClick={actions.hideToast}
@@ -171,7 +227,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         </div>
       )}
 
-      {/* Navigation Padding for Bottom Edge Devices */}
+      {/* Navigation Padding */}
       <div className="h-[env(safe-area-inset-bottom)] bg-stone-900 shrink-0"></div>
 
       <EventModal />

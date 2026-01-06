@@ -67,6 +67,9 @@ export interface GameState {
   visitorsToday: string[]; // List of Mercenary IDs who have visited today
   talkedToToday: string[]; // List of Mercenary IDs who have been talked to today for affinity bonus
 
+  // Market State
+  marketStock: Record<string, number>; // Remaining quantity per item ID
+
   // Game Logic Control
   isCrafting: boolean; // Is the player currently in the minigame?
   showSleepModal: boolean; // Should the End of Day modal be visible?

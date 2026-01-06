@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../../types/index';
 import { MATERIALS } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -53,8 +54,12 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
     let newTierLevel = state.stats.tierLevel;
     let newForgeState = { ...state.forge };
     let logUpdates: string[] = [`Bought supplies for ${totalCost} Gold.`];
+    let newMarketStock = { ...state.marketStock };
 
     items.forEach(buyItem => {
+            // Update stock
+            newMarketStock[buyItem.id] = Math.max(0, (newMarketStock[buyItem.id] || 0) - buyItem.count);
+
             if (buyItem.id === 'scroll_t2') {
                 newTierLevel = Math.max(newTierLevel, 2);
                 logUpdates.unshift('Upgrade Complete: Market Tier 2 Unlocked!');
@@ -92,6 +97,7 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
         stats: { ...state.stats, gold: newGold, tierLevel: newTierLevel },
         forge: newForgeState,
         inventory: newInventory,
+        marketStock: newMarketStock,
         logs: [...logUpdates, ...state.logs]
     };
 };

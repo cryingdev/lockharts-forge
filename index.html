@@ -16,7 +16,6 @@
         theme: {
           extend: {
             fontFamily: {
-              // 폰트 설정: 타이틀용은 Gotisch, 본문용은 기본 Grenze
               serif: ['"Grenze Gotisch"', 'serif'],
               sans: ['"Grenze"', 'sans-serif'],
               mono: ['"Courier New"', 'monospace'],
@@ -30,7 +29,6 @@
         --base-font-size: 16px;
       }
 
-      /* 전역 폰트 적용 */
       * {
         -webkit-touch-callout: none;
         -webkit-user-select: none;
@@ -44,7 +42,6 @@
         font-family: 'Grenze', sans-serif;
       }
 
-      /* 제목 등은 Gotisch 사용 */
       h1, h2, h3, .font-serif {
         font-family: 'Grenze Gotisch', serif;
       }
@@ -74,6 +71,16 @@
 
       .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
       .px-safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+
+      /* 기능은 유지하되 바만 숨기기 */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
+      }
 
       @media screen and (max-height: 500px) {
         :root { --base-font-size: 13px; }
