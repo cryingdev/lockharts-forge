@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Anvil, Play, Upload, User, Info, FastForward } from 'lucide-react';
 import { getAssetUrl } from '../utils';
 import { getLatestSaveInfo, getSaveMetadataList, loadFromSlot } from '../utils/saveSystem';
@@ -16,9 +16,23 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [hasSaves, setHasSaves] = useState(false);
     const VERSION = "0.1.35";
 
-    useEffect(() => {
-        setHasSaves(getSaveMetadataList().length > 0);
+    // 세이브 파일 존재 여부를 체크하는 함수
+    const checkSaves = useCallback(() => {
+        const metadata = getSaveMetadataList();
+        setHasSaves(metadata.length > 0);
     }, []);
+
+    // 초기 마운트 시 체크
+    useEffect(() => {
+        checkSaves();
+    }, [checkSaves]);
+
+    // 로드 모달이 닫힐 때(변경 사항이 있을 수 있음) 다시 체크
+    useEffect(() => {
+        if (!showLoadModal) {
+            checkSaves();
+        }
+    }, [showLoadModal, checkSaves]);
 
     const handleContinue = () => {
         const info = getLatestSaveInfo();

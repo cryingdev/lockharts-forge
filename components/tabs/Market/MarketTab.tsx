@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { Store, ShoppingCart, ShoppingBag, AlertCircle, Coins, CreditCard, X, ChevronRight, ChevronLeft, Trash2, Plus, Minus, Package } from 'lucide-react';
@@ -28,7 +29,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const { hasFurnace, hasWorkbench } = state.forge;
   const currentTier = state.stats.tierLevel;
 
-  const cartItemCount = useMemo(() => Object.values(cart).reduce((a, b) => a + b, 0), [cart]);
+  // Fix: Explicitly cast Object.values to number[] to resolve 'unknown' type error in reduce
+  const cartItemCount = useMemo(() => (Object.values(cart) as number[]).reduce((a, b) => a + b, 0), [cart]);
   
   const calculateTotal = () => {
     return Object.entries(cart).reduce((total, [id, count]) => {
