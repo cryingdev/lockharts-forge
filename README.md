@@ -7,27 +7,29 @@
 
 ## 🔄 Recent Updates (v0.1.35)
 
-*   **Dungeon Expansion Phase 1**:
-    *   Split Dungeon Entry into two distinct paths: **Strategic Deploy** (Auto) and **Direct Assault** (Manual).
-    *   Unified requirement checking for both modes (Power, Energy, Party).
-*   **Smart Persistence Engine**: 
-    *   Implemented automatic slot discovery for New Games.
-    *   Dynamic Slot Sync: Saving to a specific slot via Settings now redirects all future auto-saves to that slot.
-    *   Safe Loading: Added a "Title-to-Game" bridge to ensure state hydration happens in a clean memory environment.
-    *   **Persistence UI Polish**: Compressed save slots to a compact h-20 format and increased legibility for empty slot markers.
-*   **Mobile Performance & UX**:
-    *   **Dungeon Ghosting Fix**: Added unique container keys and GPU hardware acceleration to prevent afterimages during dungeon paging.
-    *   **UI Polish**: Relocated the Sleep Modal close button to the top-right for standard accessibility.
-*   **Mastery Visuals**: 
-    *   Replaced standard borders with a radial mastery gauge around the selected item's image in the Forge.
-*   **Workbench Refinements**: 
-    *   Inverted needle orientation and replaced the guide path with an aesthetic brown dashed line.
+*   **Visual & Thematic Polish**:
+    *   **Typography Overhaul**: Integrated *Grenze* and *Grenze Gotisch* fonts globally for an immersive medieval aesthetic.
+    *   **Golden Ratio Notifications**: Toast notifications now follow the 80% width policy, preventing excessive line breaks on mobile devices.
+*   **Persistence Engine Expansion**: 
+    *   **Version Stamping**: Save files now record and display their creation version (`v0.1.35`) and precise timestamps in the slot menu.
+    *   **Dynamic Slot Sync**: Saving to a specific slot via Settings now redirects all future auto-saves (Rest) to that slot.
+    *   **Safe Loading**: Unified "Title-to-Game" bridge ensures clean state hydration during load requests.
+*   **Dungeon expansion Phase 1**:
+    *   Split Dungeon Entry into **Strategic Deploy** (Auto) and **Direct Assault** (Manual).
+    *   Implemented "Tactical Extraction" interaction—claim rewards manually after defeating bosses.
+*   **UI/UX Refinements**:
+    *   **Mastery Radial**: Replaced borders with a sleek SVG radial gauge around items in the Forge.
+    *   **Persistence UI**: Compressed save slots to a compact format for better visibility on small screens.
+    *   **Workbench**: Inverted needle orientation and aesthetic dashed-line guides for better stitching feedback.
 
 ## 🌟 Key Features
 
 ### 1. The Forge (Crafting System)
 *   **Smithing**: Manage heat and timing. Watch the billet morph into a blade as you strike the anvil.
 *   **Workbench**: Rhythm-based stitching for leather and wood using the refined dashed-line guide.
+
+### 2. Smart Persistence
+*   Three robust save slots with metadata previews, ensuring your progress is never lost across sessions.
 
 ## 📜 License
 

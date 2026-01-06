@@ -3,6 +3,7 @@ import { GameState } from '../types/game-state';
 
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 const META_KEY = 'lockharts_forge_meta';
+const APP_VERSION = '0.1.35';
 
 export interface SaveMetadata {
     index: number;
@@ -10,6 +11,7 @@ export interface SaveMetadata {
     day: number;
     gold: number;
     label: string;
+    version: string;
 }
 
 export const getSaveMetadataList = (): SaveMetadata[] => {
@@ -51,7 +53,8 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
             timestamp: Date.now(),
             day: state.stats.day,
             gold: state.stats.gold,
-            label: `Slot ${slotIndex + 1}`
+            label: `Slot ${slotIndex + 1}`,
+            version: APP_VERSION
         };
         
         const filteredMeta = currentMeta.filter(m => m.index !== slotIndex);

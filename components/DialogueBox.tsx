@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { User, ChevronRight, Coins } from 'lucide-react';
 
@@ -76,7 +77,6 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     }
   };
 
-  // Helper to render text with highlighting
   const renderFormattedText = () => {
     if (!highlightTerm || !displayedText.includes(highlightTerm)) {
       return displayedText;
@@ -93,7 +93,6 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
           onClick={(e) => { e.stopPropagation(); setShowItemTooltip(!showItemTooltip); }}
         >
           {part}
-          {/* Tooltip Popup */}
           {itemDetail && (
             <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-4 py-3 bg-stone-900/95 backdrop-blur-xl border-2 border-emerald-500/50 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-3 transition-all duration-300 min-w-max z-[100] ${showItemTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
                <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-800 rounded-xl border border-stone-700 flex items-center justify-center shadow-inner shrink-0">
@@ -121,10 +120,8 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   return (
     <div className="absolute bottom-2 md:bottom-6 left-1/2 -translate-x-1/2 w-[96vw] md:w-[90vw] max-w-6xl z-40 pb-[env(safe-area-inset-bottom)]">
       <div 
-        className="w-full h-[30vh] min-h-[120px] bg-stone-950/20 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_40px_80px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-500 ring-1 ring-white/10"
+        className="w-full h-[30vh] min-h-[140px] bg-stone-950/20 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_40px_80px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-500 ring-1 ring-white/10"
       >
-        
-        {/* Speaker Name Badge - Reduced padding for landscape */}
         <div className="bg-stone-900/10 p-2 md:p-6 border-r border-white/5 flex flex-col items-center gap-1 md:gap-4 w-24 md:w-44 shrink-0 justify-center">
           <div className="w-10 h-10 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-amber-900/20 to-stone-800/40 border border-amber-600/20 flex items-center justify-center shadow-inner">
              <User className="w-5 h-5 md:w-10 md:h-10 text-amber-500/80 drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]" />
@@ -136,7 +133,6 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
           </div>
         </div>
 
-        {/* Text Area Content - Responsive spacing */}
         <div className="flex-1 p-3 md:p-8 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent">
           <div 
             ref={scrollRef}
@@ -150,15 +146,15 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
             </div>
           </div>
 
-          {/* Options - More compact buttons for small height */}
+          {/* Options - Use flex-wrap and justify-center on mobile to prevent overflow */}
           {!isTyping && options.length > 0 && (
-            <div className="mt-2 md:mt-6 flex flex-wrap gap-2 md:gap-4 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
+            <div className="mt-2 md:mt-6 flex flex-wrap gap-1.5 md:gap-4 justify-center md:justify-end animate-in fade-in slide-in-from-right-4 pb-2 px-1 shrink-0">
               {options.map((option, idx) => (
                 <button
                   key={idx}
                   onClick={option.action}
                   disabled={option.disabled}
-                  className={`px-3 md:px-8 py-1.5 md:py-4 rounded-lg md:rounded-xl font-black text-[9px] md:text-sm flex items-center gap-1.5 md:gap-2 transition-all transform active:scale-95 border shadow-2xl ${
+                  className={`px-3 md:px-8 py-2 md:py-4 rounded-lg md:rounded-xl font-black text-[9px] md:text-sm flex items-center gap-1.5 md:gap-2 transition-all transform active:scale-95 border shadow-2xl ${
                     option.disabled 
                       ? 'bg-stone-800/40 text-stone-600 border-stone-700/30 cursor-not-allowed'
                       : option.variant === 'danger'
@@ -168,8 +164,8 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
                             : 'bg-amber-700/80 text-white border-amber-500 hover:bg-amber-600 hover:border-amber-300 hover:shadow-amber-900/60'
                   }`}
                 >
-                  {option.label}
-                  {!option.disabled && <ChevronRight className="w-2.5 h-2.5 md:w-5 md:h-5 opacity-70 group-hover:translate-x-1 transition-transform" />}
+                  <span className="whitespace-nowrap">{option.label}</span>
+                  {!option.disabled && <ChevronRight className="hidden xs:block w-2.5 h-2.5 md:w-5 md:h-5 opacity-70 group-hover:translate-x-1 transition-transform" />}
                 </button>
               ))}
             </div>

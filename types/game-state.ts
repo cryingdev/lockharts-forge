@@ -5,6 +5,18 @@ import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
 import { Expedition } from '../models/Dungeon';
 
+export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL';
+
+export interface ManualDungeonSession {
+    dungeonId: string;
+    partyIds: string[];
+    grid: RoomType[][];
+    visited: boolean[][]; // Fog of war
+    playerPos: { x: number, y: number };
+    hasKey: boolean;
+    isBossLocked: boolean;
+}
+
 export interface PlayerStats {
   gold: number;
   energy: number;
@@ -73,6 +85,8 @@ export interface GameState {
   activeExpeditions: Expedition[];
   dungeonClearCounts: Record<string, number>; // Key: Dungeon ID, Value: Count
   dungeonResult: DungeonResult | null; // Populated when claim is clicked to show modal
+  activeManualDungeon: ManualDungeonSession | null; // Current manual play session
+  showManualDungeonOverlay: boolean; // Toggle for dungeon UI visibility
 
   // Result Tracking
   lastCraftedItem: InventoryItem | null;

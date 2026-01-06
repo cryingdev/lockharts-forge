@@ -5,12 +5,13 @@ import { DUNGEONS } from '../../../data/dungeons';
 import { MATERIALS } from '../../../data/materials';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { calculatePartyPower, calculateMercenaryPower, formatDuration } from '../../../utils/dungeonUtils';
-import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2 } from 'lucide-react';
+import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
+import AssaultNavigator from './AssaultNavigator';
 
 const DungeonTab = () => {
     const { state, actions } = useGame();
-    const { activeExpeditions, knownMercenaries, dungeonClearCounts, unlockedRecipes, inventory } = state;
+    const { activeExpeditions, knownMercenaries, dungeonClearCounts, unlockedRecipes, inventory, activeManualDungeon, showManualDungeonOverlay } = state;
 
     // Index-based selection for paging
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -19,6 +20,9 @@ const DungeonTab = () => {
     const [failedPowerHighlight, setFailedPowerHighlight] = useState(false);
     
     const selectedDungeon = DUNGEONS[selectedIndex];
+
+    // Check if this specific dungeon is the one being manually assaulted
+    const isOngoingManual = activeManualDungeon && activeManualDungeon.dungeonId === selectedDungeon.id;
 
     const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
     const currentExpedition = activeExpeditions.find(e => e.dungeonId === selectedDungeon.id);
@@ -85,9 +89,12 @@ const DungeonTab = () => {
     };
 
     const handleStartManualAssault = () => {
+        if (isOngoingManual) {
+            actions.toggleManualDungeonOverlay(true);
+            return;
+        }
         if (!validateEntry()) return;
-        // Placeholder for the upcoming manual play mode
-        actions.showToast("Manual Assault mode is being prepared...");
+        actions.startManualAssault(selectedDungeon.id, party);
     };
 
     const handleClaim = (expId: string) => {
@@ -157,8 +164,10 @@ const DungeonTab = () => {
     }, [selectedDungeon, clears, unlockedRecipes, inventory]);
 
     return (
-        <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans">
+        <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans relative">
             
+            {(activeManualDungeon && showManualDungeonOverlay) && <AssaultNavigator />}
+
             {/* Left/Upper Panel: Dungeon Selection */}
             <div className="w-full sm:w-[40%] h-[42%] sm:h-full flex flex-col border-b sm:border-b-0 sm:border-r border-stone-800 bg-stone-900/50 relative overflow-hidden shrink-0 min-h-0">
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -198,6 +207,12 @@ const DungeonTab = () => {
                                          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
                                              <Timer className="w-4 h-4 sm:w-8 sm:h-8 text-amber-500 animate-pulse" />
                                              <span className="text-[9px] sm:text-sm font-mono text-amber-400 font-bold">{timeLeft}</span>
+                                         </div>
+                                     )}
+                                     {isOngoingManual && !showManualDungeonOverlay && (
+                                         <div className="absolute inset-0 bg-amber-900/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
+                                             <Navigation2 className="w-4 h-4 sm:w-8 sm:h-8 text-amber-200 animate-bounce" />
+                                             <span className="text-[9px] sm:text-xs font-black text-white uppercase tracking-tight">Active</span>
                                          </div>
                                      )}
                                 </div>
@@ -424,14 +439,18 @@ const DungeonTab = () => {
                                 {/* Direct Assault (New Manual) */}
                                 <button 
                                     onClick={handleStartManualAssault} 
-                                    disabled={!isUnlocked || party.length === 0} 
-                                    className={`group flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all transform active:scale-95 shadow-xl ${isUnlocked && party.length > 0 ? 'bg-amber-600 hover:bg-amber-500 border-amber-800 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
+                                    disabled={!isUnlocked || (party.length === 0 && !isOngoingManual)} 
+                                    className={`group flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all transform active:scale-95 shadow-xl ${isUnlocked && (party.length > 0 || isOngoingManual) ? 'bg-amber-600 hover:bg-amber-500 border-amber-800 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <Gamepad2 className="w-3 h-3 sm:w-5" />
-                                        <span className="text-[10px] sm:text-base font-black uppercase tracking-tight">Direct Assault</span>
+                                        {isOngoingManual ? <Play className="w-3 h-3 sm:w-5 animate-pulse text-amber-100" /> : <Gamepad2 className="w-3 h-3 sm:w-5" />}
+                                        <span className="text-[10px] sm:text-base font-black uppercase tracking-tight">
+                                            {isOngoingManual ? 'Resume Assault' : 'Direct Assault'}
+                                        </span>
                                     </div>
-                                    <span className="text-[7px] sm:text-[10px] font-bold opacity-60 uppercase tracking-widest">Active Control</span>
+                                    <span className="text-[7px] sm:text-[10px] font-bold opacity-60 uppercase tracking-widest">
+                                        {isOngoingManual ? 'Continue Exploration' : 'Active Control'}
+                                    </span>
                                 </button>
                             </div>
                             {!isUnlocked && (

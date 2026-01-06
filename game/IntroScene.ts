@@ -1,8 +1,8 @@
+
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
 export default class IntroScene extends Phaser.Scene {
-  // Fix: Explicitly declare Phaser Scene properties to resolve TypeScript "Property does not exist" errors
   public add!: Phaser.GameObjects.GameObjectFactory;
   public tweens!: Phaser.Tweens.TweenManager;
   public scale!: Phaser.Scale.ScaleManager;
@@ -44,7 +44,7 @@ export default class IntroScene extends Phaser.Scene {
   private createNarrativeText(text: string, color: string = '#ef4444') {
     const t = this.add
       .text(0, 0, text, {
-        fontFamily: 'serif',
+        fontFamily: 'Grenze Gotisch',
         fontSize: '40px',
         color,
         align: 'center',
@@ -77,7 +77,7 @@ export default class IntroScene extends Phaser.Scene {
 
     this.skipHint = this.add
       .text(0, 0, 'Touch anywhere to skip', {
-        fontFamily: 'sans-serif',
+        fontFamily: 'Grenze',
         fontSize: '12px',
         color: '#57534e',
         fontStyle: 'bold',
@@ -99,7 +99,7 @@ export default class IntroScene extends Phaser.Scene {
 
     this.devText = this.add
       .text(0, 0, 'CRYINGDEV STUDIO\nPRESENTS', {
-        fontFamily: 'serif',
+        fontFamily: 'Grenze Gotisch',
         fontSize: '45px',
         color: '#a8a29e',
         align: 'center',
@@ -136,14 +136,12 @@ export default class IntroScene extends Phaser.Scene {
     this.fireEmitter.setDepth(4);
     this.root.add(this.fireEmitter);
 
-    // layout + resize listeners
     this.handleResize(this.scale.gameSize);
     this.scale.on('resize', this.handleResize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off('resize', this.handleResize, this);
     });
 
-    // iOS: 첫 렌더 직후 viewport 안정화 타이밍 보정
     this.time.delayedCall(80, () => this.handleResize());
     this.time.delayedCall(180, () => this.handleResize());
 
@@ -153,10 +151,7 @@ export default class IntroScene extends Phaser.Scene {
   private handleResize(gameSize?: Phaser.Structs.Size) {
     const w = gameSize?.width ?? this.scale.gameSize.width;
     const h = gameSize?.height ?? this.scale.gameSize.height;
-
-    // 카메라 viewport는 항상 실제 화면으로
     this.cameras.main.setViewport(0, 0, w, h);
-
     const isPortrait = h > w;
 
     if (this.lastPortrait === undefined) {
@@ -168,69 +163,50 @@ export default class IntroScene extends Phaser.Scene {
     const changed = this.lastPortrait !== isPortrait;
     this.lastPortrait = isPortrait;
 
-    // 방향 전환 시 iOS 중간 사이즈 튐 완화: 짧은 페이드 + 지연 레이아웃
     if (changed && !this.isRelayouting) {
       this.isRelayouting = true;
       const cam = this.cameras.main;
-
       cam.fadeOut(120, 0, 0, 0);
-
       this.time.delayedCall(140, () => {
         const ww = this.scale.gameSize.width;
         const hh = this.scale.gameSize.height;
-
         cam.setViewport(0, 0, ww, hh);
         (hh > ww) ? this.layoutPortrait(ww, hh) : this.layoutLandscape(ww, hh);
-
         cam.fadeIn(120, 0, 0, 0);
-
-        this.time.delayedCall(160, () => {
-          this.isRelayouting = false;
-        });
+        this.time.delayedCall(160, () => { this.isRelayouting = false; });
       });
-
       return;
     }
-
     isPortrait ? this.layoutPortrait(w, h) : this.layoutLandscape(w, h);
   }
 
   private layoutLandscape(w: number, h: number) {
     const cx = w / 2;
     const cy = h / 2;
-
     const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.4, 1.2);
-
     this.bgs.forEach((img) => {
       img.setPosition(cx, cy);
       img.setScale(Math.max(w / img.width, h / img.height));
     });
-
     if (this.dragon) {
       const s = Math.min((h * 0.55) / this.dragon.height, (w * 0.9) / this.dragon.width);
       this.dragon.setScale(s);
       this.dragon.setPosition(cx, cy - h * 0.22);
     }
-
     this.devText?.setPosition(cx, cy).setFontSize(Math.round(45 * uiScale));
-
     if (this.skipHint) {
       this.skipHint.setPosition(cx, h - Math.max(24, h * 0.05));
       this.skipHint.setFontSize(Math.round(12 * uiScale));
     }
-
     this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
-
     this.narrativeTexts.forEach((t) => {
       t.setPosition(cx, cy);
       t.setFontSize(Math.round(40 * uiScale));
     });
-
     const despairIdx = this.narrativeTexts.length - 2;
     const gap = Math.max(20, h * 0.08);
     if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
     if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
-
     if (this.fireEmitter) {
       const y = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.12 : h * 0.35;
       this.fireEmitter.setPosition(cx, y);
@@ -240,41 +216,31 @@ export default class IntroScene extends Phaser.Scene {
   private layoutPortrait(w: number, h: number) {
     const cx = w / 2;
     const cy = h / 2;
-
     const uiScale = Phaser.Math.Clamp(h / 900, 0.7, 1.15);
-
     this.bgs.forEach((img) => {
       img.setPosition(cx, cy);
       img.setScale(Math.max(w / img.width, h / img.height));
     });
-
     if (this.dragon) {
       const s = Math.min((w * 0.95) / this.dragon.width, (h * 0.38) / this.dragon.height);
       this.dragon.setScale(s);
       this.dragon.setPosition(cx, h * 0.28);
     }
-
     this.devText?.setPosition(cx, h * 0.42).setFontSize(Math.round(40 * uiScale));
-
     if (this.skipHint) {
       this.skipHint.setPosition(cx, h - Math.max(28, h * 0.04));
       this.skipHint.setFontSize(Math.round(12 * uiScale));
     }
-
     this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
-
     const textBaseY = h * 0.62;
-
     this.narrativeTexts.forEach((t) => {
       t.setPosition(cx, textBaseY);
       t.setFontSize(Math.round(34 * uiScale));
     });
-
     const despairIdx = this.narrativeTexts.length - 2;
     const gap = Math.max(28, h * 0.06);
     if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = textBaseY - gap / 2;
     if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = textBaseY + gap / 2;
-
     if (this.fireEmitter) {
       const y = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.12 : h * 0.35;
       this.fireEmitter.setPosition(cx, y);
@@ -287,9 +253,7 @@ export default class IntroScene extends Phaser.Scene {
         { targets: this.devText, alpha: 1, duration: 2500, ease: 'Power2' },
         { targets: this.devText, alpha: 1, duration: 2000, onStart: () => this.cameras.main.shake(6000, 0.005) },
         { targets: this.devText, alpha: 0, duration: 2000, ease: 'Power2' },
-
         { targets: this.bgs[0], alpha: 1, duration: 1500, ease: 'Linear' },
-
         {
           targets: this.dragon,
           alpha: { from: 0, to: 1 },
@@ -301,9 +265,7 @@ export default class IntroScene extends Phaser.Scene {
             this.cameras.main.shake(3500, 0.005);
           },
         },
-
         { targets: this.dragon, y: '-=150', scale: '*=0.7', duration: 1000, ease: 'Quad.easeOut' },
-
         {
           targets: this.breathOverlay,
           alpha: 0.8,
@@ -319,23 +281,18 @@ export default class IntroScene extends Phaser.Scene {
             this.dragon!.setVisible(false);
           },
         },
-
         { targets: this.bgs[1], alpha: 1, duration: 2000, hold: 2500, ease: 'Linear' },
         { targets: n1, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2' },
         { targets: n1, alpha: 0, duration: 1000, ease: 'Power2' },
-
         { targets: this.bgs[2], alpha: 1, duration: 2000, hold: 2500, ease: 'Linear' },
         { targets: n2, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2' },
         { targets: n2, alpha: 0, duration: 1000, ease: 'Power2' },
-
         { targets: this.bgs[3], alpha: 1, duration: 3000, hold: 3500, ease: 'Linear' },
         { targets: n3, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2' },
         { targets: n3, alpha: 0, duration: 1000, ease: 'Power2' },
-
         { targets: this.bgs[4], alpha: 1, duration: 3000, ease: 'Linear' },
         { targets: nD, alpha: 1, duration: 2000, ease: 'Power2', delay: 500 },
         { targets: nV, alpha: 1, duration: 2500, ease: 'Power2' },
-
         {
           targets: [...this.bgs, nD, nV],
           alpha: 0,

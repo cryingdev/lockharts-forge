@@ -12,6 +12,7 @@ import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDism
 import { handleAddKnownMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
+import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon } from './reducer/manualDungeon';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -71,6 +72,13 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     // Equipment
     case 'EQUIP_ITEM': return handleEquipItem(state, action.payload);
     case 'UNEQUIP_ITEM': return handleUnequipItem(state, action.payload);
+
+    // Manual Dungeon
+    case 'START_MANUAL_DUNGEON': return handleStartManualDungeon(state, action.payload);
+    case 'MOVE_MANUAL_DUNGEON': return handleMoveManualDungeon(state, action.payload);
+    case 'FINISH_MANUAL_DUNGEON': return handleFinishManualDungeon(state);
+    case 'RETREAT_MANUAL_DUNGEON': return { ...state, activeManualDungeon: null, showManualDungeonOverlay: false, logs: ['The squad retreated from the area.', ...state.logs] };
+    case 'TOGGLE_MANUAL_DUNGEON_OVERLAY': return { ...state, showManualDungeonOverlay: action.payload };
 
     // Toast Notifications
     case 'SHOW_TOAST':

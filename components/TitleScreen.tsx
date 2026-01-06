@@ -14,7 +14,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showCredits, setShowCredits] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
-    const VERSION = "0.1.34";
+    const VERSION = "0.1.35";
 
     useEffect(() => {
         setHasSaves(getSaveMetadataList().length > 0);

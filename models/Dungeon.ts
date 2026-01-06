@@ -13,7 +13,15 @@ export interface DungeonDefinition {
   description: string;
   durationMinutes: number;
   requiredPower: number;
-  energyCost: number; // Applied to each mercenary
+  energyCost: number; // For Auto Expedition
+  
+  // Manual Expedition Settings
+  gridWidth: number;
+  gridHeight: number;
+  moveEnergy: number; 
+  bossEnergy: number;
+  isBossLocked?: boolean;
+
   rewards: DungeonReward[];
   bossUnlockReq?: number; // Number of clears to unlock boss variant
   bossVariantId?: string;
@@ -29,5 +37,4 @@ export interface Expedition {
   startTime: number;
   endTime: number;
   status: ExpeditionStatus;
-  // notifiedReady removed - we use status transition to COMPLETED instead
 }

@@ -49,7 +49,6 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
 
     const handleSlotClick = (index: number) => {
         onAction(index);
-        // 저장 모드일 때는 화면 갱신을 위해 메타데이터 다시 불러오기
         if (mode === 'SAVE') {
             setTimeout(() => setMetaList(getSaveMetadataList()), 100);
         }
@@ -57,13 +56,13 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
 
     return (
         <>
-            <div className="absolute inset-0 z-[250] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-                <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="absolute inset-0 z-[250] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-200 px-[10%] py-[5%]">
+                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-md shadow-[0_40px_80px_-20px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
                     
                     {/* Header */}
                     <div className="p-4 border-b border-stone-800 bg-stone-850 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <div className="bg-stone-800 p-2 rounded-lg border border-stone-700 text-amber-500">
+                            <div className="bg-stone-800 p-2 rounded-xl border border-stone-700 text-amber-500">
                                 {mode === 'SAVE' ? <Save className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
                             </div>
                             <h3 className="font-bold font-serif text-lg text-stone-200 tracking-wide uppercase">
@@ -83,7 +82,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                 <div 
                                     key={index}
                                     onClick={() => (meta || mode === 'SAVE') && handleSlotClick(index)}
-                                    className={`group relative h-20 p-3 rounded-xl border-2 transition-all flex flex-col justify-center gap-2 ${
+                                    className={`group relative h-20 p-3 rounded-2xl border-2 transition-all flex flex-col justify-center gap-2 ${
                                         meta 
                                         ? 'bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750 cursor-pointer' 
                                         : mode === 'SAVE' 
@@ -91,9 +90,15 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                             : 'bg-stone-950 border-stone-900 text-stone-600 cursor-not-allowed opacity-60'
                                     }`}
                                 >
-                                    {/* Top Row: Slot Number & Metadata info */}
                                     <div className="flex justify-between items-center w-full">
-                                        <span className="font-black text-xs uppercase tracking-widest text-stone-500 group-hover:text-amber-500">Slot {index + 1}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-black text-[10px] uppercase tracking-widest text-stone-500 group-hover:text-amber-500">Slot {index + 1}</span>
+                                            {meta?.version && (
+                                                <span className="px-1.5 py-0.5 bg-stone-950 rounded text-[7px] font-mono font-bold text-stone-600 border border-stone-800 group-hover:border-amber-900/50 group-hover:text-amber-700 transition-colors">
+                                                    v{meta.version}
+                                                </span>
+                                            )}
+                                        </div>
                                         {meta && (
                                             <div className="flex items-center gap-2">
                                                 <div className="flex items-center gap-1 text-[10px] text-stone-500 font-mono">
@@ -106,7 +111,6 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                         )}
                                     </div>
 
-                                    {/* Bottom Content Area: Standardized space for data or empty message */}
                                     {meta ? (
                                         <div className="flex items-center justify-between w-full">
                                             <div className="flex items-center gap-4">

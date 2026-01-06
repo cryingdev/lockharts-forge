@@ -28,9 +28,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
 
     const handleSlotAction = (slotIndex: number) => {
         if (slModal.mode === 'SAVE') {
-            // context의 saveGame 액션을 호출하여 활성 슬롯 동기화 처리
             actions.saveGame(slotIndex);
-            // 저장 후 모달을 닫지 않고 유지 (사용자가 결과를 볼 수 있게)
         } else {
             const data = loadFromSlot(slotIndex);
             if (data) {
@@ -81,16 +79,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
 
     return (
         <>
-            <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-stone-900 border-2 border-stone-700 rounded-xl w-full max-w-sm shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 px-[10%] py-[5%]">
+                <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-sm shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] relative overflow-hidden animate-in zoom-in-95 duration-200">
                     
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-stone-800 bg-stone-850">
                         <div className="flex items-center gap-2 text-stone-200">
                             <Settings className="w-5 h-5 text-amber-500" />
-                            <h3 className="font-bold font-serif tracking-wide">System Menu</h3>
+                            <h3 className="font-bold font-serif tracking-wide uppercase text-sm">System Menu</h3>
                         </div>
-                        <button onClick={onClose} className="p-1 hover:bg-stone-800 rounded text-stone-500 transition-colors">
+                        <button onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -102,7 +100,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                                 key={idx}
                                 onClick={item.action}
                                 disabled={item.disabled}
-                                className={`w-full flex items-center gap-4 p-4 rounded-lg border transition-all group ${
+                                className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all group ${
                                     item.disabled 
                                     ? 'bg-stone-900/50 border-stone-800 text-stone-600 cursor-not-allowed'
                                     : item.variant === 'danger'

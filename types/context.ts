@@ -1,3 +1,4 @@
+
 import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -57,8 +58,14 @@ export interface GameContextType {
     updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;
 
     triggerEnergyHighlight: () => void;
-    // Fix: Added missing action definitions to match context implementation
     showToast: (message: string) => void;
     hideToast: () => void;
+
+    // Manual Dungeon Actions
+    startManualAssault: (dungeonId: string, partyIds: string[]) => void;
+    moveInManualDungeon: (dx: number, dy: number) => void;
+    finishManualAssault: () => void;
+    retreatFromManualDungeon: () => void;
+    toggleManualDungeonOverlay: (show: boolean) => void;
   };
 }
