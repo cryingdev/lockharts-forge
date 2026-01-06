@@ -1,3 +1,4 @@
+
 export const MATERIALS = {
     // --- 1. METALS (금속) ---
     COPPER_ORE: {
@@ -76,7 +77,11 @@ export const MATERIALS = {
     // --- 6. CONSUMABLES ---
     ENERGY_POTION: {
         id: 'energy_potion', name: 'Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1,
-        description: 'Restores 25 Energy.', baseValue: 50 
+        description: 'Restores 25 Blacksmith Energy.', baseValue: 50 
+    },
+    STAMINA_POTION: {
+        id: 'stamina_potion', name: 'Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1,
+        description: 'Restores 50 Stamina for a Mercenary.', baseValue: 100, icon: '🧪'
     },
 
     // --- 7. TOOLS & OTHERS ---

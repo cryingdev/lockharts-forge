@@ -2,6 +2,7 @@
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { MATERIALS } from '../data/materials';
+import { MARKET_CATALOG } from '../data/market/index';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
 
 const createInitialInventory = (): InventoryItem[] => [
@@ -46,6 +47,9 @@ export const createInitialGameState = (): GameState => ({
     shopQueue: [],
     visitorsToday: [],
     talkedToToday: [],
+
+    // Market Initial Stock
+    marketStock: MARKET_CATALOG.reduce((acc, item) => ({ ...acc, [item.id]: item.maxStock }), {}),
 
     // Game Logic State
     isCrafting: false,

@@ -1,3 +1,4 @@
+
 import { GameState } from '../../types/index';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -62,9 +63,13 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
 
     const mercenary = { ...state.knownMercenaries[mercIndex] };
     let affinityGain = 3; // Default for resources/consumables
+    let staminaGain = 0;
 
-    // Special handling for debug items
-    if (itemId === 'affinity_debug_gift') {
+    // Special handling for consumables
+    if (itemId === 'stamina_potion') {
+        staminaGain = 50;
+        affinityGain = 5;
+    } else if (itemId === 'affinity_debug_gift') {
         affinityGain = 50;
     } else if (inventoryItem.type === 'EQUIPMENT' && inventoryItem.equipmentData) {
         affinityGain = 5; // Base for gear
@@ -78,6 +83,9 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
     }
 
     mercenary.affinity = Math.min(100, (mercenary.affinity || 0) + affinityGain);
+    if (staminaGain > 0) {
+        mercenary.expeditionEnergy = Math.min(DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, (mercenary.expeditionEnergy || 0) + staminaGain);
+    }
 
     const newInventory = state.inventory.map(item => {
         if (item.id === itemId) {
@@ -89,11 +97,14 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
     const newMercenaries = [...state.knownMercenaries];
     newMercenaries[mercIndex] = mercenary;
 
+    let logMsg = `Gifted ${inventoryItem.name} to ${mercenary.name}. Affinity +${affinityGain}.`;
+    if (staminaGain > 0) logMsg += ` Stamina +${staminaGain}.`;
+
     return {
         ...state,
         inventory: newInventory,
         knownMercenaries: newMercenaries,
-        logs: [`Gifted ${inventoryItem.name} to ${mercenary.name}. Affinity +${affinityGain}.`, ...state.logs]
+        logs: [logMsg, ...state.logs]
     };
 };
 
