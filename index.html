@@ -1,16 +1,36 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Lockhart's Forge</title>
+    <!-- Google Fonts: Grenze and Grenze Gotisch -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Grenze:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Grenze+Gotisch:wght@100..900&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              // 폰트 설정: 타이틀용은 Gotisch, 본문용은 기본 Grenze
+              serif: ['"Grenze Gotisch"', 'serif'],
+              sans: ['"Grenze"', 'sans-serif'],
+              mono: ['"Courier New"', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
     <style>
       :root {
         --base-font-size: 16px;
       }
 
-      /* 텍스트 선택 및 컨텍스트 메뉴 방지 */
+      /* 전역 폰트 적용 */
       * {
         -webkit-touch-callout: none;
         -webkit-user-select: none;
@@ -21,6 +41,12 @@
         -webkit-tap-highlight-color: transparent;
         -webkit-user-drag: none;
         box-sizing: border-box;
+        font-family: 'Grenze', sans-serif;
+      }
+
+      /* 제목 등은 Gotisch 사용 */
+      h1, h2, h3, .font-serif {
+        font-family: 'Grenze Gotisch', serif;
       }
 
       html, body {
@@ -29,14 +55,12 @@
         margin: 0;
         padding: 0;
         width: 100%;
-        /* dvh 지원 브라우저는 dvh 사용, 미지원 시 vh 대체 */
         height: 100vh;
         height: 100dvh;
         min-height: -webkit-fill-available;
         overflow: hidden;
         position: fixed;
         font-size: var(--base-font-size);
-        /* 모바일 바운스 방지 */
         overscroll-behavior: none;
       }
       
@@ -48,19 +72,11 @@
         overflow: hidden;
       }
 
-      /* Safe Area Helper Classes */
-      .pb-safe {
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-      .px-safe {
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
-      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+      .px-safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
 
       @media screen and (max-height: 500px) {
-        :root {
-          --base-font-size: 13px;
-        }
+        :root { --base-font-size: 13px; }
       }
 
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -108,18 +124,9 @@
   </head>
   <body>
     <div id="root"></div>
-
     <script>
-      // 우클릭 방지
-      window.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-      }, false);
-
-      // 모바일 주소창 높이 변화 대응을 위한 팁:
-      // 브라우저 윈도우 크기가 변경될 때 스크롤 상단을 강제하여 주소창이 튀는 것을 방지
-      window.addEventListener('resize', () => {
-        window.scrollTo(0, 0);
-      });
+      window.addEventListener('contextmenu', function(e) { e.preventDefault(); }, false);
+      window.addEventListener('resize', () => { window.scrollTo(0, 0); });
     </script>
     <script type="module" src="/index.tsx"></script>
   </body>

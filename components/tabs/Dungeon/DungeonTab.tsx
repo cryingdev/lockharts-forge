@@ -5,12 +5,13 @@ import { DUNGEONS } from '../../../data/dungeons';
 import { MATERIALS } from '../../../data/materials';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { calculatePartyPower, calculateMercenaryPower, formatDuration } from '../../../utils/dungeonUtils';
-import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle } from 'lucide-react';
+import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
+import AssaultNavigator from './AssaultNavigator';
 
 const DungeonTab = () => {
     const { state, actions } = useGame();
-    const { activeExpeditions, knownMercenaries, dungeonClearCounts, unlockedRecipes, inventory } = state;
+    const { activeExpeditions, knownMercenaries, dungeonClearCounts, unlockedRecipes, inventory, activeManualDungeon, showManualDungeonOverlay } = state;
 
     // Index-based selection for paging
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -19,6 +20,9 @@ const DungeonTab = () => {
     const [failedPowerHighlight, setFailedPowerHighlight] = useState(false);
     
     const selectedDungeon = DUNGEONS[selectedIndex];
+
+    // Check if this specific dungeon is the one being manually assaulted
+    const isOngoingManual = activeManualDungeon && activeManualDungeon.dungeonId === selectedDungeon.id;
 
     const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
     const currentExpedition = activeExpeditions.find(e => e.dungeonId === selectedDungeon.id);
@@ -49,16 +53,14 @@ const DungeonTab = () => {
                 setParty(prev => [...prev, mercId]);
             }
         }
-        // 에러 표시 중이었다면 제거
         if (failedMercs.includes(mercId)) {
             setFailedMercs(prev => prev.filter(id => id !== mercId));
         }
     };
 
-    const handleStartExpedition = () => {
-        if (party.length === 0 || !selectedDungeon) return;
+    const validateEntry = () => {
+        if (party.length === 0 || !selectedDungeon) return false;
 
-        // 에너지 체크
         const selectedMercs = knownMercenaries.filter(m => party.includes(m.id));
         const lowEnergyIds = selectedMercs
             .filter(m => (m.expeditionEnergy || 0) < selectedDungeon.energyCost)
@@ -67,17 +69,32 @@ const DungeonTab = () => {
         if (lowEnergyIds.length > 0) {
             setFailedMercs(lowEnergyIds);
             setTimeout(() => setFailedMercs([]), 2000);
-            return;
+            actions.showToast("Some squad members are too exhausted.");
+            return false;
         }
 
-        // 전투력 체크
         if (currentPartyPower < selectedDungeon.requiredPower) {
             setFailedPowerHighlight(true);
             setTimeout(() => setFailedPowerHighlight(false), 2000);
-            return;
+            actions.showToast("Party power is insufficient for this area.");
+            return false;
         }
 
+        return true;
+    };
+
+    const handleStartAutoExpedition = () => {
+        if (!validateEntry()) return;
         actions.startExpedition(selectedDungeon.id, party);
+    };
+
+    const handleStartManualAssault = () => {
+        if (isOngoingManual) {
+            actions.toggleManualDungeonOverlay(true);
+            return;
+        }
+        if (!validateEntry()) return;
+        actions.startManualAssault(selectedDungeon.id, party);
     };
 
     const handleClaim = (expId: string) => {
@@ -131,7 +148,6 @@ const DungeonTab = () => {
     const clears = dungeonClearCounts[selectedDungeon.id] || 0;
     const isBoss = !!selectedDungeon.bossVariantId;
 
-    // Display Rewards including Quest Rewards (like Recipe Scrolls)
     const displayRewards = useMemo(() => {
         const base = [...selectedDungeon.rewards];
         if (selectedDungeon.id === 'dungeon_t1_rats') {
@@ -148,18 +164,18 @@ const DungeonTab = () => {
     }, [selectedDungeon, clears, unlockedRecipes, inventory]);
 
     return (
-        <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans">
+        <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans relative">
             
+            {(activeManualDungeon && showManualDungeonOverlay) && <AssaultNavigator />}
+
             {/* Left/Upper Panel: Dungeon Selection */}
             <div className="w-full sm:w-[40%] h-[42%] sm:h-full flex flex-col border-b sm:border-b-0 sm:border-r border-stone-800 bg-stone-900/50 relative overflow-hidden shrink-0 min-h-0">
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                     <img src={getAssetUrl('dungeon_bg.png')} className="w-full h-full object-cover grayscale" />
                 </div>
 
-                {/* Content Container with unique key to prevent afterimages */}
                 <div key={selectedDungeon.id} className="flex-1 flex flex-col items-center z-10 min-h-0 transform-gpu backface-hidden">
                     
-                    {/* Header Area */}
                     <div className="relative flex flex-col items-center pt-3 sm:pt-10 z-10 shrink-0 w-full">
                         <div className="h-14 sm:h-24 flex flex-col items-center justify-center text-center px-10 mb-1 sm:mb-4">
                             <h1 className="text-base sm:text-2xl lg:text-3xl font-black text-white font-serif tracking-tighter uppercase leading-none animate-in fade-in duration-300">
@@ -172,7 +188,6 @@ const DungeonTab = () => {
                             )}
                         </div>
 
-                        {/* Navigation Area with Fixed Arrows */}
                         <div className="relative w-full flex items-center justify-center h-20 sm:h-40 mb-1 sm:mb-6">
                             <button 
                                 onClick={handlePrev} 
@@ -194,6 +209,12 @@ const DungeonTab = () => {
                                              <span className="text-[9px] sm:text-sm font-mono text-amber-400 font-bold">{timeLeft}</span>
                                          </div>
                                      )}
+                                     {isOngoingManual && !showManualDungeonOverlay && (
+                                         <div className="absolute inset-0 bg-amber-900/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
+                                             <Navigation2 className="w-4 h-4 sm:w-8 sm:h-8 text-amber-200 animate-bounce" />
+                                             <span className="text-[9px] sm:text-xs font-black text-white uppercase tracking-tight">Active</span>
+                                         </div>
+                                     )}
                                 </div>
 
                                 <div className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded sm:rounded-lg font-black text-[7px] sm:text-xs shadow-xl border sm:border-2 z-30 font-mono tracking-tighter ${isBoss ? 'bg-red-700 border-red-400 text-white' : 'bg-amber-600 border-amber-400 text-amber-50'}`}>
@@ -210,7 +231,6 @@ const DungeonTab = () => {
                         </div>
                     </div>
 
-                    {/* Dynamic Content (Scrollable) */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 sm:p-8 pt-0 z-10 flex flex-col items-center min-h-0 w-full">
                         <div className="w-full max-w-sm space-y-3 sm:space-y-6">
                             <p className="text-stone-400 text-[9px] sm:text-sm text-center italic px-4 leading-snug animate-in fade-in duration-500">
@@ -379,7 +399,7 @@ const DungeonTab = () => {
                                                             <div className="text-[7px] sm:text-[9px] lg:text-[11px] text-amber-500 font-mono font-bold mt-0.5">POW {power}</div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex flex-col items-end gap-1 sm:gap-1.5 shrink-0">
+                                                    <div className="flex flex-col items-end gap-1 shrink-0">
                                                         {isBusy ? (
                                                             <span className="text-[6px] sm:text-[8px] lg:text-[9px] font-black uppercase text-stone-500 bg-stone-950 px-1.5 py-0.5 rounded border border-stone-800">Deploying</span>
                                                         ) : (
@@ -400,25 +420,46 @@ const DungeonTab = () => {
                             </div>
                         </div>
 
-                        {/* Footer Action Bar */}
-                        <div className="p-2 sm:p-5 lg:p-6 bg-stone-900/50 border-t border-stone-800 flex items-center justify-between gap-4 shrink-0">
-                            <div className="text-[7px] sm:text-[10px] lg:text-xs text-stone-600 font-bold uppercase italic hidden xs:block">
-                                * Ensure squad capacity and energy requirements.
+                        {/* Footer Action Bar: Dual Mode Split */}
+                        <div className="p-2 sm:p-5 lg:p-6 bg-stone-900/50 border-t border-stone-800 shrink-0">
+                            <div className="grid grid-cols-2 gap-2 sm:gap-4 max-w-2xl mx-auto">
+                                {/* Strategic Deploy (Existing Auto) */}
+                                <button 
+                                    onClick={handleStartAutoExpedition} 
+                                    disabled={!isUnlocked || party.length === 0} 
+                                    className={`group flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all transform active:scale-95 shadow-xl ${isUnlocked && party.length > 0 ? 'bg-indigo-700 hover:bg-indigo-600 border-indigo-900 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Timer className={`w-3 h-3 sm:w-5 ${isUnlocked && party.length > 0 ? 'animate-pulse' : ''}`} />
+                                        <span className="text-[10px] sm:text-base font-black uppercase tracking-tight">Strategic Deploy</span>
+                                    </div>
+                                    <span className="text-[7px] sm:text-[10px] font-bold opacity-60 uppercase tracking-widest">Auto Exploration</span>
+                                </button>
+
+                                {/* Direct Assault (New Manual) */}
+                                <button 
+                                    onClick={handleStartManualAssault} 
+                                    disabled={!isUnlocked || (party.length === 0 && !isOngoingManual)} 
+                                    className={`group flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all transform active:scale-95 shadow-xl ${isUnlocked && (party.length > 0 || isOngoingManual) ? 'bg-amber-600 hover:bg-amber-500 border-amber-800 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        {isOngoingManual ? <Play className="w-3 h-3 sm:w-5 animate-pulse text-amber-100" /> : <Gamepad2 className="w-3 h-3 sm:w-5" />}
+                                        <span className="text-[10px] sm:text-base font-black uppercase tracking-tight">
+                                            {isOngoingManual ? 'Resume Assault' : 'Direct Assault'}
+                                        </span>
+                                    </div>
+                                    <span className="text-[7px] sm:text-[10px] font-bold opacity-60 uppercase tracking-widest">
+                                        {isOngoingManual ? 'Continue Exploration' : 'Active Control'}
+                                    </span>
+                                </button>
                             </div>
-                            <button 
-                                onClick={handleStartExpedition} 
-                                disabled={!isUnlocked || party.length === 0} 
-                                className={`flex-1 sm:flex-none px-6 sm:px-14 lg:px-20 py-2 sm:py-3 lg:py-5 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-base lg:text-xl shadow-2xl flex items-center justify-center gap-2 sm:gap-3 border-b-4 transition-all transform active:scale-95 ${isUnlocked ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-800' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
-                            >
-                                {isUnlocked ? (
-                                    <>
-                                        {canStartStatus ? <Sword className="w-3 h-3 sm:w-6 lg:w-7" /> : <Lock className="w-3 h-3 sm:w-6 lg:w-7" />}
-                                        Deploy Squad
-                                    </>
-                                ) : (
-                                    "Area Locked"
-                                )}
-                            </button>
+                            {!isUnlocked && (
+                                <div className="mt-3 text-center">
+                                    <span className="text-[8px] sm:text-xs text-red-500 font-bold uppercase tracking-widest flex items-center justify-center gap-1.5">
+                                        <Lock className="w-3 h-3" /> Area Exploration Locked
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

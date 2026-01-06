@@ -3,7 +3,6 @@ import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
 export default class WorkbenchScene extends Phaser.Scene {
-  // Fix: Explicitly declare Phaser Scene properties to resolve TypeScript "Property does not exist" errors
   public add!: Phaser.GameObjects.GameObjectFactory;
   public tweens!: Phaser.Tweens.TweenManager;
   public scale!: Phaser.Scale.ScaleManager;
@@ -14,7 +13,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   public cameras!: Phaser.Cameras.Scene2D.CameraManager;
 
   private targetNodes: Phaser.GameObjects.Arc[] = [];
-  private cursor!: Phaser.GameObjects.Image; // Rectangle에서 Image로 변경
+  private cursor!: Phaser.GameObjects.Image; 
   private comboText!: Phaser.GameObjects.Text;
 
   private progBg!: Phaser.GameObjects.Rectangle;
@@ -37,7 +36,6 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   private onComplete?: (score: number, bonus?: number) => void;
 
-  // layout cache
   private centerX = 0;
   private centerY = 0;
   private waveStartX = 0;
@@ -73,7 +71,6 @@ export default class WorkbenchScene extends Phaser.Scene {
   init(data: { onComplete: (score: number, bonus?: number) => void; difficulty: number }) {
     this.onComplete = data.onComplete;
     this.cursorSpeed = 0.00015 + data.difficulty * 0.00002;
-
     this.isFinished = false;
     this.cursorProgress = 0;
     this.confirmedProgress = 0;
@@ -89,159 +86,81 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   create() {
     this.root = this.add.container(0, 0);
-
     this.bgImage = this.add.image(0, 0, 'workbench_bg').setAlpha(0.8).setOrigin(0.5);
     this.root.add(this.bgImage);
-
     this.progBg = this.add.rectangle(0, 0, 250, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e).setName('progBg');
     this.progressBar = this.add.rectangle(0, 0, 0.1, 12, 0x10b981).setOrigin(0, 0.5);
-    this.qualityText = this.add
-      .text(0, 0, 'PRISTINE', { fontFamily: 'monospace', fontSize: '16px', color: '#fbbf24', fontStyle: 'bold' })
-      .setOrigin(0.5);
-
+    this.qualityText = this.add.text(0, 0, 'PRISTINE', { fontFamily: 'Grenze Gotisch', fontSize: '18px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
     this.root.add([this.progBg, this.progressBar, this.qualityText]);
-
     this.wavePathGraphics = this.add.graphics();
     this.root.add(this.wavePathGraphics);
-
-    // 커서(바늘) 생성 및 오리진 설정
     this.cursor = this.add.image(0, 0, 'niddle').setDepth(10).setOrigin(0.5, 0.9);
     this.root.add(this.cursor);
-
-    this.comboText = this.add.text(0, 0, '', { 
-        fontFamily: 'Impact', 
-        fontSize: '42px', 
-        color: '#fcd34d', 
-        stroke: '#000', 
-        strokeThickness: 6 
-    }).setOrigin(0.5).setAlpha(0).setDepth(26);
+    this.comboText = this.add.text(0, 0, '', { fontFamily: 'Grenze Gotisch', fontSize: '42px', color: '#fcd34d', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setAlpha(0).setDepth(26);
     this.root.add(this.comboText);
-
     this.handleResize(this.scale.gameSize);
     this.scale.on('resize', this.handleResize, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.scale.off('resize', this.handleResize, this);
-    });
-
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.scale.off('resize', this.handleResize, this); });
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (this.isFinished) return;
-      for (const node of this.targetNodes) {
-        if (Phaser.Math.Distance.Between(p.x, p.y, node.x, node.y) < 60 * this.uiScale) {
-          this.handleHit(node as any);
-        }
-      }
+      for (const node of this.targetNodes) { if (Phaser.Math.Distance.Between(p.x, p.y, node.x, node.y) < 60 * this.uiScale) { this.handleHit(node as any); } }
     });
-
     this.spawnNodes();
   }
 
   private handleResize(gameSize?: Phaser.Structs.Size) {
-    const w = gameSize?.width ?? this.scale.width;
-    const h = gameSize?.height ?? this.scale.height;
+    const w = gameSize?.width ?? this.scale.width; const h = gameSize?.height ?? this.scale.height;
     if (w <= 0 || h <= 0) return;
-
     this.isPortrait = h > w;
-
-    this.uiScale = this.isPortrait
-      ? Phaser.Math.Clamp(h / 1000, 0.75, 1.2)
-      : Phaser.Math.Clamp(w / 1200, 0.85, 1.3);
-
-    this.centerX = w / 2;
-    this.centerY = h / 2;
-
-    this.bgImage.setPosition(this.centerX, this.centerY);
-    this.bgImage.setDisplaySize(Math.max(w, h * 1.8), Math.max(h, w / 1.8));
-
+    this.uiScale = this.isPortrait ? Phaser.Math.Clamp(h / 1000, 0.75, 1.2) : Phaser.Math.Clamp(w / 1200, 0.85, 1.3);
+    this.centerX = w / 2; this.centerY = h / 2;
+    this.bgImage.setPosition(this.centerX, this.centerY); this.bgImage.setDisplaySize(Math.max(w, h * 1.8), Math.max(h, w / 1.8));
     if (this.isPortrait) {
-      const pbW = w * 0.8;
-      this.progBg.setPosition(this.centerX, 80 * this.uiScale).setSize(pbW, 20 * this.uiScale);
+      const pbW = w * 0.8; this.progBg.setPosition(this.centerX, 80 * this.uiScale).setSize(pbW, 20 * this.uiScale);
       this.progressBar.setPosition(this.centerX - pbW / 2, 80 * this.uiScale);
-      this.qualityText.setPosition(this.centerX, 120 * this.uiScale).setFontSize(Math.round(18 * this.uiScale));
+      this.qualityText.setPosition(this.centerX, 120 * this.uiScale).setFontSize(Math.round(20 * this.uiScale));
     } else {
-      const pbW = w * 0.5;
-      this.progBg.setPosition(this.centerX, 40 * this.uiScale).setSize(pbW, 18 * this.uiScale);
+      const pbW = w * 0.5; this.progBg.setPosition(this.centerX, 40 * this.uiScale).setSize(pbW, 18 * this.uiScale);
       this.progressBar.setPosition(this.centerX - pbW / 2, 40 * this.uiScale);
-      this.qualityText.setPosition(this.centerX, 80 * this.uiScale).setFontSize(Math.round(20 * this.uiScale));
+      this.qualityText.setPosition(this.centerX, 80 * this.uiScale).setFontSize(Math.round(22 * this.uiScale));
     }
-
     this.updateProgressBar();
-
-    this.waveStartX = w * 0.1;
-    this.waveWidth = w * 0.8;
-    this.waveAmplitude = (this.isPortrait ? 80 : 120) * this.uiScale;
-
-    this.drawPath();
-    this.updateNodes();
+    this.waveStartX = w * 0.1; this.waveWidth = w * 0.8; this.waveAmplitude = (this.isPortrait ? 80 : 120) * this.uiScale;
+    this.drawPath(); this.updateNodes();
   }
 
   private drawPath() {
-    // 점선 그리기 설정 - 색상을 짙은 갈색(0x3e2723)으로 변경, 투명도 0.4 유지
     this.wavePathGraphics.clear().lineStyle(4, 0x3e2723, 0.8).beginPath();
-    
-    const steps = 400; // 해상도 상향
-    const dashLen = 8; // 그릴 단계 수
-    const gapLen = 6;  // 건너뛸 단계 수
-    
-    let isDrawing = true;
-    let counter = 0;
-
+    const steps = 400; const dashLen = 8; const gapLen = 6;
+    let isDrawing = true; let counter = 0;
     for (let i = 0; i <= steps; i++) {
-      const p = i / steps;
-      const pos = this.getPathPosition(p);
-
-      if (i === 0) {
-        this.wavePathGraphics.moveTo(pos.x, pos.y);
-      } else {
-        if (isDrawing) {
-          this.wavePathGraphics.lineTo(pos.x, pos.y);
-        } else {
-          this.wavePathGraphics.moveTo(pos.x, pos.y);
-        }
+      const p = i / steps; const pos = this.getPathPosition(p);
+      if (i === 0) { this.wavePathGraphics.moveTo(pos.x, pos.y); } else {
+        if (isDrawing) { this.wavePathGraphics.lineTo(pos.x, pos.y); } else { this.wavePathGraphics.moveTo(pos.x, pos.y); }
       }
-
       counter++;
-      if (isDrawing && counter >= dashLen) {
-        isDrawing = false;
-        counter = 0;
-      } else if (!isDrawing && counter >= gapLen) {
-        isDrawing = true;
-        counter = 0;
-      }
+      if (isDrawing && counter >= dashLen) { isDrawing = false; counter = 0; } else if (!isDrawing && counter >= gapLen) { isDrawing = true; counter = 0; }
     }
     this.wavePathGraphics.strokePath();
   }
 
   private spawnNodes() {
-    this.targetNodes.forEach((n) => n.destroy());
-    this.targetNodes = [];
-
-    const segments = [
-        [0.10, 0.22],
-        [0.35, 0.47],
-        [0.60, 0.72],
-        [0.85, 0.95]
-    ];
-
+    this.targetNodes.forEach((n) => n.destroy()); this.targetNodes = [];
+    const segments = [[0.10, 0.22], [0.35, 0.47], [0.60, 0.72], [0.85, 0.95]];
     segments.forEach((range) => {
       const p = Phaser.Math.FloatBetween(range[0], range[1]);
       const node = this.add.circle(0, 0, 18, 0x10b981, 0.3).setStrokeStyle(3, 0x10b981);
-      (node as any).p = p;
-      (node as any).hit = false;
-      (node as any).missed = false;
-      this.targetNodes.push(node);
-      this.root.add(node);
+      (node as any).p = p; (node as any).hit = false; (node as any).missed = false;
+      this.targetNodes.push(node); this.root.add(node);
     });
-
     this.updateNodes();
   }
 
   private updateNodes() {
     if (this.scale.width <= 0 || this.scale.height <= 0) return;
     this.targetNodes.forEach((n) => {
-      const p = (n as any).p as number;
-      const pos = this.getPathPosition(p);
-      n.setPosition(pos.x, pos.y);
-      n.setScale(this.uiScale);
+      const p = (n as any).p as number; const pos = this.getPathPosition(p);
+      n.setPosition(pos.x, pos.y); n.setScale(this.uiScale);
     });
   }
 
@@ -253,160 +172,62 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     if (this.isFinished) return;
-
     this.cursorProgress += this.cursorSpeed * delta;
-
     this.targetNodes.forEach((node: any) => {
       if (!node.hit && !node.missed && this.cursorProgress > node.p + 0.06) {
-        node.missed = true;
-        this.handleMiss(node.x, node.y);
+        node.missed = true; this.handleMiss(node.x, node.y);
       }
     });
-
     if (this.cursorProgress > 1) {
-      this.cursorProgress = 0;
-      this.confirmedProgress = Math.min(100, this.confirmedProgress + 25);
-      this.updateProgressBar();
-
-      if (this.confirmedProgress >= 100) {
-        this.finish();
-        return;
-      }
+      this.cursorProgress = 0; this.confirmedProgress = Math.min(100, this.confirmedProgress + 25);
+      this.updateProgressBar(); if (this.confirmedProgress >= 100) { this.finish(); return; }
       this.spawnNodes();
     }
-
-    const pos = this.getPathPosition(this.cursorProgress);
-    const nextPos = this.getPathPosition(this.cursorProgress + 0.005);
-    
+    const pos = this.getPathPosition(this.cursorProgress); const nextPos = this.getPathPosition(this.cursorProgress + 0.005);
     const angle = Math.atan2(nextPos.y - pos.y, nextPos.x - pos.x);
-    
-    // 바늘 방향을 반대로 하기 위해 오프셋을 +PI/2에서 -PI/2로 변경
-    this.cursor.setPosition(pos.x, pos.y)
-        .setScale(this.uiScale * 0.3) 
-        .setRotation(angle - Math.PI / 2);
-
-    this.qualityText
-      .setText(this.getQualityLabel(this.currentQuality))
-      .setColor(this.getLabelColor(this.currentQuality));
+    this.cursor.setPosition(pos.x, pos.y).setScale(this.uiScale * 0.3).setRotation(angle - Math.PI / 2);
+    this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
   }
 
-  private updateProgressBar() {
-    const width = (this.confirmedProgress / 100) * this.progBg.width;
-    this.progressBar.width = Math.max(0.1, width);
-  }
+  private updateProgressBar() { const width = (this.confirmedProgress / 100) * this.progBg.width; this.progressBar.width = Math.max(0.1, width); }
 
   private handleHit(node: any) {
     if (node.hit || node.missed) return;
-
     const diff = Math.abs(this.cursorProgress - node.p);
-    
-    if (diff < 0.045) { // PERFECT
-      node.hit = true;
-      node.setFillStyle(0xfbbf24, 1).setStrokeStyle(3, 0xffffff);
-      this.perfectStreak++;
-      this.combo++;
-      
-      if (this.perfectStreak > 0 && this.perfectStreak % 8 === 0) {
-        this.currentQuality += 1;
-      }
-      
-      this.showFeedback('PERFECT!', 0xfbbf24, node.x, node.y);
-      this.showCombo(node.x, node.y);
-    } else if (diff < 0.09) { // GOOD
-      node.hit = true;
-      node.setFillStyle(0xe5e5e5, 0.8).setStrokeStyle(2, 0xaaaaaa);
-      this.perfectStreak = 0;
-      this.combo = 0;
-      this.currentQuality = Math.max(0, this.currentQuality - 2);
+    if (diff < 0.045) { 
+      node.hit = true; node.setFillStyle(0xfbbf24, 1).setStrokeStyle(3, 0xffffff); this.perfectStreak++; this.combo++;
+      if (this.perfectStreak > 0 && this.perfectStreak % 8 === 0) { this.currentQuality += 1; }
+      this.showFeedback('PERFECT!', 0xfbbf24, node.x, node.y); this.showCombo(node.x, node.y);
+    } else if (diff < 0.09) { 
+      node.hit = true; node.setFillStyle(0xe5e5e5, 0.8).setStrokeStyle(2, 0xaaaaaa); this.perfectStreak = 0; this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
       this.showFeedback('GOOD', 0xe5e5e5, node.x, node.y);
     }
   }
 
-  private handleMiss(x: number, y: number) {
-    this.perfectStreak = 0;
-    this.combo = 0;
-    this.currentQuality = Math.max(0, this.currentQuality - 5);
-    this.showFeedback('MISS', 0xef4444, x, y);
-    this.cameras.main.shake(100, 0.005);
-  }
+  private handleMiss(x: number, y: number) { this.perfectStreak = 0; this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 5); this.showFeedback('MISS', 0xef4444, x, y); this.cameras.main.shake(100, 0.005); }
 
   private showCombo(x: number, y: number) {
       if (this.combo < 2) return;
-      
-      this.comboText.setPosition(x, y - 70 * this.uiScale)
-          .setText(`${this.combo} COMBO!`)
-          .setAlpha(1)
-          .setScale(this.uiScale * 1.2);
-          
-      this.tweens.add({
-          targets: this.comboText,
-          scale: this.uiScale,
-          alpha: 0,
-          duration: 800,
-          ease: 'Power2'
-      });
+      this.comboText.setPosition(x, y - 70 * this.uiScale).setText(`${this.combo} COMBO!`).setAlpha(1).setScale(this.uiScale * 1.2);
+      this.tweens.add({ targets: this.comboText, scale: this.uiScale, alpha: 0, duration: 800, ease: 'Power2' });
   }
 
   private showFeedback(text: string, color: number, x: number, y: number) {
     const hex = '#' + color.toString(16).padStart(6, '0');
-    const fb = this.add
-      .text(x, y, text, {
-        fontFamily: 'monospace',
-        fontSize: `${Math.round(22 * this.uiScale)}px`,
-        color: hex,
-        stroke: '#000',
-        strokeThickness: Math.round(5 * this.uiScale),
-        fontStyle: 'bold'
-      })
-      .setOrigin(0.5)
-      .setDepth(30);
-
+    const fb = this.add.text(x, y, text, { fontFamily: 'Grenze Gotisch', fontSize: `${Math.round(22 * this.uiScale)}px`, color: hex, stroke: '#000', strokeThickness: Math.round(5 * this.uiScale), fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
     this.root.add(fb);
-
-    this.tweens.add({
-      targets: fb,
-      y: y - 50 * this.uiScale,
-      alpha: 0,
-      duration: 600,
-      ease: 'Cubic.easeOut',
-      onComplete: () => fb.destroy(),
-    });
+    this.tweens.add({ targets: fb, y: y - 50 * this.uiScale, alpha: 0, duration: 600, ease: 'Cubic.easeOut', onComplete: () => fb.destroy(), });
   }
 
   private finish() {
-    this.isFinished = true;
-    this.cursor.setVisible(false);
-    
+    this.isFinished = true; this.cursor.setVisible(false);
     const bg = this.add.rectangle(this.centerX, this.centerY, this.scale.width, this.scale.height, 0x000000).setAlpha(0).setDepth(100);
-    this.root.add(bg);
-    this.tweens.add({ targets: bg, alpha: 0.7, duration: 400 });
-
+    this.root.add(bg); this.tweens.add({ targets: bg, alpha: 0.7, duration: 400 });
     const label = this.getQualityLabel(this.currentQuality);
     const textContent = this.isPortrait ? `${label}\nCRAFT!` : `${label} CRAFT!`;
     const fontSize = `${Math.round(this.isPortrait ? 36 * this.uiScale : 42 * this.uiScale)}px`;
-
-    const txt = this.add.text(this.centerX, this.centerY, textContent, {
-      fontFamily: 'serif',
-      fontSize: fontSize,
-      color: this.getLabelColor(this.currentQuality),
-      stroke: '#000',
-      strokeThickness: 4,
-      fontStyle: 'italic',
-      align: 'center'
-    }).setOrigin(0.5).setAlpha(0).setDepth(101).setScale(0.5);
-
+    const txt = this.add.text(this.centerX, this.centerY, textContent, { fontFamily: 'Grenze Gotisch', fontSize: fontSize, color: this.getLabelColor(this.currentQuality), stroke: '#000', strokeThickness: 4, fontStyle: 'italic', align: 'center' }).setOrigin(0.5).setAlpha(0).setDepth(101).setScale(0.5);
     this.root.add(txt);
-    this.tweens.add({
-      targets: txt,
-      alpha: 1,
-      scale: 1,
-      duration: 500,
-      ease: 'Back.out',
-      onComplete: () => {
-        this.time.delayedCall(1200, () => {
-          this.onComplete?.(this.currentQuality);
-        });
-      }
-    });
+    this.tweens.add({ targets: txt, alpha: 1, scale: 1, duration: 500, ease: 'Back.out', onComplete: () => { this.time.delayedCall(1200, () => { this.onComplete?.(this.currentQuality); }); } });
   }
 }

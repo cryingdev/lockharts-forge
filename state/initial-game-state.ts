@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { MATERIALS } from '../data/materials';
@@ -50,6 +51,7 @@ export const createInitialGameState = (): GameState => ({
     isCrafting: false,
     showSleepModal: false,
     showJournal: false,
+    toast: null,
     
     // Progression
     craftingMastery: {},
@@ -63,6 +65,8 @@ export const createInitialGameState = (): GameState => ({
     activeExpeditions: [],
     dungeonClearCounts: {},
     dungeonResult: null,
+    activeManualDungeon: null,
+    showManualDungeonOverlay: false,
 
     // Result Tracking
     lastCraftedItem: null,

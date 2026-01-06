@@ -1,8 +1,21 @@
+
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
 import { Expedition } from '../models/Dungeon';
+
+export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL';
+
+export interface ManualDungeonSession {
+    dungeonId: string;
+    partyIds: string[];
+    grid: RoomType[][];
+    visited: boolean[][]; // Fog of war
+    playerPos: { x: number, y: number };
+    hasKey: boolean;
+    isBossLocked: boolean;
+}
 
 export interface PlayerStats {
   gold: number;
@@ -35,6 +48,11 @@ export interface DungeonResult {
     }[];
 }
 
+export interface GameToast {
+    message: string;
+    visible: boolean;
+}
+
 export interface GameState {
   stats: PlayerStats;
   inventory: InventoryItem[];
@@ -53,6 +71,7 @@ export interface GameState {
   isCrafting: boolean; // Is the player currently in the minigame?
   showSleepModal: boolean; // Should the End of Day modal be visible?
   showJournal: boolean; // Toggle for the Log/Journal Modal
+  toast: GameToast | null; // Global toast notifications
   
   // Progression
   craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count
@@ -66,6 +85,8 @@ export interface GameState {
   activeExpeditions: Expedition[];
   dungeonClearCounts: Record<string, number>; // Key: Dungeon ID, Value: Count
   dungeonResult: DungeonResult | null; // Populated when claim is clicked to show modal
+  activeManualDungeon: ManualDungeonSession | null; // Current manual play session
+  showManualDungeonOverlay: boolean; // Toggle for dungeon UI visibility
 
   // Result Tracking
   lastCraftedItem: InventoryItem | null;

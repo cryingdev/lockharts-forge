@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { Hammer, Sword, Shield, Zap, Brain, Check, Star, ArrowUp, ArrowDown } from 'lucide-react';
@@ -71,7 +72,7 @@ const CraftingResultModal = () => {
     };
 
     return (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-2 md:p-4 animate-in fade-in duration-500 overflow-hidden">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-[10%] py-[5%] animate-in fade-in duration-500 overflow-hidden">
             <div className="relative z-10 w-full max-w-md max-h-[95dvh] bg-stone-900 border-2 border-amber-600/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
                 
                 {/* Header - Compact for small screens */}

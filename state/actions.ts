@@ -45,4 +45,12 @@ export type GameAction =
   | { type: 'ALLOCATE_STAT'; payload: { mercenaryId: string; stat: keyof PrimaryStats } }
   | { type: 'UPDATE_MERCENARY_STATS'; payload: { mercenaryId: string; stats: PrimaryStats } }
   | { type: 'SET_UI_EFFECT'; payload: { effect: keyof GameState['uiEffects']; value: boolean } }
-  | { type: 'LOAD_GAME'; payload: GameState };
+  | { type: 'SHOW_TOAST'; payload: string }
+  | { type: 'HIDE_TOAST' }
+  | { type: 'LOAD_GAME'; payload: GameState }
+  // Manual Dungeon Actions
+  | { type: 'START_MANUAL_DUNGEON'; payload: { dungeonId: string; partyIds: string[] } }
+  | { type: 'MOVE_MANUAL_DUNGEON'; payload: { x: number; y: number } }
+  | { type: 'FINISH_MANUAL_DUNGEON' }
+  | { type: 'RETREAT_MANUAL_DUNGEON' }
+  | { type: 'TOGGLE_MANUAL_DUNGEON_OVERLAY'; payload: boolean };

@@ -12,7 +12,7 @@ const DungeonResultModal = () => {
     if (!dungeonResult) return null;
 
     return (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-500 overflow-hidden">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md px-[10%] py-[5%] animate-in fade-in duration-500 overflow-hidden">
             <div className="relative z-10 w-full max-w-2xl max-h-[95vh] bg-stone-900 border-2 border-amber-600 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
                 
                 {/* Header */}
@@ -59,7 +59,6 @@ const DungeonResultModal = () => {
                                             <div className="flex flex-col justify-center min-w-0 overflow-hidden">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="text-[10px] md:text-xs font-black text-stone-100 truncate">{reward.name}</span>
-                                                    {/* Fix: Cast materialDef to any to safely check for 'tier' property across union types */}
                                                     {(materialDef as any)?.tier && (
                                                         <span className="text-[7px] font-mono text-stone-500 bg-stone-900 px-1 rounded">T{(materialDef as any).tier}</span>
                                                     )}

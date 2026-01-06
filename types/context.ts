@@ -17,7 +17,7 @@ export interface GameContextType {
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
 
-    saveGame: () => void;
+    saveGame: (slotIndex?: number) => void;
     loadGame: (loadedState: GameState) => void;
     
     startCrafting: (item: EquipmentItem) => void;
@@ -58,5 +58,14 @@ export interface GameContextType {
     updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;
 
     triggerEnergyHighlight: () => void;
+    showToast: (message: string) => void;
+    hideToast: () => void;
+
+    // Manual Dungeon Actions
+    startManualAssault: (dungeonId: string, partyIds: string[]) => void;
+    moveInManualDungeon: (dx: number, dy: number) => void;
+    finishManualAssault: () => void;
+    retreatFromManualDungeon: () => void;
+    toggleManualDungeonOverlay: (show: boolean) => void;
   };
 }

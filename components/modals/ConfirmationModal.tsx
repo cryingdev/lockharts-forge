@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
@@ -25,9 +26,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={onCancel}>
+        <div className="absolute inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 px-[10%] py-[5%]" onClick={onCancel}>
             <div 
-                className="bg-stone-900 border-2 border-stone-700 rounded-xl p-6 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-200"
+                className="bg-stone-900 border-2 border-stone-700 rounded-2xl p-6 max-w-sm w-full shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] relative animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center gap-3 mb-4">
