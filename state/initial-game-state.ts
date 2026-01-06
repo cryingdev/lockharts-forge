@@ -14,6 +14,7 @@ const createInitialInventory = (): InventoryItem[] => [
     { ...MATERIALS.EMERGENCY_GOLD, quantity: 1 },
 ];
 
+// Fix: Added missing 'toast' property to comply with GameState type definition
 export const createInitialGameState = (): GameState => ({
     stats: {
         gold: 1500,
@@ -50,6 +51,8 @@ export const createInitialGameState = (): GameState => ({
     isCrafting: false,
     showSleepModal: false,
     showJournal: false,
+    // Initial toast state
+    toast: null,
     
     // Progression
     craftingMastery: {},

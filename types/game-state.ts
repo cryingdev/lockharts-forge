@@ -1,3 +1,4 @@
+
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
@@ -35,6 +36,11 @@ export interface DungeonResult {
     }[];
 }
 
+export interface GameToast {
+    message: string;
+    visible: boolean;
+}
+
 export interface GameState {
   stats: PlayerStats;
   inventory: InventoryItem[];
@@ -53,6 +59,7 @@ export interface GameState {
   isCrafting: boolean; // Is the player currently in the minigame?
   showSleepModal: boolean; // Should the End of Day modal be visible?
   showJournal: boolean; // Toggle for the Log/Journal Modal
+  toast: GameToast | null; // Global toast notifications
   
   // Progression
   craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count

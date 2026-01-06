@@ -11,6 +11,7 @@
     *   Implemented automatic slot discovery for New Games.
     *   Dynamic Slot Sync: Saving to a specific slot via Settings now redirects all future auto-saves to that slot.
     *   Safe Loading: Added a "Title-to-Game" bridge to ensure state hydration happens in a clean memory environment.
+    *   **Persistence UI Polish**: Compressed save slots to a compact h-20 format and increased legibility for empty slot markers.
 *   **Mobile Performance & UX**:
     *   **Dungeon Ghosting Fix**: Added unique container keys and GPU hardware acceleration to prevent afterimages during dungeon paging.
     *   **UI Polish**: Relocated the Sleep Modal close button to the top-right for standard accessibility.

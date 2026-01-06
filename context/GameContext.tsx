@@ -57,6 +57,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
       }, 3000);
   };
 
+  const showToast = (message: string) => {
+      dispatch({ type: 'SHOW_TOAST', payload: message });
+      setTimeout(() => {
+          dispatch({ type: 'HIDE_TOAST' });
+      }, 3000);
+  };
+
   // --- ACTIONS ---
   const actions = useMemo(() => ({
     repairItem: () => {
@@ -83,12 +90,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
         const success = saveToSlot(targetSlot, stateRef.current);
         if (success) {
             currentSlotRef.current = targetSlot; // 수동 저장된 슬롯으로 활성 슬롯 변경
-            dispatch({ type: 'TRIGGER_EVENT', payload: {
-                id: 'NONE',
-                title: "Game Saved",
-                description: `Your progress has been recorded in slot ${targetSlot + 1}.`,
-                options: [{ label: "Continue", action: () => {} }]
-            }});
+            showToast(`Progress saved to Slot ${targetSlot + 1}.`);
         }
     },
     loadGame: (loadedState: GameState) => {
@@ -148,7 +150,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     useItem: (itemId: string) => dispatch({ type: 'USE_ITEM', payload: { itemId } }),
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
 
-    triggerEnergyHighlight
+    triggerEnergyHighlight,
+    showToast: (message: string) => {
+        dispatch({ type: 'SHOW_TOAST', payload: message });
+        setTimeout(() => {
+            dispatch({ type: 'HIDE_TOAST' });
+        }, 3000);
+    },
+    hideToast: () => dispatch({ type: 'HIDE_TOAST' })
   }), []); 
 
   return (

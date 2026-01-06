@@ -4,6 +4,7 @@ import { Save, Upload, Volume2, LogOut, X, Settings } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
 import SaveLoadModal from './SaveLoadModal';
 import { loadFromSlot } from '../../utils/saveSystem';
+import ConfirmationModal from './ConfirmationModal';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -15,25 +16,39 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, onLoadRequest }) => {
     const { state, actions } = useGame();
     const [slModal, setSlModal] = useState<{ isOpen: boolean, mode: 'SAVE' | 'LOAD' }>({ isOpen: false, mode: 'SAVE' });
-    const VERSION = "0.1.34";
+    const [loadConfirm, setLoadConfirm] = useState<{ isOpen: boolean, data: any, index: number | null }>({
+        isOpen: false,
+        data: null,
+        index: null
+    });
+
+    const VERSION = "0.1.35";
     
     if (!isOpen) return null;
 
-    const handleSlotAction = (index: number) => {
+    const handleSlotAction = (slotIndex: number) => {
         if (slModal.mode === 'SAVE') {
             // context의 saveGame 액션을 호출하여 활성 슬롯 동기화 처리
-            actions.saveGame(index);
-            setSlModal({ ...slModal, isOpen: false });
+            actions.saveGame(slotIndex);
+            // 저장 후 모달을 닫지 않고 유지 (사용자가 결과를 볼 수 있게)
         } else {
-            const data = loadFromSlot(index);
+            const data = loadFromSlot(slotIndex);
             if (data) {
-                if (confirm("저장된 데이터를 불러오시겠습니까? 현재 진행 상황은 사라집니다.\n(안전한 로딩을 위해 타이틀 화면으로 이동합니다.)")) {
-                    setSlModal({ ...slModal, isOpen: false });
-                    onClose();
-                    // App.tsx의 핸들러를 통해 로드 프로세스 시작
-                    onLoadRequest(data, index);
-                }
+                setLoadConfirm({
+                    isOpen: true,
+                    data,
+                    index: slotIndex
+                });
             }
+        }
+    };
+
+    const handleConfirmLoad = () => {
+        if (loadConfirm.data && loadConfirm.index !== null) {
+            setLoadConfirm({ ...loadConfirm, isOpen: false });
+            setSlModal({ ...slModal, isOpen: false });
+            onClose();
+            onLoadRequest(loadConfirm.data, loadConfirm.index);
         }
     };
 
@@ -119,6 +134,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                 mode={slModal.mode}
                 onClose={() => setSlModal({ ...slModal, isOpen: false })}
                 onAction={handleSlotAction}
+            />
+
+            <ConfirmationModal 
+                isOpen={loadConfirm.isOpen}
+                title="Load Save Game"
+                message="Do you want to load the saved data? Any unsaved progress will be lost."
+                confirmLabel="Confirm Load"
+                onConfirm={handleConfirmLoad}
+                onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })}
             />
         </>
     );

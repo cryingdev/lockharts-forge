@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
-import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity } from 'lucide-react';
+import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, Info } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 
 // Import Background Services
@@ -33,7 +33,7 @@ interface MainGameLayoutProps {
 const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSettings }) => {
   const [activeTab, setActiveTab] = useState<'FORGE' | 'INVENTORY' | 'MARKET' | 'SHOP' | 'TAVERN' | 'DUNGEON' | 'SIMULATION'>('FORGE');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { state } = useGame();
+  const { state, actions } = useGame();
 
   // --- BACKGROUND SERVICES ---
   useShopService();
@@ -157,6 +157,17 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         {activeTab === 'DUNGEON' && <DungeonTab />}
         {activeTab === 'SIMULATION' && <SimulationTab />}
       </main>
+
+      {/* Toast Notification Container */}
+      {state.toast?.visible && (
+        <div 
+            onClick={actions.hideToast}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[500] flex items-center gap-3 px-6 py-3 bg-stone-900/95 border border-amber-500/50 text-stone-200 rounded-xl shadow-2xl backdrop-blur-md cursor-pointer animate-in slide-in-from-bottom-4 fade-in duration-300 ring-2 ring-black/50 active:scale-95"
+        >
+            <Info className="w-5 h-5 text-amber-500 shrink-0" />
+            <span className="text-sm font-bold tracking-tight">{state.toast.message}</span>
+        </div>
+      )}
 
       {/* Navigation Padding for Bottom Edge Devices */}
       <div className="h-[env(safe-area-inset-bottom)] bg-stone-900 shrink-0"></div>

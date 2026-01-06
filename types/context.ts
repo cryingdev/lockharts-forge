@@ -1,4 +1,3 @@
-
 import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -17,7 +16,7 @@ export interface GameContextType {
     handleEventOption: (action: () => void) => void;
     closeEvent: () => void;
 
-    saveGame: () => void;
+    saveGame: (slotIndex?: number) => void;
     loadGame: (loadedState: GameState) => void;
     
     startCrafting: (item: EquipmentItem) => void;
@@ -58,5 +57,8 @@ export interface GameContextType {
     updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;
 
     triggerEnergyHighlight: () => void;
+    // Fix: Added missing action definitions to match context implementation
+    showToast: (message: string) => void;
+    hideToast: () => void;
   };
 }

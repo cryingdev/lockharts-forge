@@ -36,6 +36,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - **Smart Allocation**: On "New Game", the system identifies the first empty slot. 
 - **Active Slot Tracking**: Loading a game or manually saving switches the "Active Slot", ensuring all subsequent auto-saves (on Rest) target the correct file.
 - **State Integrity**: Loading from within the game now forces a temporary return to the Title screen to prevent state mixing between different save files.
+- **Compact Slot Design**: Save/Load interface optimized for vertical lists using a streamlined h-20 slot height and high-contrast status text for empty states.
 
 ### 2. Mobile & Visual Optimization
 - **Ghosting Prevention**: Dungeon paging uses React `key` properties to force complete DOM re-renders of the selection panel, combined with CSS `transform-gpu`.

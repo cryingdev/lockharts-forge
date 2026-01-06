@@ -72,6 +72,18 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'EQUIP_ITEM': return handleEquipItem(state, action.payload);
     case 'UNEQUIP_ITEM': return handleUnequipItem(state, action.payload);
 
+    // Toast Notifications
+    case 'SHOW_TOAST':
+        return {
+            ...state,
+            toast: { message: action.payload, visible: true }
+        };
+    case 'HIDE_TOAST':
+        return {
+            ...state,
+            toast: state.toast ? { ...state.toast, visible: false } : null
+        };
+
     // UI Effects
     case 'SET_UI_EFFECT':
         return {
