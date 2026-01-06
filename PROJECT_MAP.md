@@ -24,7 +24,7 @@ This document provides a comprehensive structural map of the project, detailing 
   - `utils/saveSystem.ts`: Core persistence logic. Handles `localStorage` slot indexing and metadata management.
 
 - **Tabs (Features)**
-  - `components/tabs/Dungeon/`: Expedition hub. Optimized with hardware acceleration for mobile paging.
+  - `components/tabs/Dungeon/`: Expedition hub. Optimized with dual-entry branching (Auto/Manual).
   - `components/tabs/Forge/`: Crafting center. Features radial mastery indicators and minigame entry points.
   - `components/tabs/Tavern/`: Recruitment and relationship management.
 
@@ -38,10 +38,14 @@ This document provides a comprehensive structural map of the project, detailing 
 - **State Integrity**: Loading from within the game now forces a temporary return to the Title screen to prevent state mixing between different save files.
 - **Compact Slot Design**: Save/Load interface optimized for vertical lists using a streamlined h-20 slot height and high-contrast status text for empty states.
 
-### 2. Mobile & Visual Optimization
+### 2. Dungeon Exploration Modes (v0.1.35)
+- **Strategic Deploy**: Traditional time-based auto-exploration.
+- **Direct Assault**: New active play mode entry point. Unified validation ensures squad preparedness regardless of chosen mode.
+
+### 3. Mobile & Visual Optimization
 - **Ghosting Prevention**: Dungeon paging uses React `key` properties to force complete DOM re-renders of the selection panel, combined with CSS `transform-gpu`.
 - **Mastery Radial**: Item progress is visually represented by a SVG radial track surrounding the item sprite, providing immediate feedback on craftsmanship level.
 
-### 3. Immersive Interaction Design
+### 4. Immersive Interaction Design
 - **Verticality**: Optimized for mobile portrait mode using `dvh` units.
 - **Depth Masking**: Characters are positioned behind a foreground element (Counter/Table) with their feet hidden to simulate depth.

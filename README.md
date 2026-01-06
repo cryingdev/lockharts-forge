@@ -7,6 +7,9 @@
 
 ## 🔄 Recent Updates (v0.1.35)
 
+*   **Dungeon Expansion Phase 1**:
+    *   Split Dungeon Entry into two distinct paths: **Strategic Deploy** (Auto) and **Direct Assault** (Manual).
+    *   Unified requirement checking for both modes (Power, Energy, Party).
 *   **Smart Persistence Engine**: 
     *   Implemented automatic slot discovery for New Games.
     *   Dynamic Slot Sync: Saving to a specific slot via Settings now redirects all future auto-saves to that slot.
