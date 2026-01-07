@@ -29,6 +29,13 @@ export interface MatchStats {
     minDmg: number;
 }
 
+export interface CombatLogEntry {
+    msg: string;
+    team: 'A' | 'B' | 'SYSTEM';
+    isCrit?: boolean;
+    isMiss?: boolean;
+}
+
 export interface SingleMatchReport {
     winner: 'A' | 'B' | null;
     durationTicks: number;
@@ -55,7 +62,8 @@ export interface SimulationHook {
     addSlot: (side: 'A' | 'B') => void;
     removeSlot: (side: 'A' | 'B', instanceId: string) => void;
     updateSlot: (side: 'A' | 'B', instanceId: string, data: Partial<CombatantInstance>) => void;
-    combatLog: { msg: string; color: string }[];
+    combatLog: CombatLogEntry[];
+    clearLogs: () => void;
     isBattleRunning: boolean;
     battleSpeed: 1 | 2 | 5 | 10;
     setBattleSpeed: (speed: 1 | 2 | 5 | 10) => void;
@@ -94,7 +102,7 @@ export const useSimulation = (): SimulationHook => {
         teamB: [createEmptyCombatant()]
     });
 
-    const [combatLog, setCombatLog] = useState<{msg: string, color: string}[]>([]);
+    const [combatLog, setCombatLog] = useState<CombatLogEntry[]>([]);
     const [isBattleRunning, setIsBattleRunning] = useState(false);
     const [battleSpeed, setBattleSpeed] = useState<1 | 2 | 5 | 10>(1);
     const [singleMatchReport, setSingleMatchReport] = useState<SingleMatchReport | null>(null);
@@ -195,9 +203,13 @@ export const useSimulation = (): SimulationHook => {
         });
     };
 
-    const addLog = (msg: string, color: string = 'text-stone-400') => {
-        setCombatLog(prev => [{ msg, color }, ...prev].slice(0, 100));
+    const addLog = (msg: string, team: 'A' | 'B' | 'SYSTEM' = 'SYSTEM', isCrit = false, isMiss = false) => {
+        setCombatLog(prev => [...prev, { msg, team, isCrit, isMiss }].slice(-100));
     };
+
+    const clearLogs = useCallback(() => {
+        setCombatLog([]);
+    }, []);
 
     const handleReset = useCallback(() => {
         setIsBattleRunning(false); setIsSearching(false); stopSearchRef.current = true;
@@ -210,7 +222,7 @@ export const useSimulation = (): SimulationHook => {
         });
         
         setBattleState(prev => ({ teamA: resetTeam(prev.teamA), teamB: resetTeam(prev.teamB) }));
-        setCombatLog([{ msg: "Arena Reset. Squads ready.", color: "text-amber-500 font-bold" }]);
+        setCombatLog([]);
         setSingleMatchReport(null); setBulkReport(null); setLiveStats(null);
         matchStatsRef.current = { A: createInitialStats(), B: createInitialStats(), ticks: 0 };
     }, [getDerivedStats]);
@@ -287,20 +299,28 @@ export const useSimulation = (): SimulationHook => {
             return; 
         }
 
-        // Check if reset is needed before starting a new round
-        const needsReset = singleMatchReport || bulkReport;
-        
         const validA = battleState.teamA.filter(c => c.mercenaryId);
         const validB = battleState.teamB.filter(c => c.mercenaryId);
         if (validA.length === 0 || validB.length === 0) return;
 
-        if (needsReset) handleReset();
-
-        setIsBattleRunning(true); 
+        // Reset state for a fresh start
         setSingleMatchReport(null); 
         setBulkReport(null);
+        setCombatLog([]); // Clear logs on simulation start
         matchStatsRef.current = { A: createInitialStats(), B: createInitialStats(), ticks: 0 };
         setLiveStats({ A: createInitialStats(), B: createInitialStats() });
+
+        // Atomic Combatant Reset before starting the interval
+        setBattleState(prev => {
+            const resetTeam = (team: CombatantInstance[]) => team.map(c => {
+                if (!c.mercenaryId) return c;
+                const derived = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats);
+                return { ...c, currentHp: derived ? derived.maxHp : 0, gauge: 0, lastAttacker: false };
+            });
+            return { teamA: resetTeam(prev.teamA), teamB: resetTeam(prev.teamB) };
+        });
+
+        setIsBattleRunning(true);
 
         battleInterval.current = setInterval(() => {
             const speedMult = battleSpeedRef.current; 
@@ -308,17 +328,9 @@ export const useSimulation = (): SimulationHook => {
 
             setBattleState(prev => {
                 const nextA = prev.teamA.map(c => {
-                    if (c.mercenaryId && (c.currentHp <= 0 || needsReset)) {
-                        const d = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)!;
-                        return { ...c, currentHp: d.maxHp, gauge: 0, lastAttacker: false };
-                    }
                     return (c.mercenaryId && c.currentHp > 0) ? { ...c, gauge: c.gauge + (getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)!.speed * 0.1 * speedMult) } : c;
                 });
                 const nextB = prev.teamB.map(c => {
-                    if (c.mercenaryId && (c.currentHp <= 0 || needsReset)) {
-                        const d = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)!;
-                        return { ...c, currentHp: d.maxHp, gauge: 0, lastAttacker: false };
-                    }
                     return (c.mercenaryId && c.currentHp > 0) ? { ...c, gauge: c.gauge + (getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)!.speed * 0.1 * speedMult) } : c;
                 });
 
@@ -334,6 +346,7 @@ export const useSimulation = (): SimulationHook => {
                     stats.attacks++;
                     att.gauge -= ACTION_THRESHOLD;
                     att.lastAttacker = true;
+                    
                     setTimeout(() => setBattleState(curr => ({ teamA: curr.teamA.map(c => c.instanceId === att.instanceId ? { ...c, lastAttacker: false } : c), teamB: curr.teamB.map(c => c.instanceId === att.instanceId ? { ...c, lastAttacker: false } : c) })), 120);
 
                     const res = calculateCombatResult(attD, defD, attD.magicalAttack > attD.physicalAttack ? 'MAGICAL' : 'PHYSICAL');
@@ -343,10 +356,10 @@ export const useSimulation = (): SimulationHook => {
                         if (res.damage > stats.maxDmg) stats.maxDmg = res.damage;
                         if (stats.minDmg === 0 || res.damage < stats.minDmg) stats.minDmg = res.damage;
                         target.currentHp = Math.max(0, target.currentHp - res.damage);
-                        addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} hits for ${res.damage}${res.isCrit ? "!" : ""}`, side === 'A' ? "text-blue-300" : "text-red-300");
+                        addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} hits for ${res.damage}${res.isCrit ? "!" : ""}`, side, res.isCrit);
                     } else {
                         stats.misses++; enemyStats.evasions++;
-                        addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} missed!`, "text-stone-500 italic");
+                        addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} missed!`, side, false, true);
                     }
                 };
 
@@ -359,8 +372,15 @@ export const useSimulation = (): SimulationHook => {
                 setLiveStats({ A: { ...matchStatsRef.current.A }, B: { ...matchStatsRef.current.B } });
 
                 if (curA === 0 || curB === 0) {
-                    setIsBattleRunning(false); if (battleInterval.current) clearInterval(battleInterval.current);
-                    setSingleMatchReport({ winner: curA > 0 ? 'A' : 'B', durationTicks: matchStatsRef.current.ticks, statsA: { ...matchStatsRef.current.A }, statsB: { ...matchStatsRef.current.B }, analysis: ["Battle Concluded."] });
+                    setIsBattleRunning(false); 
+                    if (battleInterval.current) clearInterval(battleInterval.current);
+                    setSingleMatchReport({ 
+                        winner: curA > 0 ? 'A' : 'B', 
+                        durationTicks: matchStatsRef.current.ticks, 
+                        statsA: { ...matchStatsRef.current.A }, 
+                        statsB: { ...matchStatsRef.current.B }, 
+                        analysis: ["Battle Concluded."] 
+                    });
                 }
                 return { teamA: nextA, teamB: nextB };
             });
@@ -369,7 +389,7 @@ export const useSimulation = (): SimulationHook => {
 
     return {
         teamA: battleState.teamA, teamB: battleState.teamB, addSlot, removeSlot, updateSlot,
-        combatLog, isBattleRunning, battleSpeed, setBattleSpeed,
+        combatLog, clearLogs, isBattleRunning, battleSpeed, setBattleSpeed,
         singleMatchReport, liveStats, bulkReport, isSearching,
         handleReset, runBulkSimulation, runAttackCycle, getDerivedStats
     };
