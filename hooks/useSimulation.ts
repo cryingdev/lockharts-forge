@@ -17,6 +17,11 @@ export interface CombatantInstance {
     gauge: number;
     dps: number;
     lastAttacker?: boolean;
+    lastDamaged?: boolean;
+    // Stats for MVP and performance tracking
+    kills: number;
+    damageDealt: number;
+    damageTaken: number;
 }
 
 export interface MatchStats {
@@ -84,7 +89,10 @@ const createEmptyCombatant = (): CombatantInstance => ({
     allocatedStats: { str: 0, vit: 0, dex: 0, int: 0, luk: 0 },
     currentHp: 0,
     gauge: 0,
-    dps: 0
+    dps: 0,
+    kills: 0,
+    damageDealt: 0,
+    damageTaken: 0
 });
 
 const createInitialStats = (): MatchStats => ({
@@ -218,7 +226,7 @@ export const useSimulation = (): SimulationHook => {
         const resetTeam = (team: CombatantInstance[]) => team.map(c => {
             if (!c.mercenaryId) return c;
             const derived = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats);
-            return { ...c, currentHp: derived ? derived.maxHp : 0, gauge: 0, lastAttacker: false };
+            return { ...c, currentHp: derived ? derived.maxHp : 0, gauge: 0, lastAttacker: false, lastDamaged: false, kills: 0, damageDealt: 0, damageTaken: 0 };
         });
         
         setBattleState(prev => ({ teamA: resetTeam(prev.teamA), teamB: resetTeam(prev.teamB) }));
@@ -303,19 +311,17 @@ export const useSimulation = (): SimulationHook => {
         const validB = battleState.teamB.filter(c => c.mercenaryId);
         if (validA.length === 0 || validB.length === 0) return;
 
-        // Reset state for a fresh start
         setSingleMatchReport(null); 
         setBulkReport(null);
-        setCombatLog([]); // Clear logs on simulation start
+        setCombatLog([]); 
         matchStatsRef.current = { A: createInitialStats(), B: createInitialStats(), ticks: 0 };
         setLiveStats({ A: createInitialStats(), B: createInitialStats() });
 
-        // Atomic Combatant Reset before starting the interval
         setBattleState(prev => {
             const resetTeam = (team: CombatantInstance[]) => team.map(c => {
                 if (!c.mercenaryId) return c;
                 const derived = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats);
-                return { ...c, currentHp: derived ? derived.maxHp : 0, gauge: 0, lastAttacker: false };
+                return { ...c, currentHp: derived ? derived.maxHp : 0, gauge: 0, lastAttacker: false, lastDamaged: false, kills: 0, damageDealt: 0, damageTaken: 0 };
             });
             return { teamA: resetTeam(prev.teamA), teamB: resetTeam(prev.teamB) };
         });
@@ -355,7 +361,21 @@ export const useSimulation = (): SimulationHook => {
                         stats.totalDmg += res.damage;
                         if (res.damage > stats.maxDmg) stats.maxDmg = res.damage;
                         if (stats.minDmg === 0 || res.damage < stats.minDmg) stats.minDmg = res.damage;
+                        
+                        // Performance Stats
+                        att.damageDealt += res.damage;
+                        target.damageTaken += res.damage;
                         target.currentHp = Math.max(0, target.currentHp - res.damage);
+                        
+                        // Kill Logic
+                        if (target.currentHp <= 0) {
+                            att.kills += 1;
+                        }
+
+                        // Trigger Damaged Animation
+                        target.lastDamaged = true;
+                        setTimeout(() => setBattleState(curr => ({ teamA: curr.teamA.map(c => c.instanceId === target.instanceId ? { ...c, lastDamaged: false } : c), teamB: curr.teamB.map(c => c.instanceId === target.instanceId ? { ...c, lastDamaged: false } : c) })), 200);
+
                         addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} hits for ${res.damage}${res.isCrit ? "!" : ""}`, side, res.isCrit);
                     } else {
                         stats.misses++; enemyStats.evasions++;

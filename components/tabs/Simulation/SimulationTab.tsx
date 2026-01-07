@@ -4,7 +4,7 @@ import { useSimulation, CombatantInstance, MatchStats } from '../../../hooks/use
 import { Mercenary } from '../../../models/Mercenary';
 import { Equipment } from '../../../models/Equipment';
 import { DerivedStats, PrimaryStats } from '../../../models/Stats';
-import { Sword, Shield, Activity, User, Play, RefreshCw, ScrollText, Crosshair, Target, Wind, FastForward, Brain, X, ChevronUp, ChevronDown, Package, Plus, Trash2, Trophy, Loader2, Zap, Crown } from 'lucide-react';
+import { Sword, Shield, Activity, User, Play, RefreshCw, ScrollText, Crosshair, Target, Wind, FastForward, Brain, X, ChevronUp, ChevronDown, Package, Plus, Trash2, Trophy, Loader2, Zap, Crown, Skull } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 
 const ACTION_THRESHOLD = 1000;
@@ -46,10 +46,11 @@ interface CombatantSlotProps {
     onRemove: () => void;
     disabled?: boolean;
     isWinner?: boolean;
+    isMvp?: boolean;
 }
 
 const CombatantSlot: React.FC<CombatantSlotProps> = ({ 
-    combatant, mercenary, derived, onSelect, onUpdate, onRemove, disabled, isWinner 
+    combatant, mercenary, derived, onSelect, onUpdate, onRemove, disabled, isWinner, isMvp 
 }) => {
     const hpPercent = derived ? (combatant.currentHp / derived.maxHp) * 100 : 0;
     const gaugePercent = Math.min(100, (combatant.gauge / ACTION_THRESHOLD) * 100);
@@ -71,20 +72,46 @@ const CombatantSlot: React.FC<CombatantSlotProps> = ({
             {/* Winner Overlay Effect */}
             {isWinner && mercenary && (
                 <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none animate-in zoom-in fade-in duration-500">
-                    {/* Golden Glow Backdrop */}
-                    <div className="absolute inset-0 bg-amber-500/10 backdrop-blur-[1px] rounded-xl border-2 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.2)]"></div>
+                    <div className={`absolute inset-0 rounded-xl border-2 transition-all ${isMvp ? 'bg-amber-500/20 border-amber-400 shadow-[0_0_40px_rgba(245,158,11,0.4)]' : 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.2)]'}`}></div>
                     
-                    {/* Centered Crown */}
-                    <div className="relative bg-amber-500 p-2 md:p-3 rounded-full shadow-[0_0_40px_rgba(245,158,11,0.8)] animate-bounce border-2 border-amber-200">
-                        <Crown className="w-5 h-5 md:w-8 md:h-8 text-stone-900 fill-stone-900" />
-                        {/* Sparkles or Extra bits can be added here */}
-                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping"></div>
+                    <div className="relative flex flex-col items-center">
+                        {/* Kills Badge - Top Left of the crown area */}
+                        {combatant.kills > 0 && (
+                            <div className="absolute -top-12 -left-8 bg-red-600 border border-white/20 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg animate-in slide-in-from-bottom-2 duration-700">
+                                <Skull className="w-3 h-3 text-white" />
+                                <span className="text-[10px] font-black text-white font-mono">{combatant.kills}</span>
+                            </div>
+                        )}
+
+                        {/* Centered Crown */}
+                        <div className={`relative p-2 md:p-3 rounded-full shadow-[0_0_40px_rgba(245,158,11,0.8)] animate-bounce border-2 border-amber-200 ${isMvp ? 'bg-amber-400 scale-110' : 'bg-amber-500'}`}>
+                            <Crown className={`w-5 h-5 md:w-8 md:h-8 text-stone-900 fill-stone-900`} />
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping"></div>
+                        </div>
+
+                        {/* MVP Text Label */}
+                        {isMvp && (
+                            <div className="mt-2 bg-stone-900 border border-amber-500 px-3 py-0.5 rounded-full shadow-xl animate-in fade-in zoom-in delay-300 duration-500">
+                                <span className="text-[10px] md:text-xs font-black text-amber-500 tracking-widest uppercase">MVP</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Damaged Slash Effect */}
+            {combatant.lastDamaged && mercenary && (
+                <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none overflow-hidden rounded-xl">
+                    <div className="absolute inset-0 bg-red-600/20 animate-in fade-in duration-75"></div>
+                    <div className="relative w-full h-full flex items-center justify-center">
+                        <div className="absolute w-[120%] h-2 md:h-4 bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.8)] rotate-[35deg] animate-in slide-in-from-top-left zoom-in duration-100 ease-out"></div>
+                        <div className="absolute w-[120%] h-1 md:h-2 bg-white/80 rotate-[35deg] blur-sm animate-in slide-in-from-top-left zoom-in duration-150 delay-75"></div>
                     </div>
                 </div>
             )}
 
             {/* Main Content Box */}
-            <div className={`flex flex-col gap-1 md:gap-1.5 p-2 md:p-2.5 bg-stone-900 border rounded-xl overflow-hidden h-full w-full relative transition-all duration-150 ${combatant.lastAttacker ? 'border-amber-500 ring-2 ring-inset ring-amber-500/50 brightness-125' : 'border-stone-800/50 hover:border-stone-700'} ${mercenary && combatant.currentHp <= 0 ? 'grayscale opacity-30' : ''} ${isWinner ? 'border-amber-500/50 shadow-inner' : ''}`}>
+            <div className={`flex flex-col gap-1 md:gap-1.5 p-2 md:p-2.5 bg-stone-900 border rounded-xl overflow-hidden h-full w-full relative transition-all duration-150 ${combatant.lastAttacker ? 'border-amber-500 ring-2 ring-inset ring-amber-500/50 brightness-125' : 'border-stone-800/50 hover:border-stone-700'} ${mercenary && combatant.currentHp <= 0 ? 'grayscale opacity-30' : ''} ${isWinner ? 'border-amber-500/50 shadow-inner' : ''} ${combatant.lastDamaged ? 'border-red-500' : ''}`}>
                 <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute top-1.5 right-1.5 hover:text-red-500 text-stone-700 transition-colors z-20"><Trash2 className="w-3 h-3 md:w-3.5 md:h-3.5" /></button>
                 
                 {mercenary && derived ? (
@@ -163,8 +190,8 @@ const SimulationTab = () => {
     const hiredMercs = state.knownMercenaries.filter(m => m.status === 'HIRED' || m.status === 'VISITOR');
 
     const hasTeamA = useMemo(() => sim.teamA.some(c => c.mercenaryId), [sim.teamA]);
-    const hasTeamB = useSimulation().teamB.some(c => c.mercenaryId); // Fixed memo or use sim directly
-    const canRun = hasTeamA && sim.teamB.some(c => c.mercenaryId);
+    const hasTeamB = sim.teamB.some(c => c.mercenaryId); 
+    const canRun = hasTeamA && hasTeamB;
 
     const logContainerRef = useRef<HTMLDivElement>(null);
     const shouldAutoScrollRef = useRef(true);
@@ -195,6 +222,21 @@ const SimulationTab = () => {
         const empty = { attacks: 0, totalDmg: 0, misses: 0, crits: 0, evasions: 0, maxDmg: 0, minDmg: 0 };
         return { A: empty, B: empty, winner: null };
     }, [sim.singleMatchReport, sim.liveStats]);
+
+    const mvpId = useMemo(() => {
+        const winner = sim.singleMatchReport?.winner;
+        if (!winner) return null;
+        const winnerTeam = winner === 'A' ? sim.teamA : sim.teamB;
+        const candidates = winnerTeam.filter(c => c.mercenaryId);
+        if (candidates.length === 0) return null;
+
+        return [...candidates].sort((a, b) => {
+            if (b.kills !== a.kills) return b.kills - a.kills;
+            const scoreA = a.damageDealt + a.damageTaken;
+            const scoreB = b.damageDealt + b.damageTaken;
+            return scoreB - scoreA;
+        })[0].instanceId;
+    }, [sim.singleMatchReport, sim.teamA, sim.teamB]);
 
     const getHitRate = (stats: MatchStats) => stats.attacks > 0 ? `${Math.round(((stats.attacks - stats.misses) / stats.attacks) * 100)}%` : '0%';
 
@@ -232,6 +274,7 @@ const SimulationTab = () => {
                             onRemove={() => sim.removeSlot('A', c.instanceId)} 
                             disabled={sim.isBattleRunning || sim.isSearching}
                             isWinner={sim.singleMatchReport?.winner === 'A'}
+                            isMvp={mvpId === c.instanceId}
                         />
                     ))}
                     <button onClick={() => sim.addSlot('A')} disabled={sim.teamA.length >= 4 || sim.isBattleRunning} className="w-full py-3 border-2 border-dashed border-stone-800 rounded-xl text-stone-700 hover:text-stone-500 hover:bg-stone-900 transition-all flex flex-col items-center justify-center gap-1 shrink-0"><Plus className="w-4 h-4" /> <span className="text-[8px] md:text-[9px] font-black uppercase">Add Slot</span></button>
@@ -316,6 +359,7 @@ const SimulationTab = () => {
                             onRemove={() => sim.removeSlot('B', c.instanceId)} 
                             disabled={sim.isBattleRunning || sim.isSearching}
                             isWinner={sim.singleMatchReport?.winner === 'B'}
+                            isMvp={mvpId === c.instanceId}
                         />
                     ))}
                     <button onClick={() => sim.addSlot('B')} disabled={sim.teamB.length >= 4 || sim.isBattleRunning} className="w-full py-3 border-2 border-dashed border-stone-800 rounded-xl text-stone-700 hover:text-stone-500 hover:bg-stone-900 transition-all flex flex-col items-center justify-center gap-1 shrink-0"><Plus className="w-4 h-4" /> <span className="text-[8px] md:text-[9px] font-black uppercase">Add Slot</span></button>
