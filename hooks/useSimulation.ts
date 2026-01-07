@@ -118,7 +118,6 @@ export const useSimulation = (): SimulationHook => {
             if (!c.mercenaryId) return c;
             const derived = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats);
             if (!derived) return c;
-            // 더 높은 공격력 타입을 자동으로 선택
             const isMage = derived.magicalAttack > derived.physicalAttack;
             return {
                 ...c,
@@ -137,7 +136,6 @@ export const useSimulation = (): SimulationHook => {
 
     const removeSlot = (side: 'A' | 'B', instanceId: string) => {
         const setter = side === 'A' ? setTeamA : setTeamB;
-        // 최소 슬롯 개수 제한을 제거하여 모든 슬롯이 삭제 가능하도록 수정
         setter(prev => prev.filter(i => i.instanceId !== instanceId));
     };
 
@@ -159,7 +157,6 @@ export const useSimulation = (): SimulationHook => {
                 const derived = getDerivedStats(updated.mercenaryId, updated.level, updated.allocatedStats);
                 if (derived) {
                     updated.currentHp = derived.maxHp;
-                    // 업데이트 시점에도 더 높은 수치를 기준으로 DPS 측정
                     const isMage = derived.magicalAttack > derived.physicalAttack;
                     updated.dps = calculateExpectedDPS(derived, isMage ? 'MAGICAL' : 'PHYSICAL');
                 }
@@ -303,8 +300,8 @@ export const useSimulation = (): SimulationHook => {
                     const readyA = nextA.filter(c => c.gauge >= ACTION_THRESHOLD && c.currentHp > 0);
                     const readyB = nextB.filter(c => c.gauge >= ACTION_THRESHOLD && c.currentHp > 0);
 
-                    const executeAttack = (att: CombatantInstance, side: 'A' | 'B', currentTeamA: CombatantInstance[], currentTeamB: CombatantInstance[]) => {
-                        const targetSide = (side === 'A' ? currentTeamB : currentTeamA);
+                    const executeAttack = (att: CombatantInstance, side: 'A' | 'B') => {
+                        const targetSide = (side === 'A' ? nextB : nextA);
                         const targets = targetSide.filter(c => c.mercenaryId && c.currentHp > 0);
                         if (targets.length === 0) return;
 
@@ -313,9 +310,7 @@ export const useSimulation = (): SimulationHook => {
                         const defDerived = getDerivedStats(target.mercenaryId, target.level, target.allocatedStats)!;
                         const merc = state.knownMercenaries.find(m => m.id === att.mercenaryId)!;
                         
-                        // 물리/마법 중 더 높은 공격력을 자동 선택
                         const isMage = attDerived.magicalAttack > attDerived.physicalAttack;
-                        
                         const stats = side === 'A' ? matchStatsRef.current.A : matchStatsRef.current.B;
                         const enemyStats = side === 'A' ? matchStatsRef.current.B : matchStatsRef.current.A;
                         
@@ -323,10 +318,11 @@ export const useSimulation = (): SimulationHook => {
                         att.gauge -= ACTION_THRESHOLD;
                         att.lastAttacker = true;
                         
+                        // 시인성을 위해 lastAttacker 해제 시간을 120ms로 약간 상향
                         setTimeout(() => {
                             setTeamA(curr => curr.map(c => c.instanceId === att.instanceId ? { ...c, lastAttacker: false } : c));
                             setTeamB(curr => curr.map(c => c.instanceId === att.instanceId ? { ...c, lastAttacker: false } : c));
-                        }, 100);
+                        }, 120);
 
                         const res = calculateCombatResult(attDerived, defDerived, isMage ? 'MAGICAL' : 'PHYSICAL');
                         if (res.isHit) {
@@ -341,8 +337,8 @@ export const useSimulation = (): SimulationHook => {
                         }
                     };
 
-                    readyA.forEach(c => executeAttack(c, 'A', nextA, nextB));
-                    readyB.forEach(c => executeAttack(c, 'B', nextA, nextB));
+                    readyA.forEach(c => executeAttack(c, 'A'));
+                    readyB.forEach(c => executeAttack(c, 'B'));
 
                     const currentAliveA = nextA.filter(c => c.mercenaryId && c.currentHp > 0).length;
                     const currentAliveB = nextB.filter(c => c.mercenaryId && c.currentHp > 0).length;
@@ -367,7 +363,7 @@ export const useSimulation = (): SimulationHook => {
     };
 
     const runCounterBuildSearch = () => {
-        if (!teamA[0].mercenaryId || !teamB[0].mercenaryId || isSearching) return;
+        if (!teamA[0]?.mercenaryId || !teamB[0]?.mercenaryId || isSearching) return;
         handleReset(); setIsSearching(true); stopSearchRef.current = false;
         
         const SIM_LEVEL = teamA[0].level;
