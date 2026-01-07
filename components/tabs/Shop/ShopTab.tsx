@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -118,42 +119,59 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             disabled={!isShopOpen && !canAffordOpen}
         />
 
+        {/* Queue 표시: 간판 바로 아래 우측 배치 */}
         {isShopOpen && (
-            <div className="absolute top-2 md:top-4 right-32 md:right-44 z-50 flex items-center gap-1.5 md:gap-2 bg-stone-900/90 px-2 md:px-4 py-1 md:py-2 rounded-xl border border-stone-700 text-stone-200 shadow-xl backdrop-blur-md">
+            <div className="absolute top-16 md:top-24 right-4 z-50 flex items-center gap-1.5 md:gap-2 bg-stone-900/90 px-2 md:px-4 py-1 md:py-1.5 rounded-xl border border-stone-700 text-stone-200 shadow-xl backdrop-blur-md">
                 <div className="bg-stone-800 p-1 md:p-1.5 rounded-full">
                     <Users className="w-3 h-3 md:w-5 md:h-5 text-amber-500" />
                 </div>
                 <div className="flex flex-col leading-none">
-                    <span className="text-[7px] md:text-[10px] text-stone-500 font-bold uppercase tracking-wider">Queue</span>
+                    <span className="text-[7px] md:text-[9px] text-stone-500 font-bold uppercase tracking-wider">Queue</span>
                     <span className="text-sm md:text-lg font-bold font-mono">{shopQueue.length}</span>
                 </div>
             </div>
         )}
 
+        {/* 용병 정보 HUD: 너비를 배율(w-[32%])로 설정하고 최대치 제한 */}
         {isShopOpen && activeCustomer && (
-            <div className="absolute top-[8%] md:top-[10%] left-4 md:left-10 z-50 animate-in slide-in-from-left-10 fade-in duration-500">
-                <div className="w-36 md:w-48 bg-stone-950/80 border border-stone-700/50 p-2 md:p-3 rounded-2xl backdrop-blur-xl shadow-2xl text-[9px] md:text-xs ring-1 ring-white/10">
-                    <div className="flex items-center justify-between mb-1.5 md:mb-2">
-                        <span className="font-black text-amber-500 uppercase tracking-tighter">{activeCustomer.mercenary.job}</span>
-                        <span className="text-stone-500 font-mono">Lv.{activeCustomer.mercenary.level}</span>
-                    </div>
-                    <div className="space-y-1 mb-1.5 md:mb-2">
-                        <div className="w-full bg-stone-900 h-1 md:h-1.5 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                            <div className="bg-red-600 h-full shadow-[0_0_10px_rgba(220,38,38,0.5)]" style={{ width: `${(activeCustomer.mercenary.currentHp / activeCustomer.mercenary.maxHp) * 100}%` }}></div>
+            <div className="absolute top-4 left-4 z-50 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
+                <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
+                    <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
+                        <div className="flex flex-col leading-tight min-w-0">
+                            <span className="font-black text-amber-500 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{activeCustomer.mercenary.job}</span>
+                            <span className="text-stone-500 text-[8px] md:text-[10px] font-mono">Lv.{activeCustomer.mercenary.level}</span>
                         </div>
-                        <div className="w-full bg-stone-900 h-1 md:h-1.5 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                            <div className="bg-blue-600 h-full shadow-[0_0_10px_rgba(37,99,235,0.5)]" style={{ width: `${(activeCustomer.mercenary.currentMp / activeCustomer.mercenary.maxMp) * 100}%` }}></div>
+                        <div className="flex items-center gap-1 text-pink-400 font-bold bg-pink-950/20 px-1 md:px-1.5 py-0.5 rounded border border-pink-900/30 shrink-0">
+                            <Heart className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-pink-400" />
+                            <span className="font-mono text-[9px] md:text-xs">{activeCustomer.mercenary.affinity}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-pink-500 font-black">
-                        <Heart className="w-3 h-3 fill-pink-500" />
-                        <span>{activeCustomer.mercenary.affinity}</span>
+                    
+                    <div className="space-y-1.5 md:space-y-2.5">
+                        <div className="flex flex-col gap-0.5">
+                            <div className="flex justify-between items-center text-[7px] md:text-[9px] font-mono text-stone-500 px-0.5">
+                                <span>HP</span>
+                                <span>{Math.floor(activeCustomer.mercenary.currentHp)}/{activeCustomer.mercenary.maxHp}</span>
+                            </div>
+                            <div className="w-full bg-stone-950 h-1 md:h-1.5 rounded-full overflow-hidden border border-stone-800">
+                                <div className="bg-red-600 h-full transition-all duration-700" style={{ width: `${(activeCustomer.mercenary.currentHp / activeCustomer.mercenary.maxHp) * 100}%` }}></div>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                            <div className="flex justify-between items-center text-[7px] md:text-[9px] font-mono text-stone-500 px-0.5">
+                                <span>MP</span>
+                                <span>{Math.floor(activeCustomer.mercenary.currentMp)}/{activeCustomer.mercenary.maxMp}</span>
+                            </div>
+                            <div className="w-full bg-stone-950 h-1 md:h-1.5 rounded-full overflow-hidden border border-stone-800">
+                                <div className="bg-blue-600 h-full transition-all duration-700" style={{ width: `${(activeCustomer.mercenary.currentMp / activeCustomer.mercenary.maxMp) * 100}%` }}></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         )}
 
-        {/* Character Placement - MASSIVE SCALE FOR PORTRAIT (~75% of view height) */}
+        {/* Character Placement */}
         <div className="absolute inset-0 z-20 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
             {isShopOpen && activeCustomer && (
                <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
@@ -163,14 +181,13 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                            alt="Adventurer"
                            className="h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)]"
                        />
-                       {/* Depth shadow behind character */}
                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-black/60 blur-3xl rounded-full -z-10"></div>
                    </div>
                </div>
             )}
         </div>
 
-        {/* Shop Counter - Very tall in portrait to frame the massive character */}
+        {/* Shop Counter */}
         <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-30 flex items-end justify-center pointer-events-none">
             {!counterImgError ? (
                 <img 
@@ -186,22 +203,26 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             )}
         </div>
 
-        {isShopOpen && activeCustomer && (
-            <DialogueBox 
-                speaker={activeCustomer.mercenary.name}
-                text={activeCustomer.request.dialogue}
-                highlightTerm={getItemName(activeCustomer.request.requestedId)}
-                itemDetail={{
-                    icon: getItemIcon(activeCustomer.request.requestedId),
-                    imageUrl: getItemImageUrl(activeCustomer.request.requestedId),
-                    price: activeCustomer.request.price
-                }}
-                options={[
-                    { label: `Sell (${activeCustomer.request.price} G)`, action: handleSell, variant: 'primary', disabled: !hasItem() },
-                    { label: "Refuse", action: handleRefuse, variant: 'danger' }
-                ]}
-            />
-        )}
+        {/* Bottom UI 컨테이너 */}
+        <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center pointer-events-none">
+            {isShopOpen && activeCustomer && (
+                <DialogueBox 
+                    speaker={activeCustomer.mercenary.name}
+                    text={activeCustomer.request.dialogue}
+                    highlightTerm={getItemName(activeCustomer.request.requestedId)}
+                    itemDetail={{
+                        icon: getItemIcon(activeCustomer.request.requestedId),
+                        imageUrl: getItemImageUrl(activeCustomer.request.requestedId),
+                        price: activeCustomer.request.price
+                    }}
+                    options={[
+                        { label: `Sell (${activeCustomer.request.price} G)`, action: handleSell, variant: 'primary', disabled: !hasItem() },
+                        { label: "Refuse", action: handleRefuse, variant: 'danger' }
+                    ]}
+                    className="w-full relative pointer-events-auto"
+                />
+            )}
+        </div>
 
         {!isShopOpen && (
             <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
@@ -210,7 +231,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     {!canAffordOpen ? (
                         <div className="bg-stone-950/90 border-2 border-red-900/50 p-6 md:p-10 rounded-[2rem] shadow-2xl flex flex-col items-center text-center max-w-xs ring-4 ring-black/50 backdrop-blur-2xl">
                             <div className="w-16 h-16 md:w-20 md:h-20 bg-red-950/30 rounded-full flex items-center justify-center mb-4 border border-red-800/30">
-                                <ZapOff className="w-8 h-8 md:w-10 md:h-10 text-red-500 animate-pulse" />
+                                <ZapOff className="w-8 h-8 md:w-10 md:h-10 text-red-50 animate-pulse" />
                             </div>
                             <h3 className="text-xl md:text-2xl font-black text-red-100 font-serif uppercase tracking-tight">Exhausted</h3>
                             <p className="text-stone-500 text-xs md:text-base mt-2 mb-6 leading-relaxed">

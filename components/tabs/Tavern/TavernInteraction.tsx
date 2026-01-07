@@ -156,27 +156,36 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            <div className="absolute top-4 left-4 z-40 animate-in slide-in-from-left-4 duration-500">
-                <div className="bg-stone-900/90 border border-stone-700 p-3 rounded-xl backdrop-blur-md shadow-2xl min-w-[180px]">
-                    <div className="flex justify-between items-center mb-2">
-                        <div className="flex flex-col leading-tight">
-                            <span className="font-black text-amber-500 text-[8px] tracking-widest uppercase">{mercenary.job}</span>
-                            <span className="text-stone-500 text-[8px] font-mono">Lv.{mercenary.level}</span>
+            {/* Mercenary Info HUD: 너비를 배율(w-[32%])로 설정하고 최대치 제한 */}
+            <div className="absolute top-4 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
+                <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
+                    <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
+                        <div className="flex flex-col leading-tight min-w-0">
+                            <span className="font-black text-amber-500 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{mercenary.job}</span>
+                            <span className="text-stone-500 text-[8px] md:text-[10px] font-mono">Lv.{mercenary.level}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-pink-400 font-bold bg-pink-950/20 px-1.5 py-0.5 rounded border border-pink-900/30">
-                            <Heart className="w-2.5 h-2.5 fill-pink-400" />
-                            <span className="font-mono text-xs">{mercenary.affinity}</span>
+                        <div className="flex items-center gap-1 text-pink-400 font-bold bg-pink-950/20 px-1 md:px-1.5 py-0.5 rounded border border-pink-900/30 shrink-0">
+                            <Heart className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-pink-400" />
+                            <span className="font-mono text-[9px] md:text-xs">{mercenary.affinity}</span>
                         </div>
                     </div>
                     
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 md:space-y-2.5">
                         <div className="flex flex-col gap-0.5">
-                            <div className="w-full bg-stone-950 h-1 rounded-full overflow-hidden border border-stone-800">
+                            <div className="flex justify-between items-center text-[7px] md:text-[9px] font-mono text-stone-500 px-0.5">
+                                <span>HP</span>
+                                <span>{Math.floor(mercenary.currentHp)}/{mercenary.maxHp}</span>
+                            </div>
+                            <div className="w-full bg-stone-950 h-1 md:h-1.5 rounded-full overflow-hidden border border-stone-800">
                                 <div className="bg-red-600 h-full transition-all duration-700" style={{ width: `${(mercenary.currentHp / mercenary.maxHp) * 100}%` }}></div>
                             </div>
                         </div>
                         <div className="flex flex-col gap-0.5">
-                            <div className="w-full bg-stone-950 h-1 rounded-full overflow-hidden border border-stone-800">
+                            <div className="flex justify-between items-center text-[7px] md:text-[9px] font-mono text-stone-500 px-0.5">
+                                <span>MP</span>
+                                <span>{Math.floor(mercenary.currentMp)}/{mercenary.maxMp}</span>
+                            </div>
+                            <div className="w-full bg-stone-950 h-1 md:h-1.5 rounded-full overflow-hidden border border-stone-800">
                                 <div className="bg-blue-600 h-full transition-all duration-700" style={{ width: `${(mercenary.currentMp / mercenary.maxMp) * 100}%` }}></div>
                             </div>
                         </div>
@@ -219,11 +228,12 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* Interaction Action Bar - Perfectly Centered, Leave at far right */}
-            <div 
-                className={`absolute bottom-[calc(22dvh+1.5rem)] md:bottom-[calc(28vh+4rem)] left-0 right-0 z-50 flex flex-row items-center justify-center transition-opacity duration-500 ${pendingGiftItem ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}
-            >
-                <div className="flex flex-row items-center justify-center gap-1.5 md:gap-3 px-4 max-w-full overflow-x-auto no-scrollbar py-2">
+            {/* Bottom UI Unit: Buttons + Spacing + Dialogue */}
+            <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center gap-[10px] pb-[env(safe-area-inset-bottom)] pointer-events-none">
+                {/* Interaction Action Bar - Only buttons are clickable */}
+                <div 
+                    className={`flex flex-row items-center justify-center gap-1.5 md:gap-3 px-4 max-w-full overflow-x-auto no-scrollbar py-2 pointer-events-auto transition-opacity duration-500 ${pendingGiftItem ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}
+                >
                     {/* Talk Button */}
                     <button 
                         onClick={handleTalk}
@@ -280,16 +290,17 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                         <LogOut className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
                     </button>
                 </div>
-            </div>
 
-            <DialogueBox 
-                speaker={mercenary.name}
-                text={dialogue}
-                options={pendingGiftItem ? [
-                    { label: `Give ${pendingGiftItem.name}`, action: handleConfirmGift, variant: 'primary' },
-                    { label: "Cancel", action: handleCancelGift, variant: 'neutral' }
-                ] : []}
-            />
+                <DialogueBox 
+                    speaker={mercenary.name}
+                    text={dialogue}
+                    options={pendingGiftItem ? [
+                        { label: `Give ${pendingGiftItem.name}`, action: handleConfirmGift, variant: 'primary' },
+                        { label: "Cancel", action: handleCancelGift, variant: 'neutral' }
+                    ] : []}
+                    className="w-full relative pointer-events-auto"
+                />
+            </div>
 
             {showGiftMenu && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">

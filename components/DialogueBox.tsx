@@ -21,6 +21,7 @@ interface DialogueBoxProps {
   options?: DialogueOption[];
   highlightTerm?: string;
   itemDetail?: ItemDetail;
+  className?: string;
 }
 
 const DialogueBox: React.FC<DialogueBoxProps> = ({ 
@@ -28,13 +29,13 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   text, 
   options = [], 
   highlightTerm,
-  itemDetail 
+  itemDetail,
+  className = "relative w-full z-40"
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showItemTooltip, setShowItemTooltip] = useState(false);
   const isMounted = useRef(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     isMounted.current = true;
@@ -63,12 +64,6 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
 
     return () => clearInterval(timer);
   }, [text]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [displayedText]);
 
   const handleSkipTyping = () => {
     if (isTyping) {
@@ -118,9 +113,9 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   };
 
   return (
-    <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-40 pb-[env(safe-area-inset-bottom)]">
+    <div className={className}>
       <div 
-        className="w-full h-[22dvh] min-h-[110px] md:h-[28vh] md:min-h-[160px] bg-stone-950/25 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/10"
+        className="w-full h-[22dvh] min-h-[120px] md:h-[28vh] md:min-h-[160px] bg-stone-950/25 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/10"
       >
         {/* Left Area (Speaker) */}
         <div className="bg-stone-900/20 p-2 md:p-6 border-r border-white/5 flex flex-col items-center gap-1 md:gap-4 w-20 md:w-48 shrink-0 justify-center">
@@ -136,21 +131,25 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
 
         {/* Right Area (Content) */}
         <div className="flex-1 p-2.5 md:p-8 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent">
-          <div 
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto custom-scrollbar pr-1 cursor-pointer"
+          <div
+            className="flex-1 min-h-0 cursor-pointer overflow-y-auto pr-2 md:pr-3 pt-2 md:pt-4 dialogue-scroll overscroll-contain"
             onClick={handleSkipTyping}
           >
-            <div 
-              className={`text-[12px] md:text-2xl text-stone-50 leading-snug md:leading-relaxed font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${isTyping ? 'after:content-["_"] after:inline-block after:w-1.5 after:h-3 md:after:w-2 md:after:h-5 after:bg-amber-500 after:animate-pulse after:ml-1' : ''}`}
+            <div
+              className={`text-stone-50 leading-snug md:leading-relaxed font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${
+                isTyping
+                  ? 'after:content-["_"] after:inline-block after:w-1.5 after:h-3 md:after:w-2 md:after:h-5 after:bg-amber-500 after:animate-pulse after:ml-1'
+                  : ''
+              }`}
+              style={{ fontSize: 'clamp(0.9rem, 2.4dvh, 1.6rem)' }}
             >
               {renderFormattedText()}
             </div>
           </div>
 
-          {/* Options */}
+          {/* Options - justify-end를 사용하여 버튼들이 오른쪽으로 정렬되도록 고정 */}
           {!isTyping && options.length > 0 && (
-            <div className="mt-2 md:mt-8 flex flex-wrap gap-1.5 md:gap-4 justify-center md:justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
+            <div className="mt-2 md:mt-8 flex flex-wrap gap-1.5 md:gap-4 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
               {options.map((option, idx) => (
                 <button
                   key={idx}
