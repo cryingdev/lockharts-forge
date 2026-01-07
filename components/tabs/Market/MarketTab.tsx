@@ -13,6 +13,7 @@ import {
   Plus,
   Minus,
   Package,
+  CreditCard,
 } from 'lucide-react';
 import { MATERIALS } from '../../../data/materials';
 import { MARKET_CATALOG } from '../../../data/market/index';
@@ -201,6 +202,37 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                 Tier {currentTier} Supplies
               </span>
             </div>
+          </div>
+
+          {/* Quick Pay Button in Header */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBuy}
+              disabled={cartItemCount === 0 || totalCost > state.stats.gold}
+              className={`relative flex items-center gap-2 md:gap-3 px-3 md:px-6 py-1.5 md:py-3 rounded-xl border transition-all shadow-lg active:scale-95 group ${
+                cartItemCount === 0
+                  ? 'bg-stone-800/40 border-stone-700 text-stone-600 cursor-not-allowed'
+                  : totalCost > state.stats.gold
+                    ? 'bg-red-900/40 border-red-700 text-red-300'
+                    : 'bg-amber-600 hover:bg-amber-500 border-amber-400 text-white shadow-[0_0_20px_rgba(217,119,6,0.2)]'
+              }`}
+            >
+              <div className="relative">
+                <ShoppingCart className={`w-3.5 h-3.5 md:w-5 md:h-5 ${cartItemCount > 0 ? 'animate-bounce' : ''}`} />
+                {cartItemCount > 0 && (
+                  <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[7px] md:text-[9px] font-black px-1 rounded-full border border-stone-900 ring-1 ring-white/20">
+                    {cartItemCount}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Pay Now</span>
+                <div className="flex items-center gap-0.5 mt-0.5">
+                  <span className="text-[9px] md:text-sm font-mono font-black">{totalCost}</span>
+                  <Coins className="w-2.5 h-2.5 md:w-3 md:h-3 text-amber-200" />
+                </div>
+              </div>
+            </button>
           </div>
         </div>
 
