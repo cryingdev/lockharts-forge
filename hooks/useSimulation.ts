@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useGame } from '../context/GameContext';
 import { Mercenary } from '../models/Mercenary';
@@ -226,7 +227,16 @@ export const useSimulation = (): SimulationHook => {
         const resetTeam = (team: CombatantInstance[]) => team.map(c => {
             if (!c.mercenaryId) return c;
             const derived = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats);
-            return { ...c, currentHp: derived ? derived.maxHp : 0, gauge: 0, lastAttacker: false, lastDamaged: false, kills: 0, damageDealt: 0, damageTaken: 0 };
+            return { 
+                ...c, 
+                currentHp: derived ? derived.maxHp : 0, 
+                gauge: 0, 
+                lastAttacker: false, 
+                lastDamaged: false,
+                kills: 0,
+                damageDealt: 0,
+                damageTaken: 0
+            };
         });
         
         setBattleState(prev => ({ teamA: resetTeam(prev.teamA), teamB: resetTeam(prev.teamB) }));
@@ -277,7 +287,9 @@ export const useSimulation = (): SimulationHook => {
                         if(targets.length === 0) break;
                         const tIdx = targets[Math.floor(Math.random()*targets.length)];
                         totalAtksA++;
-                        const dmg = calculateFastDmg(teamAData[j].atk, teamBData[tIdx].red, teamAData[j].crt, teamAData[j].cdmg, 80); 
+                        // Apply 90-100% variance even in bulk simulation for consistency
+                        const variance = 0.9 + Math.random() * 0.1;
+                        const dmg = calculateFastDmg(teamAData[j].atk * variance, teamBData[tIdx].red, teamAData[j].crt, teamAData[j].cdmg, 80); 
                         if(dmg > 0) { hpsB[tIdx] -= dmg; if(hpsB[tIdx] <= 0) aliveB--; } else { totalEvasionsB++; }
                     }
                 }
@@ -290,7 +302,8 @@ export const useSimulation = (): SimulationHook => {
                         if(targets.length === 0) break;
                         const tIdx = targets[Math.floor(Math.random()*targets.length)];
                         totalAtksB++;
-                        const dmg = calculateFastDmg(teamBData[j].atk, teamAData[tIdx].red, teamBData[j].crt, teamBData[j].cdmg, 80);
+                        const variance = 0.9 + Math.random() * 0.1;
+                        const dmg = calculateFastDmg(teamBData[j].atk * variance, teamAData[tIdx].red, teamBData[j].crt, teamBData[j].cdmg, 80);
                         if(dmg > 0) { hpsA[tIdx] -= dmg; if(hpsA[tIdx] <= 0) aliveA--; } else { totalEvasionsA++; }
                     }
                 }
@@ -311,20 +324,7 @@ export const useSimulation = (): SimulationHook => {
         const validB = battleState.teamB.filter(c => c.mercenaryId);
         if (validA.length === 0 || validB.length === 0) return;
 
-        setSingleMatchReport(null); 
-        setBulkReport(null);
-        setCombatLog([]); 
-        matchStatsRef.current = { A: createInitialStats(), B: createInitialStats(), ticks: 0 };
-        setLiveStats({ A: createInitialStats(), B: createInitialStats() });
-
-        setBattleState(prev => {
-            const resetTeam = (team: CombatantInstance[]) => team.map(c => {
-                if (!c.mercenaryId) return c;
-                const derived = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats);
-                return { ...c, currentHp: derived ? derived.maxHp : 0, gauge: 0, lastAttacker: false, lastDamaged: false, kills: 0, damageDealt: 0, damageTaken: 0 };
-            });
-            return { teamA: resetTeam(prev.teamA), teamB: resetTeam(prev.teamB) };
-        });
+        handleReset(); // Always start fresh for single matches
 
         setIsBattleRunning(true);
 
@@ -358,16 +358,21 @@ export const useSimulation = (): SimulationHook => {
                     const res = calculateCombatResult(attD, defD, attD.magicalAttack > attD.physicalAttack ? 'MAGICAL' : 'PHYSICAL');
                     if (res.isHit) {
                         if (res.isCrit) stats.crits++;
-                        stats.totalDmg += res.damage;
-                        if (res.damage > stats.maxDmg) stats.maxDmg = res.damage;
-                        if (stats.minDmg === 0 || res.damage < stats.minDmg) stats.minDmg = res.damage;
                         
-                        // Performance Stats
-                        att.damageDealt += res.damage;
-                        target.damageTaken += res.damage;
-                        target.currentHp = Math.max(0, target.currentHp - res.damage);
+                        // Apply 90-100% damage variance
+                        const variance = 0.9 + Math.random() * 0.1;
+                        const finalDamage = Math.max(1, Math.round(res.damage * variance));
                         
-                        // Kill Logic
+                        stats.totalDmg += finalDamage;
+                        if (finalDamage > stats.maxDmg) stats.maxDmg = finalDamage;
+                        if (stats.minDmg === 0 || finalDamage < stats.minDmg) stats.minDmg = finalDamage;
+                        
+                        // Performance Stats Update
+                        att.damageDealt += finalDamage;
+                        target.damageTaken += finalDamage;
+                        target.currentHp = Math.max(0, target.currentHp - finalDamage);
+                        
+                        // Kill Check (Last Hit)
                         if (target.currentHp <= 0) {
                             att.kills += 1;
                         }
@@ -376,7 +381,7 @@ export const useSimulation = (): SimulationHook => {
                         target.lastDamaged = true;
                         setTimeout(() => setBattleState(curr => ({ teamA: curr.teamA.map(c => c.instanceId === target.instanceId ? { ...c, lastDamaged: false } : c), teamB: curr.teamB.map(c => c.instanceId === target.instanceId ? { ...c, lastDamaged: false } : c) })), 200);
 
-                        addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} hits for ${res.damage}${res.isCrit ? "!" : ""}`, side, res.isCrit);
+                        addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} hits for ${finalDamage}${res.isCrit ? "!" : ""}`, side, res.isCrit);
                     } else {
                         stats.misses++; enemyStats.evasions++;
                         addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} missed!`, side, false, true);

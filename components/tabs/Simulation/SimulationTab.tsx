@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { useSimulation, CombatantInstance, MatchStats } from '../../../hooks/useSimulation';
@@ -223,6 +224,7 @@ const SimulationTab = () => {
         return { A: empty, B: empty, winner: null };
     }, [sim.singleMatchReport, sim.liveStats]);
 
+    // MVP 선정 로직: 킬 수 우선, 동률 시 (입힌 피해 + 받은 피해) 합산 우선
     const mvpId = useMemo(() => {
         const winner = sim.singleMatchReport?.winner;
         if (!winner) return null;

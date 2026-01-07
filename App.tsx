@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { GameProvider } from './context/GameContext';
+import { GameProvider, useGame } from './context/GameContext';
 import IntroScreen from './components/IntroScreen';
 import TitleScreen from './components/TitleScreen';
 import MainGameLayout from './components/MainGameLayout';
@@ -8,6 +8,24 @@ import { getNextAvailableSlot } from './utils/saveSystem';
 import { GameState } from './types/game-state';
 
 type GameView = 'INTRO' | 'TITLE' | 'GAME';
+
+/**
+ * GameLoader 컴포넌트:
+ * GameProvider 내부에서 실행되어, 로드할 데이터가 있는 경우 상태를 즉시 교체합니다.
+ */
+const GameLoader: React.FC<{ initialData: GameState | null, children: React.ReactNode }> = ({ initialData, children }) => {
+    const { actions } = useGame();
+    const isFirstRun = React.useRef(true);
+
+    useEffect(() => {
+        if (isFirstRun.current && initialData) {
+            actions.loadGame(initialData);
+        }
+        isFirstRun.current = false;
+    }, [initialData, actions]);
+
+    return <>{children}</>;
+};
 
 const App = () => {
   const [view, setView] = useState<GameView>('INTRO');
@@ -66,25 +84,6 @@ const App = () => {
         )}
       </>
   );
-};
-
-/**
- * GameLoader 컴포넌트:
- * GameProvider 내부에서 실행되어, 로드할 데이터가 있는 경우 상태를 즉시 교체합니다.
- */
-import { useGame } from './context/GameContext';
-const GameLoader: React.FC<{ initialData: GameState | null, children: React.ReactNode }> = ({ initialData, children }) => {
-    const { actions } = useGame();
-    const isFirstRun = React.useRef(true);
-
-    useEffect(() => {
-        if (isFirstRun.current && initialData) {
-            actions.loadGame(initialData);
-        }
-        isFirstRun.current = false;
-    }, [initialData, actions]);
-
-    return <>{children}</>;
 };
 
 export default App;
