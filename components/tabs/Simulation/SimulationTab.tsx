@@ -3,7 +3,6 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { useSimulation, CombatantInstance } from '../../../hooks/useSimulation';
 import { Mercenary } from '../../../models/Mercenary';
-// Added Equipment import for explicit casting in the UI
 import { Equipment } from '../../../models/Equipment';
 import { DerivedStats, PrimaryStats } from '../../../models/Stats';
 import { Sword, Shield, Activity, User, Play, RefreshCw, ScrollText, Crosshair, Target, Wind, FastForward, Brain, X, ChevronUp, ChevronDown, Package, Plus, Trash2, Trophy, Loader2, Zap } from 'lucide-react';
@@ -40,7 +39,6 @@ const getArchetype = (derived: DerivedStats) => {
 };
 
 interface CombatantSlotProps {
-    side: 'LEFT' | 'RIGHT';
     combatant: CombatantInstance;
     mercenary: Mercenary | null;
     derived: DerivedStats | null;
@@ -51,18 +49,16 @@ interface CombatantSlotProps {
 }
 
 const CombatantSlot: React.FC<CombatantSlotProps> = ({ 
-    side, combatant, mercenary, derived, onSelect, onUpdate, onRemove, disabled 
+    combatant, mercenary, derived, onSelect, onUpdate, onRemove, disabled 
 }) => {
     const hpPercent = derived ? (combatant.currentHp / derived.maxHp) * 100 : 0;
     const gaugePercent = Math.min(100, (combatant.gauge / ACTION_THRESHOLD) * 100);
     const totalPoints = (combatant.level - 1) * 3;
-    // Fix: Explicitly cast values of allocatedStats to number[] to ensure usedPoints is recognized as a number
     const usedPoints = (Object.values(combatant.allocatedStats) as number[]).reduce((a, b) => a + b, 0);
     const availablePoints = Math.max(0, totalPoints - usedPoints);
     
     const archetype = derived ? getArchetype(derived) : null;
     
-    // 더 높은 수치를 자동으로 판단하여 UI 속성 결정
     const isMage = derived ? derived.magicalAttack > derived.physicalAttack : false;
     const weaponAtkLabel = isMage ? "M.ATK" : "P.ATK";
     const weaponAtkColor = isMage ? "text-blue-400" : "text-amber-500";
@@ -73,7 +69,7 @@ const CombatantSlot: React.FC<CombatantSlotProps> = ({
     const reductionValue = derived ? Math.round((isMage ? derived.magicalReduction : derived.physicalReduction) * 100) : 0;
 
     return (
-        <div className={`flex flex-col gap-1.5 md:gap-2 p-2.5 md:p-3 bg-stone-900 border transition-all duration-300 rounded-xl relative overflow-hidden shrink-0 min-h-[220px] md:min-h-[280px] ${side === 'LEFT' ? 'border-blue-900/40' : 'border-red-900/40'} ${combatant.lastAttacker ? 'scale-[1.02] ring-2 ring-amber-500 z-10' : 'hover:border-stone-700'} ${disabled ? 'opacity-50 pointer-events-none' : ''} ${mercenary && combatant.currentHp <= 0 ? 'grayscale opacity-30' : ''}`}>
+        <div className={`flex flex-col gap-1.5 md:gap-2 p-2.5 md:p-3 bg-stone-900 border transition-all duration-150 rounded-xl relative overflow-hidden shrink-0 min-h-[220px] md:min-h-[280px] ${combatant.lastAttacker ? 'border-amber-500 ring-2 ring-inset ring-amber-500/50 brightness-125 z-10' : 'border-stone-800/50 hover:border-stone-700'} ${disabled ? 'opacity-50 pointer-events-none' : ''} ${mercenary && combatant.currentHp <= 0 ? 'grayscale opacity-30' : ''}`}>
             
             <button 
                 onClick={onRemove} 
@@ -87,7 +83,7 @@ const CombatantSlot: React.FC<CombatantSlotProps> = ({
                     <div className="flex items-center gap-1">
                          <div className="flex items-center gap-1.5 md:gap-2 min-w-0 pr-6">
                             <div onClick={onSelect} className="w-8 h-8 md:w-10 md:h-10 bg-stone-800 rounded-lg border border-stone-700 flex items-center justify-center text-base md:text-xl shadow-inner shrink-0 cursor-pointer hover:border-amber-500 transition-colors">{mercenary.icon}</div>
-                            <div className="min-w-0 flex flex-col justify-center">
+                            <div className="min-w-0 flex flex-col justify-center text-left">
                                 <div className="flex items-center gap-1 truncate text-left">
                                     <h3 className="text-[9px] md:text-xs font-black text-stone-200 truncate leading-none uppercase">{mercenary.name.split(' ')[0]}</h3>
                                     {archetype && (
@@ -110,7 +106,6 @@ const CombatantSlot: React.FC<CombatantSlotProps> = ({
 
                     <div className="flex gap-1 overflow-x-auto no-scrollbar py-0.5 bg-stone-950/30 rounded px-1 min-h-[22px]">
                         {Object.entries(mercenary.equipment).map(([slot, item]) => {
-                            // Fix: Explicitly cast 'item' to Equipment to resolve 'unknown' property access errors
                             const eqItem = item as Equipment | null;
                             if (!eqItem) return null;
                             const imageUrl = eqItem.image ? getAssetUrl(eqItem.image) : (eqItem.recipeId ? getAssetUrl(`${eqItem.recipeId}.png`) : getAssetUrl(`${eqItem.id.split('_')[0]}.png`));
@@ -144,7 +139,6 @@ const CombatantSlot: React.FC<CombatantSlotProps> = ({
                     </div>
 
                     <div className="grid grid-cols-3 gap-1 shrink-0">
-                        {/* 더 높은 공격 타입에 맞게 동적 표시 */}
                         <StatBox label={weaponAtkLabel} value={weaponAtkValue} icon={weaponAtkIcon} color={weaponAtkColor} />
                         <StatBox label={reductionLabel} value={`${reductionValue}%`} icon={<Shield className="w-2 h-2" />} color="text-blue-400" />
                         <StatBox label="SPD" value={derived.speed} icon={<FastForward className="w-2 h-2" />} color="text-indigo-400" />
@@ -222,11 +216,10 @@ const SimulationTab = () => {
             </div>
 
             <div className="flex-1 flex gap-2 overflow-hidden min-h-0 mb-2">
-                <div className="w-[35%] h-full flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1">
+                <div className="w-[35%] h-full flex flex-col gap-2 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 pb-12">
                     {sim.teamA.map(c => (
                         <CombatantSlot 
                             key={c.instanceId} 
-                            side="LEFT" 
                             combatant={c} 
                             mercenary={state.knownMercenaries.find(m => m.id === c.mercenaryId) || null} 
                             derived={sim.getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)} 
@@ -321,11 +314,10 @@ const SimulationTab = () => {
                     )}
                 </div>
 
-                <div className="w-[35%] h-full flex flex-col gap-2 overflow-y-auto custom-scrollbar pl-1">
+                <div className="w-[35%] h-full flex flex-col gap-2 overflow-y-auto overflow-x-hidden custom-scrollbar pl-1 pb-12">
                     {sim.teamB.map(c => (
                         <CombatantSlot 
                             key={c.instanceId} 
-                            side="RIGHT" 
                             combatant={c} 
                             mercenary={state.knownMercenaries.find(m => m.id === c.mercenaryId) || null} 
                             derived={sim.getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)} 
