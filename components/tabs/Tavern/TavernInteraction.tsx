@@ -156,7 +156,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            {/* Mercenary Info HUD: 너비를 배율(w-[32%])로 설정하고 최대치 제한 */}
+            {/* Mercenary Info HUD: 상점과 통일 (좌측 상단, 너비 w-[32%], 수치 표시) */}
             <div className="absolute top-4 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">

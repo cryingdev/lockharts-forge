@@ -119,9 +119,9 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             disabled={!isShopOpen && !canAffordOpen}
         />
 
-        {/* Queue 표시: 간판 바로 아래 우측 배치 */}
+        {/* Queue Display */}
         {isShopOpen && (
-            <div className="absolute top-16 md:top-24 right-4 z-50 flex items-center gap-1.5 md:gap-2 bg-stone-900/90 px-2 md:px-4 py-1 md:py-1.5 rounded-xl border border-stone-700 text-stone-200 shadow-xl backdrop-blur-md">
+            <div className="absolute top-20 md:top-28 right-4 z-50 flex items-center gap-1.5 md:gap-2 bg-stone-900/90 px-2 md:px-4 py-1 md:py-1.5 rounded-xl border border-stone-700 text-stone-200 shadow-xl backdrop-blur-md">
                 <div className="bg-stone-800 p-1 md:p-1.5 rounded-full">
                     <Users className="w-3 h-3 md:w-5 md:h-5 text-amber-500" />
                 </div>
@@ -132,7 +132,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        {/* 용병 정보 HUD: 너비를 배율(w-[32%])로 설정하고 최대치 제한 */}
+        {/* Mercenary Info HUD: 좌측 상단, 너비 w-[32%], 수치 표시 */}
         {isShopOpen && activeCustomer && (
             <div className="absolute top-4 left-4 z-50 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
