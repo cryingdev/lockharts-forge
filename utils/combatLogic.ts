@@ -1,4 +1,3 @@
-
 import { DerivedStats } from '../models/Stats';
 import { DERIVED_CONFIG } from '../config/derived-stats-config';
 
@@ -14,81 +13,83 @@ const STANDARD_DEFENSE = 150;
 const STANDARD_EVASION = 50;
 
 /**
- * Calculates the outcome of a single combat exchange.
+ * Optimized combat result calculation.
  */
 export const calculateCombatResult = (
   attacker: DerivedStats,
   defender: DerivedStats,
   type: 'PHYSICAL' | 'MAGICAL' = 'PHYSICAL'
 ): CombatResult => {
-  const rawHitChance = (attacker.accuracy / (attacker.accuracy + defender.evasion * DERIVED_CONFIG.HIT_EVA_WEIGHT)) * 100;
-  const hitChance = Math.round(Math.min(95, Math.max(5, rawHitChance)));
+  const acc = attacker.accuracy;
+  const eva = defender.evasion;
+  const rawHitChance = (acc / (acc + eva * 0.7)) * 100;
+  const hitChance = rawHitChance > 95 ? 95 : (rawHitChance < 5 ? 5 : rawHitChance);
   
-  const hitRoll = Math.random() * 100;
-
-  if (hitRoll > hitChance) {
+  if (Math.random() * 100 > hitChance) {
     return { isHit: false, isCrit: false, damage: 0, hitChance };
   }
 
-  const critRoll = Math.random() * 100;
-  const isCrit = critRoll <= attacker.critChance;
-  const critMult = isCrit ? attacker.critDamage / 100 : 1.0;
+  const isCrit = Math.random() * 100 <= attacker.critChance;
+  const critMult = isCrit ? attacker.critDamage * 0.01 : 1.0;
 
-  let baseDamage = 0;
-  if (type === 'PHYSICAL') {
-    baseDamage = attacker.physicalAttack * (1 - defender.physicalReduction);
-  } else {
-    baseDamage = attacker.magicalAttack * (1 - defender.magicalReduction);
-  }
-
+  const baseAtk = type === 'PHYSICAL' ? attacker.physicalAttack : attacker.magicalAttack;
+  const reduction = type === 'PHYSICAL' ? defender.physicalReduction : defender.magicalReduction;
+  
+  const baseDamage = baseAtk * (1 - reduction);
   const damage = Math.max(1, Math.round(baseDamage * critMult));
 
-  return {
-    isHit: true,
-    isCrit,
-    damage,
-    hitChance,
-  };
+  return { isHit: true, isCrit, damage, hitChance };
+};
+
+/**
+ * High-performance lightweight combat calculation for bulk simulations.
+ * Minimizes object creation and property access overhead.
+ */
+export const calculateFastDmg = (
+  atkValue: number,
+  reduction: number,
+  critChance: number,
+  critDamage: number,
+  hitChance: number
+): number => {
+  if (Math.random() * 100 > hitChance) return 0;
+  const isCrit = Math.random() * 100 <= critChance;
+  const dmg = atkValue * (1 - reduction) * (isCrit ? critDamage * 0.01 : 1.0);
+  return dmg < 1 ? 1 : dmg;
 };
 
 /**
  * Calculates theoretical Expected Damage Per Second (DPS) against a standard target.
- * Formula: [Actions Per Second] * [Hit Chance] * [Avg Damage Incl. Crits]
  */
 export const calculateExpectedDPS = (stats: DerivedStats, attackType: 'PHYSICAL' | 'MAGICAL' = 'PHYSICAL'): number => {
-    const critBonusMult = (stats.critChance / 100) * ((stats.critDamage / 100) - 1);
+    const critBonusMult = (stats.critChance * 0.01) * ((stats.critDamage * 0.01) - 1);
     const avgDmgMult = 1 + critBonusMult;
 
-    const reduction = STANDARD_DEFENSE / (STANDARD_DEFENSE + DERIVED_CONFIG.DEF_REDUCTION_CONSTANT);
+    const reduction = STANDARD_DEFENSE / (STANDARD_DEFENSE + 150);
     const rawAtk = attackType === 'PHYSICAL' ? stats.physicalAttack : stats.magicalAttack;
     const baseDmg = rawAtk * (1 - reduction);
     const expectedDmgPerHit = baseDmg * avgDmgMult;
 
-    const rawHitChance = (stats.accuracy / (stats.accuracy + STANDARD_EVASION * DERIVED_CONFIG.HIT_EVA_WEIGHT)) * 100;
-    const hitChance = Math.min(95, Math.max(5, rawHitChance)) / 100;
+    const rawHitChance = (stats.accuracy / (stats.accuracy + STANDARD_EVASION * 0.7)) * 100;
+    const hitChance = (rawHitChance > 95 ? 95 : (rawHitChance < 5 ? 5 : rawHitChance)) * 0.01;
 
-    const actionsPerSecond = (stats.speed / 1000) * 25;
+    const actionsPerSecond = (stats.speed * 0.001) * 25;
 
     return Math.round(expectedDmgPerHit * hitChance * actionsPerSecond);
 };
 
 /**
- * Calculates overall Combat Power (CP) of a mercenary.
- * Combines offensive potential (DPS) and defensive longevity (Effective HP).
+ * Calculates overall Combat Power (CP).
  */
 export const calculateCombatPower = (stats: DerivedStats, attackType: 'PHYSICAL' | 'MAGICAL' = 'PHYSICAL'): number => {
-    // 1. Offensive Score
     const dps = calculateExpectedDPS(stats, attackType);
-    const offensiveScore = dps * 12; // Weighting DPS for tactical impact
+    const offensiveScore = dps * 12;
 
-    // 2. Defensive Score (Effective HP)
-    // EHP = HP / (1 - Damage Reduction)
-    const avgReduction = (stats.physicalReduction + stats.magicalReduction) / 2;
+    const avgReduction = (stats.physicalReduction + stats.magicalReduction) * 0.5;
     const effectiveHp = stats.maxHp / Math.max(0.1, (1 - avgReduction));
     
-    // Add Evasion weight (Simple bonus: 1% evasion = 1% more EHP potential)
-    const evasionBonus = 1 + (stats.evasion / 200);
-    const defensiveScore = (effectiveHp * evasionBonus) / 4;
+    const evasionBonus = 1 + (stats.evasion * 0.005);
+    const defensiveScore = (effectiveHp * evasionBonus) * 0.25;
 
-    return Math.round((offensiveScore + defensiveScore) / 10);
+    return Math.round((offensiveScore + defensiveScore) * 0.1);
 };
