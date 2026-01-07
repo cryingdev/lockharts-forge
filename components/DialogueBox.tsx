@@ -131,23 +131,19 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
 
         {/* Right Area (Content) */}
         <div className="flex-1 p-2.5 md:p-8 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent">
-          <div
-            className="flex-1 min-h-0 cursor-pointer overflow-y-auto pr-2 md:pr-3 pt-2 md:pt-4 dialogue-scroll overscroll-contain"
+          <div 
+            className="flex-1 overflow-hidden cursor-pointer"
             onClick={handleSkipTyping}
           >
-            <div
-              className={`text-stone-50 leading-snug md:leading-relaxed font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${
-                isTyping
-                  ? 'after:content-["_"] after:inline-block after:w-1.5 after:h-3 md:after:w-2 md:after:h-5 after:bg-amber-500 after:animate-pulse after:ml-1'
-                  : ''
-              }`}
+            <div 
+              className={`text-stone-50 leading-snug md:leading-relaxed font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${isTyping ? 'after:content-["_"] after:inline-block after:w-1.5 after:h-3 md:after:w-2 md:after:h-5 after:bg-amber-500 after:animate-pulse after:ml-1' : ''}`}
               style={{ fontSize: 'clamp(0.9rem, 2.4dvh, 1.6rem)' }}
             >
               {renderFormattedText()}
             </div>
           </div>
 
-          {/* Options - justify-end를 사용하여 버튼들이 오른쪽으로 정렬되도록 고정 */}
+          {/* Options - justify-end를 사용하여 버튼들이 오른쪽으로 정렬되도록 함 */}
           {!isTyping && options.length > 0 && (
             <div className="mt-2 md:mt-8 flex flex-wrap gap-1.5 md:gap-4 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
               {options.map((option, idx) => (
