@@ -1,4 +1,3 @@
-
 import { GameState } from '../../types/index';
 import { calculateDailyWage } from '../../config/contract-config';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -67,7 +66,15 @@ export const handleConfirmSleep = (state: GameState): GameState => {
             day: nextDay,
             gold: newGold,
             energy: state.stats.maxEnergy,
-            incomeToday: 0,
+            dailyFinancials: {
+                incomeShop: 0,
+                incomeInventory: 0,
+                incomeDungeon: 0,
+                incomeRepair: 0,
+                expenseMarket: 0,
+                expenseWages: totalWages, // Track wages spent at end of current day (processed during rest transition)
+                expenseScout: 0
+            },
         },
         knownMercenaries: updatedMercenaries,
         marketStock: newMarketStock,

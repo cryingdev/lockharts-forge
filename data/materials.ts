@@ -1,4 +1,3 @@
-
 export const MATERIALS = {
     // --- 1. METALS (금속) ---
     COPPER_ORE: {
@@ -105,6 +104,6 @@ export const MATERIALS = {
     },
     EMERGENCY_GOLD: {
         id: 'emergency_gold', name: 'Emergency Fund', type: 'RESOURCE', category: 'METAL', tier: 1,
-        description: 'A hidden pouch of gold. Sell it when you are in trouble.', baseValue: 1000, icon: '💰'
+        description: 'A hidden pouch of gold. Sell it when you are in trouble.', baseValue: 10000, icon: '💰'
     },
 } as const;

@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { MATERIALS } from '../data/materials';
@@ -23,7 +22,15 @@ export const createInitialGameState = (): GameState => ({
         maxEnergy: 100,
         day: 1,
         tierLevel: 0,
-        incomeToday: 0,
+        dailyFinancials: {
+            incomeShop: 0,
+            incomeInventory: 0,
+            incomeDungeon: 0,
+            incomeRepair: 0,
+            expenseMarket: 0,
+            expenseWages: 0,
+            expenseScout: 0
+        },
     },
     inventory: createInitialInventory(),
     forge: {

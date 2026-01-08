@@ -3,6 +3,7 @@ import { DUNGEONS } from '../../data/dungeons';
 import { Expedition } from '../../models/Dungeon';
 import { MATERIALS } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
+import { TILLY_FOOTLOOSE } from '../../data/mercenaries';
 
 export const handleStartExpedition = (state: GameState, payload: { dungeonId: string; partyIds: string[] }): GameState => {
     const { dungeonId, partyIds } = payload;
@@ -63,8 +64,28 @@ export const handleCompleteExpedition = (state: GameState, payload: { expedition
     };
 };
 
-export const handleClaimExpedition = (state: GameState, payload: { expeditionId: string }): GameState => {
+export const handleAbortExpedition = (state: GameState, payload: { expeditionId: string }): GameState => {
     const { expeditionId } = payload;
+    const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
+    if (!expedition) return state;
+
+    const updatedMercs = state.knownMercenaries.map(m => {
+        if (expedition.partyIds.includes(m.id)) {
+            return { ...m, status: 'HIRED' as const, assignedExpeditionId: undefined };
+        }
+        return m;
+    });
+
+    return {
+        ...state,
+        knownMercenaries: updatedMercs,
+        activeExpeditions: state.activeExpeditions.filter(e => e.id !== expeditionId),
+        logs: [`Mission aborted. The squad has been recalled with no rewards.`, ...state.logs]
+    };
+};
+
+export const handleClaimExpedition = (state: GameState, payload: { expeditionId: string; rescuedNpcId?: string }): GameState => {
+    const { expeditionId, rescuedNpcId } = payload;
     const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
     if (!expedition) return state;
 
@@ -98,11 +119,13 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
             }
     });
 
+    // Gold Reward
+    const goldGained = dungeon.goldReward || 0;
+
     // Special Reward: Recipe Scroll for First Clear of Rats Dungeon
     const isFirstClear = (state.dungeonClearCounts[dungeon.id] || 0) === 0;
     if (isFirstClear && dungeon.id === 'dungeon_t1_rats') {
         const scrollDef = MATERIALS.RECIPE_SCROLL_BRONZE_LONGSWORD;
-        // Check if player somehow already has it (unlikely but safe)
         const alreadyHasScroll = newInventory.some(i => i.id === scrollDef.id);
         const alreadyHasRecipe = state.unlockedRecipes.includes('sword_bronze_long_t1');
         
@@ -115,6 +138,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     const mercenaryResults: DungeonResult['mercenaryResults'] = [];
     let newKnownMercenaries = [...state.knownMercenaries];
 
+    // Process XP for party
     newKnownMercenaries = newKnownMercenaries.map(merc => {
         if (expedition.partyIds.includes(merc.id)) {
             let xpToAdd = dungeon.baseXp || 50;
@@ -168,6 +192,17 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
         return merc;
     });
 
+    // Handle Rescued NPC
+    let rescuedMercenary = undefined;
+    if (rescuedNpcId) {
+        if (rescuedNpcId === 'tilly_footloose') {
+            rescuedMercenary = { ...TILLY_FOOTLOOSE };
+            if (!newKnownMercenaries.some(m => m.id === rescuedMercenary!.id)) {
+                newKnownMercenaries.push(rescuedMercenary);
+            }
+        }
+    }
+
     const newClearCounts = { ...state.dungeonClearCounts };
     newClearCounts[dungeon.id] = (newClearCounts[dungeon.id] || 0) + 1;
     const remainingExpeditions = state.activeExpeditions.filter(e => e.id !== expeditionId);
@@ -175,13 +210,17 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     const resultData: DungeonResult = {
         dungeonName: dungeon.name,
         rewards: gainedItems,
-        mercenaryResults
+        goldGained,
+        mercenaryResults,
+        rescuedMercenary
     };
 
     const luckMsg = luckMultiplier > 1.1 ? ` (Luck Bonus x${luckMultiplier.toFixed(1)})` : '';
-    const logStr = gainedItems.length > 0 
+    let logStr = gainedItems.length > 0 
         ? `Returned from ${dungeon.name}${luckMsg}. Gained: ${gainedItems.map(i => `${i.name} x${i.count}`).join(', ')}`
         : `Returned from ${dungeon.name}. No loot found.`;
+    
+    if (goldGained > 0) logStr += ` and ${goldGained} Gold.`;
 
     return {
         ...state,
@@ -190,6 +229,14 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
         activeExpeditions: remainingExpeditions,
         dungeonClearCounts: newClearCounts,
         dungeonResult: resultData,
+        stats: {
+            ...state.stats,
+            gold: state.stats.gold + goldGained,
+            dailyFinancials: {
+                ...state.stats.dailyFinancials,
+                incomeDungeon: state.stats.dailyFinancials.incomeDungeon + goldGained
+            }
+        },
         logs: [logStr, ...state.logs]
     };
 };

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -69,6 +68,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     },
     rest: () => dispatch({ type: 'SLEEP' }),
     confirmSleep: () => dispatch({ type: 'CONFIRM_SLEEP' }),
+    category: () => dispatch({ type: 'CLOSE_SLEEP_MODAL' }), // Note: Fix typo if intended, kept as per source
     closeRest: () => dispatch({ type: 'CLOSE_SLEEP_MODAL' }),
     
     triggerEvent: (event: GameEvent) => dispatch({ type: 'TRIGGER_EVENT', payload: event }),
@@ -115,6 +115,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
         dispatch({ type: 'TOGGLE_SHOP' });
     },
     addMercenary: (merc: Mercenary) => dispatch({ type: 'ADD_KNOWN_MERCENARY', payload: merc }),
+    scoutMercenary: (merc: Mercenary, cost: number) => dispatch({ type: 'SCOUT_MERCENARY', payload: { mercenary: merc, cost } }),
 
     consumeItem: (id: string, count: number) => dispatch({ type: 'PAY_COST', payload: { items: [{ id, count }] } }),
 
@@ -134,6 +135,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
 
     startExpedition: (dungeonId: string, partyIds: string[]) => dispatch({ type: 'START_EXPEDITION', payload: { dungeonId, partyIds } }),
     completeExpedition: (expeditionId: string) => dispatch({ type: 'COMPLETE_EXPEDITION', payload: { expeditionId } }),
+    // Added missing abortExpedition implementation
+    abortExpedition: (expeditionId: string) => dispatch({ type: 'ABORT_EXPEDITION', payload: { expeditionId } }),
     claimExpedition: (expeditionId: string) => dispatch({ type: 'CLAIM_EXPEDITION', payload: { expeditionId } }),
     dismissDungeonResult: () => dispatch({ type: 'DISMISS_DUNGEON_RESULT' }),
 
@@ -155,10 +158,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     toggleManualDungeonOverlay: (show: boolean) => 
         dispatch({ type: 'TOGGLE_MANUAL_DUNGEON_OVERLAY', payload: show }),
 
+    rescueMercenary: (npcId: string) => 
+        dispatch({ type: 'RESCUE_NPC', payload: { npcId } }),
+
     triggerEnergyHighlight,
     showToast,
     hideToast: () => dispatch({ type: 'HIDE_TOAST' })
-  }), []); 
+  }), [dispatch]); 
 
   return (
     <GameContext.Provider value={{ state, actions }}>

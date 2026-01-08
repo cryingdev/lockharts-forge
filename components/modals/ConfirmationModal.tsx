@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
@@ -26,35 +25,40 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="absolute inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 px-[10%] py-[5%]" onClick={onCancel}>
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-200 px-[10%] py-[15%]" onClick={onCancel}>
             <div 
-                className="bg-stone-900 border-2 border-stone-700 rounded-2xl p-6 max-w-sm w-full shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] relative animate-in zoom-in-95 duration-200"
+                className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-fit max-w-[400px] h-fit max-h-full min-h-[180px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-2 rounded-full ${isDanger ? 'bg-red-900/30 text-red-500' : 'bg-amber-900/30 text-amber-500'}`}>
-                        <AlertTriangle className="w-6 h-6" />
+                {/* Header */}
+                <div className="p-4 md:p-6 bg-stone-850 border-b border-stone-800 flex items-center gap-4 shrink-0">
+                    <div className={`p-2 rounded-lg shrink-0 ${isDanger ? 'bg-red-950/40 text-red-500 border border-red-900/30' : 'bg-amber-900/30 text-amber-500 border border-amber-800/30'}`}>
+                        <AlertTriangle className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
-                    <h3 className="text-lg font-bold text-stone-200 font-serif">{title}</h3>
+                    <h3 className="text-base md:text-xl font-bold text-stone-100 font-serif uppercase tracking-tight truncate pr-4">{title}</h3>
                 </div>
                 
-                <p className="text-stone-400 mb-6 text-sm leading-relaxed">
-                    {message}
-                </p>
+                {/* Body */}
+                <div className="flex-1 p-5 md:p-8 overflow-y-auto custom-scrollbar">
+                    <p className="text-stone-400 text-xs md:text-sm leading-relaxed text-center italic px-2">
+                        {message}
+                    </p>
+                </div>
 
-                <div className="flex justify-end gap-3">
+                {/* Footer - 모바일에서 버튼이 영역을 벗어나지 않도록 flex-col 대응 */}
+                <div className="p-4 md:p-6 bg-stone-900 border-t border-stone-800 flex flex-col-reverse sm:flex-row gap-2 md:gap-3 shrink-0">
                     <button 
                         onClick={onCancel}
-                        className="px-4 py-2 rounded-lg text-sm font-bold text-stone-400 hover:bg-stone-800 transition-colors border border-transparent hover:border-stone-700"
+                        className="w-full sm:flex-1 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black text-stone-500 hover:text-stone-200 bg-stone-800 hover:bg-stone-750 transition-all uppercase tracking-widest px-4"
                     >
                         {cancelLabel}
                     </button>
                     <button 
                         onClick={onConfirm}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition-all border ${
+                        className={`w-full sm:flex-[1.5] py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black transition-all border-b-4 uppercase tracking-widest px-6 ${
                             isDanger 
-                            ? 'bg-red-900/50 text-red-200 border-red-800 hover:bg-red-800 hover:border-red-500' 
-                            : 'bg-amber-700 text-amber-50 border-amber-600 hover:bg-amber-600'
+                            ? 'bg-red-700 hover:bg-red-600 text-white border-red-900' 
+                            : 'bg-amber-600 hover:bg-amber-500 text-white border-amber-800'
                         }`}
                     >
                         {confirmLabel}

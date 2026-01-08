@@ -1,4 +1,3 @@
-
 import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -30,6 +29,7 @@ export interface GameContextType {
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => void;
     toggleShop: () => void;
     addMercenary: (merc: Mercenary) => void;
+    scoutMercenary: (merc: Mercenary, cost: number) => void;
     consumeItem: (id: string, count: number) => void;
     
     enqueueCustomer: (customer: ShopCustomer) => void;
@@ -47,6 +47,8 @@ export interface GameContextType {
 
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
     completeExpedition: (expeditionId: string) => void;
+    // Added missing abortExpedition method definition
+    abortExpedition: (expeditionId: string) => void;
     claimExpedition: (expeditionId: string) => void;
     dismissDungeonResult: () => void;
 
@@ -67,5 +69,6 @@ export interface GameContextType {
     finishManualAssault: () => void;
     retreatFromManualDungeon: () => void;
     toggleManualDungeonOverlay: (show: boolean) => void;
+    rescueMercenary: (npcId: string) => void;
   };
 }

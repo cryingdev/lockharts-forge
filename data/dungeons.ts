@@ -1,4 +1,3 @@
-
 import { DungeonDefinition } from '../models/Dungeon';
 
 export const DUNGEONS: DungeonDefinition[] = [
@@ -17,6 +16,7 @@ export const DUNGEONS: DungeonDefinition[] = [
         moveEnergy: 3,
         bossEnergy: 5,
         isBossLocked: false,
+        goldReward: 100,
         rewards: [
              { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 3, chance: 1.0 },
              { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 2, chance: 0.4 },

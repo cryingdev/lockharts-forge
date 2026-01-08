@@ -1,11 +1,10 @@
-
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
 import { Expedition } from '../models/Dungeon';
 
-export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL';
+export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP';
 
 export interface ManualDungeonSession {
     dungeonId: string;
@@ -15,6 +14,20 @@ export interface ManualDungeonSession {
     playerPos: { x: number, y: number };
     hasKey: boolean;
     isBossLocked: boolean;
+    isBossDefeated?: boolean; // New: Tracks if boss was beaten but player is still inside
+    npcFound?: boolean; // Track if the NPC in this session was interacted with
+    rescuedNpcId?: string; // ID of the NPC rescued during this session
+    goldCollected: number; // Cumulative gold found during this session
+}
+
+export interface DailyFinancials {
+  incomeShop: number;
+  incomeInventory: number;
+  incomeDungeon: number;
+  incomeRepair: number;
+  expenseMarket: number;
+  expenseWages: number;
+  expenseScout: number;
 }
 
 export interface PlayerStats {
@@ -23,7 +36,7 @@ export interface PlayerStats {
   maxEnergy: number;
   day: number;
   tierLevel: number; // Current crafting/market tier access
-  incomeToday: number; // Track gold earned during the current day
+  dailyFinancials: DailyFinancials; // Track detailed financial history for the current day
 }
 
 export interface ForgeStatus {
@@ -36,6 +49,7 @@ export interface ForgeStatus {
 export interface DungeonResult {
     dungeonName: string;
     rewards: { id: string; name: string; count: number }[];
+    goldGained?: number;
     mercenaryResults: {
         id: string;
         name: string;
@@ -46,6 +60,7 @@ export interface DungeonResult {
         currentXp: number;
         xpToNext: number;
     }[];
+    rescuedMercenary?: Mercenary; // Rescued NPC to be displayed in the result
 }
 
 export interface GameToast {

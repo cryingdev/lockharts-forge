@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Save, Upload, X, Trash2, Clock, Coins, Calendar, ChevronRight } from 'lucide-react';
 import { getSaveMetadataList, SaveMetadata, deleteSlot } from '../../utils/saveSystem';
@@ -56,11 +55,11 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
 
     return (
         <>
-            <div className="absolute inset-0 z-[250] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-200 px-[10%] py-[5%]">
-                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-md shadow-[0_40px_80px_-20px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-black/80 backdrop-blur-md px-[10%] py-[15%] overflow-hidden animate-in fade-in duration-200">
+                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-fit max-w-[450px] h-fit max-h-full min-h-[300px] min-w-[280px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 mx-auto">
                     
                     {/* Header */}
-                    <div className="p-4 border-b border-stone-800 bg-stone-850 flex justify-between items-center">
+                    <div className="p-4 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="bg-stone-800 p-2 rounded-xl border border-stone-700 text-amber-500">
                                 {mode === 'SAVE' ? <Save className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
@@ -69,13 +68,13 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                 {mode === 'SAVE' ? 'Save Game' : 'Load Game'}
                             </h3>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 hover:text-stone-300 transition-colors">
+                        <button onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 hover:text-stone-300 transition-colors ml-4">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
                     {/* Slot List */}
-                    <div className="p-4 space-y-3 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                    <div className="p-4 space-y-3 overflow-y-auto flex-1 custom-scrollbar min-h-0">
                         {slots.map(index => {
                             const meta = metaList.find(m => m.index === index);
                             return (
@@ -90,8 +89,8 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                             : 'bg-stone-950 border-stone-900 text-stone-600 cursor-not-allowed opacity-60'
                                     }`}
                                 >
-                                    <div className="flex justify-between items-center w-full">
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex justify-between items-center w-full gap-4">
+                                        <div className="flex items-center gap-2 min-w-0">
                                             <span className="font-black text-[10px] uppercase tracking-widest text-stone-500 group-hover:text-amber-500">Slot {index + 1}</span>
                                             {meta?.version && (
                                                 <span className="px-1.5 py-0.5 bg-stone-950 rounded text-[7px] font-mono font-bold text-stone-600 border border-stone-800 group-hover:border-amber-900/50 group-hover:text-amber-700 transition-colors">
@@ -100,9 +99,9 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                             )}
                                         </div>
                                         {meta && (
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-1 text-[10px] text-stone-500 font-mono">
-                                                    <Clock className="w-3 h-3" /> {formatDate(meta.timestamp)}
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <div className="flex items-center gap-1 text-[9px] text-stone-500 font-mono">
+                                                    <Clock className="w-2.5 h-2.5" /> {formatDate(meta.timestamp)}
                                                 </div>
                                                 <button onClick={(e) => requestDelete(e, index)} className="p-1 hover:text-red-500 transition-colors">
                                                     <Trash2 className="w-3.5 h-3.5" />
@@ -112,15 +111,15 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                     </div>
 
                                     {meta ? (
-                                        <div className="flex items-center justify-between w-full">
+                                        <div className="flex items-center justify-between w-full gap-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="flex items-center gap-1.5">
                                                     <Calendar className="w-3.5 h-3.5 text-stone-500" />
-                                                    <span className="text-sm font-bold text-stone-200">Day {meta.day}</span>
+                                                    <span className="text-xs md:text-sm font-bold text-stone-200">Day {meta.day}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <Coins className="w-3.5 h-3.5 text-amber-500" />
-                                                    <span className="text-sm font-bold text-amber-400 font-mono">{meta.gold}G</span>
+                                                    <span className="text-xs md:text-sm font-bold text-amber-400 font-mono">{meta.gold}G</span>
                                                 </div>
                                             </div>
                                             <ChevronRight className="w-5 h-5 text-stone-600 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" />
@@ -137,8 +136,8 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                         })}
                     </div>
 
-                    <div className="p-3 bg-stone-950 text-center border-t border-stone-800">
-                        <p className="text-[10px] text-stone-600 font-mono uppercase tracking-tighter">Your progress is kept in browser local storage.</p>
+                    <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0">
+                        <p className="text-[9px] md:text-[10px] text-stone-600 font-mono uppercase tracking-tighter">Your progress is kept in browser local storage.</p>
                     </div>
                 </div>
             </div>

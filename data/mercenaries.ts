@@ -22,32 +22,12 @@ const defaultEquipment: Record<EquipmentSlotType, Equipment | null> = {
     ACCESSORY: null
 };
 
-// Explicitly casting the mapped objects to Mercenary to prevent type widening of string literals like Gender
-export const NAMED_MERCENARIES: Mercenary[] = [
-  {
-    id: 'pip_green',
-    name: 'Pip the Green',
-    gender: 'Male',
-    job: JobClass.NOVICE,
-    level: 1,
-    stats: stats(4, 4, 6, 3, 8),
-    allocatedStats: emptyAllocated(),
-    currentHp: 0, // Calculated in init
-    maxHp: 0,
-    currentMp: 0,
-    maxMp: 0,
-    affinity: 0,
-    visitCount: 0,
-    isUnique: true,
-    sprite: 'pip_the_green.png',
-    icon: '🌱',
-    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
-    currentXp: 0,
-    xpToNextLevel: 100,
-    status: 'VISITOR',
-    equipment: { ...defaultEquipment }
-  },
-  {
+/**
+ * SPECIAL_RECRUITS
+ * These mercenaries do not appear in the Tavern by default.
+ * They must be found through specific events or dungeons.
+ */
+export const TILLY_FOOTLOOSE: Mercenary = {
     id: 'tilly_footloose',
     name: 'Tilly Footloose',
     gender: 'Female',
@@ -59,7 +39,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     maxHp: 0,
     currentMp: 0,
     maxMp: 0,
-    affinity: 0,
+    affinity: 15, // Starts with some affinity if rescued
     visitCount: 0,
     isUnique: true,
     sprite: 'tily_footloose.png',
@@ -67,6 +47,39 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
     xpToNextLevel: 200,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
+};
+
+// Vitals for Tilly
+const maxHpTilly = calculateMaxHp(TILLY_FOOTLOOSE.stats, TILLY_FOOTLOOSE.level);
+const maxMpTilly = calculateMaxMp(TILLY_FOOTLOOSE.stats, TILLY_FOOTLOOSE.level);
+TILLY_FOOTLOOSE.maxHp = maxHpTilly;
+TILLY_FOOTLOOSE.currentHp = maxHpTilly;
+TILLY_FOOTLOOSE.maxMp = maxMpTilly;
+TILLY_FOOTLOOSE.currentMp = maxMpTilly;
+
+export const NAMED_MERCENARIES: Mercenary[] = [
+  {
+    id: 'pip_green',
+    name: 'Pip the Green',
+    gender: 'Male',
+    job: JobClass.NOVICE,
+    level: 1,
+    stats: stats(4, 4, 6, 3, 8),
+    allocatedStats: emptyAllocated(),
+    currentHp: 0,
+    maxHp: 0,
+    currentMp: 0,
+    maxMp: 0,
+    affinity: 0,
+    visitCount: 0,
+    isUnique: true,
+    sprite: 'pip_the_green.png',
+    icon: '🌱',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 100,
     status: 'VISITOR',
     equipment: { ...defaultEquipment }
   },

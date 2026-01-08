@@ -1,4 +1,3 @@
-
 import { GameState } from '../../types/index';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -21,6 +20,33 @@ export const handleAddKnownMercenary = (state: GameState, merc: Mercenary): Game
     };
 };
 
+export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mercenary; cost: number }): GameState => {
+    const { mercenary, cost } = payload;
+    if (state.stats.gold < cost) return state;
+
+    const mercWithData = { 
+        ...mercenary, 
+        expeditionEnergy: mercenary.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+        currentXp: mercenary.currentXp ?? 0,
+        xpToNextLevel: mercenary.xpToNextLevel ?? (mercenary.level * 100),
+        status: 'VISITOR' as const
+    };
+
+    return {
+        ...state,
+        stats: {
+            ...state.stats,
+            gold: state.stats.gold - cost,
+            dailyFinancials: {
+                ...state.stats.dailyFinancials,
+                expenseScout: state.stats.dailyFinancials.expenseScout + cost
+            }
+        },
+        knownMercenaries: [...state.knownMercenaries, mercWithData],
+        logs: [`Paid ${cost} G to find new talent. ${mercenary.name} arrived at the tavern.`, ...state.logs]
+    };
+};
+
 export const handleHireMercenary = (state: GameState, payload: { mercenaryId: string; cost: number }): GameState => {
     const { mercenaryId, cost } = payload;
     if (state.stats.gold < cost) return state;
@@ -32,7 +58,14 @@ export const handleHireMercenary = (state: GameState, payload: { mercenaryId: st
     const name = hiredMerc ? hiredMerc.name : 'Mercenary';
     return {
         ...state,
-        stats: { ...state.stats, gold: state.stats.gold - cost },
+        stats: { 
+            ...state.stats, 
+            gold: state.stats.gold - cost,
+            dailyFinancials: {
+                ...state.stats.dailyFinancials,
+                expenseScout: state.stats.dailyFinancials.expenseScout + cost
+            }
+        },
         knownMercenaries: updatedMercenaries,
         logs: [`Contract signed! ${name} has joined your service. -${cost} G`, ...state.logs]
     };

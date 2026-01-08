@@ -1,4 +1,3 @@
-
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -9,10 +8,10 @@ import { handleTriggerEvent, handleCloseEvent, handleToggleJournal } from './red
 import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem } from './reducer/inventory';
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
 import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer } from './reducer/shop';
-import { handleAddKnownMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
-import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleDismissDungeonResult } from './reducer/expedition';
+import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
+import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
-import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon } from './reducer/manualDungeon';
+import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon } from './reducer/manualDungeon';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -56,6 +55,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
     // Mercenaries
     case 'ADD_KNOWN_MERCENARY': return handleAddKnownMercenary(state, action.payload);
+    case 'SCOUT_MERCENARY': return handleScoutMercenary(state, action.payload);
     case 'HIRE_MERCENARY': return handleHireMercenary(state, action.payload);
     case 'FIRE_MERCENARY': return handleFireMercenary(state, action.payload);
     case 'GIVE_GIFT': return handleGiveGift(state, action.payload);
@@ -67,6 +67,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'START_EXPEDITION': return handleStartExpedition(state, action.payload);
     case 'COMPLETE_EXPEDITION': return handleCompleteExpedition(state, action.payload);
     case 'CLAIM_EXPEDITION': return handleClaimExpedition(state, action.payload);
+    case 'ABORT_EXPEDITION': return handleAbortExpedition(state, action.payload);
     case 'DISMISS_DUNGEON_RESULT': return handleDismissDungeonResult(state);
 
     // Equipment
@@ -77,8 +78,9 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'START_MANUAL_DUNGEON': return handleStartManualDungeon(state, action.payload);
     case 'MOVE_MANUAL_DUNGEON': return handleMoveManualDungeon(state, action.payload);
     case 'FINISH_MANUAL_DUNGEON': return handleFinishManualDungeon(state);
-    case 'RETREAT_MANUAL_DUNGEON': return { ...state, activeManualDungeon: null, showManualDungeonOverlay: false, logs: ['The squad retreated from the area.', ...state.logs] };
+    case 'RETREAT_MANUAL_DUNGEON': return handleRetreatManualDungeon(state);
     case 'TOGGLE_MANUAL_DUNGEON_OVERLAY': return { ...state, showManualDungeonOverlay: action.payload };
+    case 'RESCUE_NPC': return handleRescueNPC(state, action.payload);
 
     // Toast Notifications
     case 'SHOW_TOAST':

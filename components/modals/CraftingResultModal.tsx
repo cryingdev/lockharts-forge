@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { Hammer, Sword, Shield, Zap, Brain, Check, Star, ArrowUp, ArrowDown } from 'lucide-react';
@@ -40,86 +39,51 @@ const CraftingResultModal = () => {
     const renderStatItem = (icon: React.ReactNode, labelStr: string, statKey: keyof EquipmentStats, value: number) => {
         const baseValue = recipe?.baseStats?.[statKey] || 0;
         const diff = value - baseValue;
-        
-        let status: 'UP' | 'DOWN' | 'EQUAL' = 'EQUAL';
-        if (diff > 0) status = 'UP';
-        else if (diff < 0) status = 'DOWN';
+        let status: 'UP' | 'DOWN' | 'EQUAL' = diff > 0 ? 'UP' : diff < 0 ? 'DOWN' : 'EQUAL';
 
         return (
-            <div 
-                className={`bg-stone-950/50 p-2 md:p-3 rounded-xl border transition-all hover:bg-stone-900 group flex justify-between items-center ${
-                    status === 'UP' ? 'border-amber-600/40 shadow-[inner_0_0_10px_rgba(245,158,11,0.1)]' : 
-                    status === 'DOWN' ? 'border-red-900/40 shadow-[inner_0_0_10px_rgba(239,68,68,0.05)]' : 
-                    'border-stone-800'
-                }`}
-            >
-                <span className="text-[9px] md:text-[10px] text-stone-500 font-bold uppercase flex items-center gap-1.5 group-hover:text-stone-400">
+            <div className={`bg-stone-950/50 p-2 md:p-3 rounded-xl border transition-all flex justify-between items-center min-w-[120px] ${status === 'UP' ? 'border-amber-600/40 shadow-[inner_0_0_10px_rgba(245,158,11,0.1)]' : status === 'DOWN' ? 'border-red-900/40' : 'border-stone-800'}`}>
+                <span className="text-[8px] md:text-[10px] text-stone-500 font-bold uppercase flex items-center gap-1.5 pr-2">
                     {icon} {labelStr}
                 </span>
-                <div className="flex items-center gap-1.5">
-                    <span className={`text-xs md:text-sm font-mono font-bold transition-colors ${
-                        status === 'UP' ? 'text-amber-400' : 
-                        status === 'DOWN' ? 'text-red-500' : 
-                        'text-stone-200'
-                    }`}>
-                        {value}
-                    </span>
-                    {status === 'UP' && <ArrowUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-amber-500 animate-bounce" />}
-                    {status === 'DOWN' && <ArrowDown className="w-2.5 h-2.5 md:w-3 md:h-3 text-red-700 animate-pulse" />}
+                <div className="flex items-center gap-1">
+                    <span className={`text-xs md:text-sm font-mono font-bold ${status === 'UP' ? 'text-amber-400' : status === 'DOWN' ? 'text-red-500' : 'text-stone-200'}`}>{value}</span>
+                    {status === 'UP' && <ArrowUp className="w-2.5 h-2.5 text-amber-500 animate-bounce" />}
                 </div>
             </div>
         );
     };
 
     return (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-[10%] py-[5%] animate-in fade-in duration-500 overflow-hidden">
-            <div className="relative z-10 w-full max-w-md max-h-[95dvh] bg-stone-900 border-2 border-amber-600/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-sm px-[10%] py-[15%] animate-in fade-in duration-500 overflow-hidden">
+            <div className="relative w-fit max-w-[500px] h-fit max-h-full min-h-[200px] min-w-[280px] bg-stone-900 border-2 border-amber-600 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 mx-auto">
                 
-                {/* Header - Compact for small screens */}
-                <div className="bg-stone-850 p-3 md:p-6 border-b border-stone-800 flex flex-col items-center text-center relative overflow-hidden shrink-0">
-                    <div className="absolute top-0 right-0 p-2 opacity-5 hidden md:block">
-                         <Hammer className="w-20 h-20 text-stone-500" />
+                {/* Header */}
+                <div className="bg-stone-850 p-4 md:p-6 border-b border-stone-800 flex flex-col items-center text-center shrink-0">
+                    <div className={`w-16 h-16 md:w-20 md:h-20 bg-stone-900 rounded-full border-4 ${qColor.replace('text-', 'border-')} flex items-center justify-center mb-3 shadow-xl`}>
+                        <img src={imageUrl} className="w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-lg" />
                     </div>
-                    <div className={`w-14 h-14 md:w-24 md:h-24 bg-stone-900 rounded-full border-4 ${qColor.replace('text-', 'border-')} flex items-center justify-center mb-1.5 md:mb-4 shadow-2xl transition-all`}>
-                        <img 
-                            src={imageUrl} 
-                            className="w-9 h-9 md:w-16 md:h-16 object-contain drop-shadow-lg" 
-                        />
-                    </div>
-                    <h2 className="text-lg md:text-2xl font-bold text-stone-200 font-serif tracking-wide truncate w-full leading-tight">{data.name}</h2>
-                    <div className={`flex items-center gap-2 mt-1 md:mt-2 px-3 py-0.5 md:py-1 rounded-full bg-stone-950 border border-stone-800 font-bold uppercase tracking-widest text-[8px] md:text-[10px] ${qColor}`}>
-                        <Star className="w-2.5 h-2.5 md:w-3 md:h-3 fill-current" />
-                        {label} Quality
+                    <h2 className="text-lg md:text-2xl font-bold text-stone-100 font-serif leading-tight px-6">{data.name}</h2>
+                    <div className={`mt-2 px-3 py-1 rounded-full bg-stone-950 border border-stone-800 font-black uppercase tracking-widest text-[8px] md:text-[10px] ${qColor} flex items-center gap-1`}>
+                        <Star className="w-3 h-3 fill-current" /> {label} Quality
                     </div>
                 </div>
 
-                {/* Content - Scrollable */}
-                <div className="p-3 md:p-6 space-y-3 md:space-y-5 overflow-y-auto flex-1 custom-scrollbar">
-                    <p className="text-stone-400 text-[10px] md:text-sm text-center italic leading-relaxed px-2">
-                        "{item.description}"
-                    </p>
-
+                {/* Content */}
+                <div className="p-4 md:p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+                    <p className="text-stone-400 text-[10px] md:text-sm text-center italic leading-tight px-4">"{item.description}"</p>
                     <div className="grid grid-cols-2 gap-2 md:gap-3">
                         {renderStatItem(<Sword className="w-3 h-3" />, "P.Atk", "physicalAttack", data.stats.physicalAttack)}
                         {renderStatItem(<Shield className="w-3 h-3" />, "P.Def", "physicalDefense", data.stats.physicalDefense)}
                         {renderStatItem(<Zap className="w-3 h-3" />, "M.Atk", "magicalAttack", data.stats.magicalAttack)}
                         {renderStatItem(<Brain className="w-3 h-3" />, "M.Def", "magicalDefense", data.stats.magicalDefense)}
                     </div>
-
-                    <div className="flex justify-between items-center text-[10px] border-t border-stone-800/50 pt-3 md:pt-4 px-2">
-                        <span className="text-stone-500 uppercase font-bold tracking-tighter">Market Value</span>
-                        <span className="text-amber-500 font-mono font-bold text-sm md:text-lg">{data.price} G</span>
-                    </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-3 md:p-4 border-t border-stone-800 bg-stone-850 shrink-0">
-                    <button 
-                        onClick={actions.dismissCraftingResult}
-                        className="w-full py-2.5 md:py-4 bg-amber-700 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95 text-xs md:text-base"
-                    >
-                        <Check className="w-4 h-4 md:w-5 md:h-5" />
-                        Complete Forge
+                <div className="p-4 border-t border-stone-800 bg-stone-850 shrink-0">
+                    <button onClick={actions.dismissCraftingResult} className="w-full py-3 md:py-4 bg-amber-700 hover:bg-amber-600 text-white font-black rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 text-xs md:text-base uppercase tracking-widest">
+                        <Check className="w-4 h-4" /> Finalize Forge
                     </button>
                 </div>
             </div>

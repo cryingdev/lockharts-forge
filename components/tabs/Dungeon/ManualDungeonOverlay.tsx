@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { useGame } from '../../../context/GameContext';
@@ -6,7 +5,7 @@ import { DUNGEONS } from '../../../data/dungeons';
 import DungeonScene from '../../../game/DungeonScene';
 import { 
     ChevronUp, ChevronDown, ChevronLeft, ChevronRight, 
-    Key, Zap, LogOut, Heart
+    Key, Zap, LogOut
 } from 'lucide-react';
 
 const ManualDungeonOverlay = () => {
@@ -63,15 +62,14 @@ const ManualDungeonOverlay = () => {
                 moveEnergy: dungeon.moveEnergy,
                 bossEnergy: dungeon.bossEnergy,
                 onMove: (dx: number, dy: number) => {
-                    // @ts-ignore
-                    actions.dispatch({ type: 'MOVE_MANUAL_DUNGEON', payload: { x: dx, y: dy } });
+                    actions.moveInManualDungeon(dx, dy);
                 }
             });
         } else {
             const scene = gameRef.current.scene.getScene('DungeonScene') as DungeonScene;
             if (scene) scene.updateSession(session);
         }
-    }, [isReady, session]);
+    }, [isReady, session, actions, dungeon.moveEnergy, dungeon.bossEnergy]);
 
     // 3. 언마운트 시 파괴
     useEffect(() => {
@@ -104,8 +102,7 @@ const ManualDungeonOverlay = () => {
                 </div>
                 
                 <button 
-                    // @ts-ignore
-                    onClick={() => actions.dispatch({ type: 'RETREAT_MANUAL_DUNGEON' })}
+                    onClick={() => actions.retreatFromManualDungeon()}
                     className="flex items-center gap-2 px-4 py-2 bg-red-950/20 hover:bg-red-900/50 border border-red-900/50 rounded-lg text-red-400 font-bold text-xs transition-all"
                 >
                     <LogOut className="w-4 h-4" /> Retreat

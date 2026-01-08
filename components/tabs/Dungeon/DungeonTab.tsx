@@ -1,13 +1,13 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
 import { MATERIALS } from '../../../data/materials';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { calculatePartyPower, calculateMercenaryPower } from '../../../utils/combatLogic';
-import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play } from 'lucide-react';
+import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play, Ban, RefreshCw, LogOut, AlertTriangle } from 'lucide-react';
 import { getAssetUrl, formatDuration } from '../../../utils';
 import AssaultNavigator from './AssaultNavigator';
+import ConfirmationModal from '../../modals/ConfirmationModal';
 
 const DungeonTab = () => {
     const { state, actions } = useGame();
@@ -19,16 +19,23 @@ const DungeonTab = () => {
     const [failedMercs, setFailedMercs] = useState<string[]>([]);
     const [failedPowerHighlight, setFailedPowerHighlight] = useState(false);
     
+    // Modal states
+    const [showRecallConfirm, setShowRecallConfirm] = useState<'AUTO' | 'MANUAL' | null>(null);
+    
     const selectedDungeon = DUNGEONS[selectedIndex];
 
     // Check if this specific dungeon is the one being manually assaulted
     const isOngoingManual = activeManualDungeon && activeManualDungeon.dungeonId === selectedDungeon.id;
-
-    const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
     const currentExpedition = activeExpeditions.find(e => e.dungeonId === selectedDungeon.id);
     
+    // Any active mission (Auto or Manual) for this dungeon
+    const hasActiveMission = !!currentExpedition || !!isOngoingManual;
+
+    const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
+    
     const isMercBusy = (mercId: string) => {
-        return activeExpeditions.some(e => e.partyIds.includes(mercId));
+        return activeExpeditions.some(e => e.partyIds.includes(mercId)) || 
+               (activeManualDungeon && activeManualDungeon.partyIds.includes(mercId));
     };
 
     const handlePrev = () => {
@@ -84,6 +91,10 @@ const DungeonTab = () => {
     };
 
     const handleStartAutoExpedition = () => {
+        if (isOngoingManual) {
+            actions.showToast("Cannot start auto-expedition while a manual assault is active.");
+            return;
+        }
         if (!validateEntry()) return;
         actions.startExpedition(selectedDungeon.id, party);
     };
@@ -101,21 +112,21 @@ const DungeonTab = () => {
         actions.claimExpedition(expId);
     };
 
+    const handleConfirmRecall = () => {
+        if (showRecallConfirm === 'AUTO' && currentExpedition) {
+            actions.abortExpedition(currentExpedition.id);
+            actions.showToast("Strategic deployment cancelled.");
+        } else if (showRecallConfirm === 'MANUAL') {
+            actions.retreatFromManualDungeon();
+            actions.showToast("Direct assault abandoned.");
+        }
+        setShowRecallConfirm(null);
+    };
+
     const currentPartyPower = useMemo(() => {
         const selectedMercs = knownMercenaries.filter(m => party.includes(m.id));
         return calculatePartyPower(selectedMercs);
     }, [party, knownMercenaries]);
-
-    const canStartStatus = useMemo(() => {
-        if (!selectedDungeon) return false;
-        if (party.length === 0) return false;
-        if (currentPartyPower < selectedDungeon.requiredPower) return false;
-        
-        const selectedMercs = knownMercenaries.filter(m => party.includes(m.id));
-        const hasEnergy = selectedMercs.every(m => (m.expeditionEnergy || 0) >= selectedDungeon.energyCost);
-        
-        return hasEnergy;
-    }, [selectedDungeon, party, currentPartyPower, knownMercenaries]);
 
     const [timeLeft, setTimeLeft] = useState<string>('');
     const isComplete = currentExpedition?.status === 'COMPLETED';
@@ -205,7 +216,7 @@ const DungeonTab = () => {
                                      </div>
                                      {currentExpedition && timeLeft && (
                                          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
-                                             <Timer className="w-4 h-4 sm:w-8 sm:h-8 text-amber-500 animate-pulse" />
+                                             <Timer className="w-4 h-4 sm:w-8 sm:h-8 text-amber-50 animate-pulse" />
                                              <span className="text-[9px] sm:text-sm font-mono text-amber-400 font-bold">{timeLeft}</span>
                                          </div>
                                      )}
@@ -283,25 +294,60 @@ const DungeonTab = () => {
 
             {/* Right/Lower Panel: Deployment & Squad */}
             <div className="flex-1 flex flex-col bg-stone-925 relative overflow-hidden min-h-0 min-w-0">
-                {currentExpedition ? (
+                {hasActiveMission ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center animate-in fade-in duration-700">
                         <Trophy className={`w-10 h-10 sm:w-24 lg:w-28 mb-4 sm:mb-8 ${isComplete ? 'text-emerald-500 animate-bounce' : 'text-stone-800 opacity-30'}`} />
                         <h2 className="text-lg sm:text-3xl lg:text-4xl font-black text-stone-100 mb-2 uppercase tracking-tighter font-serif italic">Mission Underway</h2>
-                        <p className="text-stone-500 text-[10px] sm:text-base lg:text-lg max-w-lg mb-6 sm:mb-12 leading-relaxed px-4">The squad is currently navigating the hazards of <span className="text-amber-500 font-bold">{selectedDungeon.name}</span>. Stand by for status updates.</p>
+                        <p className="text-stone-500 text-[10px] sm:text-base lg:text-lg max-w-lg mb-4 sm:mb-8 leading-relaxed px-4">
+                            {isOngoingManual 
+                                ? `Your squad is currently engaging targets in ${selectedDungeon.name}. Await tactical updates or resume command.`
+                                : `The squad is currently navigating the hazards of ${selectedDungeon.name}. Stand by for status updates.`}
+                        </p>
                         
-                        {isComplete ? (
-                            <button onClick={() => handleClaim(currentExpedition.id)} className="px-8 sm:px-16 lg:px-20 py-3 sm:py-5 lg:py-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl md:rounded-2xl shadow-2xl flex items-center gap-3 sm:gap-4 border-b-4 border-emerald-800 active:scale-95 transition-all">
-                                <CheckCircle className="w-4 h-4 sm:w-7 lg:w-8" /> 
-                                <span className="text-xs sm:lg lg:text-xl uppercase tracking-widest">Secure Loot & Return</span>
-                            </button>
-                        ) : (
-                            timeLeft && (
-                                <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-50 shadow-2xl backdrop-blur-md flex items-center gap-0">
-                                    <Timer className="w-5 h-5 sm:w-8 lg:w-10 animate-pulse text-amber-600 shrink-0" />
-                                    <span>{timeLeft}</span>
-                                </div>
-                            )
-                        )}
+                        <div className="flex flex-col items-center gap-4 w-full max-w-sm">
+                            {/* Case 1: Completed Auto Expedition */}
+                            {currentExpedition && isComplete && (
+                                <button onClick={() => handleClaim(currentExpedition.id)} className="w-full py-4 sm:py-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl md:rounded-2xl shadow-2xl flex items-center justify-center gap-3 border-b-4 border-emerald-800 active:scale-95 transition-all">
+                                    <CheckCircle className="w-5 h-5 sm:w-8" /> 
+                                    <span className="text-xs sm:text-xl uppercase tracking-widest">Secure Loot & Return</span>
+                                </button>
+                            )}
+
+                            {/* Case 2: Active Auto Expedition */}
+                            {currentExpedition && !isComplete && (
+                                <>
+                                    <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-50 shadow-2xl backdrop-blur-md flex items-center gap-2">
+                                        <Timer className="w-5 h-5 sm:w-8 lg:w-10 animate-pulse text-amber-600 shrink-0" />
+                                        <span>{timeLeft}</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowRecallConfirm('AUTO')}
+                                        className="flex items-center gap-2 px-6 py-2.5 bg-red-950/30 hover:bg-red-900/50 border border-red-900/50 rounded-xl text-red-500 font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all active:scale-95"
+                                    >
+                                        <Ban className="w-4 h-4" /> Cancel & Recall Squad
+                                    </button>
+                                </>
+                            )}
+
+                            {/* Case 3: Ongoing Manual Assault */}
+                            {isOngoingManual && (
+                                <>
+                                    <button 
+                                        onClick={handleStartManualAssault} 
+                                        className="w-full py-3 md:py-4 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl shadow-2xl flex items-center justify-center gap-3 border-b-4 border-amber-800 active:scale-95 transition-all"
+                                    >
+                                        <Play className="w-5 h-5 sm:w-6 animate-pulse" /> 
+                                        <span className="text-xs sm:text-lg uppercase tracking-widest">Resume Assault</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowRecallConfirm('MANUAL')}
+                                        className="flex items-center gap-2 px-6 py-2.5 bg-red-950/30 hover:bg-red-900/50 border border-red-900/50 rounded-xl text-red-500 font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all active:scale-95"
+                                    >
+                                        <LogOut className="w-4 h-4" /> Abandon & Return
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="flex-1 flex flex-col overflow-hidden">
@@ -401,13 +447,13 @@ const DungeonTab = () => {
                                                     </div>
                                                     <div className="flex flex-col items-end gap-1 shrink-0">
                                                         {isBusy ? (
-                                                            <span className="text-[6px] sm:text-[8px] lg:text-[9px] font-black uppercase text-stone-500 bg-stone-950 px-1.5 py-0.5 rounded border border-stone-800">Deploying</span>
+                                                            <span className="text-[6px] sm:text-[8px] lg:text-[9px] font-black uppercase text-stone-500 bg-stone-950 px-1.5 py-0.5 rounded border border-stone-800">Busy</span>
                                                         ) : (
                                                             <div className="flex items-center gap-1 sm:gap-1.5">
-                                                                <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-0.5 sm:h-1 lg:h-1.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800">
-                                                                    <div className={`h-full transition-all duration-700 ${hasEnoughEnergy ? 'bg-blue-600' : 'bg-red-600'}`} style={{ width: `${energy}%` }}></div>
+                                                                <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-2 sm:h-2.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800 p-[1px] shadow-inner">
+                                                                    <div className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${hasEnoughEnergy ? 'from-blue-700 to-blue-500' : 'from-red-800 to-red-600 animate-pulse'}`} style={{ width: `${energy}%` }}></div>
                                                                 </div>
-                                                                <Zap className={`w-2.5 h-2.5 sm:w-3.5 lg:w-4 ${hasEnoughEnergy ? 'text-blue-500' : 'text-red-600'}`} />
+                                                                <Zap className={`w-3 h-3 sm:w-4 lg:w-5 ${hasEnoughEnergy ? 'text-blue-500' : 'text-red-600 animate-pulse'}`} />
                                                                 {hasError && <AlertCircle className="w-3.5 h-3.5 sm:w-5 text-red-500 animate-pulse" />}
                                                             </div>
                                                         )}
@@ -426,11 +472,11 @@ const DungeonTab = () => {
                                 {/* Strategic Deploy (Existing Auto) */}
                                 <button 
                                     onClick={handleStartAutoExpedition} 
-                                    disabled={!isUnlocked || party.length === 0} 
-                                    className={`group flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all transform active:scale-95 shadow-xl ${isUnlocked && party.length > 0 ? 'bg-indigo-700 hover:bg-indigo-600 border-indigo-900 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
+                                    disabled={!isUnlocked || party.length === 0 || !!isOngoingManual} 
+                                    className={`group flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all transform active:scale-95 shadow-xl ${isUnlocked && party.length > 0 && !isOngoingManual ? 'bg-indigo-700 hover:bg-indigo-600 border-indigo-900 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <Timer className={`w-3 h-3 sm:w-5 ${isUnlocked && party.length > 0 ? 'animate-pulse' : ''}`} />
+                                        <Timer className={`w-3 h-3 sm:w-5 ${isUnlocked && party.length > 0 && !isOngoingManual ? 'animate-pulse' : ''}`} />
                                         <span className="text-[10px] sm:text-base font-black uppercase tracking-tight">Strategic Deploy</span>
                                     </div>
                                     <span className="text-[7px] sm:text-[10px] font-bold opacity-60 uppercase tracking-widest">Auto Exploration</span>
@@ -464,6 +510,21 @@ const DungeonTab = () => {
                     </div>
                 )}
             </div>
+
+            {/* Recall Confirmation Modal */}
+            <ConfirmationModal 
+                isOpen={!!showRecallConfirm}
+                title="Recall Squad?"
+                message={showRecallConfirm === 'MANUAL' 
+                    ? "Abandon the current assault? You will lose all progress on this floor and return the entire squad to the Tavern immediately. No rewards will be gained."
+                    : "Cancel strategic deployment? The squad will return to the Tavern immediately. No loot will be collected and energy will not be refunded."
+                }
+                confirmLabel="Confirm Recall"
+                cancelLabel="Stay Deployed"
+                isDanger={true}
+                onConfirm={handleConfirmRecall}
+                onCancel={() => setShowRecallConfirm(null)}
+            />
         </div>
     );
 };

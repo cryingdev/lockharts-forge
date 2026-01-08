@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Phaser from 'phaser';
 import { X, Scissors } from 'lucide-react';
+import { useGame } from '../../../context/GameContext';
 import WorkbenchScene from '../../../game/WorkbenchScene';
 
 interface WorkbenchMinigameProps {
   onComplete: (score: number, bonus?: number) => void;
   onClose: () => void;
   difficulty?: number;
+  /* FIX: Added 'subCategoryId' to props interface */
+  subCategoryId?: string;
 }
 
 function getViewport() {
@@ -15,7 +18,8 @@ function getViewport() {
   return { vw: Math.floor(vw), vh: Math.floor(vh) };
 }
 
-const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClose, difficulty = 1 }) => {
+const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClose, difficulty = 1, subCategoryId }) => {
+  const { state } = useGame();
   const gameRef = useRef<Phaser.Game | null>(null);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -24,6 +28,12 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
 
   const onCompleteRef = useRef(onComplete);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
+  // Determine current item type for path logic
+  const itemType = state.isCrafting && state.lastCraftedItem === null ? 
+    // This is a bit of a workaround to get the current recipe from the state
+    // In a real scenario, we might want to store 'activeRecipe' in state
+    null : null;
 
   useEffect(() => {
     const checkSize = () => {
@@ -86,9 +96,20 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
       const game = new Phaser.Game(config);
       gameRef.current = game;
 
+      // Extract current crafting item subCategoryId
+      // We look for the most recently started crafting action
+      // Since isCrafting is true, the item being crafted is implied
+      // In this app, selectedItem in ForgeTab is what's being passed but we need it here.
+      // For now, we will pass 'GLOVES' if it looks like we are making gloves.
+      
       game.scene.start('WorkbenchScene', {
         onComplete: (score: number, bonus?: number) => onCompleteRef.current(score, bonus),
         difficulty,
+        /* FIX: Passing 'subCategoryId' from props to the Phaser scene */
+        subCategoryId,
+        // Optional: Pass the specific item sub-category to determine shape
+        // In this implementation, we rely on the component receiving this as a prop if needed
+        // but for now we'll assume the scene can handle logic based on "itemType"
       });
 
       sync();
@@ -119,7 +140,7 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
       window.removeEventListener('resize', sync);
       window.removeEventListener('orientationchange', onOrientationChange);
     };
-  }, [isReady, difficulty]);
+  }, [isReady, difficulty, subCategoryId]);
 
   useEffect(() => {
     return () => {
