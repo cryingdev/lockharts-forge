@@ -4,7 +4,8 @@ import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
 import { MATERIALS } from '../../../data/materials';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
-import { calculatePartyPower, calculateMercenaryPower, formatDuration } from '../../../utils/dungeonUtils';
+import { calculatePartyPower, calculateMercenaryPower } from '../../../utils/mercenaryUtils';
+import { formatDuration } from '../../../utils/dungeonUtils';
 import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import AssaultNavigator from './AssaultNavigator';
@@ -296,7 +297,7 @@ const DungeonTab = () => {
                             </button>
                         ) : (
                             timeLeft && (
-                                <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-500 shadow-2xl backdrop-blur-md flex items-center gap-0">
+                                <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-50 shadow-2xl backdrop-blur-md flex items-center gap-0">
                                     <Timer className="w-5 h-5 sm:w-8 lg:w-10 animate-pulse text-amber-600 shrink-0" />
                                     <span>{timeLeft}</span>
                                 </div>
@@ -368,7 +369,7 @@ const DungeonTab = () => {
                             {/* Roster Selection Area */}
                             <div className="flex-1 flex flex-col gap-2 sm:gap-3 bg-stone-950/40 rounded-xl sm:rounded-2xl border border-stone-800 shadow-inner min-h-0 min-w-0 overflow-hidden">
                                 <div className="p-2 sm:p-3 lg:p-4 border-b border-stone-800 bg-stone-900/40 flex justify-between items-center shrink-0">
-                                    <span className="text-[8px] sm:text-[10px] lg:text-xs font-black text-stone-400 uppercase tracking-widest">Available Units</span>
+                                    <span className="text-[8px] sm:text-10px] lg:text-xs font-black text-stone-400 uppercase tracking-widest">Available Units</span>
                                     <span className="text-[7px] sm:text-[9px] lg:text-[10px] font-mono text-stone-600 bg-stone-950 px-2 py-0.5 rounded-full">{hiredMercs.length} Hired</span>
                                 </div>
                                 <div className="flex-1 overflow-y-auto custom-scrollbar p-1.5 sm:p-3 space-y-1.5 sm:space-y-2">

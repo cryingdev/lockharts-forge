@@ -4,6 +4,7 @@ import { Mercenary } from '../models/Mercenary';
 import { calculateDerivedStats, applyEquipmentBonuses, DerivedStats, mergePrimaryStats, PrimaryStats } from '../models/Stats';
 import { Equipment } from '../models/Equipment';
 import { calculateCombatResult, calculateExpectedDPS, calculateFastDmg } from '../utils/combatLogic';
+import { JobClass, JOB_EFFICIENCY } from '../models/JobClass';
 
 const ACTION_THRESHOLD = 1000;
 const MAX_SQUAD_SIZE = 4;
@@ -156,9 +157,10 @@ export const useSimulation = (): SimulationHook => {
         const refreshTeam = (team: CombatantInstance[]) => team.map(c => {
             if (!c.mercenaryId) return c;
             const derived = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats);
-            if (!derived) return c;
+            const merc = state.knownMercenaries.find(m => m.id === c.mercenaryId);
+            if (!derived || !merc) return c;
             const isMage = derived.magicalAttack > derived.physicalAttack;
-            return { ...c, dps: calculateExpectedDPS(derived, isMage ? 'MAGICAL' : 'PHYSICAL') };
+            return { ...c, dps: calculateExpectedDPS(derived, merc.job, isMage ? 'MAGICAL' : 'PHYSICAL') };
         });
 
         setBattleState(prev => ({
@@ -199,10 +201,11 @@ export const useSimulation = (): SimulationHook => {
 
                 if (data.mercenaryId !== undefined || data.level !== undefined || data.allocatedStats !== undefined) {
                     const derived = getDerivedStats(updated.mercenaryId, updated.level, updated.allocatedStats);
-                    if (derived) {
+                    const merc = state.knownMercenaries.find(m => m.id === updated.mercenaryId);
+                    if (derived && merc) {
                         updated.currentHp = derived.maxHp;
                         const isMage = derived.magicalAttack > derived.physicalAttack;
-                        updated.dps = calculateExpectedDPS(derived, isMage ? 'MAGICAL' : 'PHYSICAL');
+                        updated.dps = calculateExpectedDPS(derived, merc.job, isMage ? 'MAGICAL' : 'PHYSICAL');
                     }
                 }
                 return updated;
@@ -246,13 +249,17 @@ export const useSimulation = (): SimulationHook => {
 
         const teamAData = battleState.teamA.filter(c => c.mercenaryId).map(c => {
             const d = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)!;
+            const merc = state.knownMercenaries.find(m => m.id === c.mercenaryId)!;
             const isMage = d.magicalAttack > d.physicalAttack;
-            return { hp: d.maxHp, spd: d.speed, atk: isMage ? d.magicalAttack : d.physicalAttack, red: isMage ? d.magicalReduction : d.physicalReduction, crt: d.critChance, cdmg: d.critDamage };
+            const baseEff = isMage ? JOB_EFFICIENCY[merc.job].magical : JOB_EFFICIENCY[merc.job].physical;
+            return { hp: d.maxHp, spd: d.speed, atk: isMage ? d.magicalAttack : d.physicalAttack, red: isMage ? d.magicalReduction : d.physicalReduction, crt: d.critChance, cdmg: d.critDamage, baseEff };
         });
         const teamBData = battleState.teamB.filter(c => c.mercenaryId).map(c => {
             const d = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)!;
+            const merc = state.knownMercenaries.find(m => m.id === c.mercenaryId)!;
             const isMage = d.magicalAttack > d.physicalAttack;
-            return { hp: d.maxHp, spd: d.speed, atk: isMage ? d.magicalAttack : d.physicalAttack, red: isMage ? d.magicalReduction : d.physicalReduction, crt: d.critChance, cdmg: d.critDamage };
+            const baseEff = isMage ? JOB_EFFICIENCY[merc.job].magical : JOB_EFFICIENCY[merc.job].physical;
+            return { hp: d.maxHp, spd: d.speed, atk: isMage ? d.magicalAttack : d.physicalAttack, red: isMage ? d.magicalReduction : d.physicalReduction, crt: d.critChance, cdmg: d.critDamage, baseEff };
         });
 
         if (teamAData.length === 0 || teamBData.length === 0) return;
@@ -277,7 +284,7 @@ export const useSimulation = (): SimulationHook => {
                         if(targets.length === 0) break;
                         const tIdx = targets[Math.floor(Math.random()*targets.length)];
                         totalAtksA++;
-                        const dmg = calculateFastDmg(teamAData[j].atk, teamBData[tIdx].red, teamAData[j].crt, teamAData[j].cdmg, 80); 
+                        const dmg = calculateFastDmg(teamAData[j].atk, teamBData[tIdx].red, teamAData[j].crt, teamAData[j].cdmg, 95, teamAData[j].baseEff); 
                         if(dmg > 0) { hpsB[tIdx] -= dmg; if(hpsB[tIdx] <= 0) aliveB--; } else { totalEvasionsB++; }
                     }
                 }
@@ -290,7 +297,7 @@ export const useSimulation = (): SimulationHook => {
                         if(targets.length === 0) break;
                         const tIdx = targets[Math.floor(Math.random()*targets.length)];
                         totalAtksB++;
-                        const dmg = calculateFastDmg(teamBData[j].atk, teamAData[tIdx].red, teamBData[j].crt, teamBData[j].cdmg, 80);
+                        const dmg = calculateFastDmg(teamBData[j].atk, teamAData[tIdx].red, teamBData[j].crt, teamBData[j].cdmg, 95, teamBData[j].baseEff);
                         if(dmg > 0) { hpsA[tIdx] -= dmg; if(hpsA[tIdx] <= 0) aliveA--; } else { totalEvasionsA++; }
                     }
                 }
@@ -346,6 +353,7 @@ export const useSimulation = (): SimulationHook => {
                     const target = targets[Math.floor(Math.random() * targets.length)];
                     const attD = getDerivedStats(att.mercenaryId, att.level, att.allocatedStats)!;
                     const defD = getDerivedStats(target.mercenaryId, target.level, target.allocatedStats)!;
+                    const attMerc = state.knownMercenaries.find(m => m.id === att.mercenaryId)!;
                     const stats = side === 'A' ? matchStatsRef.current.A : matchStatsRef.current.B;
                     const enemyStats = side === 'A' ? matchStatsRef.current.B : matchStatsRef.current.A;
                     
@@ -355,7 +363,7 @@ export const useSimulation = (): SimulationHook => {
                     
                     setTimeout(() => setBattleState(curr => ({ teamA: curr.teamA.map(c => c.instanceId === att.instanceId ? { ...c, lastAttacker: false } : c), teamB: curr.teamB.map(c => c.instanceId === att.instanceId ? { ...c, lastAttacker: false } : c) })), 120);
 
-                    const res = calculateCombatResult(attD, defD, attD.magicalAttack > attD.physicalAttack ? 'MAGICAL' : 'PHYSICAL');
+                    const res = calculateCombatResult(attD, defD, attMerc.job, attD.magicalAttack > attD.physicalAttack ? 'MAGICAL' : 'PHYSICAL');
                     if (res.isHit) {
                         if (res.isCrit) stats.crits++;
                         stats.totalDmg += res.damage;
