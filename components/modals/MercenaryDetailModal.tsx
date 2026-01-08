@@ -413,7 +413,8 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
     const currentEquipmentStats = (Object.values(mercenary.equipment) as (Equipment | null)[]).map(eq => eq?.stats).filter(Boolean);
     const currentStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
     const currentAttackType = mergedPrimary.int > mergedPrimary.str ? 'MAGICAL' : 'PHYSICAL';
-    const currentCombatPower = calculateCombatPower(currentStats, currentAttackType);
+    // Fix: Added missing mercenary.job argument to calculateCombatPower call
+    const currentCombatPower = calculateCombatPower(currentStats, mercenary.job, currentAttackType);
 
     let previewStats: DerivedStats | null = null;
     let previewCombatPower: number | null = null;
@@ -425,7 +426,8 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
             else if (item.slotType === 'OFF_HAND' && previewEq.MAIN_HAND?.isTwoHanded) previewEq.MAIN_HAND = null;
             previewEq[item.slotType] = item;
             previewStats = applyEquipmentBonuses(baseDerived, (Object.values(previewEq) as (Equipment | null)[]).map(e => e?.stats).filter(Boolean) as any);
-            previewCombatPower = calculateCombatPower(previewStats, currentAttackType);
+            // Fix: Added missing mercenary.job argument to calculateCombatPower call
+            previewCombatPower = calculateCombatPower(previewStats, mercenary.job, currentAttackType);
         }
     }
 
