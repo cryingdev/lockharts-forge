@@ -4,10 +4,9 @@ import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
 import { MATERIALS } from '../../../data/materials';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
-import { calculatePartyPower, calculateMercenaryPower } from '../../../utils/mercenaryUtils';
-import { formatDuration } from '../../../utils/dungeonUtils';
+import { calculatePartyPower, calculateMercenaryPower } from '../../../utils/combatLogic';
 import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play } from 'lucide-react';
-import { getAssetUrl } from '../../../utils';
+import { getAssetUrl, formatDuration } from '../../../utils';
 import AssaultNavigator from './AssaultNavigator';
 
 const DungeonTab = () => {
@@ -253,7 +252,7 @@ const DungeonTab = () => {
                                                     className="w-4 h-4 sm:w-8 sm:h-8 object-contain opacity-70 group-hover:opacity-100 transition-opacity"
                                                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                                 />
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-950 border border-stone-700 rounded text-[7px] sm:text-[9px] font-bold text-stone-300 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-2xl">
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-950 border border-stone-700 rounded text-[7px] sm:text-[9px] font-bold text-stone-300 opacity-0 group-hover:opacity-10 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-2xl">
                                                     {mat?.name || reward.itemId}
                                                 </div>
                                             </div>
