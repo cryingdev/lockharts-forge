@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
 import { getEnergyCost, generateEquipment } from '../../utils/craftingLogic';
@@ -75,8 +76,8 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
     };
 };
 
-export const handleFinishCrafting = (state: GameState, payload: { item: EquipmentItem; quality: number; bonus?: number }): GameState => {
-    const { item, quality, bonus = 0 } = payload;
+export const handleFinishCrafting = (state: GameState, payload: { item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number }): GameState => {
+    const { item, quality, bonus = 0, masteryGain = 1 } = payload;
     const masteryCount = state.craftingMastery[item.id] || 0;
 
     const equipment = generateEquipment(item, quality, masteryCount, bonus);
@@ -96,7 +97,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     newInventory.push(newItem);
 
     const newMastery = { ...state.craftingMastery };
-    newMastery[item.id] = (masteryCount || 0) + 1;
+    newMastery[item.id] = (masteryCount || 0) + masteryGain;
 
     const label = getQualityLabel(quality);
     // Generic log: label + name. No percentages.

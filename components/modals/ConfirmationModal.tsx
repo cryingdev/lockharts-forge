@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
@@ -27,7 +28,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     return (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-200 px-[10%] py-[15%]" onClick={onCancel}>
             <div 
-                className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-fit max-w-[400px] h-fit max-h-full min-h-[180px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto"
+                className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-[90vw] max-w-[400px] h-fit max-h-full min-h-[180px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}

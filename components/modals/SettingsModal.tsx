@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Save, Upload, Volume2, LogOut, X, Settings } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
@@ -46,7 +47,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
     return (
         <>
             <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-black/90 backdrop-blur-md px-[10%] py-[15%] animate-in fade-in duration-200 overflow-hidden">
-                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-sm h-fit max-h-full min-h-[200px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-[90vw] max-w-[380px] h-fit max-h-full min-h-[200px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto">
                     
                     {/* Header */}
                     <div className="flex items-center justify-between p-5 border-b border-stone-800 bg-stone-850 shrink-0">

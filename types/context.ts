@@ -1,3 +1,4 @@
+
 import { GameState } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -21,7 +22,7 @@ export interface GameContextType {
     
     startCrafting: (item: EquipmentItem) => void;
     cancelCrafting: (item: EquipmentItem) => void;
-    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number) => void;
+    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number, masteryGain?: number) => void;
     craftItem: (item: EquipmentItem, quality: number) => void; 
     dismissCraftingResult: () => void;
     

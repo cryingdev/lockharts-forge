@@ -1,8 +1,90 @@
-import React from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
-import { Trophy, Check, Star, Heart, Sparkles, Coins } from 'lucide-react';
+import { Trophy, Check, Star, Heart, Sparkles, Coins, Award, User } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
 import { MATERIALS } from '../../data/materials';
+
+/**
+ * 용병별 경험치 게이지 컴포넌트
+ */
+// FIX: Typed as React.FC to properly handle standard props like 'key' in parent components
+interface MercenaryExpRadialProps {
+    result: { 
+        id: string; 
+        name: string; 
+        job: string; 
+        levelBefore: number; 
+        levelAfter: number; 
+        xpGained: number; 
+        currentXp: number; 
+        xpToNext: number; 
+    };
+    delay: number;
+}
+
+const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({ 
+    result, 
+    delay 
+}) => {
+    const [progress, setProgress] = useState(0);
+    const radius = 46;
+    const circumference = 2 * Math.PI * radius;
+    
+    // 최종 목표 퍼센트 계산
+    const targetPercent = (result.currentXp / result.xpToNext) * 100;
+    const isLevelUp = result.levelAfter > result.levelBefore;
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setProgress(targetPercent);
+        }, 300 + delay);
+        return () => clearTimeout(timer);
+    }, [targetPercent, delay]);
+
+    const offset = circumference - (progress / 100) * circumference;
+    const merc = { icon: '👤' }; // 기본 아이콘 (필요시 전역 상태에서 매칭 가능)
+
+    return (
+        <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in duration-700" style={{ animationDelay: `${delay}ms` }}>
+            <div className="relative group">
+                <div className={`w-16 h-16 md:w-24 md:h-24 bg-stone-900 rounded-full flex items-center justify-center relative z-10 p-1 md:p-2 border border-stone-800/50 shadow-xl transition-all duration-700 ${isLevelUp ? 'shadow-[0_0_20px_rgba(59,130,246,0.3)]' : ''}`}>
+                    {/* Radial SVG Gauge */}
+                    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                        {/* Background Track */}
+                        <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-stone-950/40" />
+                        {/* Progress Arc */}
+                        <circle 
+                            cx="50" cy="50" r="46" 
+                            stroke="currentColor" strokeWidth="4" fill="transparent"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={offset}
+                            strokeLinecap="round"
+                            className={`transition-all duration-[1500ms] ease-out ${isLevelUp ? 'stroke-blue-400' : 'stroke-amber-500'}`}
+                        />
+                    </svg>
+                    
+                    <div className="text-2xl md:text-4xl filter drop-shadow-md z-20">
+                        {/* 용병 아이콘을 찾을 수 있으면 표시 */}
+                        {result.name.includes('Pip') ? '🌱' : result.name.includes('Garret') ? '🛡️' : result.name.includes('Elara') ? '🔥' : '👤'}
+                    </div>
+
+                    {/* Level Badge */}
+                    <div className={`absolute -bottom-1 -right-1 md:bottom-0 md:right-0 z-30 px-1.5 py-0.5 rounded-full border shadow-xl flex items-center gap-0.5 ${isLevelUp ? 'bg-blue-600 border-blue-400 animate-bounce' : 'bg-stone-800 border-stone-700'}`}>
+                        <span className="text-[8px] md:text-[10px] font-black text-white font-mono">LV.{result.levelAfter}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="text-center min-w-0 px-1">
+                <div className="text-[10px] md:text-sm font-black text-stone-200 truncate uppercase leading-none">{result.name.split(' ')[0]}</div>
+                <div className={`text-[8px] md:text-[10px] font-bold mt-1 ${isLevelUp ? 'text-blue-400' : 'text-amber-500'}`}>
+                    +{result.xpGained} XP {isLevelUp && 'UP!'}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const DungeonResultModal = () => {
     const { state, actions } = useGame();
@@ -24,7 +106,20 @@ const DungeonResultModal = () => {
                 </div>
 
                 {/* Content - Scrollable */}
-                <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-6 custom-scrollbar">
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-8 custom-scrollbar">
+                    
+                    {/* Squad Progress Section */}
+                    <div className="space-y-4">
+                        <h3 className="text-stone-500 font-black uppercase text-[8px] md:text-xs tracking-[0.2em] border-b border-stone-800 pb-1 flex items-center gap-2">
+                            <Award className="w-3 h-3 text-amber-500" /> Squad Growth
+                        </h3>
+                        <div className="flex flex-wrap justify-center gap-6 md:gap-10 py-2">
+                            {dungeonResult.mercenaryResults.map((m, idx) => (
+                                <MercenaryExpRadial key={m.id} result={m} delay={idx * 150} />
+                            ))}
+                        </div>
+                    </div>
+
                     {dungeonResult.rescuedMercenary && (
                         <div className="animate-in slide-in-from-top-4 duration-1000">
                             <h3 className="text-amber-500 font-black uppercase text-[8px] md:text-xs tracking-[0.2em] flex items-center gap-2 mb-2">

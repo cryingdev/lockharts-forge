@@ -28,7 +28,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [showError, setShowError] = useState(false);
 
   const [itemMultipliers, setItemMultipliers] = useState<Record<string, number>>({});
 
@@ -163,15 +162,19 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   };
 
   const handleBuy = () => {
+    if (cartItemCount === 0) {
+      actions.showToast("Your cart is empty.");
+      return;
+    }
     if (totalCost > state.stats.gold) {
-      setShowError(true);
-      setTimeout(() => setShowError(false), 3000);
+      actions.showToast("Insufficient Gold!");
       return;
     }
 
     const itemsToBuy = Object.entries(cart).map(([id, count]) => ({ id, count }));
     actions.buyItems(itemsToBuy, totalCost);
     setCart({});
+    actions.showToast("Purchase complete!");
   };
 
   const setMultiplier = (itemId: string, mult: number) => {
@@ -180,13 +183,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   return (
     <div className="h-full w-full flex bg-stone-950 relative overflow-hidden">
-      {showError && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[110] bg-red-900 border-2 border-red-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
-          <AlertCircle className="w-5 h-5 text-red-200" />
-          <div className="text-sm font-black uppercase tracking-tight">Insufficient Gold!</div>
-        </div>
-      )}
-
       {/* ✅ 메인 카탈로그: 너비를 w-full로 고정하여 장바구니 상태와 무관하게 일정하게 유지 */}
       <div className="flex flex-col h-full w-full relative shrink-0">
         <div className="bg-stone-900/80 backdrop-blur-md p-3 md:p-5 border-b border-stone-800 flex items-center justify-between z-10 shrink-0">
@@ -208,10 +204,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleBuy}
-              disabled={cartItemCount === 0 || totalCost > state.stats.gold}
               className={`relative flex items-center gap-2 md:gap-3 px-3 md:px-6 py-1.5 md:py-3 rounded-xl border transition-all shadow-lg active:scale-95 group ${
                 cartItemCount === 0
-                  ? 'bg-stone-800/40 border-stone-700 text-stone-600 cursor-not-allowed'
+                  ? 'bg-stone-800/40 border-stone-700 text-stone-600 grayscale'
                   : totalCost > state.stats.gold
                     ? 'bg-red-900/40 border-red-700 text-red-300'
                     : 'bg-amber-600 hover:bg-amber-500 border-amber-400 text-white shadow-[0_0_20px_rgba(217,119,6,0.2)]'
@@ -356,9 +351,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
                   <div className="w-full text-center mb-0.5">
                     <h4
-                      className="text-[7px] md:text-[11px] font-black leading-none truncate px-1 ${
+                      className={`text-[7px] md:text-[11px] font-black leading-none truncate px-1 ${
                         isKeyItem || isScrollItem ? 'text-amber-400' : 'text-stone-400'
-                      }"
+                      }`}
                     >
                       {itemName}
                     </h4>
@@ -499,9 +494,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             <button
               type="button"
               onClick={handleBuy}
-              disabled={totalCost === 0 || totalCost > state.stats.gold}
               className={`w-full py-2.5 md:py-3 rounded-xl font-black text-xs md:text-sm transition-all flex items-center justify-center gap-2 shadow-xl ${
-                totalCost > state.stats.gold ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white'
+                totalCost > state.stats.gold ? 'bg-stone-800 text-stone-300' : 
+                totalCost === 0 ? 'bg-stone-800 text-stone-500 grayscale opacity-60' :
+                'bg-amber-600 hover:bg-amber-500 text-white'
               }`}
             >
               <ShoppingBag className="w-4 h-4" />
