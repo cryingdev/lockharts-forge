@@ -1,9 +1,10 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import WorkbenchMinigame from './WorkbenchMinigame';
-import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain, AlertCircle, TrendingUp, Sparkles } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain, AlertCircle, TrendingUp, Sparkles, FastForward } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
@@ -136,16 +137,40 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       setFavorites(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
   }, []);
 
+  const isRequirementMet = useMemo(() => {
+    if (!selectedItem) return true;
+    if (selectedItem.craftingType === 'FORGE') return hasFurnace;
+    if (selectedItem.craftingType === 'WORKBENCH') return hasWorkbench;
+    return true;
+  }, [selectedItem, hasFurnace, hasWorkbench]);
+
   const startCrafting = useCallback(() => {
       if (!selectedItem) return;
+
+      // Tiered checks for toast feedback
+      if (!isRequirementMet) {
+          actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
+          return;
+      }
+      if (!canAffordResources(selectedItem)) {
+          actions.showToast(`Insufficient materials for ${selectedItem.name}.`);
+          return;
+      }
+      if (!hasEnergy) {
+          actions.triggerEnergyHighlight();
+          actions.showToast("Not enough energy.");
+          return;
+      }
       if (selectedItem.craftingType === 'FORGE' && !canEnterForge) {
           setFailedFuelHighlight(true);
           setTimeout(() => setFailedFuelHighlight(false), 2000);
+          actions.showToast("Forge is cold! Add fuel first.");
           return;
       }
+
       actions.startCrafting(selectedItem);
       setIsPanelOpen(false); 
-  }, [actions, selectedItem, canEnterForge]);
+  }, [actions, selectedItem, isRequirementMet, canAffordResources, hasEnergy, canEnterForge]);
 
   const cancelCrafting = useCallback(() => {
       if (selectedItem) actions.cancelCrafting(selectedItem);
@@ -212,34 +237,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     );
   };
 
-  const renderMasteryProgress = (item: EquipmentItem) => {
-    const count = craftingMastery[item.id] || 0;
-    let nextThreshold = MASTERY_THRESHOLDS.ADEPT;
-    let label = "Novice";
-    let color = "from-stone-500 to-stone-400";
-    if (count >= MASTERY_THRESHOLDS.ARTISAN) { nextThreshold = 50; label = "Artisan"; color = "from-amber-600 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]"; }
-    else if (count >= MASTERY_THRESHOLDS.ADEPT) { nextThreshold = MASTERY_THRESHOLDS.ARTISAN; label = "Adept"; color = "from-emerald-600 to-emerald-400"; }
-    const progress = Math.min(100, (count / nextThreshold) * 100);
-    return (
-        <div className="w-full max-w-xs mb-6 md:mb-8 bg-stone-900/40 p-2 md:p-3 rounded-xl border border-stone-800/50">
-            <div className="flex justify-between items-end mb-1.5">
-                <div className="flex items-center gap-1.5"><Award className="w-3 h-3 md:w-4 md:h-4 text-amber-500" /><span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-stone-400">{label} Mastery</span></div>
-                <span className="text-[8px] md:text-[10px] font-mono font-bold text-stone-500">{count} / {nextThreshold} CRAFTS</span>
-            </div>
-            <div className="w-full h-1 md:h-1.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800 shadow-inner">
-                <div className={`h-full bg-gradient-to-r ${color} transition-all duration-1000`} style={{ width: `${progress}%` }}></div>
-            </div>
-        </div>
-    );
-  };
-
-  const isRequirementMet = useMemo(() => {
-    if (!selectedItem) return true;
-    if (selectedItem.craftingType === 'FORGE') return hasFurnace;
-    if (selectedItem.craftingType === 'WORKBENCH') return hasWorkbench;
-    return true;
-  }, [selectedItem, hasFurnace, hasWorkbench]);
-
   const renderItemCard = (item: EquipmentItem) => {
       const isSelected = selectedItem?.id === item.id;
       const isFav = favorites.includes(item.id);
@@ -297,9 +294,65 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     return { label, colorClass, glowClass, progress, circumference, offset, count, nextMax };
   }, [selectedItem, craftingMastery]);
 
+  const quickCraftFuelCost = useMemo(() => {
+      if (!selectedItem || selectedItem.craftingType !== 'FORGE' || !masteryInfo) return 0;
+      const count = masteryInfo.count;
+      let divisor = 8;
+      if (count >= MASTERY_THRESHOLDS.ARTISAN) divisor = 14;
+      else if (count >= MASTERY_THRESHOLDS.ADEPT) divisor = 12;
+      return Math.ceil(selectedItem.maxDurability / divisor);
+  }, [selectedItem, masteryInfo]);
+
+  const handleQuickCraft = useCallback(() => {
+      if (!selectedItem || !masteryInfo) return;
+
+      // Tiered checks for Quick Craft
+      if (!isRequirementMet) {
+          actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
+          return;
+      }
+      if (!canAffordResources(selectedItem)) {
+          actions.showToast(`Insufficient materials for ${selectedItem.name}.`);
+          return;
+      }
+      if (!hasEnergy) {
+          actions.triggerEnergyHighlight();
+          actions.showToast("Not enough energy.");
+          return;
+      }
+
+      // Fuel logic for Smithing Quick Craft
+      if (selectedItem.craftingType === 'FORGE') {
+          if (charcoalCount < quickCraftFuelCost) {
+              actions.showToast(`Insufficient charcoal! Need ${quickCraftFuelCost} fuel.`);
+              return;
+          }
+          actions.consumeItem('charcoal', quickCraftFuelCost);
+      }
+
+      // Determine quality and mastery gain based on current rank
+      let quality = 50;
+      let masteryGain = 0.5;
+
+      if (masteryInfo.count >= MASTERY_THRESHOLDS.ARTISAN) {
+          quality = 95;
+          masteryGain = 1.0;
+      } else if (masteryInfo.count >= MASTERY_THRESHOLDS.ADEPT) {
+          quality = 75;
+          masteryGain = 0.7;
+      }
+
+      // Deduct resources and energy
+      actions.startCrafting(selectedItem);
+      // Immediately finalize with specific parameters
+      actions.finishCrafting(selectedItem, quality, 0, masteryGain);
+  }, [selectedItem, masteryInfo, isRequirementMet, canAffordResources, hasEnergy, actions, charcoalCount, quickCraftFuelCost]);
+
   const content = useMemo(() => {
     const canCraft = selectedItem && canAffordResources(selectedItem) && (selectedItem.craftingType === 'WORKBENCH' || canEnterForge) && hasEnergy && isRequirementMet;
+    const canQuickCraft = selectedItem && canAffordResources(selectedItem) && hasEnergy && isRequirementMet && (selectedItem.craftingType !== 'FORGE' || charcoalCount >= quickCraftFuelCost);
     const isMissingFuelOnly = selectedItem && selectedItem.craftingType === 'FORGE' && canAffordResources(selectedItem) && !canEnterForge && hasEnergy && isRequirementMet;
+    const hasAlreadyCraftedOnce = selectedItem ? (craftingMastery[selectedItem.id] || 0) > 0 : false;
     
     return (
         <div className="relative h-full w-full bg-stone-950 overflow-hidden" style={{ backgroundImage: `url(${getAssetUrl('tile_forge.png')})`, backgroundRepeat: 'repeat', backgroundBlendMode: 'multiply' }}>
@@ -322,7 +375,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     {selectedItem ? (
                         <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg">
                             
-                            {/* NEW: Mastery Radial Indicator around item image */}
+                            {/* Mastery Radial Indicator around item image */}
                             <div className="relative mb-3 md:mb-6 group">
                                 <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-full flex items-center justify-center relative z-10 p-2 md:p-4 border border-stone-800/50 ${masteryInfo?.glowClass} transition-all duration-700`}>
                                     {/* Radial SVG Gauge */}
@@ -352,34 +405,56 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1 md:mb-1.5 font-serif tracking-wide">{selectedItem.name}</h2>
                             <p className="text-stone-500 text-center max-w-md mb-4 md:mb-6 italic text-[9px] md:text-sm leading-tight px-6">"{selectedItem.description}"</p>
                             
-                            {/* REINSTATED: Stats Block */}
+                            {/* Stats Block */}
                             {renderStats(selectedItem)}
 
                             {/* Modified Mastery Info (Simplified Text since circle handles visual) */}
                             <div className="w-full max-w-xs mb-6 md:mb-8 flex flex-col items-center">
                                 <div className="flex items-center gap-1.5 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-stone-500 mb-1">
                                     <Award className="w-3 h-3 md:w-4 md:h-4 text-amber-600" />
-                                    <span>Experience: {masteryInfo?.count} / {masteryInfo?.nextMax}</span>
+                                    <span>Experience: {Math.round(masteryInfo?.progress || 0)}%</span>
                                 </div>
                             </div>
 
-                            <div className="relative group flex flex-col items-center">
+                            <div className="relative group flex flex-col items-center w-full gap-2 md:gap-4 px-4">
                                 {/* Persistent Fuel Warning */}
                                 {isMissingFuelOnly && (
-                                    <div className="mb-4 flex items-center gap-1.5 text-orange-500 font-bold text-[9px] md:text-xs animate-pulse bg-orange-950/30 px-3 py-1 rounded-full border border-orange-900/40">
+                                    <div className="mb-2 flex items-center gap-1.5 text-orange-500 font-bold text-[9px] md:text-xs animate-pulse bg-orange-950/30 px-3 py-1 rounded-full border border-orange-900/40">
                                         <Flame className="w-3 h-3 md:w-4 md:h-4" />
                                         <span>Fuel Required to Heat the Forge</span>
                                     </div>
                                 )}
 
-                                <button 
-                                    onClick={startCrafting} 
-                                    disabled={!canAffordResources(selectedItem) || !hasEnergy || !isRequirementMet} 
-                                    className={`px-8 md:px-12 py-3 md:py-4 rounded-lg font-black text-sm md:text-lg shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-2 md:gap-3 border ${failedFuelHighlight ? 'bg-red-900 border-red-500 animate-shake-hard shadow-[0_0_20px_rgba(239,68,68,0.4)]' : canCraft ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500') : (isMissingFuelOnly ? 'bg-stone-800 text-stone-300 border-amber-600/50' : 'bg-stone-800 text-stone-500 border-stone-700 opacity-70')}`}
-                                >
-                                    {selectedItem.craftingType === 'FORGE' ? <Hammer className="w-4 h-4 md:w-6 md:h-6" /> : <Wrench className="w-4 h-4 md:w-6 md:h-6" />}
-                                    <span>{selectedItem.craftingType === 'FORGE' ? 'Start Forging' : 'Start Crafting'}</span>
-                                </button>
+                                <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
+                                    <button 
+                                        onClick={startCrafting} 
+                                        className={`flex-1 max-w-[280px] px-6 md:px-10 py-3 md:py-4 rounded-lg font-black text-sm md:text-lg shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 md:gap-3 border ${failedFuelHighlight ? 'bg-red-900 border-red-500 animate-shake-hard shadow-[0_0_20px_rgba(239,68,68,0.4)]' : canCraft ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500') : (isMissingFuelOnly ? 'bg-stone-800 text-stone-300 border-amber-600/50 grayscale opacity-70' : 'bg-stone-800 text-stone-500 border-stone-700 opacity-70 grayscale')}`}
+                                    >
+                                        {selectedItem.craftingType === 'FORGE' ? <Hammer className="w-4 h-4 md:w-6 md:h-6" /> : <Wrench className="w-4 h-4 md:w-6 md:h-6" />}
+                                        <span>{selectedItem.craftingType === 'FORGE' ? 'Start Forging' : 'Start Crafting'}</span>
+                                    </button>
+
+                                    {hasAlreadyCraftedOnce && (
+                                        <button 
+                                            onClick={handleQuickCraft}
+                                            className={`flex-1 max-w-[280px] px-6 md:px-10 py-3 md:py-4 rounded-lg font-black text-sm md:text-lg shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 md:gap-3 border bg-stone-900 border-stone-700 hover:bg-stone-800 hover:border-amber-600 group ${!canQuickCraft ? 'opacity-50 grayscale' : ''}`}
+                                            title={`Quick Craft (Lower Quality & Mastery XP)${selectedItem.craftingType === 'FORGE' ? ` - Costs ${quickCraftFuelCost} Charcoal` : ''}`}
+                                        >
+                                            <div className="flex flex-col items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <Zap className="w-4 h-4 md:w-6 md:h-6 text-amber-500 group-hover:scale-110 transition-transform" />
+                                                    <span className="text-stone-300 group-hover:text-amber-200">Quick Craft</span>
+                                                </div>
+                                                {selectedItem.craftingType === 'FORGE' && (
+                                                    <div className="flex items-center gap-1 mt-0.5 opacity-60 text-[8px] md:text-xs font-mono font-bold">
+                                                        <Flame className="w-2.5 h-2.5 text-orange-500" />
+                                                        <span>-{quickCraftFuelCost}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </button>
+                                    )}
+                                </div>
                                 
                                 {failedFuelHighlight && <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] md:text-xs font-black px-3 py-1.5 rounded-lg shadow-2xl animate-in fade-in zoom-in slide-in-from-bottom-2 whitespace-nowrap z-50 ring-2 ring-red-400"><AlertCircle className="w-3 h-3 md:w-4 md:h-4 inline mr-1" /> LACK OF FUEL</div>}
                             </div>
@@ -409,7 +484,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             </div>
         </div>
         {isCrafting && selectedItem && (
-            /* FIX: Removed duplicate 'difficulty' prop and enabled 'subCategoryId' prop usage on WorkbenchMinigame */
             <div className="absolute inset-0 z-50 animate-in fade-in zoom-in-95 duration-300 bg-stone-950">{selectedItem.craftingType === 'FORGE' ? <SmithingMinigame difficulty={selectedItem.tier} onComplete={handleMinigameComplete} onClose={cancelCrafting} /> : <WorkbenchMinigame difficulty={selectedItem.tier} onComplete={handleMinigameComplete} onClose={cancelCrafting} subCategoryId={selectedItem.subCategoryId} />}</div>
         )}
         {hoveredItem && (
@@ -426,7 +500,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
         )}
         </div>
     );
-  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, hasPromptedFurnace, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo]);
+  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, hasPromptedFurnace, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo, handleQuickCraft, quickCraftFuelCost]);
   return content;
 };
 

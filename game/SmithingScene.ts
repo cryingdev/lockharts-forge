@@ -82,8 +82,12 @@ export default class SmithingScene extends Phaser.Scene {
   private shrinkDuration = 2000;
   private ringTimer = 0;
 
+  // Ring types state
+  private currentTargetColor = 0xfabf24;
+  private currentSpeedMult = 1.0;
+
   private readonly UI_PAD_TOP = 18;
-  private readonly UI_PAD_SIDE = 24; 
+  private readonly UI_PAD_SIDE = 12; 
   private readonly UI_PAD_BOTTOM = 24;
   private readonly UI_GAP = 14;
 
@@ -236,12 +240,12 @@ export default class SmithingScene extends Phaser.Scene {
       this.tempBar, this.tempValueText,
     ]);
     this.bellowsContainer = this.add.container(0, 0);
-    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(0.3);
+    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(1); 
     const pumpTxt = this.add.text(0, 22, 'PUMP', { fontSize: '10px', color: '#fde68a', fontFamily: 'Grenze', fontStyle: 'bold' }).setOrigin(0.5);
-    this.bellowsContainer.add([this.bellowsSprite, pumpTxt]).setInteractive(new Phaser.Geom.Rectangle(-50, -40, 100, 80), Phaser.Geom.Rectangle.Contains);
+    this.bellowsContainer.add([this.bellowsSprite, pumpTxt]).setInteractive(new Phaser.Geom.Rectangle(-149, -94, 298, 188), Phaser.Geom.Rectangle.Contains);
     this.bellowsSprite.on('animationcomplete-bellows_pump', () => { this.isPumping = false; });
     this.heatUpBtnContainer = this.add.container(0, 0);
-    const r = 34;
+    const r = 35; 
     const btnBg = this.add.circle(0, 0, r, 0x1c1917, 1).setStrokeStyle(3, 0x57534e).setName('btnBg');
     const btnIcon = this.add.text(0, -8, '🔥', { fontSize: '18px' }).setOrigin(0.5).setName('btnIcon');
     const btnLabel = this.add.text(0, 8, 'HEAT', { fontSize: '10px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'Grenze' }).setOrigin(0.5);
@@ -285,11 +289,13 @@ export default class SmithingScene extends Phaser.Scene {
       if (this.flashOverlay) this.flashOverlay.setSize(sw, sh);
       const anvilW = sw * 1.2; const anvilScale = anvilW / this.anvilImage.width;
       const anvilY = portrait ? this.centerY : this.centerY + this.anvilConfig.yOffset;
-      this.anvilImage.setScale(anvilScale).setPosition(this.centerX, anvilY + this.anvilConfig.imageOffsetY);
-      if (this.ambientGlow) this.ambientGlow.setPosition(this.centerX, anvilY);
+      const anvilX = portrait ? sw * 0.35 : this.centerX;
+      
+      this.anvilImage.setScale(anvilScale).setPosition(anvilX, anvilY + this.anvilConfig.imageOffsetY);
+      if (this.ambientGlow) this.ambientGlow.setPosition(anvilX, anvilY);
       this.placeBilletOnAnvil();
       const basis = Math.min(sw, sh); this.startRadius = Phaser.Math.Clamp(basis * (portrait ? 0.28 : 0.35), 105, 240);
-      this.targetRadius = this.startRadius * 0.25;
+      
       const isCompact = sh < 450; this.repositionUI(sw, sh, portrait, isCompact);
       if (this.isPlaying) this.resetRing();
     };
@@ -309,8 +315,13 @@ export default class SmithingScene extends Phaser.Scene {
 
   private repositionUI(sw: number, sh: number, portrait: boolean, isCompact: boolean) {
     if (!this.uiContainer) return;
-    const padTop = this.UI_PAD_TOP; const padSide = portrait ? 28 : this.UI_PAD_SIDE;
+    const padTop = this.UI_PAD_TOP; 
     const padBottom = this.UI_PAD_BOTTOM; const gap = this.UI_GAP;
+    
+    // Adjusted to 18% width area for the controllers
+    const sideAreaWidth = Math.min(sw, sh) * 0.18;
+    const rightX = sw - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
+
     const progBg = this.uiContainer.getByName('progBg') as Phaser.GameObjects.Rectangle;
     const progWidth = Math.min(sw * (portrait ? 0.72 : 0.6), 340);
     const progX = this.centerX - progWidth / 2;
@@ -318,15 +329,20 @@ export default class SmithingScene extends Phaser.Scene {
     this.progressBar.setPosition(progX, padTop + 10);
     this.updateProgressBar();
     this.qualityText.setPosition(this.centerX, padTop + 40).setFontSize(isCompact ? '16px' : '18px');
-    const ctrlScale = isCompact ? 0.92 : 1.0;
-    this.bellowsContainer.setScale(ctrlScale); this.heatUpBtnContainer.setScale(ctrlScale);
-    const bellowsBounds = this.bellowsContainer.getBounds(); const heatUpBounds = this.heatUpBtnContainer.getBounds();
-    const bellowsH = bellowsBounds.height; const heatUpH = heatUpBounds.height;
-    const maxHalfW = Math.max(bellowsBounds.width, heatUpBounds.width) / 2;
-    const rightX = sw - padSide - maxHalfW;
+
+    const bellowsScale = sideAreaWidth / 298;
+    this.bellowsContainer.setScale(bellowsScale);
+    const heatScale = sideAreaWidth / 70;
+    this.heatUpBtnContainer.setScale(heatScale);
+
+    const bellowsH = 188 * bellowsScale;
+    const heatUpH = 70 * heatScale;
     const heatUpY = sh - padBottom - (heatUpH / 2);
     const bellowsY = heatUpY - (heatUpH / 2) - gap - (bellowsH / 2);
-    this.heatUpBtnContainer.setPosition(rightX, heatUpY); this.bellowsContainer.setPosition(rightX, bellowsY);
+    
+    this.heatUpBtnContainer.setPosition(rightX, heatUpY); 
+    this.bellowsContainer.setPosition(rightX, bellowsY);
+
     const tFrame = this.uiContainer.getByName('tempFrame') as Phaser.GameObjects.Rectangle;
     const tBg = this.uiContainer.getByName('tempBg') as Phaser.GameObjects.Rectangle;
     const gaugeTop = padTop + 70; const gaugeBottomLimit = bellowsY - (bellowsH / 2) - gap;
@@ -334,10 +350,12 @@ export default class SmithingScene extends Phaser.Scene {
     let gaugeH = Math.min(availableH, sh * 0.6);
     if (availableH >= this.TEMP_GAUGE_H_MIN) { gaugeH = Math.max(gaugeH, this.TEMP_GAUGE_H_MIN); } else { gaugeH = availableH; }
     const gaugeCenterY = gaugeTop + gaugeH / 2;
+    
     tFrame.setPosition(rightX, gaugeCenterY).setSize(28, gaugeH + 10);
     tBg.setPosition(rightX, gaugeCenterY).setSize(22, gaugeH);
     this.tempBar.setSize(16, gaugeH); this.tempBar.setPosition(rightX, gaugeCenterY + gaugeH / 2);
     this.tempValueText.setPosition(rightX, gaugeCenterY - gaugeH / 2 - 16).setFontSize(isCompact ? '12px' : '14px');
+    
     const infoY = portrait ? sh * 0.3 : this.centerY - (isCompact ? 80 : 140);
     this.infoText.setPosition(this.centerX, infoY).setFontSize(portrait ? (isCompact ? '20px' : '24px') : (isCompact ? '20px' : '26px'));
   }
@@ -369,7 +387,7 @@ export default class SmithingScene extends Phaser.Scene {
     if (diff < this.targetRadius * 0.35) {
       this.score += Math.ceil(8 * eff); this.combo++; this.perfectCount++;
       if (this.perfectCount >= 6) { this.currentQuality += 1; }
-      this.createSparks(30, 0xffaa00, 1.5, 'spark_perfect', x, y); this.showFeedback('PERFECT!', 0xffb300, 1.4, this.hitX, this.hitY); this.cameras.main.shake(150, 0.02);
+      this.createSparks(30, this.currentTargetColor, 1.5, 'spark_perfect', x, y); this.showFeedback('PERFECT!', 0xffb300, 1.4, this.hitX, this.hitY); this.cameras.main.shake(150, 0.02);
     } else if (diff < this.targetRadius * 0.95) {
       this.score += Math.ceil(5 * eff); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
       this.createSparks(15, 0xffffff, 1.1, 'spark_normal', x, y); this.showFeedback('GOOD', 0xe5e5e5, 1.1, this.hitX, this.hitY);
@@ -421,19 +439,61 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   private handleRingLogic(delta: number) {
-    this.ringTimer += delta; const t = Math.min(this.ringTimer / this.shrinkDuration, 1.5); this.currentRadius = this.startRadius * (1 - t * t);
-    this.approachRing.clear().lineStyle(6, this.currentRadius < this.targetRadius ? 0xffffff : 0xfabf24, 0.5).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
+    this.ringTimer += delta * this.currentSpeedMult; 
+    const t = Math.min(this.ringTimer / this.shrinkDuration, 1.5); 
+    this.currentRadius = this.startRadius * (1 - t * t);
+
+    // Color interpolation: Start at White (0xffffff), target Current Type Color
+    const colorT = Math.min(this.ringTimer / this.shrinkDuration, 1.0);
+    const targetRGB = Phaser.Display.Color.IntegerToColor(this.currentTargetColor);
+    
+    const r = Math.floor(255 + (targetRGB.red - 255) * colorT);
+    const g = Math.floor(255 + (targetRGB.green - 255) * colorT);
+    const b = Math.floor(255 + (targetRGB.blue - 255) * colorT);
+    const ringColor = Phaser.Display.Color.GetColor(r, g, b);
+
+    // Increased alpha values for better visibility
+    const ringAlpha = 0.6 + (colorT * 0.3);
+
+    this.approachRing.clear()
+      .lineStyle(6, ringColor, ringAlpha)
+      .strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
+
     if (this.currentRadius < this.targetRadius - 25) { this.combo = 0; this.resetRing(); }
   }
 
   private resetRing() {
     if (this.temperature <= 0) return; this.targetRing.clear(); this.approachRing.clear(); this.currentRadius = this.startRadius; this.ringTimer = 0;
+    
+    // Select speed and color type
+    const randType = Math.random();
+    if (randType < 0.2) { // SLOW
+      this.currentTargetColor = 0x10b981; // Green
+      this.currentSpeedMult = 0.75;
+    } else if (randType < 0.75) { // NORMAL
+      this.currentTargetColor = 0xfabf24; // Amber
+      this.currentSpeedMult = 1.0;
+    } else { // FAST
+      this.currentTargetColor = 0xef4444; // Red
+      this.currentSpeedMult = 1.45;
+    }
+
+    // Randomized target size: 18% to 32% of start radius
+    this.targetRadius = this.startRadius * Phaser.Math.FloatBetween(0.18, 0.32);
+
     const w = this.hammerHitArea.width; const h = this.hammerHitArea.height;
     const u = Phaser.Math.Between(-w * 0.35, w * 0.35); const v = Phaser.Math.Between(-h * 0.25, h * 0.25);
     const rad = Phaser.Math.DegToRad(this.hammerHitArea.angle);
     this.hitX = this.hammerHitArea.x + (u * Math.cos(rad) - v * Math.sin(rad));
     this.hitY = this.hammerHitArea.y + (u * Math.sin(rad) + v * Math.cos(rad));
-    if (this.isPlaying) { this.targetRing.clear().fillStyle(0xfabf24, 0.1).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(4, 0xfabf24, 0.4).strokeCircle(this.hitX, this.hitY, this.targetRadius); }
+    
+    if (this.isPlaying) { 
+      this.targetRing.clear()
+        .fillStyle(this.currentTargetColor, 0.2)
+        .fillCircle(this.hitX, this.hitY, this.targetRadius)
+        .lineStyle(4, this.currentTargetColor, 0.7)
+        .strokeCircle(this.hitX, this.hitY, this.targetRadius); 
+    }
   }
 
   private updateProgressBar() {
@@ -465,8 +525,16 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   private pumpBellows() {
-    if (this.isPumping) return; this.isPumping = true; this.bellowsSprite.play('bellows_pump');
-    if (this.temperature > 0) { this.temperature = Math.min(100, this.temperature + 5); if (!this.isPlaying && !this.isReadyToStart) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } }
+    // Removed isPumping check to allow immediate re-triggering for better responsiveness
+    this.isPumping = true; 
+    this.bellowsSprite.play('bellows_pump', true); // Force animation restart
+    if (this.temperature > 0) { 
+        this.temperature = Math.min(100, this.temperature + 5); 
+        if (!this.isPlaying && !this.isReadyToStart) { 
+            this.isReadyToStart = true; 
+            this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); 
+        } 
+    }
   }
 
   private requestHeatUp() { if (this.charcoalCount > 0 && this.onHeatUpRequest) { this.tweens.add({ targets: this.heatUpBtnContainer, scale: 0.9, duration: 50, yoyo: true }); this.onHeatUpRequest(); } else { this.cameras.main.shake(100, 0.005); } }

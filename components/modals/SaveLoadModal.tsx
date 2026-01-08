@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Save, Upload, X, Trash2, Clock, Coins, Calendar, ChevronRight } from 'lucide-react';
 import { getSaveMetadataList, SaveMetadata, deleteSlot } from '../../utils/saveSystem';
@@ -56,7 +57,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
     return (
         <>
             <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-black/80 backdrop-blur-md px-[10%] py-[15%] overflow-hidden animate-in fade-in duration-200">
-                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-fit max-w-[450px] h-fit max-h-full min-h-[300px] min-w-[280px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 mx-auto">
+                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-[92vw] max-w-[450px] h-fit max-h-full min-h-[300px] min-w-[280px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 mx-auto">
                     
                     {/* Header */}
                     <div className="p-4 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">

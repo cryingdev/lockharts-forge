@@ -1,19 +1,74 @@
-import React from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
-import { Hammer, Sword, Shield, Zap, Brain, Check, Star, ArrowUp, ArrowDown } from 'lucide-react';
+// Added missing 'Sparkles' import from lucide-react
+import { Hammer, Sword, Shield, Zap, Brain, Check, Star, ArrowUp, ArrowDown, Award, Sparkles } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
 import { EquipmentStats } from '../../models/Equipment';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
+import { MASTERY_THRESHOLDS } from '../../config/mastery-config';
 
 const CraftingResultModal = () => {
     const { state, actions } = useGame();
     const item = state.lastCraftedItem;
+    const [animatedProgress, setAnimatedProgress] = useState(0);
 
-    if (!item || !item.equipmentData) return null;
+    // Calculate Mastery Info
+    const masteryInfo = useMemo(() => {
+        if (!item || !item.equipmentData || !item.equipmentData.recipeId) return null;
+        
+        const recipeId = item.equipmentData.recipeId;
+        const count = state.craftingMastery[recipeId] || 0;
+        
+        let label = "Novice";
+        let colorClass = "stroke-stone-400";
+        let textClass = "text-stone-400";
+        let progress = 0;
+        let nextMax = MASTERY_THRESHOLDS.ADEPT;
+
+        if (count >= MASTERY_THRESHOLDS.ARTISAN) {
+            label = "Artisan";
+            colorClass = "stroke-amber-500";
+            textClass = "text-amber-500";
+            progress = Math.min(100, ((count - MASTERY_THRESHOLDS.ARTISAN) / 20) * 100);
+            nextMax = 50; 
+        } else if (count >= MASTERY_THRESHOLDS.ADEPT) {
+            label = "Adept";
+            colorClass = "stroke-emerald-500";
+            textClass = "text-emerald-500";
+            progress = ((count - MASTERY_THRESHOLDS.ADEPT) / (MASTERY_THRESHOLDS.ARTISAN - MASTERY_THRESHOLDS.ADEPT)) * 100;
+            nextMax = MASTERY_THRESHOLDS.ARTISAN;
+        } else {
+            label = "Novice";
+            colorClass = "stroke-stone-400";
+            textClass = "text-stone-400";
+            progress = (count / MASTERY_THRESHOLDS.ADEPT) * 100;
+            nextMax = MASTERY_THRESHOLDS.ADEPT;
+        }
+
+        const radius = 46;
+        const circumference = 2 * Math.PI * radius;
+
+        return { label, colorClass, textClass, progress, circumference, count, nextMax };
+    }, [item, state.craftingMastery]);
+
+    // Animation Effect
+    useEffect(() => {
+        if (masteryInfo) {
+            // Start from slightly less or zero to show growth
+            setAnimatedProgress(0);
+            const timer = setTimeout(() => {
+                setAnimatedProgress(masteryInfo.progress);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [masteryInfo]);
+
+    if (!item || !item.equipmentData || !masteryInfo) return null;
 
     const data = item.equipmentData;
     const recipe = EQUIPMENT_ITEMS.find(r => r.id === data.recipeId);
-    const imageUrl = data.image ? getAssetUrl(data.image) : (data.recipeId ? getAssetUrl(`${data.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`));
+    const imageUrl = data.image ? getAssetUrl(data.image) : (data.recipeId ? getAssetUrl(`${recipe?.id}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`));
 
     const getQualityLabel = (q: number): string => {
         if (q >= 110) return "Masterwork";
@@ -54,18 +109,52 @@ const CraftingResultModal = () => {
         );
     };
 
+    const offset = masteryInfo.circumference - (animatedProgress / 100) * masteryInfo.circumference;
+
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-sm px-[10%] py-[15%] animate-in fade-in duration-500 overflow-hidden">
             <div className="relative w-fit max-w-[500px] h-fit max-h-full min-h-[200px] min-w-[280px] bg-stone-900 border-2 border-amber-600 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 mx-auto">
                 
                 {/* Header */}
                 <div className="bg-stone-850 p-4 md:p-6 border-b border-stone-800 flex flex-col items-center text-center shrink-0">
-                    <div className={`w-16 h-16 md:w-20 md:h-20 bg-stone-900 rounded-full border-4 ${qColor.replace('text-', 'border-')} flex items-center justify-center mb-3 shadow-xl`}>
-                        <img src={imageUrl} className="w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-lg" />
+                    
+                    {/* Radial Mastery Gauge around Item */}
+                    <div className="relative mb-4 group">
+                        <div className={`w-24 h-24 md:w-32 md:h-32 bg-stone-900 rounded-full flex items-center justify-center relative z-10 p-2 md:p-3 border border-stone-800/50 shadow-2xl`}>
+                            {/* Radial SVG Gauge */}
+                            <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none scale-105" viewBox="0 0 100 100">
+                                {/* Background Track */}
+                                <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-stone-950/40" />
+                                {/* Progress Arc */}
+                                <circle 
+                                    cx="50" cy="50" r="46" 
+                                    stroke="currentColor" strokeWidth="4" fill="transparent"
+                                    strokeDasharray={masteryInfo.circumference}
+                                    strokeDashoffset={offset}
+                                    strokeLinecap="round"
+                                    className={`${masteryInfo.colorClass} transition-all duration-[1000ms] ease-out`}
+                                />
+                            </svg>
+                            
+                            <img src={imageUrl} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-2xl z-20 relative" />
+                            
+                            {/* Rank Badge */}
+                            <div className={`absolute -bottom-1 -right-1 md:bottom-0 md:right-0 z-30 px-1.5 py-0.5 rounded-full border border-stone-700 bg-stone-900 shadow-xl flex items-center gap-1 animate-in slide-in-from-right-2 duration-700`}>
+                                <Star className={`w-2 h-2 md:w-3 md:h-3 fill-current ${masteryInfo.textClass}`} />
+                                <span className={`text-[7px] md:text-[9px] font-black uppercase tracking-tighter ${masteryInfo.textClass}`}>{masteryInfo.label}</span>
+                            </div>
+                        </div>
                     </div>
+
                     <h2 className="text-lg md:text-2xl font-bold text-stone-100 font-serif leading-tight px-6">{data.name}</h2>
-                    <div className={`mt-2 px-3 py-1 rounded-full bg-stone-950 border border-stone-800 font-black uppercase tracking-widest text-[8px] md:text-[10px] ${qColor} flex items-center gap-1`}>
-                        <Star className="w-3 h-3 fill-current" /> {label} Quality
+                    
+                    <div className="flex flex-col items-center gap-1.5 mt-2">
+                        <div className={`px-3 py-1 rounded-full bg-stone-950 border border-stone-800 font-black uppercase tracking-widest text-[8px] md:text-[10px] ${qColor} flex items-center gap-1 shadow-inner`}>
+                            <Sparkles className="w-3 h-3 fill-current" /> {label} Quality
+                        </div>
+                        <div className="flex items-center gap-1 text-[8px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest">
+                            <Award className="w-2.5 h-2.5" /> Experience: {Math.round(masteryInfo.progress)}%
+                        </div>
                     </div>
                 </div>
 

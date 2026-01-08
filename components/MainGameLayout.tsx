@@ -191,7 +191,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       {state.toast?.visible && (
         <div 
             onClick={actions.hideToast}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[500] flex items-center gap-3 px-6 py-3 bg-stone-900/95 border border-amber-500/50 text-stone-200 rounded-xl shadow-2xl backdrop-blur-md cursor-pointer animate-in slide-in-from-bottom-4 fade-in duration-300 ring-2 ring-black/50 active:scale-95 w-max max-w-[80vw]"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[3000] flex items-center gap-3 px-6 py-3 bg-stone-900/95 border border-amber-500/50 text-stone-200 rounded-xl shadow-2xl backdrop-blur-md cursor-pointer animate-in slide-in-from-bottom-4 fade-in duration-300 ring-2 ring-black/50 active:scale-95 w-max max-w-[80vw]"
         >
             <Info className="w-5 h-5 text-amber-500 shrink-0" />
             <span className="text-sm font-bold tracking-tight text-center leading-tight">{state.toast.message}</span>
