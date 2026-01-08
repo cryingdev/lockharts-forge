@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { ArrowLeft, Heart, Coins, Gift, MessageSquare, UserPlus, Info, Zap, Package, X, ChevronRight, Search, Wrench, LogOut, Star } from 'lucide-react';
+import { ArrowLeft, Heart, Coins, Gift, MessageSquare, UserPlus, Info, Zap, Package, X, ChevronRight, Search, Wrench, LogOut, Star, UserMinus, Ban } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { Mercenary } from '../../../models/Mercenary';
 import { CONTRACT_CONFIG, calculateHiringCost } from '../../../config/contract-config';
@@ -21,6 +20,8 @@ interface FloatingHeart {
     size: number;
 }
 
+type InteractionStep = 'IDLE' | 'CONFIRM_HIRE' | 'CONFIRM_FIRE';
+
 const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack }) => {
     const { state, actions } = useGame();
     const [dialogue, setDialogue] = useState(`(You sit across from ${mercenary.name}.)`);
@@ -29,13 +30,17 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     
+    // Step-based interaction state
+    const [step, setStep] = useState<InteractionStep>('IDLE');
+
     const isHired = mercenary.status === 'HIRED' || mercenary.status === 'ON_EXPEDITION' || mercenary.status === 'INJURED';
+    const isOnExpedition = mercenary.status === 'ON_EXPEDITION';
     const hiringCost = calculateHiringCost(mercenary.level, mercenary.job);
     const canAfford = state.stats.gold >= hiringCost;
     const hasAffinity = mercenary.affinity >= CONTRACT_CONFIG.HIRE_AFFINITY_THRESHOLD;
 
     const handleTalk = () => {
-        if (pendingGiftItem) return;
+        if (pendingGiftItem || step !== 'IDLE') return;
 
         if (!state.talkedToToday.includes(mercenary.id)) {
             actions.talkMercenary(mercenary.id);
@@ -61,8 +66,8 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
         setDialogue(lines[Math.floor(Math.random() * lines.length)]);
     };
 
-    const handleRecruit = () => {
-        if (pendingGiftItem) return;
+    // --- Hiring Flow ---
+    const handleRecruitInit = () => {
         if (!hasAffinity) {
             setDialogue("I don't know you well enough to pledge my blade to your forge yet.");
             return;
@@ -71,8 +76,40 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
             setDialogue(`The contract is ${hiringCost} gold. Come back when you have the coin.`);
             return;
         }
+        setStep('CONFIRM_HIRE');
+        setDialogue(`"A contract for ${hiringCost} Gold? Are you certain you want me on your squad?"`);
+    };
+
+    const handleConfirmHire = () => {
         actions.hireMercenary(mercenary.id, hiringCost);
+        setStep('IDLE');
         setDialogue("A fair contract. My strength is yours, Lockhart.");
+    };
+
+    // --- Termination Flow ---
+    const handleTerminateInit = () => {
+        setStep('CONFIRM_FIRE');
+        setDialogue(`(Surprised) "Terminate the contract? Did I fail you in some way? If you let me go now, I might not return for some time."`);
+    };
+
+    const handleConfirmTerminate = () => {
+        actions.fireMercenary(mercenary.id);
+        setStep('IDLE');
+        setDialogue(`"I see. Perhaps our paths will cross again on another road. Farewell, smith."`);
+    };
+
+    const handleRecall = () => {
+        if (mercenary.assignedExpeditionId) {
+            if (window.confirm("Abort current mission and recall the entire squad? No rewards will be gained.")) {
+                actions.abortExpedition(mercenary.assignedExpeditionId);
+                setDialogue("(Heavy breathing) We're back. The mission was too hazardous... we had to retreat.");
+            }
+        }
+    };
+
+    const handleCancelStep = () => {
+        setStep('IDLE');
+        setDialogue(`"I'm glad we cleared that up."`);
     };
 
     const handleSelectItemForGift = (item: InventoryItem) => {
@@ -156,7 +193,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            {/* Mercenary Info HUD: 상점과 통일 (좌측 상단, 너비 w-[32%], 수치 표시) */}
+            {/* Mercenary Info HUD */}
             <div className="absolute top-4 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
@@ -190,6 +227,17 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                             </div>
                         </div>
                     </div>
+                    {isOnExpedition && (
+                        <div className="mt-3 bg-blue-950/40 border border-blue-700/30 rounded-lg p-1.5 flex flex-col items-center">
+                            <span className="text-[7px] font-black text-blue-400 uppercase tracking-widest animate-pulse">On Expedition</span>
+                            <button 
+                                onClick={handleRecall}
+                                className="mt-1 w-full py-1 bg-red-900/60 hover:bg-red-800 text-white rounded text-[8px] font-black uppercase flex items-center justify-center gap-1 transition-all"
+                            >
+                                <Ban className="w-2.5 h-2.5" /> Force Recall
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -228,76 +276,97 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* Bottom UI Unit: Buttons + Spacing + Dialogue */}
+            {/* Bottom UI Unit */}
             <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center gap-[10px] pb-[env(safe-area-inset-bottom)] pointer-events-none">
-                {/* Interaction Action Bar - Only buttons are clickable */}
-                <div 
-                    className={`flex flex-row items-center justify-center gap-1.5 md:gap-3 px-4 max-w-full overflow-x-auto no-scrollbar py-2 pointer-events-auto transition-opacity duration-500 ${pendingGiftItem ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}
-                >
-                    {/* Talk Button */}
-                    <button 
-                        onClick={handleTalk}
-                        className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
-                    >
-                        <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-amber-500" />
-                        <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
-                    </button>
-
-                    {/* Gift Button */}
-                    <button 
-                        onClick={() => setShowGiftMenu(true)}
-                        className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
-                    >
-                        <Gift className="w-3 h-3 md:w-4 md:h-4 text-pink-500" />
-                        <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
-                    </button>
-
-                    {/* Recruit Button */}
-                    {!isHired && (
+                
+                {/* Interaction Action Bars */}
+                <div className={`flex flex-col items-end gap-2 w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
+                    
+                    {/* Top Row: 나가기 버튼 단독 배치 */}
+                    <div className="flex justify-end w-full">
                         <button 
-                            onClick={handleRecruit}
-                            disabled={!canAfford || !hasAffinity}
-                            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 border rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 ${
-                                (!canAfford || !hasAffinity) 
-                                ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' 
-                                : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'
-                            }`}
+                            onClick={onBack}
+                            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-3 bg-red-950/45 hover:bg-red-900/60 border border-red-900/50 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
                         >
-                            <UserPlus className="w-3 h-3 md:w-4 md:h-4" />
-                            <div className="flex flex-col items-start leading-none">
-                                <span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Recruit</span>
-                                {hasAffinity && <span className="text-[7px] md:text-[8px] font-mono opacity-70">{hiringCost}G</span>}
-                            </div>
+                            <LogOut className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
                         </button>
-                    )}
+                    </div>
 
-                    {/* Manage/Inspect Button */}
-                    <button 
-                        onClick={() => setShowDetail(true)}
-                        className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}
-                    >
-                        {isHired ? <Wrench className="w-3 h-3 md:w-4 md:h-4 text-emerald-500" /> : <Search className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />}
-                        <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">
-                            {isHired ? 'Manage' : 'Inspect'}
-                        </span>
-                    </button>
+                    {/* Bottom Row: 기능 버튼들 (우측 정렬 & 개행 가능) */}
+                    <div className="flex flex-wrap items-center justify-end gap-1.5 md:gap-3 w-full">
+                        <button 
+                            onClick={handleTalk}
+                            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
+                        >
+                            <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-amber-500" />
+                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
+                        </button>
 
-                    {/* Leave Button - Far Right */}
-                    <button 
-                        onClick={onBack}
-                        className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2.5 md:py-3.5 bg-red-950/45 hover:bg-red-900/60 border border-red-900/50 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
-                    >
-                        <LogOut className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
-                    </button>
+                        <button 
+                            onClick={() => setShowGiftMenu(true)}
+                            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
+                        >
+                            <Gift className="w-3 h-3 md:w-4 md:h-4 text-pink-500" />
+                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
+                        </button>
+
+                        {/* Recruit or Terminate Button */}
+                        {isHired ? (
+                            <button 
+                                onClick={handleTerminateInit}
+                                disabled={isOnExpedition}
+                                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 border rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 text-white ${isOnExpedition ? 'bg-stone-900 border-stone-800 text-stone-600 cursor-not-allowed opacity-50' : 'bg-red-950/60 hover:bg-red-900/80 border border-red-800'}`}
+                            >
+                                <UserMinus className="w-3 h-3 md:w-4 md:h-4" />
+                                <span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Terminate</span>
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleRecruitInit}
+                                disabled={!canAfford || !hasAffinity}
+                                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 border rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 ${
+                                    (!canAfford || !hasAffinity) 
+                                    ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' 
+                                    : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'
+                                }`}
+                            >
+                                <UserPlus className="w-3 h-3 md:w-4 md:h-4" />
+                                <div className="flex flex-col items-start leading-none">
+                                    <span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Recruit</span>
+                                    {hasAffinity && <span className="text-[7px] md:text-[8px] font-mono opacity-70">{hiringCost}G</span>}
+                                </div>
+                            </button>
+                        )}
+
+                        <button 
+                            onClick={() => setShowDetail(true)}
+                            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}
+                        >
+                            {isHired ? <Wrench className="w-3 h-3 md:w-4 md:h-4 text-emerald-500" /> : <Search className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />}
+                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">
+                                {isHired ? 'Manage' : 'Inspect'}
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
                 <DialogueBox 
                     speaker={mercenary.name}
                     text={dialogue}
-                    options={pendingGiftItem ? [
-                        { label: `Give ${pendingGiftItem.name}`, action: handleConfirmGift, variant: 'primary' },
-                        { label: "Cancel", action: handleCancelGift, variant: 'neutral' }
-                    ] : []}
+                    options={
+                        pendingGiftItem ? [
+                            { label: `Give ${pendingGiftItem.name}`, action: handleConfirmGift, variant: 'primary' },
+                            { label: "Cancel", action: handleCancelGift, variant: 'neutral' }
+                        ] : 
+                        step === 'CONFIRM_HIRE' ? [
+                            { label: `Sign Contract (-${hiringCost}G)`, action: handleConfirmHire, variant: 'primary' },
+                            { label: "Think again", action: handleCancelStep, variant: 'neutral' }
+                        ] : 
+                        step === 'CONFIRM_FIRE' ? [
+                            { label: "Terminate Contract", action: handleConfirmTerminate, variant: 'danger' },
+                            { label: "Stay with me", action: handleCancelStep, variant: 'neutral' }
+                        ] : []
+                    }
                     className="w-full relative pointer-events-auto"
                 />
             </div>
@@ -362,7 +431,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                     mercenary={mercenary}
                     onClose={() => setShowDetail(false)}
                     onUnequip={(mercId, slot) => actions.unequipItem(mercId, slot)}
-                    isReadOnly={!isHired}
+                    isReadOnly={!isHired || isOnExpedition}
                 />
             )}
         </div>

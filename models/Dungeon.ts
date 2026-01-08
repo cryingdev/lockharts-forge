@@ -1,4 +1,3 @@
-
 export interface DungeonReward {
   itemId: string;
   minQuantity: number;
@@ -23,6 +22,7 @@ export interface DungeonDefinition {
   isBossLocked?: boolean;
 
   rewards: DungeonReward[];
+  goldReward?: number; // Fixed gold reward upon completion
   bossUnlockReq?: number; // Number of clears to unlock boss variant
   bossVariantId?: string;
   baseXp: number; // XP gained per mercenary

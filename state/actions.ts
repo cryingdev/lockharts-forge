@@ -1,4 +1,3 @@
-
 import { GameEvent } from '../types/events';
 import { EquipmentItem, InventoryItem } from '../types/inventory';
 import { EquipmentSlotType } from '../models/Equipment';
@@ -25,6 +24,7 @@ export type GameAction =
   | { type: 'SELL_ITEM'; payload: { itemId: string; count: number; price: number; equipmentInstanceId?: string; customer?: Mercenary } }
   | { type: 'TOGGLE_SHOP' }
   | { type: 'ADD_KNOWN_MERCENARY'; payload: Mercenary }
+  | { type: 'SCOUT_MERCENARY'; payload: { mercenary: Mercenary; cost: number } }
   | { type: 'ENQUEUE_CUSTOMER'; payload: ShopCustomer }
   | { type: 'NEXT_CUSTOMER' }
   | { type: 'DISMISS_CUSTOMER' }
@@ -38,6 +38,7 @@ export type GameAction =
   | { type: 'START_EXPEDITION'; payload: { dungeonId: string; partyIds: string[] } }
   | { type: 'COMPLETE_EXPEDITION'; payload: { expeditionId: string } }
   | { type: 'CLAIM_EXPEDITION'; payload: { expeditionId: string } }
+  | { type: 'ABORT_EXPEDITION'; payload: { expeditionId: string } }
   | { type: 'DISMISS_DUNGEON_RESULT' }
   | { type: 'EQUIP_ITEM'; payload: { mercenaryId: string; inventoryItemId: string } }
   | { type: 'UNEQUIP_ITEM'; payload: { mercenaryId: string; slot: EquipmentSlotType } }
@@ -53,4 +54,5 @@ export type GameAction =
   | { type: 'MOVE_MANUAL_DUNGEON'; payload: { x: number; y: number } }
   | { type: 'FINISH_MANUAL_DUNGEON' }
   | { type: 'RETREAT_MANUAL_DUNGEON' }
-  | { type: 'TOGGLE_MANUAL_DUNGEON_OVERLAY'; payload: boolean };
+  | { type: 'TOGGLE_MANUAL_DUNGEON_OVERLAY'; payload: boolean }
+  | { type: 'RESCUE_NPC'; payload: { npcId: string } };

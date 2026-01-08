@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../../types/index';
 import { MATERIALS } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -94,7 +93,15 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
 
     return {
         ...state,
-        stats: { ...state.stats, gold: newGold, tierLevel: newTierLevel },
+        stats: { 
+            ...state.stats, 
+            gold: newGold, 
+            tierLevel: newTierLevel,
+            dailyFinancials: {
+                ...state.stats.dailyFinancials,
+                expenseMarket: state.stats.dailyFinancials.expenseMarket + totalCost
+            }
+        },
         forge: newForgeState,
         inventory: newInventory,
         marketStock: newMarketStock,
@@ -118,6 +125,8 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     let newKnownMercenaries = [...state.knownMercenaries];
     let logMessage = '';
     let newActiveCustomer = state.activeCustomer;
+
+    const isShopSale = !!customer;
 
     if (equipmentInstanceId) {
         const itemIndex = newInventory.findIndex(i => i.id === equipmentInstanceId);
@@ -173,7 +182,11 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
         stats: { 
             ...state.stats, 
             gold: state.stats.gold + price,
-            incomeToday: state.stats.incomeToday + price,
+            dailyFinancials: {
+                ...state.stats.dailyFinancials,
+                incomeShop: state.stats.dailyFinancials.incomeShop + (isShopSale ? price : 0),
+                incomeInventory: state.stats.dailyFinancials.incomeInventory + (!isShopSale ? price : 0)
+            }
         },
         knownMercenaries: newKnownMercenaries,
         activeCustomer: newActiveCustomer,

@@ -409,7 +409,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             </div>
         </div>
         {isCrafting && selectedItem && (
-            <div className="absolute inset-0 z-50 animate-in fade-in zoom-in-95 duration-300 bg-stone-950">{selectedItem.craftingType === 'FORGE' ? <SmithingMinigame difficulty={selectedItem.tier} onComplete={handleMinigameComplete} onClose={cancelCrafting} /> : <WorkbenchMinigame difficulty={selectedItem.tier} onComplete={handleMinigameComplete} onClose={cancelCrafting} />}</div>
+            /* FIX: Removed duplicate 'difficulty' prop and enabled 'subCategoryId' prop usage on WorkbenchMinigame */
+            <div className="absolute inset-0 z-50 animate-in fade-in zoom-in-95 duration-300 bg-stone-950">{selectedItem.craftingType === 'FORGE' ? <SmithingMinigame difficulty={selectedItem.tier} onComplete={handleMinigameComplete} onClose={cancelCrafting} /> : <WorkbenchMinigame difficulty={selectedItem.tier} onComplete={handleMinigameComplete} onClose={cancelCrafting} subCategoryId={selectedItem.subCategoryId} />}</div>
         )}
         {hoveredItem && (
             <div className="fixed z-[60] pointer-events-none w-56 md:w-64 bg-stone-950/95 border border-stone-700 rounded-lg shadow-2xl backdrop-blur-sm p-3 md:p-4 animate-in fade-in duration-150" style={{ top: tooltipPos.y, left: tooltipPos.x }}>

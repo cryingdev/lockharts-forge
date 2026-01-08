@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { User, ChevronRight, Coins } from 'lucide-react';
 
@@ -36,25 +35,32 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [showItemTooltip, setShowItemTooltip] = useState(false);
   const isMounted = useRef(true);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     isMounted.current = true;
-    return () => { isMounted.current = false; };
+    return () => { 
+      isMounted.current = false;
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   useEffect(() => {
+    // Clear any existing timer when text changes
+    if (timerRef.current) clearInterval(timerRef.current);
+    
     setDisplayedText('');
     setIsTyping(true);
     setShowItemTooltip(false);
     let index = 0;
     const speed = 25; 
 
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       if (!isMounted.current) return;
       
       index++;
       if (index > text.length) {
-        clearInterval(timer);
+        if (timerRef.current) clearInterval(timerRef.current);
         setIsTyping(false);
         setDisplayedText(text);
       } else {
@@ -62,11 +68,14 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       }
     }, speed);
 
-    return () => clearInterval(timer);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [text]);
 
   const handleSkipTyping = () => {
     if (isTyping) {
+      if (timerRef.current) clearInterval(timerRef.current);
       setDisplayedText(text);
       setIsTyping(false);
     }
@@ -130,11 +139,11 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
         </div>
 
         {/* Right Area (Content) */}
-        <div className="flex-1 p-2.5 md:p-8 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent">
-          <div 
-            className="flex-1 overflow-hidden cursor-pointer"
-            onClick={handleSkipTyping}
-          >
+        <div 
+          className="flex-1 p-2.5 md:p-8 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent cursor-pointer"
+          onClick={handleSkipTyping}
+        >
+          <div className="flex-1 overflow-hidden">
             <div 
               className={`text-stone-50 leading-snug md:leading-relaxed font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${isTyping ? 'after:content-["_"] after:inline-block after:w-1.5 after:h-3 md:after:w-2 md:after:h-5 after:bg-amber-500 after:animate-pulse after:ml-1' : ''}`}
               style={{ fontSize: 'clamp(0.9rem, 2.4dvh, 1.6rem)' }}
@@ -149,7 +158,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
               {options.map((option, idx) => (
                 <button
                   key={idx}
-                  onClick={option.action}
+                  onClick={(e) => { e.stopPropagation(); option.action(); }}
                   disabled={option.disabled}
                   className={`px-4 md:px-10 py-1.5 md:py-4 rounded-lg md:rounded-xl font-black text-[9px] md:text-sm flex items-center gap-1.5 md:gap-3 transition-all transform active:scale-95 border shadow-2xl ${
                     option.disabled 

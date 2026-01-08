@@ -1,13 +1,15 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { ManualDungeonSession, RoomType } from '../types/game-state';
+
+export type CameraMode = 'LOCKED' | 'ADAPTIVE' | 'FREE';
 
 export interface DungeonSceneData {
     session: ManualDungeonSession;
     moveEnergy: number;
     bossEnergy: number;
     onMove: (dx: number, dy: number) => void;
+    cameraMode: CameraMode;
 }
 
 export default class DungeonScene extends Phaser.Scene {
@@ -24,6 +26,7 @@ export default class DungeonScene extends Phaser.Scene {
 
     private session!: ManualDungeonSession;
     private onMoveCallback!: (dx: number, dy: number) => void;
+    private cameraMode: CameraMode = 'LOCKED';
     
     private root!: Phaser.GameObjects.Container;
     private mapLayer!: Phaser.GameObjects.Container;
@@ -32,6 +35,7 @@ export default class DungeonScene extends Phaser.Scene {
     
     private playerMarker!: Phaser.GameObjects.Container;
     private revealedTiles: Set<string> = new Set();
+    private contentByCoord: Map<string, Phaser.GameObjects.Text> = new Map();
     
     private sprayEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
     
@@ -44,6 +48,10 @@ export default class DungeonScene extends Phaser.Scene {
     private dragStartX = 0;
     private dragStartY = 0;
 
+    // 카메라 지연 추적용 타이머
+    private cameraTrackTimer: Phaser.Time.TimerEvent | null = null;
+    private cameraTrackTween: Phaser.Tweens.Tween | null = null;
+
     constructor() {
         super('DungeonScene');
     }
@@ -51,6 +59,7 @@ export default class DungeonScene extends Phaser.Scene {
     init(data: DungeonSceneData) {
         this.session = data.session;
         this.onMoveCallback = data.onMove;
+        this.cameraMode = data.cameraMode ?? 'LOCKED';
     }
 
     preload() {
@@ -82,10 +91,17 @@ export default class DungeonScene extends Phaser.Scene {
 
         this.initialRender();
         this.createPlayer();
-        this.alignViewToEntrance();
+        this.alignViewToPlayer(); // 초기 위치 설정
         
-        this.scale.on('resize', () => this.alignViewToEntrance(), this);
+        this.scale.on('resize', () => this.alignViewToPlayer(), this);
         this.setupDragControls();
+    }
+
+    public setCameraMode(mode: CameraMode) {
+        this.cameraMode = mode;
+        if (mode === 'LOCKED' && !this.isMoving) {
+            this.alignViewToPlayer(); // 즉시 이동
+        }
     }
 
     private setupDragControls() {
@@ -93,6 +109,16 @@ export default class DungeonScene extends Phaser.Scene {
             this.isDragging = true;
             this.dragStartX = pointer.x - this.root.x;
             this.dragStartY = pointer.y - this.root.y;
+            
+            // 드래그 시작 시 진행 중인 자동 카메라 이동 중단
+            if (this.cameraTrackTween) {
+                this.cameraTrackTween.stop();
+                this.cameraTrackTween = null;
+            }
+            if (this.cameraTrackTimer) {
+                this.cameraTrackTimer.remove();
+                this.cameraTrackTimer = null;
+            }
         });
 
         this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
@@ -117,6 +143,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.mapLayer.removeAll(true);
         this.contentLayer.removeAll(true);
         this.revealedTiles.clear();
+        this.contentByCoord.clear();
 
         for (let y = 0; y < rows; y++) {
             for (let x = 0; x < cols; x++) {
@@ -129,34 +156,41 @@ export default class DungeonScene extends Phaser.Scene {
 
     private drawRevealedTile(x: number, y: number, type: RoomType, animate: boolean) {
         const key = `${x},${y}`;
-        if (this.revealedTiles.has(key)) return;
-
         const tx = x * (this.tileWidth + this.tileGap);
         const ty = y * (this.tileWidth + this.tileGap);
 
-        // 바닥 타일
-        const tile = this.add.rectangle(tx, ty, this.tileWidth, this.tileWidth, 0x1c1917)
-            .setStrokeStyle(2, 0x44403c)
-            .setOrigin(0.5);
-        this.mapLayer.add(tile);
+        if (!this.revealedTiles.has(key)) {
+            // 바닥 타일
+            const tile = this.add.rectangle(tx, ty, this.tileWidth, this.tileWidth, 0x1c1917)
+                .setStrokeStyle(2, 0x44403c)
+                .setOrigin(0.5);
+            this.mapLayer.add(tile);
 
-        // 콘텐츠
+            if (animate) {
+                this.sprayEmitter.emitParticleAt(tx, ty, 15);
+                tile.setAlpha(0).setScale(0.7);
+                this.tweens.add({
+                    targets: tile,
+                    alpha: 1,
+                    scale: 1,
+                    duration: 600,
+                    ease: 'Back.easeOut'
+                });
+            }
+            this.revealedTiles.add(key);
+        }
+
+        // 콘텐츠 갱신
+        if (this.contentByCoord.has(key)) {
+            this.contentByCoord.get(key)!.destroy();
+            this.contentByCoord.delete(key);
+        }
+        
         const content = this.createRoomContents(type, tx, ty);
-
-        if (animate) {
-            this.sprayEmitter.emitParticleAt(tx, ty, 15);
-            tile.setAlpha(0).setScale(0.7);
-            if (content) content.setAlpha(0).setScale(0.5);
-
-            this.tweens.add({
-                targets: tile,
-                alpha: 1,
-                scale: 1,
-                duration: 600,
-                ease: 'Back.easeOut'
-            });
-
-            if (content) {
+        if (content) {
+            this.contentByCoord.set(key, content);
+            if (animate) {
+                content.setAlpha(0).setScale(0.5);
                 this.tweens.add({
                     targets: content,
                     alpha: 1,
@@ -167,8 +201,6 @@ export default class DungeonScene extends Phaser.Scene {
                 });
             }
         }
-
-        this.revealedTiles.add(key);
     }
 
     private createRoomContents(type: RoomType, x: number, y: number) {
@@ -183,6 +215,40 @@ export default class DungeonScene extends Phaser.Scene {
                 break;
             case 'ENTRANCE':
                 content = this.add.text(x, y, '🚪', { fontSize: '28px' }).setOrigin(0.5);
+                break;
+            case 'GOLD':
+                content = this.add.text(x, y, '💰', { fontSize: '28px' }).setOrigin(0.5);
+                this.tweens.add({
+                    targets: content,
+                    y: y - 5,
+                    duration: 1200,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+                break;
+            case 'TRAP':
+                content = this.add.text(x, y, '🕸️', { fontSize: '28px' }).setOrigin(0.5);
+                this.tweens.add({
+                    targets: content,
+                    angle: 15,
+                    duration: 500,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+                break;
+            case 'NPC':
+                // npcFound가 true라면 아이콘을 렌더링하지 않음 (구출 완료 처리)
+                if (this.session.npcFound) return null;
+                content = this.add.text(x, y, '👤', { fontSize: '30px' }).setOrigin(0.5);
+                this.tweens.add({
+                    targets: content,
+                    alpha: 0.5,
+                    duration: 1000,
+                    yoyo: true,
+                    repeat: -1
+                });
                 break;
         }
         if (content) {
@@ -214,12 +280,11 @@ export default class DungeonScene extends Phaser.Scene {
         });
     }
 
-    private alignViewToEntrance() {
+    private alignViewToPlayer() {
         const { width, height } = this.scale;
-        const { grid } = this.session;
         const { x, y } = this.session.playerPos;
         
-        const yOffset = -height * 0.15;
+        const yOffset = height * 0.05;
         const currentScale = 1.0;
         this.root.setScale(currentScale);
 
@@ -231,12 +296,16 @@ export default class DungeonScene extends Phaser.Scene {
 
     public updateSession(newSession: ManualDungeonSession) {
         this.session = newSession;
+        const { width, height } = this.scale;
         const { x, y } = newSession.playerPos;
+        const yOffset = height * 0.05;
+        
         const targetLocalX = x * (this.tileWidth + this.tileGap);
         const targetLocalY = y * (this.tileWidth + this.tileGap);
 
         this.isMoving = true;
         
+        // 캐릭터 이동 애니메이션
         this.tweens.add({
             targets: this.playerMarker,
             x: targetLocalX,
@@ -245,11 +314,48 @@ export default class DungeonScene extends Phaser.Scene {
             ease: 'Cubic.out',
             onComplete: () => {
                 this.isMoving = false;
-                if (newSession.visited[y][x]) {
-                    this.drawRevealedTile(x, y, newSession.grid[y][x], true);
-                }
+                this.initialRender();
             }
         });
+
+        // 자동 추적 로직 (LOCKED 또는 ADAPTIVE)
+        if (this.cameraMode !== 'FREE') {
+            let shouldTrack = this.cameraMode === 'LOCKED';
+
+            if (this.cameraMode === 'ADAPTIVE') {
+                // Adaptive 로직: 현재 화면 중심에서 임계값(화면 너비/높이의 45%) 이상 벗어났는지 체크 (화면 끝에 가까워질 때)
+                const currentViewX = (width / 2) - this.root.x;
+                const currentViewY = (height / 2 + yOffset) - this.root.y;
+                
+                const distH = Math.abs(targetLocalX - currentViewX);
+                const distV = Math.abs(targetLocalY - currentViewY);
+
+                if (distH > width * 0.45 || distV > height * 0.45) {
+                    shouldTrack = true;
+                }
+            }
+
+            if (shouldTrack) {
+                // 이전 추적 예약 취소
+                if (this.cameraTrackTimer) this.cameraTrackTimer.remove();
+                
+                // 1초 뒤에 카메라 이동 시작
+                this.cameraTrackTimer = this.time.delayedCall(1000, () => {
+                    const targetRootX = (width / 2) - targetLocalX;
+                    const targetRootY = (height / 2 + yOffset) - targetLocalY;
+
+                    if (this.cameraTrackTween) this.cameraTrackTween.stop();
+                    
+                    this.cameraTrackTween = this.tweens.add({
+                        targets: this.root,
+                        x: targetRootX,
+                        y: targetRootY,
+                        duration: 600, // 부드러운 추적을 위해 조금 더 길게 설정
+                        ease: 'Cubic.out'
+                    });
+                });
+            }
+        }
     }
 
     public move(dx: number, dy: number) {
