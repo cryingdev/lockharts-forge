@@ -221,19 +221,19 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                 </div>
             )}
             {s.magicalAttack > 0 && (
-                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex items-center justify-between items-center shadow-inner">
+                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex justify-between items-center shadow-inner">
                     <span className="text-[7px] md:text-[10px] text-stone-500 font-black uppercase flex items-center gap-1"><Zap className="w-2.5 h-2.5" /> M.Atk</span>
                     <span className="text-[9px] md:text-sm font-mono font-bold text-stone-200">{s.magicalAttack}</span>
                 </div>
             )}
             {s.physicalDefense > 0 && (
-                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex items-center justify-between items-center shadow-inner">
+                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex justify-between items-center shadow-inner">
                     <span className="text-[7px] md:text-[10px] text-stone-500 font-black uppercase flex items-center gap-1"><Shield className="w-2.5 h-2.5" /> P.Def</span>
                     <span className="text-[9px] md:text-sm font-mono font-bold text-stone-200">{s.physicalDefense}</span>
                 </div>
             )}
             {s.magicalDefense > 0 && (
-                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex items-center justify-between items-center shadow-inner">
+            <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex justify-between items-center shadow-inner">
                     <span className="text-[7px] md:text-[10px] text-stone-500 font-black uppercase flex items-center gap-1"><Brain className="w-2.5 h-2.5" /> M.Def</span>
                     <span className="text-[9px] md:text-sm font-mono font-bold text-stone-200">{s.magicalDefense}</span>
                 </div>
@@ -264,6 +264,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       );
   };
 
+  // --- Mastery Radial Logic ---
   const masteryInfo = useMemo(() => {
     if (!selectedItem) return null;
     const count = craftingMastery[selectedItem.id] || 0;
@@ -312,6 +313,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const handleQuickCraft = useCallback(() => {
       if (!selectedItem || !masteryInfo) return;
 
+      // Tiered checks for Quick Craft
       if (!isRequirementMet) {
           actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
           return;
@@ -326,6 +328,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           return;
       }
 
+      // Fuel logic for Smithing Quick Craft
       if (selectedItem.craftingType === 'FORGE') {
           if (charcoalCount < quickCraftFuelCost) {
               actions.showToast(`Insufficient charcoal! Need ${quickCraftFuelCost} fuel.`);
@@ -334,6 +337,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           actions.consumeItem('charcoal', quickCraftFuelCost);
       }
 
+      // Determine quality and mastery gain based on current rank
       let quality = 50;
       let masteryGain = 0.5;
 
@@ -345,7 +349,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           masteryGain = 0.7;
       }
 
+      // Deduct resources and energy
       actions.startCrafting(selectedItem);
+      // Immediately finalize with specific parameters
       actions.finishCrafting(selectedItem, quality, 0, masteryGain);
   }, [selectedItem, masteryInfo, isRequirementMet, canAffordResources, hasEnergy, actions, charcoalCount, quickCraftFuelCost]);
 
@@ -459,8 +465,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     )}
                 </div>
             </div>
-            <div className={`h-full bg-stone-900/95 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out relative backdrop-blur-sm ${isPanelOpen ? 'w-[55%] md:w-[60%]' : 'w-full'}`}>
-                <button onClick={() => setIsPanelOpen(!isPanelOpen)} disabled={isCrafting} className={`absolute top-1/2 -left-6 w-6 h-20 md:h-24 -translate-y-1/2 bg-stone-800 border-y border-l border-stone-600 rounded-l-lg flex items-center justify-center hover:bg-stone-750 hover:text-amber-400 transition-colors z-20 ${isCrafting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>{isCrafting ? <Lock className="w-3.5 h-3.5 text-stone-500" /> : isPanelOpen ? <ChevronRight className="w-4 h-4 text-stone-400" /> : <ChevronLeft className="w-4 h-4 text-amber-500 animate-pulse" />}</button>
+
+            <div className={`h-full bg-stone-900/95 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out relative backdrop-blur-sm ${isPanelOpen ? 'w-[45%] md:w-[40%] translate-x-0' : 'w-0 translate-x-full border-none'}`}>
+                <button onClick={() => setIsPanelOpen(!isPanelOpen)} disabled={isCrafting} className={`absolute top-1/2 -left-6 w-6 h-20 md:h-24 -translate-y-1/2 bg-stone-800 border-y border-l border-stone-600 rounded-l-lg flex items-center justify-center hover:bg-stone-700 hover:text-amber-400 transition-colors z-20 ${isCrafting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>{isCrafting ? <Lock className="w-3.5 h-3.5 text-stone-500" /> : isPanelOpen ? <ChevronRight className="w-4 h-4 text-stone-400" /> : <ChevronLeft className="w-4 h-4 text-amber-500 animate-pulse" />}</button>
                 <div className="w-full h-full flex flex-col">
                     <div className="flex border-b border-stone-800 shrink-0"><button onClick={() => handleCategoryChange('WEAPON')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'WEAPON' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Sword className="w-3 h-3 md:w-4 md:h-4" /> WEAPONS</button><button onClick={() => handleCategoryChange('ARMOR')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'ARMOR' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Shield className="w-3 h-3 md:w-4 md:h-4" /> ARMOR</button></div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-3 space-y-2">
