@@ -8,7 +8,7 @@ export interface SmithingSceneData {
   onHeatUpRequest?: () => void;
   difficulty: number;
   initialTemp: number;
-  charcoalCount: number;
+  charcoalCount: number | string;
 }
 
 export default class SmithingScene extends Phaser.Scene {
@@ -74,7 +74,7 @@ export default class SmithingScene extends Phaser.Scene {
   private temperature = 0;
   private coolingRate = 2;
   private currentTempStage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'COLD';
-  private charcoalCount = 0;
+  private charcoalCount: number | string = 0;
 
   private startRadius = 180;
   private targetRadius = 45;
@@ -398,7 +398,8 @@ export default class SmithingScene extends Phaser.Scene {
 
   private handleMiss(x?: number, y?: number) {
     this.score = Math.max(0, this.score - 5); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 5);
-    this.cameras.main.shake(100, 0.01); this.showFeedback('MISS', 0xef4444, 1.2, x ?? this.hitX, y ?? this.hitY);
+    // Added 1.0 as the scale argument to fix the error: Expected 5 arguments, but got 4.
+    this.cameras.main.shake(100, 0.01); this.showFeedback('MISS', 0xef4444, 1.0, x ?? this.hitX, y ?? this.hitY);
     this.updateProgressBar(); this.resetRing();
   }
 
@@ -537,10 +538,25 @@ export default class SmithingScene extends Phaser.Scene {
     }
   }
 
-  private requestHeatUp() { if (this.charcoalCount > 0 && this.onHeatUpRequest) { this.tweens.add({ targets: this.heatUpBtnContainer, scale: 0.9, duration: 50, yoyo: true }); this.onHeatUpRequest(); } else { this.cameras.main.shake(100, 0.005); } }
+  private requestHeatUp() { 
+    const hasCharcoal = this.charcoalCount === '∞' || (typeof this.charcoalCount === 'number' && this.charcoalCount > 0);
+    if (hasCharcoal && this.onHeatUpRequest) { 
+      this.tweens.add({ targets: this.heatUpBtnContainer, scale: 0.9, duration: 50, yoyo: true }); 
+      this.onHeatUpRequest(); 
+    } else { 
+      this.cameras.main.shake(100, 0.005); 
+    } 
+  }
 
   public heatUp() { this.temperature = Math.min(100, this.temperature + 40); if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } this.flashOverlay.setFillStyle(0xff8800, 1).setAlpha(0.4); this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 400, ease: 'Cubic.easeOut' }); }
-  public updateCharcoalCount(count: number) { this.charcoalCount = count; this.refreshHeatUpButton(); }
-  private refreshHeatUpButton() { const bg = this.heatUpBtnContainer.getByName('btnBg') as Phaser.GameObjects.Arc; const countTxt = this.heatUpBtnContainer.getByName('countTxt') as Phaser.GameObjects.Text; if (countTxt) countTxt.setText(`x${this.charcoalCount}`); if (bg) bg.setStrokeStyle(3, this.charcoalCount > 0 ? 0xea580c : 0x292524); }
+  public updateCharcoalCount(count: number | string) { this.charcoalCount = count; this.refreshHeatUpButton(); }
+  private refreshHeatUpButton() { 
+    const bg = this.heatUpBtnContainer.getByName('btnBg') as Phaser.GameObjects.Arc; 
+    const countTxt = this.heatUpBtnContainer.getByName('countTxt') as Phaser.GameObjects.Text; 
+    if (countTxt) countTxt.setText(`x${this.charcoalCount}`); 
+    
+    const hasCharcoal = this.charcoalCount === '∞' || (typeof this.charcoalCount === 'number' && this.charcoalCount > 0);
+    if (bg) bg.setStrokeStyle(3, hasCharcoal ? 0xea580c : 0x292524); 
+  }
   public getTemperature() { return this.temperature; }
 }

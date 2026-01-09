@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -100,7 +101,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
         dispatch({ type: 'START_CRAFTING', payload: { item } });
     },
     cancelCrafting: (item: EquipmentItem) => dispatch({ type: 'CANCEL_CRAFTING', payload: { item } }),
-    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality, bonus } }),
+    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number, masteryGain?: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality, bonus, masteryGain } }),
     craftItem: (item: EquipmentItem, quality: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality } }),
     dismissCraftingResult: () => dispatch({ type: 'DISMISS_CRAFTING_RESULT' }),
 
@@ -122,6 +123,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     enqueueCustomer: (customer: ShopCustomer) => dispatch({ type: 'ENQUEUE_CUSTOMER', payload: customer }),
     nextCustomer: () => dispatch({ type: 'NEXT_CUSTOMER' }),
     dismissCustomer: () => dispatch({ type: 'DISMISS_CUSTOMER' }),
+    refuseCustomer: (mercenaryId: string, affinityLoss: number) => dispatch({ type: 'REFUSE_CUSTOMER', payload: { mercenaryId, affinityLoss } }),
 
     setCrafting: (isCrafting: boolean) => dispatch({ type: 'SET_CRAFTING', payload: isCrafting }),
     updateForgeStatus: (temp: number) => dispatch({ type: 'UPDATE_FORGE_STATUS', payload: { temp } }),
@@ -161,9 +163,17 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     rescueMercenary: (npcId: string) => 
         dispatch({ type: 'RESCUE_NPC', payload: { npcId } }),
 
+    updateSettings: (settings: Partial<GameState['settings']>) => 
+        dispatch({ type: 'UPDATE_SETTINGS', payload: settings }),
+
     triggerEnergyHighlight,
     showToast,
-    hideToast: () => dispatch({ type: 'HIDE_TOAST' })
+    hideToast: () => dispatch({ type: 'HIDE_TOAST' }),
+    setTutorialStep: (step: GameState['tutorialStep']) => dispatch({ type: 'SET_TUTORIAL_STEP', payload: step }),
+    setTutorialScene: (mode: GameState['activeTutorialScene']) => dispatch({ type: 'SET_ACTIVE_TUTORIAL_SCENE', payload: mode }),
+    completePrologue: () => dispatch({ type: 'COMPLETE_PROLOGUE' }),
+    // Added missing completeTutorial implementation
+    completeTutorial: () => dispatch({ type: 'COMPLETE_TUTORIAL' })
   }), [dispatch]); 
 
   return (

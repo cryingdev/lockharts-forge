@@ -81,8 +81,8 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     const masteryCount = state.craftingMastery[item.id] || 0;
 
     const equipment = generateEquipment(item, quality, masteryCount, bonus);
-    const newInventory = [...state.inventory];
     
+    // Create actual inventory item
     const newItem: InventoryItem = {
         id: equipment.id, 
         name: equipment.name,
@@ -94,22 +94,29 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         equipmentData: equipment
     };
 
-    newInventory.push(newItem);
+    // IMMEDIATELY add to inventory copy
+    const newInventory = [...state.inventory, newItem];
 
     const newMastery = { ...state.craftingMastery };
     newMastery[item.id] = (masteryCount || 0) + masteryGain;
 
     const label = getQualityLabel(quality);
-    // Generic log: label + name. No percentages.
     let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}!`;
     if (bonus > 0) logMsg += ` Minigame technique applied a stat bonus.`;
+
+    let newUnlockedTabs = [...state.unlockedTabs];
+    if (!newUnlockedTabs.includes('INVENTORY')) {
+        newUnlockedTabs.push('INVENTORY');
+        logMsg = "Facility restored: Inventory tracking is now active. " + logMsg;
+    }
 
     return {
         ...state,
         isCrafting: false,
         inventory: newInventory,
+        unlockedTabs: newUnlockedTabs,
         craftingMastery: newMastery,
-        lastCraftedItem: newItem,
+        lastCraftedItem: newItem, // This triggers the guidance popup
         logs: [logMsg, ...state.logs]
     };
 };

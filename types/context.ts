@@ -1,5 +1,5 @@
 
-import { GameState } from './game-state';
+import { GameState, GameSettings } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
@@ -22,8 +22,8 @@ export interface GameContextType {
     
     startCrafting: (item: EquipmentItem) => void;
     cancelCrafting: (item: EquipmentItem) => void;
-    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number, masteryGain?: number) => void;
-    craftItem: (item: EquipmentItem, quality: number) => void; 
+    finishCrafting: (item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number) => void;
+    craftItem: (item: EquipmentItem; quality: number) => void; 
     dismissCraftingResult: () => void;
     
     buyItems: (items: { id: string; count: number }[], totalCost: number) => void;
@@ -36,6 +36,8 @@ export interface GameContextType {
     enqueueCustomer: (customer: ShopCustomer) => void;
     nextCustomer: () => void;
     dismissCustomer: () => void;
+    // Added missing refuseCustomer method definition
+    refuseCustomer: (mercenaryId: string, affinityLoss: number) => void;
 
     setCrafting: (isCrafting: boolean) => void;
     updateForgeStatus: (temp: number) => void;
@@ -63,6 +65,16 @@ export interface GameContextType {
     triggerEnergyHighlight: () => void;
     showToast: (message: string) => void;
     hideToast: () => void;
+
+    setTutorialStep: (step: GameState['tutorialStep']) => void;
+    // Added missing setTutorialScene action to fix property does not exist error
+    setTutorialScene: (mode: GameState['activeTutorialScene']) => void;
+    // Added missing completePrologue action
+    completePrologue: () => void;
+    // Added missing completeTutorial action
+    completeTutorial: () => void;
+
+    updateSettings: (settings: Partial<GameSettings>) => void;
 
     // Manual Dungeon Actions
     startManualAssault: (dungeonId: string, partyIds: string[]) => void;

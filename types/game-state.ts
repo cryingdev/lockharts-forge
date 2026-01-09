@@ -1,3 +1,4 @@
+
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
@@ -68,6 +69,12 @@ export interface GameToast {
     visible: boolean;
 }
 
+export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED';
+
+export interface GameSettings {
+    showLogTicker: boolean;
+}
+
 export interface GameState {
   stats: PlayerStats;
   inventory: InventoryItem[];
@@ -77,7 +84,7 @@ export interface GameState {
   knownMercenaries: Mercenary[]; // Tracked regulars and named NPCs
   
   // Shop System State
-  activeCustomer: ShopCustomer | null; // The person currently at the counter
+  activeCustomer: null | ShopCustomer; // The person currently at the counter
   shopQueue: ShopCustomer[]; // People waiting in line
   visitorsToday: string[]; // List of Mercenary IDs who have visited today
   talkedToToday: string[]; // List of Mercenary IDs who have been talked to today for affinity bonus
@@ -94,6 +101,12 @@ export interface GameState {
   // Progression
   craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count
   unlockedRecipes: string[]; // List of IDs for recipes discovered via gameplay
+  unlockedTabs: string[]; // List of unlocked Tab IDs (e.g. 'FORGE', 'MARKET', 'SHOP')
+  
+  // Tutorial System
+  tutorialStep: 'MARKET_GUIDE' | 'FURNACE_GUIDE' | 'OPEN_SHOPPING_CART' | 'CLOSE_SHOPPING_CART' | 'PAY_NOW' | 'CRAFT_PROMPT' | 'FORGE_TAB_GUIDE' | 'SELECT_SWORD_GUIDE' | 'START_FORGING_GUIDE' | 'CRAFT_RESULT_PROMPT' | 'FINALIZE_FORGE_GUIDE' | 'SHOP_INTRO_PROMPT' | 'OPEN_SHOP_TAB_GUIDE' | 'OPEN_SHOP_SIGN_GUIDE' | 'SELL_ITEM_GUIDE' | 'PIP_PRAISE' | 'DRAGON_TALK' | 'TUTORIAL_END_MONOLOGUE' | null;
+  activeTutorialScene: TutorialSceneMode | null;
+  hasCompletedPrologue: boolean;
 
   // Minigame Persistence
   forgeTemperature: number; // Residual heat from last session
@@ -113,4 +126,7 @@ export interface GameState {
   uiEffects: {
     energyHighlight: boolean;
   };
+
+  // User Preferences
+  settings: GameSettings;
 }

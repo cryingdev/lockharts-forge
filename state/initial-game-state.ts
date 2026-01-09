@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { MATERIALS } from '../data/materials';
@@ -45,7 +46,7 @@ export const createInitialGameState = (): GameState => ({
         ...m,
         expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: 0,
-        xpToNextLevel: m.level * 100,
+        xpToNext: m.level * 100,
         status: 'VISITOR'
     })),
 
@@ -67,6 +68,10 @@ export const createInitialGameState = (): GameState => ({
     // Progression
     craftingMastery: {},
     unlockedRecipes: [],
+    unlockedTabs: ['FORGE', 'MARKET'],
+    tutorialStep: null,
+    activeTutorialScene: 'PROLOGUE',
+    hasCompletedPrologue: false,
 
     // Minigame Persistence
     forgeTemperature: 0,
@@ -85,5 +90,10 @@ export const createInitialGameState = (): GameState => ({
     // UI Effects State
     uiEffects: {
         energyHighlight: false
+    },
+
+    // User Preferences
+    settings: {
+        showLogTicker: true
     }
 });

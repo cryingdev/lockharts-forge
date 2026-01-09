@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { useGame } from '../../../context/GameContext';
@@ -15,13 +16,12 @@ const ManualDungeonOverlay = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isReady, setIsReady] = useState(false);
 
-    if (!session) return null;
+    // CRITICAL: Hooks cannot be skipped based on conditions.
+    // Early returns must come AFTER hook calls.
 
-    const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
-    if (!dungeon) return null;
-
-    const party = state.knownMercenaries.filter(m => session.partyIds.includes(m.id));
-    const avgEnergy = party.reduce((sum, m) => sum + (m.expeditionEnergy || 0), 0) / (party.length || 1);
+    const dungeon = session ? DUNGEONS.find(d => d.id === session.dungeonId) : null;
+    const party = session ? state.knownMercenaries.filter(m => session.partyIds.includes(m.id)) : [];
+    const avgEnergy = party.length > 0 ? party.reduce((sum, m) => sum + (m.expeditionEnergy || 0), 0) / (party.length || 1) : 0;
 
     // 1. Phaser 초기화 체크
     useEffect(() => {
@@ -37,7 +37,7 @@ const ManualDungeonOverlay = () => {
 
     // 2. Phaser 인스턴스 생성 및 세션 동기화
     useEffect(() => {
-        if (!isReady || !containerRef.current) return;
+        if (!isReady || !containerRef.current || !session || !dungeon) return;
 
         if (!gameRef.current) {
             const config: Phaser.Types.Core.GameConfig = {
@@ -69,7 +69,7 @@ const ManualDungeonOverlay = () => {
             const scene = gameRef.current.scene.getScene('DungeonScene') as DungeonScene;
             if (scene) scene.updateSession(session);
         }
-    }, [isReady, session, actions, dungeon.moveEnergy, dungeon.bossEnergy]);
+    }, [isReady, session, actions, dungeon?.moveEnergy, dungeon?.bossEnergy]);
 
     // 3. 언마운트 시 파괴
     useEffect(() => {
@@ -80,6 +80,8 @@ const ManualDungeonOverlay = () => {
             }
         };
     }, []);
+
+    if (!session || !dungeon) return null;
 
     const handleDpadMove = (dx: number, dy: number) => {
         const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
@@ -125,7 +127,7 @@ const ManualDungeonOverlay = () => {
                     </div>
                     <div className="h-2 bg-stone-950 rounded-full overflow-hidden border border-stone-800 p-0.5">
                         <div 
-                            className={`h-full rounded-full transition-all duration-500 ${avgEnergy < 30 ? 'bg-red-500' : 'bg-blue-600'}`} 
+                            className={`h-full rounded-full transition-all duration-500 ${avgEnergy < 30 ? 'bg-red-600' : 'bg-blue-600'}`} 
                             style={{ width: `${avgEnergy}%` }} 
                         />
                     </div>

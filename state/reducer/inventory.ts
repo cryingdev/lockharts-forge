@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../../types/index';
 import { MATERIALS } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -54,6 +55,13 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
     let newForgeState = { ...state.forge };
     let logUpdates: string[] = [`Bought supplies for ${totalCost} Gold.`];
     let newMarketStock = { ...state.marketStock };
+    let newUnlockedTabs = [...state.unlockedTabs];
+    let newActiveTutorialScene = state.activeTutorialScene;
+
+    if (!newUnlockedTabs.includes('INVENTORY')) {
+        newUnlockedTabs.push('INVENTORY');
+        logUpdates.unshift("Access granted: Inventory facility is now operational.");
+    }
 
     items.forEach(buyItem => {
             // Update stock
@@ -72,7 +80,11 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
             if (buyItem.id === 'furnace') {
                 newForgeState.hasFurnace = true;
                 if (newTierLevel === 0) newTierLevel = 1; 
-                logUpdates.unshift('Furnace acquired! You can now start forging metal.');
+                logUpdates.unshift('Furnace acquired! The restoration process has begun.');
+                
+                // Set the next tutorial scene mode
+                newActiveTutorialScene = 'FURNACE_RESTORED';
+                
                 return; 
             }
             if (buyItem.id === 'workbench') {
@@ -105,15 +117,20 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
         forge: newForgeState,
         inventory: newInventory,
         marketStock: newMarketStock,
+        unlockedTabs: newUnlockedTabs,
+        activeTutorialScene: newActiveTutorialScene,
         logs: [...logUpdates, ...state.logs]
     };
 };
 
 export const handleInstallFurnace = (state: GameState): GameState => {
+    let newUnlockedTabs = [...state.unlockedTabs];
+
     return {
-    ...state,
-    forge: { ...state.forge, hasFurnace: true },
-    logs: ['The Furnace has been installed! The forge comes alive.', ...state.logs]
+        ...state,
+        forge: { ...state.forge, hasFurnace: true },
+        unlockedTabs: newUnlockedTabs,
+        logs: ['The Furnace has been installed! The forge comes alive.', ...state.logs]
     };
 };
 
@@ -124,6 +141,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     let itemName = 'Item';
     let newKnownMercenaries = [...state.knownMercenaries];
     let logMessage = '';
+    let newTutorialStep = state.tutorialStep;
     let newActiveCustomer = state.activeCustomer;
 
     const isShopSale = !!customer;
@@ -146,31 +164,45 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
 
     if (customer) {
         const existingMercIdx = newKnownMercenaries.findIndex(m => m.id === customer.id);
+        const isPipTutorial = newTutorialStep === 'SELL_ITEM_GUIDE' && customer.id === 'pip_green';
+        const affinityGain = isPipTutorial ? 10 : 2;
         
         if (existingMercIdx > -1) {
             const merc = { ...newKnownMercenaries[existingMercIdx] };
-            merc.affinity = Math.min(100, (merc.affinity || 0) + 2); 
+            merc.affinity = Math.min(100, (merc.affinity || 0) + affinityGain); 
             merc.visitCount = (merc.visitCount || 0) + 1;
             merc.lastVisitDay = state.stats.day;
             newKnownMercenaries[existingMercIdx] = merc;
-            logMessage = `Sold ${itemName} to ${customer.name}. Affinity rose to ${merc.affinity}.`;
+            logMessage = `Sold ${itemName} to ${customer.name}. Affinity rose by ${affinityGain}.`;
         } else {
             const newMerc: Mercenary = {
                 ...customer,
-                affinity: 2,
+                affinity: affinityGain,
                 visitCount: 1,
                 lastVisitDay: state.stats.day,
                 expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
                 currentXp: 0,
                 xpToNextLevel: 100,
-                status: 'VISITOR' // Explicitly set status to VISITOR for new contacts
+                status: 'VISITOR'
             };
             newKnownMercenaries.push(newMerc);
-            logMessage = `Sold ${itemName} to ${customer.name}. (New Contact)`;
+            logMessage = `Sold ${itemName} to ${customer.name}. (New Contact, Affinity +${affinityGain})`;
         }
 
-        if (state.activeCustomer && state.activeCustomer.mercenary.id === customer.id) {
-            newActiveCustomer = null; 
+        // --- IMMEDIATE UI UPDATE ---
+        // Sync the affinity gain to the active customer object so the Shop HUD reflects it immediately
+        if (newActiveCustomer && newActiveCustomer.mercenary.id === customer.id) {
+            newActiveCustomer = {
+                ...newActiveCustomer,
+                mercenary: {
+                    ...newActiveCustomer.mercenary,
+                    affinity: Math.min(100, (newActiveCustomer.mercenary.affinity || 0) + affinityGain)
+                }
+            };
+        }
+
+        if (isPipTutorial) {
+            newTutorialStep = 'PIP_PRAISE';
         }
     } else {
         logMessage = `Sold ${itemName} for ${price} Gold.`;
@@ -190,6 +222,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
         },
         knownMercenaries: newKnownMercenaries,
         activeCustomer: newActiveCustomer,
+        tutorialStep: newTutorialStep,
         logs: [logMessage, ...state.logs]
     };
 };
@@ -205,7 +238,6 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
     let logMsg = '';
     let itemUsed = false;
 
-    // Logic per Item ID
     if (itemId === 'energy_potion') {
         const recoverAmount = 25;
         if (newStats.energy >= newStats.maxEnergy) {
@@ -233,7 +265,6 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
 
     if (!itemUsed) return state;
 
-    // Deduct Item
     const newInventory = state.inventory.map(item => {
         if (item.id === itemId) {
             return { ...item, quantity: item.quantity - 1 };

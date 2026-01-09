@@ -91,6 +91,13 @@ const CraftingResultModal = () => {
     const label = getQualityLabel(data.quality);
     const qColor = getQualityColor(data.quality);
 
+    const handleFinalize = () => {
+        if (state.tutorialStep === 'FINALIZE_FORGE_GUIDE') {
+            actions.setTutorialStep('SHOP_INTRO_PROMPT');
+        }
+        actions.dismissCraftingResult();
+    };
+
     const renderStatItem = (icon: React.ReactNode, labelStr: string, statKey: keyof EquipmentStats, value: number) => {
         const baseValue = recipe?.baseStats?.[statKey] || 0;
         const diff = value - baseValue;
@@ -171,7 +178,11 @@ const CraftingResultModal = () => {
 
                 {/* Footer */}
                 <div className="p-4 border-t border-stone-800 bg-stone-850 shrink-0">
-                    <button onClick={actions.dismissCraftingResult} className="w-full py-3 md:py-4 bg-amber-700 hover:bg-amber-600 text-white font-black rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 text-xs md:text-base uppercase tracking-widest">
+                    <button 
+                        onClick={handleFinalize} 
+                        data-tutorial-id="FINALIZE_BUTTON"
+                        className="w-full py-3 md:py-4 bg-amber-700 hover:bg-amber-600 text-white font-black rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 text-xs md:text-base uppercase tracking-widest"
+                    >
                         <Check className="w-4 h-4" /> Finalize Forge
                     </button>
                 </div>

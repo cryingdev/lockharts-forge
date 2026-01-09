@@ -1,3 +1,4 @@
+
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -7,7 +8,7 @@ import { handleSleep, handleConfirmSleep } from './reducer/sleep';
 import { handleTriggerEvent, handleCloseEvent, handleToggleJournal } from './reducer/events';
 import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem } from './reducer/inventory';
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
-import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer } from './reducer/shop';
+import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer, handleRefuseCustomer } from './reducer/shop';
 import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
@@ -52,6 +53,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'ENQUEUE_CUSTOMER': return handleEnqueueCustomer(state, action.payload);
     case 'NEXT_CUSTOMER': return handleNextCustomer(state);
     case 'DISMISS_CUSTOMER': return handleDismissCustomer(state);
+    case 'REFUSE_CUSTOMER': return handleRefuseCustomer(state, action.payload);
 
     // Mercenaries
     case 'ADD_KNOWN_MERCENARY': return handleAddKnownMercenary(state, action.payload);
@@ -81,6 +83,38 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'RETREAT_MANUAL_DUNGEON': return handleRetreatManualDungeon(state);
     case 'TOGGLE_MANUAL_DUNGEON_OVERLAY': return { ...state, showManualDungeonOverlay: action.payload };
     case 'RESCUE_NPC': return handleRescueNPC(state, action.payload);
+
+    // Tutorial & Prologue
+    case 'SET_TUTORIAL_STEP': return { ...state, tutorialStep: action.payload };
+    case 'SET_ACTIVE_TUTORIAL_SCENE': return { ...state, activeTutorialScene: action.payload };
+    case 'COMPLETE_PROLOGUE': 
+        return { 
+            ...state, 
+            hasCompletedPrologue: true,
+            activeTutorialScene: null,
+            tutorialStep: 'MARKET_GUIDE' // Prologue finished, show spotlight
+        };
+    case 'COMPLETE_TUTORIAL':
+        const finalTabs = ['FORGE', 'MARKET', 'INVENTORY', 'SHOP', 'TAVERN', 'DUNGEON', 'SIMULATION'];
+        return {
+            ...state,
+            tutorialStep: null,
+            activeTutorialScene: null,
+            unlockedTabs: finalTabs,
+            stats: {
+                ...state.stats,
+                tierLevel: 1 // Advance to Tier 1 immediately on skip
+            },
+            forge: { ...state.forge, hasFurnace: true }, // Ensure furnace is restored if skipped
+            logs: ["Tutorial skipped. Lockhart's Forge is fully operational.", ...state.logs]
+        };
+
+    // User Preferences
+    case 'UPDATE_SETTINGS':
+        return {
+            ...state,
+            settings: { ...state.settings, ...action.payload }
+        };
 
     // Toast Notifications
     case 'SHOW_TOAST':

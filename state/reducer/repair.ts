@@ -5,6 +5,14 @@ export const handleRepairWork = (state: GameState): GameState => {
   if (state.stats.energy < GAME_CONFIG.ENERGY_COST.REPAIR) return state;
   
   const earn = 15;
+  let newUnlockedTabs = [...state.unlockedTabs];
+  let logPrefix = "";
+
+  if (!newUnlockedTabs.includes('INVENTORY')) {
+    newUnlockedTabs.push('INVENTORY');
+    logPrefix = "Facility restored: Inventory tracking is now active. ";
+  }
+
   return {
     ...state,
     stats: { 
@@ -16,6 +24,7 @@ export const handleRepairWork = (state: GameState): GameState => {
           incomeRepair: state.stats.dailyFinancials.incomeRepair + earn
       }
     },
-    logs: [`Performed cold repairs for a neighbor. Gold +${earn}. Energy -${GAME_CONFIG.ENERGY_COST.REPAIR}.`, ...state.logs],
+    unlockedTabs: newUnlockedTabs,
+    logs: [`${logPrefix}Performed cold repairs for a neighbor. Gold +${earn}. Energy -${GAME_CONFIG.ENERGY_COST.REPAIR}.`, ...state.logs],
   };
 };
