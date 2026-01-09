@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.35)
+# Project Map – Lockhart’s Forge (v0.1.36)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -90,7 +90,7 @@ This document provides a comprehensive structural map of the project, detailing 
 
 - `game/IntroScene.ts`: Cinematic opening. Dragon effects and narrative presentation.
 - `game/SmithingScene.ts`: Rhythm-based forging. Handles heat management, billet morphing, and strike timing.
-- `game/WorkbenchScene.ts`: Stitching/Woodworking minigame. Path tracking and timing-based precision.
+- `game/WorkbenchScene.ts`: Stitching/Woodworking minigame. Path tracking and timing-based precision. **Now features dynamic hammer swing animation for nail-striking phases.**
 - `game/MainForgeScene.ts`: Forge hub visualization and object-based interaction rendering.
 - `game/DungeonScene.ts`: Dungeon exploration renderer. Grid visualization, fog-of-war, and player movement.
 
@@ -124,3 +124,17 @@ This document provides a comprehensive structural map of the project, detailing 
 - `models/JobClass.ts`: Class-based stat weighting and efficiency data.
 - `models/Dungeon.ts`: Expedition and dungeon instance definitions.
 - `types/*.ts`: System-wide types for state, component props, and events.
+
+---
+
+## 🔄 Recent Updates (v0.1.36)
+
+*   **Tactical Camera Overhaul (Direct Assault)**:
+    *   **Three-Tier Camera Control**: Added a cycle toggle between **Locked**, **Adaptive**, and **Free** modes.
+    *   **Delayed Intelligence**: 1-second movement delay before tracking.
+*   **Workbench Enhancement**:
+    *   **Hammer Mechanics**: Phase 1 & 3 now include a dynamic `hammer.png` animation.
+    *   **Strike Logic**: The hammer flies from an upper offset and rotates from 5° to -30° upon impact with nail heads.
+*   **System & Maintenance**:
+    *   Version incremented to `v0.1.36`.
+    *   Fixed UI overflow in mobile confirmation modals.
