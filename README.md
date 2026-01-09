@@ -1,13 +1,15 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.37
+> **Version**: 0.1.38
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
 
-## 🔄 Recent Updates (v0.1.37)
+## 🔄 Recent Updates (v0.1.38)
 
+*   **Customization Settings**:
+    *   **Header Log Ticker Toggle**: Added an option in the System Menu to show or hide the secondary header row (Log Ticker). This allows for a more compact UI if desired.
 *   **Mobile UI Optimization**:
     *   **Header Refinement**: Reduced font sizes for Energy and Gold counters on narrow screens to prevent horizontal clipping.
     *   **Dynamic Spacing**: Optimized layout gaps and button paddings for mobile portrait mode.
@@ -19,7 +21,7 @@
     *   Polished the **Prologue** and **Furnace Restoration** sequences with new dialogue and interactive spotlight guides.
     *   Added a global "Skip Tutorial" option for returning players.
 *   **System & Maintenance**:
-    *   Version incremented to `v0.1.37` across all internal systems.
+    *   Version incremented to `v0.1.38` across all internal systems.
 
 ## 🌟 Key Features
 

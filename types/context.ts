@@ -1,5 +1,5 @@
 
-import { GameState } from './game-state';
+import { GameState, GameSettings } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
@@ -73,6 +73,8 @@ export interface GameContextType {
     completePrologue: () => void;
     // Added missing completeTutorial action
     completeTutorial: () => void;
+
+    updateSettings: (settings: Partial<GameSettings>) => void;
 
     // Manual Dungeon Actions
     startManualAssault: (dungeonId: string, partyIds: string[]) => void;

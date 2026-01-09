@@ -46,7 +46,7 @@ const LogTicker = ({ message }: { message: string }) => {
 const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick }) => {
   const { state, actions } = useGame();
   const { gold, energy, maxEnergy, day } = state.stats;
-  const { uiEffects } = state;
+  const { uiEffects, settings } = state;
 
   return (
     <header className="w-full bg-stone-950 border-b border-stone-800 shadow-[0_4px_20px_rgba(0,0,0,0.5)] shrink-0 z-20 flex flex-col">
@@ -111,19 +111,21 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
         </div>
       </div>
 
-      {/* Bottom Line: Log Ticker / Journal Button */}
-      <div className="w-full bg-black/20 px-2 pb-1.5 pt-0.5 md:pb-2 md:pt-1">
-          <button 
-              onClick={actions.toggleJournal}
-              className="w-full flex items-center gap-2 md:gap-3 px-3 py-1 bg-stone-900/40 hover:bg-stone-900 rounded-md md:rounded-lg border border-stone-800/30 hover:border-stone-700 transition-all group text-left h-6 md:h-8"
-              title="Open Forge Ledger"
-          >
-              <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-stone-600 group-hover:text-amber-400 shrink-0 transition-colors" />
-              <div className="flex-1 min-w-0 h-full">
-                  <LogTicker message={state.logs[0] || ''} />
-              </div>
-          </button>
-      </div>
+      {/* Bottom Line: Log Ticker / Journal Button (Conditional based on settings) */}
+      {settings.showLogTicker && (
+          <div className="w-full bg-black/20 px-2 pb-1.5 pt-0.5 md:pb-2 md:pt-1">
+              <button 
+                  onClick={actions.toggleJournal}
+                  className="w-full flex items-center gap-2 md:gap-3 px-3 py-1 bg-stone-900/40 hover:bg-stone-900 rounded-md md:rounded-lg border border-stone-800/30 hover:border-stone-700 transition-all group text-left h-6 md:h-8"
+                  title="Open Forge Ledger"
+              >
+                  <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-stone-600 group-hover:text-amber-400 shrink-0 transition-colors" />
+                  <div className="flex-1 min-w-0 h-full">
+                      <LogTicker message={state.logs[0] || ''} />
+                  </div>
+              </button>
+          </div>
+      )}
     </header>
   );
 };

@@ -163,6 +163,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     rescueMercenary: (npcId: string) => 
         dispatch({ type: 'RESCUE_NPC', payload: { npcId } }),
 
+    updateSettings: (settings: Partial<GameState['settings']>) => 
+        dispatch({ type: 'UPDATE_SETTINGS', payload: settings }),
+
     triggerEnergyHighlight,
     showToast,
     hideToast: () => dispatch({ type: 'HIDE_TOAST' }),

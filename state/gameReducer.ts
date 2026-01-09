@@ -109,6 +109,13 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             logs: ["Tutorial skipped. Lockhart's Forge is fully operational.", ...state.logs]
         };
 
+    // User Preferences
+    case 'UPDATE_SETTINGS':
+        return {
+            ...state,
+            settings: { ...state.settings, ...action.payload }
+        };
+
     // Toast Notifications
     case 'SHOW_TOAST':
         return {

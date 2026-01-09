@@ -71,6 +71,10 @@ export interface GameToast {
 
 export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED';
 
+export interface GameSettings {
+    showLogTicker: boolean;
+}
+
 export interface GameState {
   stats: PlayerStats;
   inventory: InventoryItem[];
@@ -122,4 +126,7 @@ export interface GameState {
   uiEffects: {
     energyHighlight: boolean;
   };
+
+  // User Preferences
+  settings: GameSettings;
 }

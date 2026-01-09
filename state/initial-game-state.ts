@@ -90,5 +90,10 @@ export const createInitialGameState = (): GameState => ({
     // UI Effects State
     uiEffects: {
         energyHighlight: false
+    },
+
+    // User Preferences
+    settings: {
+        showLogTicker: true
     }
 });

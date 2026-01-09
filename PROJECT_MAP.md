@@ -1,5 +1,5 @@
 
-# Project Map – Lockhart’s Forge (v0.1.37)
+# Project Map – Lockhart’s Forge (v0.1.38)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -21,7 +21,7 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Core Reducer
 - `state/gameReducer.ts`: Primary state engine. Orchestrates sub-handlers for all game actions.
 - `state/actions.ts`: TypeScript definitions for dispatchable actions.
-- `state/initial-game-state.ts`: Default values for new game sessions.
+- `state/initial-game-state.ts`: Default values for new game sessions. Includes `settings` for user preferences.
 
 ### Action Handlers (`state/reducer/`)
 - `inventory.ts`: Item acquisition, market purchases, and tier upgrades.
@@ -38,9 +38,8 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ### Layout & Common
 - `components/MainGameLayout.tsx`: Primary dashboard. Handles tab navigation and the **Tutorial Overlay System**.
-- `components/Header.tsx`: Top HUD optimized for **Mobile Portrait** with adaptive font scaling.
+- `components/Header.tsx`: Top HUD optimized for **Mobile Portrait** with adaptive font scaling and conditional log ticker rendering.
 - `components/DialogueBox.tsx`: Narrative interface with typewriter effects and contextual choices.
-- `components/DialogueBox.tsx`: (Internal) Improved item preview tooltips for Shop requests.
 
 ### Tabs (Functional Pages)
 - `tabs/Forge/ForgeTab.tsx`: Crafting hub with Mastery Radial gauges.
@@ -53,7 +52,7 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Modals (Popup System)
 - `modals/ConfirmationModal.tsx`: Safety prompts with **Mobile-Stacking** button layouts.
 - `modals/CraftingResultModal.tsx`: Post-forge summary with animated Mastery progress.
-- `modals/MercenaryDetailModal.tsx`: Unit management and equipment paper-doll.
+- `modals/SettingsModal.tsx`: System settings and save/load management. Now includes UI customization toggles.
 - `modals/SaveLoadModal.tsx`: Browser for save slots with metadata previews.
 
 ---
@@ -66,9 +65,9 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 🔄 Recent Updates (v0.1.37)
+## 🔄 Recent Updates (v0.1.38)
 
+*   **UI Customization**: Added setting to toggle Header Log Ticker row.
 *   **Mobile Optimization**: Header and Modals refined for 320px+ screens.
-*   **Layering Fix**: Affinity hearts in Shop now render behind character sprites.
 *   **Tutorial Polish**: Integrated the prologue sequence and furnace ignition steps.
-*   **System**: version incremented to `v0.1.37`.
+*   **System**: version incremented to `v0.1.38`.
