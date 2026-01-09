@@ -64,6 +64,11 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     const canAddCount = Math.min(amount, availableStock - currentInCart);
     if (canAddCount <= 0) return false;
 
+    // 튜토리얼 중 용광로를 클릭하면 장바구니 열기 가이드로 전환
+    if (itemId === 'furnace' && state.tutorialStep === 'FURNACE_GUIDE') {
+        actions.setTutorialStep('OPEN_SHOPPING_CART');
+    }
+
     setCart(prev => {
       const nowInCart = prev[itemId] || 0;
       if (nowInCart >= availableStock) return prev;
@@ -171,6 +176,11 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
       return;
     }
 
+    // 튜토리얼 중 Pay Now를 클릭하면 튜토리얼 종료
+    if (state.tutorialStep === 'PAY_NOW') {
+        actions.setTutorialStep(null);
+    }
+
     const itemsToBuy = Object.entries(cart).map(([id, count]) => ({ id, count }));
     actions.buyItems(itemsToBuy, totalCost);
     setCart({});
@@ -179,6 +189,18 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   const setMultiplier = (itemId: string, mult: number) => {
     setItemMultipliers(prev => ({ ...prev, [itemId]: mult }));
+  };
+
+  const toggleCart = () => {
+    // 튜토리얼 중 장바구니를 열면 닫기 가이드로 전환
+    if (!isCartOpen && state.tutorialStep === 'OPEN_SHOPPING_CART') {
+        actions.setTutorialStep('CLOSE_SHOPPING_CART');
+    } 
+    // 튜토리얼 중 장바구니를 닫으면 결제 버튼 가이드로 전환
+    else if (isCartOpen && state.tutorialStep === 'CLOSE_SHOPPING_CART') {
+        actions.setTutorialStep('PAY_NOW');
+    }
+    setIsCartOpen(!isCartOpen);
   };
 
   return (
@@ -204,6 +226,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleBuy}
+              data-tutorial-id="PAY_NOW_BUTTON"
               className={`relative flex items-center gap-2 md:gap-3 px-3 md:px-6 py-1.5 md:py-3 rounded-xl border transition-all shadow-lg active:scale-95 group ${
                 cartItemCount === 0
                   ? 'bg-stone-800/40 border-stone-700 text-stone-600 grayscale'
@@ -276,6 +299,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
               return (
                 <div
                   key={marketItem.id}
+                  data-tutorial-id={marketItem.id === 'furnace' ? 'FURNACE_ITEM' : undefined}
                   className={`group relative flex flex-col items-center p-1 md:p-2 rounded-lg md:rounded-xl border transition-all h-[130px] md:h-[210px] justify-between overflow-hidden shadow-sm select-none ${
                     pressingItemId === marketItem.id
                       ? 'scale-[0.97] border-amber-500 bg-amber-900/10'
@@ -404,7 +428,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
       >
         {/* 토글 버튼: 장바구니 패널의 왼쪽에 고정되어 함께 이동 */}
         <button
-          onClick={() => setIsCartOpen(!isCartOpen)}
+          onClick={toggleCart}
+          data-tutorial-id="CART_TOGGLE"
           className={`absolute top-1/2 -left-6 md:-left-8 w-6 md:w-8 h-20 md:h-24 -translate-y-1/2 border-y border-l transition-all z-[110] cursor-pointer shadow-xl rounded-l-lg flex flex-col items-center justify-center 
             ${
               cartItemCount > 0

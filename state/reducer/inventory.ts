@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../../types/index';
 import { MATERIALS } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -54,6 +55,13 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
     let newForgeState = { ...state.forge };
     let logUpdates: string[] = [`Bought supplies for ${totalCost} Gold.`];
     let newMarketStock = { ...state.marketStock };
+    let newUnlockedTabs = [...state.unlockedTabs];
+    let newActiveTutorialScene = state.activeTutorialScene;
+
+    if (!newUnlockedTabs.includes('INVENTORY')) {
+        newUnlockedTabs.push('INVENTORY');
+        logUpdates.unshift("Access granted: Inventory facility is now operational.");
+    }
 
     items.forEach(buyItem => {
             // Update stock
@@ -72,7 +80,11 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
             if (buyItem.id === 'furnace') {
                 newForgeState.hasFurnace = true;
                 if (newTierLevel === 0) newTierLevel = 1; 
-                logUpdates.unshift('Furnace acquired! You can now start forging metal.');
+                logUpdates.unshift('Furnace acquired! The restoration process has begun.');
+                
+                // Set the next tutorial scene mode
+                newActiveTutorialScene = 'FURNACE_RESTORED';
+                
                 return; 
             }
             if (buyItem.id === 'workbench') {
@@ -105,15 +117,21 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
         forge: newForgeState,
         inventory: newInventory,
         marketStock: newMarketStock,
+        unlockedTabs: newUnlockedTabs,
+        activeTutorialScene: newActiveTutorialScene,
         logs: [...logUpdates, ...state.logs]
     };
 };
 
 export const handleInstallFurnace = (state: GameState): GameState => {
+    let newUnlockedTabs = [...state.unlockedTabs];
+    // No automatic tab unlock here anymore
+
     return {
-    ...state,
-    forge: { ...state.forge, hasFurnace: true },
-    logs: ['The Furnace has been installed! The forge comes alive.', ...state.logs]
+        ...state,
+        forge: { ...state.forge, hasFurnace: true },
+        unlockedTabs: newUnlockedTabs,
+        logs: ['The Furnace has been installed! The forge comes alive.', ...state.logs]
     };
 };
 
@@ -125,6 +143,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     let newKnownMercenaries = [...state.knownMercenaries];
     let logMessage = '';
     let newActiveCustomer = state.activeCustomer;
+    let newTutorialStep = state.tutorialStep;
 
     const isShopSale = !!customer;
 
@@ -169,6 +188,11 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
             logMessage = `Sold ${itemName} to ${customer.name}. (New Contact)`;
         }
 
+        // Tutorial completion transition: Move to monologue after Pip's sale
+        if (newTutorialStep === 'SELL_ITEM_GUIDE' && customer.id === 'pip_green') {
+            newTutorialStep = 'TUTORIAL_END_MONOLOGUE';
+        }
+
         if (state.activeCustomer && state.activeCustomer.mercenary.id === customer.id) {
             newActiveCustomer = null; 
         }
@@ -190,6 +214,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
         },
         knownMercenaries: newKnownMercenaries,
         activeCustomer: newActiveCustomer,
+        tutorialStep: newTutorialStep,
         logs: [logMessage, ...state.logs]
     };
 };

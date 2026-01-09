@@ -18,13 +18,12 @@ interface ForgeTabProps {
 const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   
-  const { inventory, stats, isCrafting, craftingMastery, activeEvent, unlockedRecipes } = state;
+  const { inventory, stats, isCrafting, craftingMastery, activeEvent, unlockedRecipes, tutorialStep, hasCompletedPrologue } = state;
   const { hasFurnace, hasWorkbench } = state.forge;
 
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const [hasPromptedFurnace, setHasPromptedFurnace] = useState(false);
   const [failedFuelHighlight, setFailedFuelHighlight] = useState(false);
   
   const [expandedSubCat, setExpandedSubCat] = useState<string | null>(null);
@@ -56,21 +55,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const charcoalCount = getInventoryCount('charcoal');
   const hasFuel = charcoalCount > 0;
   
-  useEffect(() => {
-    if (!hasFurnace && !hasPromptedFurnace && !activeEvent) {
-        actions.triggerEvent({
-            id: 'CUSTOMER_VISIT',
-            title: "The Forge lies in Ruins",
-            description: "Your journey as a blacksmith starts with a single spark. To begin forging weapons and armor, you must first install a Furnace from the market.",
-            options: [
-                { label: "Visit Market (500 G)", action: () => onNavigate('MARKET') },
-                { label: "I'll look around first", action: () => {} }
-            ]
-        });
-        setHasPromptedFurnace(true);
-    }
-  }, [hasFurnace, hasPromptedFurnace, activeEvent, actions, onNavigate]);
-
   const canEnterForge = useMemo(() => {
       if (!selectedItem) return false;
       if (selectedItem.craftingType === 'WORKBENCH') return true;
@@ -117,9 +101,15 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       );
   }, [activeCategory, groupedItems]);
 
+  // Fix: Reset or update expanded subcategory when category changes to ensure content visibility
   useEffect(() => {
-      if (visibleSubCats.length > 0 && !expandedSubCat) {
-          setExpandedSubCat(visibleSubCats[0].id);
+      if (visibleSubCats.length > 0) {
+          const isCurrentValid = visibleSubCats.some(sc => sc.id === expandedSubCat);
+          if (!isCurrentValid) {
+              setExpandedSubCat(visibleSubCats[0].id);
+          }
+      } else {
+          setExpandedSubCat(null);
       }
   }, [activeCategory, visibleSubCats, expandedSubCat]);
 
@@ -147,7 +137,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const startCrafting = useCallback(() => {
       if (!selectedItem) return;
 
-      // Tiered checks for toast feedback
       if (!isRequirementMet) {
           actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
           return;
@@ -168,9 +157,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           return;
       }
 
+      if (state.tutorialStep === 'START_FORGING_GUIDE') {
+          actions.setTutorialStep(null); 
+      }
+
       actions.startCrafting(selectedItem);
       setIsPanelOpen(false); 
-  }, [actions, selectedItem, isRequirementMet, canAffordResources, hasEnergy, canEnterForge]);
+  }, [actions, selectedItem, isRequirementMet, canAffordResources, hasEnergy, canEnterForge, state.tutorialStep]);
 
   const cancelCrafting = useCallback(() => {
       if (selectedItem) actions.cancelCrafting(selectedItem);
@@ -179,7 +172,12 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   }, [actions, selectedItem]);
 
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
-    if (selectedItem) actions.finishCrafting(selectedItem, score, bonus);
+    if (selectedItem) {
+        actions.finishCrafting(selectedItem, score, bonus);
+        if (selectedItem.id === 'sword_bronze_t1') {
+            actions.setTutorialStep('CRAFT_RESULT_PROMPT');
+        }
+    }
     setIsPanelOpen(true);
   }, [selectedItem, actions]);
   
@@ -204,6 +202,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
   const handleMouseLeave = useCallback(() => setHoveredItem(null), []);
 
+  const handleSelectItem = (item: EquipmentItem) => {
+      setSelectedItem(item);
+      if (state.tutorialStep === 'SELECT_SWORD_GUIDE' && item.id === 'sword_bronze_t1') {
+          actions.setTutorialStep('START_FORGING_GUIDE');
+      }
+  };
+
   const renderStats = (item: EquipmentItem) => {
     if (!item.baseStats) return null;
     const s = item.baseStats;
@@ -216,19 +221,19 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                 </div>
             )}
             {s.magicalAttack > 0 && (
-                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex justify-between items-center shadow-inner">
+                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex items-center justify-between items-center shadow-inner">
                     <span className="text-[7px] md:text-[10px] text-stone-500 font-black uppercase flex items-center gap-1"><Zap className="w-2.5 h-2.5" /> M.Atk</span>
                     <span className="text-[9px] md:text-sm font-mono font-bold text-stone-200">{s.magicalAttack}</span>
                 </div>
             )}
             {s.physicalDefense > 0 && (
-                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex justify-between items-center shadow-inner">
+                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex items-center justify-between items-center shadow-inner">
                     <span className="text-[7px] md:text-[10px] text-stone-500 font-black uppercase flex items-center gap-1"><Shield className="w-2.5 h-2.5" /> P.Def</span>
                     <span className="text-[9px] md:text-sm font-mono font-bold text-stone-200">{s.physicalDefense}</span>
                 </div>
             )}
             {s.magicalDefense > 0 && (
-                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex justify-between items-center shadow-inner">
+                <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex items-center justify-between items-center shadow-inner">
                     <span className="text-[7px] md:text-[10px] text-stone-500 font-black uppercase flex items-center gap-1"><Brain className="w-2.5 h-2.5" /> M.Def</span>
                     <span className="text-[9px] md:text-sm font-mono font-bold text-stone-200">{s.magicalDefense}</span>
                 </div>
@@ -243,7 +248,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       const count = inventory.filter(i => i.name === item.name).length;
       return (
         <div 
-            key={item.id} onClick={() => setSelectedItem(item)}
+            key={item.id} 
+            onClick={() => handleSelectItem(item)}
+            data-tutorial-id={item.id === 'sword_bronze_t1' ? 'SWORD_RECIPE' : undefined}
             onMouseEnter={(e) => handleMouseEnter(item, e)} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
             className={`relative flex flex-col items-center rounded-lg border transition-all cursor-pointer group text-left h-[115px] md:h-[130px] overflow-hidden ${isSelected ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-stone-800 border-stone-700 hover:border-stone-500 hover:bg-stone-750'}`}
         >
@@ -257,7 +264,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       );
   };
 
-  // --- Mastery Radial Logic ---
   const masteryInfo = useMemo(() => {
     if (!selectedItem) return null;
     const count = craftingMastery[selectedItem.id] || 0;
@@ -306,7 +312,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const handleQuickCraft = useCallback(() => {
       if (!selectedItem || !masteryInfo) return;
 
-      // Tiered checks for Quick Craft
       if (!isRequirementMet) {
           actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
           return;
@@ -321,7 +326,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           return;
       }
 
-      // Fuel logic for Smithing Quick Craft
       if (selectedItem.craftingType === 'FORGE') {
           if (charcoalCount < quickCraftFuelCost) {
               actions.showToast(`Insufficient charcoal! Need ${quickCraftFuelCost} fuel.`);
@@ -330,7 +334,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           actions.consumeItem('charcoal', quickCraftFuelCost);
       }
 
-      // Determine quality and mastery gain based on current rank
       let quality = 50;
       let masteryGain = 0.5;
 
@@ -342,9 +345,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           masteryGain = 0.7;
       }
 
-      // Deduct resources and energy
       actions.startCrafting(selectedItem);
-      // Immediately finalize with specific parameters
       actions.finishCrafting(selectedItem, quality, 0, masteryGain);
   }, [selectedItem, masteryInfo, isRequirementMet, canAffordResources, hasEnergy, actions, charcoalCount, quickCraftFuelCost]);
 
@@ -356,6 +357,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     
     return (
         <div className="relative h-full w-full bg-stone-950 overflow-hidden" style={{ backgroundImage: `url(${getAssetUrl('tile_forge.png')})`, backgroundRepeat: 'repeat', backgroundBlendMode: 'multiply' }}>
+        
         {selectedItem && !isRequirementMet && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-stone-950/90 backdrop-blur-md animate-in fade-in duration-700"></div>
@@ -375,14 +377,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     {selectedItem ? (
                         <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg">
                             
-                            {/* Mastery Radial Indicator around item image */}
                             <div className="relative mb-3 md:mb-6 group">
                                 <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-full flex items-center justify-center relative z-10 p-2 md:p-4 border border-stone-800/50 ${masteryInfo?.glowClass} transition-all duration-700`}>
-                                    {/* Radial SVG Gauge */}
                                     <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
-                                        {/* Background Track */}
                                         <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-stone-950/40" />
-                                        {/* Progress Arc */}
                                         <circle 
                                             cx="50" cy="50" r="46" 
                                             stroke="currentColor" strokeWidth="4" fill="transparent"
@@ -394,7 +392,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                                     </svg>
                                     <img src={getItemImageUrl(selectedItem)} className="w-14 h-14 md:w-32 md:h-32 object-contain drop-shadow-2xl z-20 relative transform group-hover:scale-110 transition-transform duration-500" />
                                     
-                                    {/* Small Rank Badge */}
                                     <div className={`absolute -bottom-1 -right-1 md:bottom-2 md:right-2 z-30 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-full border border-stone-700 bg-stone-900 shadow-xl flex items-center gap-1 animate-in slide-in-from-right-2 duration-700`}>
                                         <Star className={`w-2 h-2 md:w-3 md:h-3 ${masteryInfo?.colorClass.replace('stroke-', 'fill-')}`} />
                                         <span className={`text-[7px] md:text-[10px] font-black uppercase tracking-tighter ${masteryInfo?.colorClass.replace('stroke-', 'text-')}`}>{masteryInfo?.label}</span>
@@ -405,10 +402,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1 md:mb-1.5 font-serif tracking-wide">{selectedItem.name}</h2>
                             <p className="text-stone-500 text-center max-w-md mb-4 md:mb-6 italic text-[9px] md:text-sm leading-tight px-6">"{selectedItem.description}"</p>
                             
-                            {/* Stats Block */}
                             {renderStats(selectedItem)}
 
-                            {/* Modified Mastery Info (Simplified Text since circle handles visual) */}
                             <div className="w-full max-w-xs mb-6 md:mb-8 flex flex-col items-center">
                                 <div className="flex items-center gap-1.5 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-stone-500 mb-1">
                                     <Award className="w-3 h-3 md:w-4 md:h-4 text-amber-600" />
@@ -417,7 +412,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             </div>
 
                             <div className="relative group flex flex-col items-center w-full gap-2 md:gap-4 px-4">
-                                {/* Persistent Fuel Warning */}
                                 {isMissingFuelOnly && (
                                     <div className="mb-2 flex items-center gap-1.5 text-orange-500 font-bold text-[9px] md:text-xs animate-pulse bg-orange-950/30 px-3 py-1 rounded-full border border-orange-900/40">
                                         <Flame className="w-3 h-3 md:w-4 md:h-4" />
@@ -428,6 +422,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                                 <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
                                     <button 
                                         onClick={startCrafting} 
+                                        data-tutorial-id="START_FORGING_BUTTON"
                                         className={`flex-1 max-w-[280px] px-6 md:px-10 py-3 md:py-4 rounded-lg font-black text-sm md:text-lg shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 md:gap-3 border ${failedFuelHighlight ? 'bg-red-900 border-red-500 animate-shake-hard shadow-[0_0_20px_rgba(239,68,68,0.4)]' : canCraft ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500') : (isMissingFuelOnly ? 'bg-stone-800 text-stone-300 border-amber-600/50 grayscale opacity-70' : 'bg-stone-800 text-stone-500 border-stone-700 opacity-70 grayscale')}`}
                                     >
                                         {selectedItem.craftingType === 'FORGE' ? <Hammer className="w-4 h-4 md:w-6 md:h-6" /> : <Wrench className="w-4 h-4 md:w-6 md:h-6" />}
@@ -464,8 +459,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     )}
                 </div>
             </div>
-            <div className={`h-full bg-stone-900/95 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out relative backdrop-blur-sm ${isPanelOpen ? 'w-[45%] md:w-[40%] translate-x-0' : 'w-0 translate-x-full border-none'}`}>
-                <button onClick={() => setIsPanelOpen(!isPanelOpen)} disabled={isCrafting} className={`absolute top-1/2 -left-6 w-6 h-20 md:h-24 -translate-y-1/2 bg-stone-800 border-y border-l border-stone-600 rounded-l-lg flex items-center justify-center hover:bg-stone-700 hover:text-amber-400 transition-colors z-20 ${isCrafting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>{isCrafting ? <Lock className="w-3.5 h-3.5 text-stone-500" /> : isPanelOpen ? <ChevronRight className="w-4 h-4 text-stone-400" /> : <ChevronLeft className="w-4 h-4 text-amber-500 animate-pulse" />}</button>
+            <div className={`h-full bg-stone-900/95 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out relative backdrop-blur-sm ${isPanelOpen ? 'w-[55%] md:w-[60%]' : 'w-full'}`}>
+                <button onClick={() => setIsPanelOpen(!isPanelOpen)} disabled={isCrafting} className={`absolute top-1/2 -left-6 w-6 h-20 md:h-24 -translate-y-1/2 bg-stone-800 border-y border-l border-stone-600 rounded-l-lg flex items-center justify-center hover:bg-stone-750 hover:text-amber-400 transition-colors z-20 ${isCrafting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>{isCrafting ? <Lock className="w-3.5 h-3.5 text-stone-500" /> : isPanelOpen ? <ChevronRight className="w-4 h-4 text-stone-400" /> : <ChevronLeft className="w-4 h-4 text-amber-500 animate-pulse" />}</button>
                 <div className="w-full h-full flex flex-col">
                     <div className="flex border-b border-stone-800 shrink-0"><button onClick={() => handleCategoryChange('WEAPON')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'WEAPON' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Sword className="w-3 h-3 md:w-4 md:h-4" /> WEAPONS</button><button onClick={() => handleCategoryChange('ARMOR')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'ARMOR' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Shield className="w-3 h-3 md:w-4 md:h-4" /> ARMOR</button></div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-3 space-y-2">
@@ -500,7 +495,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
         )}
         </div>
     );
-  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, hasPromptedFurnace, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo, handleQuickCraft, quickCraftFuelCost]);
+  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo, handleQuickCraft, quickCraftFuelCost, actions, state.tutorialStep]);
   return content;
 };
 

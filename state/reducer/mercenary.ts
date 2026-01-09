@@ -50,12 +50,24 @@ export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mer
 export const handleHireMercenary = (state: GameState, payload: { mercenaryId: string; cost: number }): GameState => {
     const { mercenaryId, cost } = payload;
     if (state.stats.gold < cost) return state;
+    
+    let newUnlockedTabs = [...state.unlockedTabs];
+    let logUpdates: string[] = [];
+
     const updatedMercenaries = state.knownMercenaries.map(m => {
         if (m.id === mercenaryId) return { ...m, status: 'HIRED' as const };
         return m;
     });
+    
     const hiredMerc = updatedMercenaries.find(m => m.id === mercenaryId);
     const name = hiredMerc ? hiredMerc.name : 'Mercenary';
+    logUpdates.push(`Contract signed! ${name} has joined your service. -${cost} G`);
+
+    if (!newUnlockedTabs.includes('DUNGEON')) {
+        newUnlockedTabs.push('DUNGEON');
+        logUpdates.unshift("Objective Unlocked: You can now deploy squads to explore Dungeons.");
+    }
+
     return {
         ...state,
         stats: { 
@@ -67,7 +79,8 @@ export const handleHireMercenary = (state: GameState, payload: { mercenaryId: st
             }
         },
         knownMercenaries: updatedMercenaries,
-        logs: [`Contract signed! ${name} has joined your service. -${cost} G`, ...state.logs]
+        unlockedTabs: newUnlockedTabs,
+        logs: [...logUpdates, ...state.logs]
     };
 };
 

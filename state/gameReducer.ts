@@ -1,3 +1,4 @@
+
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -81,6 +82,27 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'RETREAT_MANUAL_DUNGEON': return handleRetreatManualDungeon(state);
     case 'TOGGLE_MANUAL_DUNGEON_OVERLAY': return { ...state, showManualDungeonOverlay: action.payload };
     case 'RESCUE_NPC': return handleRescueNPC(state, action.payload);
+
+    // Tutorial & Prologue
+    case 'SET_TUTORIAL_STEP': return { ...state, tutorialStep: action.payload };
+    case 'SET_ACTIVE_TUTORIAL_SCENE': return { ...state, activeTutorialScene: action.payload };
+    case 'COMPLETE_PROLOGUE': 
+        return { 
+            ...state, 
+            hasCompletedPrologue: true,
+            activeTutorialScene: null,
+            tutorialStep: 'MARKET_GUIDE' // Prologue finished, show spotlight
+        };
+    case 'COMPLETE_TUTORIAL':
+        const finalTabs = ['FORGE', 'MARKET', 'INVENTORY', 'SHOP', 'TAVERN', 'DUNGEON', 'SIMULATION'];
+        return {
+            ...state,
+            tutorialStep: null,
+            activeTutorialScene: null,
+            unlockedTabs: finalTabs,
+            forge: { ...state.forge, hasFurnace: true }, // Ensure furnace is restored if skipped
+            logs: ["Tutorial skipped. Lockhart's Forge is fully operational.", ...state.logs]
+        };
 
     // Toast Notifications
     case 'SHOW_TOAST':

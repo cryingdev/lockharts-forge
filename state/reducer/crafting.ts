@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
 import { getEnergyCost, generateEquipment } from '../../utils/craftingLogic';
@@ -100,14 +99,20 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     newMastery[item.id] = (masteryCount || 0) + masteryGain;
 
     const label = getQualityLabel(quality);
-    // Generic log: label + name. No percentages.
     let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}!`;
     if (bonus > 0) logMsg += ` Minigame technique applied a stat bonus.`;
+
+    let newUnlockedTabs = [...state.unlockedTabs];
+    if (!newUnlockedTabs.includes('INVENTORY')) {
+        newUnlockedTabs.push('INVENTORY');
+        logMsg = "Facility restored: Inventory tracking is now active. " + logMsg;
+    }
 
     return {
         ...state,
         isCrafting: false,
         inventory: newInventory,
+        unlockedTabs: newUnlockedTabs,
         craftingMastery: newMastery,
         lastCraftedItem: newItem,
         logs: [logMsg, ...state.logs]

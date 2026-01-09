@@ -55,7 +55,14 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         }
     });
 
+    let newUnlockedTabs = [...state.unlockedTabs];
     let logMsg = `Day ${nextDay} begins. Market supplies restocked. (Auto-saved)`;
+    
+    if (nextDay === 2 && !newUnlockedTabs.includes('TAVERN')) {
+        newUnlockedTabs.push('TAVERN');
+        logMsg = `Day 2 begins. Travelers are gathering at the Tavern. Facility Unlocked! (Auto-saved)`;
+    }
+
     if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. (Auto-saved)`;
     if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G). (Auto-saved)`;
 
@@ -78,6 +85,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         },
         knownMercenaries: updatedMercenaries,
         marketStock: newMarketStock,
+        unlockedTabs: newUnlockedTabs,
         forge: { ...state.forge, isShopOpen: false },
         visitorsToday: [],
         talkedToToday: [],

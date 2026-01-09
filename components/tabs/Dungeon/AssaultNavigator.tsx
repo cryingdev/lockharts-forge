@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Phaser from 'phaser';
 import { useGame } from '../../../context/GameContext';
@@ -35,15 +36,13 @@ const AssaultNavigator = () => {
     // Rescue interaction state
     const [rescueStep, setRescueStep] = useState<'NONE' | 'DIALOGUE' | 'DONE'>('NONE');
 
-    if (!session) return null;
+    // CRITICAL FIX: All logic/calculations that depend on `session` must handle 
+    // the case where `session` is null, because hooks cannot be skipped.
+    const dungeon = session ? DUNGEONS.find(d => d.id === session.dungeonId) : null;
+    const party = session ? state.knownMercenaries.filter(m => session.partyIds.includes(m.id)) : [];
+    const avgEnergy = party.length > 0 ? party.reduce((sum, m) => sum + (m.expeditionEnergy || 0), 0) / (party.length || 1) : 0;
 
-    const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
-    if (!dungeon) return null;
-
-    const party = state.knownMercenaries.filter(m => session.partyIds.includes(m.id));
-    const avgEnergy = party.reduce((sum, m) => sum + (m.expeditionEnergy || 0), 0) / (party.length || 1);
-
-    const currentRoomType = session.grid[session.playerPos.y][session.playerPos.x];
+    const currentRoomType = (session && dungeon) ? session.grid[session.playerPos.y][session.playerPos.x] : null;
     const isNPCNode = currentRoomType === 'NPC';
     const isEntranceNode = currentRoomType === 'ENTRANCE';
     const isBossNode = currentRoomType === 'BOSS';
@@ -61,6 +60,8 @@ const AssaultNavigator = () => {
     }, []);
 
     useEffect(() => {
+        if (!session || !dungeon) return;
+
         const room = session.grid[session.playerPos.y][session.playerPos.x];
         const latestLog = state.logs[0];
 
@@ -81,10 +82,10 @@ const AssaultNavigator = () => {
             if (goldTerms.some(term => latestLog?.includes(term))) setLastDiscoveryMessage("Treasury cache secured. This sector is now clear and safe. What should be our next course of action?");
             else setLastDiscoveryMessage("Scans indicate this area is vacant. No immediate threats detected. What is the next move?");
         }
-    }, [session.playerPos, session.grid, session.npcFound, dungeon.name, isEntranceNode, state.logs, session.isBossDefeated, hasTriggeredVictory]);
+    }, [session?.playerPos, session?.grid, session?.npcFound, dungeon?.name, isEntranceNode, state.logs, session?.isBossDefeated, hasTriggeredVictory]);
 
     useEffect(() => {
-        if (!isReady || !containerRef.current) return;
+        if (!isReady || !containerRef.current || !session || !dungeon) return;
         if (!gameRef.current) {
             const config: Phaser.Types.Core.GameConfig = {
                 type: Phaser.AUTO,
@@ -112,7 +113,7 @@ const AssaultNavigator = () => {
                 scene.setCameraMode(cameraMode);
             }
         }
-    }, [isReady, session, actions, dungeon.moveEnergy, dungeon.bossEnergy, cameraMode]);
+    }, [isReady, session, actions, dungeon?.moveEnergy, dungeon?.bossEnergy, cameraMode]);
 
     useEffect(() => { return () => { if (gameRef.current) { gameRef.current.destroy(true); gameRef.current = null; } }; }, []);
 
@@ -133,32 +134,37 @@ const AssaultNavigator = () => {
     const handleClose = () => { if (showResultPopup) return; actions.toggleManualDungeonOverlay(false); };
     const handleAbort = () => { actions.retreatFromManualDungeon(); setShowAbortConfirm(false); };
     const handleRetreatAtEntrance = () => { actions.retreatFromManualDungeon(); setShowRetreatAtEntranceConfirm(false); };
-    const handleRescueConfirm = () => { if (session.dungeonId === 'dungeon_t1_rats') actions.rescueMercenary('tilly_footloose'); setRescueStep('DONE'); };
+    const handleRescueConfirm = () => { if (session?.dungeonId === 'dungeon_t1_rats') actions.rescueMercenary('tilly_footloose'); setRescueStep('DONE'); };
     const handleClaimRewardsAndExit = () => { actions.finishManualAssault(); };
 
     const interactionOptions = useMemo(() => {
+        if (!session) return [];
         if (rescueStep === 'DIALOGUE') return [{ label: "Accept Escort Request", action: handleRescueConfirm, variant: 'primary' as const }];
         const opts = [];
         if (session.isBossDefeated && (isEntranceNode || isBossNode)) opts.push({ label: "Claim Rewards & Return", action: () => setShowResultPopup(true), variant: 'primary' as const });
         if (isEntranceNode && !session.isBossDefeated) opts.push({ label: "Retreat to Forge", action: () => setShowRetreatAtEntranceConfirm(true), variant: 'neutral' as const });
         if (isNPCNode && !session.npcFound && rescueStep === 'NONE') opts.push({ label: "Rescue Survivor", action: () => setRescueStep('DIALOGUE'), variant: 'primary' as const });
         return opts;
-    }, [session.playerPos, dungeon, isNPCNode, isBossNode, session.npcFound, rescueStep, session.isBossDefeated, actions, isEntranceNode]);
+    }, [session?.playerPos, dungeon, isNPCNode, isBossNode, session?.npcFound, rescueStep, session?.isBossDefeated, actions, isEntranceNode]);
 
     const speakerName = useMemo(() => {
-        if (session.isBossDefeated) return "Tactical AI";
+        if (session?.isBossDefeated) return "Tactical AI";
         if (rescueStep === 'DIALOGUE') return "Tilly Footloose";
         return "Tactical Link";
-    }, [session.isBossDefeated, rescueStep]);
+    }, [session?.isBossDefeated, rescueStep]);
 
     const tacticalDialogue = useMemo(() => {
+        if (!session) return "";
         if (session.isBossDefeated) return "Mission status: CLEARED. Sector lockdown lifted. We can extract safely from the Boss chamber or the Sector Entrance. Would you like to secure the rewards now?";
         if (isEntranceNode) return "Current coordinates: Sector Entrance. Extraction point is active. If we retreat now without defeating the Boss, we will lose all collected resources.";
         if (rescueStep === 'DIALOGUE') return "Oh! Thank the gods! I thought the rats would have me for sure. Please, lead the way out... I'll find my own way back once we're clear of this floor.";
         if (isNPCNode && !session.npcFound) return "Warning: Unidentified life-sign detected in the immediate vicinity. Civilian presence confirmed. Escort protocols advised. What is the next move?";
         if (isTrapNode) return "TACTICAL ALERT: Active hazard detected on current coordinates! Avoid sustained exposure. What is our next move?";
         return lastDiscoveryMessage || "Scanning sector... Area clear. What's the next move?";
-    }, [session.isBossDefeated, isEntranceNode, rescueStep, isNPCNode, session.npcFound, isTrapNode, lastDiscoveryMessage]);
+    }, [session?.isBossDefeated, isEntranceNode, rescueStep, isNPCNode, session?.npcFound, isTrapNode, lastDiscoveryMessage]);
+
+    // Hook declarations finished. Now it is safe to return early if no session.
+    if (!session || !dungeon) return null;
 
     const NavButton = ({ direction, dx, dy, disabled, Icon }: { direction: string, dx: number, dy: number, disabled: boolean, Icon: any }) => (
         <button 
@@ -283,7 +289,7 @@ const AssaultNavigator = () => {
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-[8px] md:text-[10px] font-black text-stone-500 uppercase tracking-widest text-center">Yield Projection</h3>
-                                <div className="flex flex-wrap gap-2 justify-center">{dungeon.rewards.map((r, i) => (<div key={i} className="w-8 h-8 md:w-10 md:h-10 bg-stone-850 border border-stone-800 rounded-lg flex items-center justify-center p-1"><img src={getAssetUrl(`${r.itemId}.png`)} className="w-full h-full object-contain" /></div>))}{session.rescuedNpcId && <div className="w-8 h-8 md:w-10 md:h-10 bg-amber-900/30 border border-amber-600 rounded-lg flex items-center justify-center"><Sparkles className="w-5 h-5 md:w-6 md:h-6 text-amber-500" /></div>}</div>
+                                <div className="flex wrap gap-2 justify-center">{dungeon.rewards.map((r, i) => (<div key={i} className="w-8 h-8 md:w-10 md:h-10 bg-stone-850 border border-stone-800 rounded-lg flex items-center justify-center p-1"><img src={getAssetUrl(`${r.itemId}.png`)} className="w-full h-full object-contain" /></div>))}{session.rescuedNpcId && <div className="w-8 h-8 md:w-10 md:h-10 bg-amber-900/30 border border-amber-600 rounded-lg flex items-center justify-center"><Sparkles className="w-5 h-5 md:w-6 md:h-6 text-amber-500" /></div>}</div>
                             </div>
                         </div>
                         <div className="p-4 md:p-6 pt-0 flex flex-col gap-2 md:gap-3 shrink-0">

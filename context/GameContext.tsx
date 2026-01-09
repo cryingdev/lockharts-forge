@@ -1,3 +1,5 @@
+
+
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -100,7 +102,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
         dispatch({ type: 'START_CRAFTING', payload: { item } });
     },
     cancelCrafting: (item: EquipmentItem) => dispatch({ type: 'CANCEL_CRAFTING', payload: { item } }),
-    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality, bonus } }),
+    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number, masteryGain?: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality, bonus, masteryGain } }),
     craftItem: (item: EquipmentItem, quality: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality } }),
     dismissCraftingResult: () => dispatch({ type: 'DISMISS_CRAFTING_RESULT' }),
 
@@ -163,7 +165,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
 
     triggerEnergyHighlight,
     showToast,
-    hideToast: () => dispatch({ type: 'HIDE_TOAST' })
+    hideToast: () => dispatch({ type: 'HIDE_TOAST' }),
+    setTutorialStep: (step: GameState['tutorialStep']) => dispatch({ type: 'SET_TUTORIAL_STEP', payload: step }),
+    setTutorialScene: (mode: GameState['activeTutorialScene']) => dispatch({ type: 'SET_ACTIVE_TUTORIAL_SCENE', payload: mode }),
+    completePrologue: () => dispatch({ type: 'COMPLETE_PROLOGUE' }),
+    // Added missing completeTutorial implementation
+    completeTutorial: () => dispatch({ type: 'COMPLETE_TUTORIAL' })
   }), [dispatch]); 
 
   return (

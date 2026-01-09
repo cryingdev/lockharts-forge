@@ -5,7 +5,7 @@ import { EquipmentSlotType } from '../models/Equipment';
 import { ShopCustomer } from '../types/shop';
 import { Mercenary } from '../models/Mercenary';
 import { PrimaryStats } from '../models/Stats';
-import { GameState } from '../types/game-state';
+import { GameState, TutorialSceneMode } from '../types/game-state';
 
 export type GameAction =
   | { type: 'REPAIR_WORK' }
@@ -50,6 +50,10 @@ export type GameAction =
   | { type: 'SHOW_TOAST'; payload: string }
   | { type: 'HIDE_TOAST' }
   | { type: 'LOAD_GAME'; payload: GameState }
+  | { type: 'SET_TUTORIAL_STEP'; payload: GameState['tutorialStep'] }
+  | { type: 'SET_ACTIVE_TUTORIAL_SCENE'; payload: TutorialSceneMode | null }
+  | { type: 'COMPLETE_PROLOGUE' }
+  | { type: 'COMPLETE_TUTORIAL' }
   // Manual Dungeon Actions
   | { type: 'START_MANUAL_DUNGEON'; payload: { dungeonId: string; partyIds: string[] } }
   | { type: 'MOVE_MANUAL_DUNGEON'; payload: { x: number; y: number } }

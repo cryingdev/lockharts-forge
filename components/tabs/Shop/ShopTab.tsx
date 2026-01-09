@@ -23,6 +23,7 @@ const ShopSign = ({ isOpen, onToggle, disabled }: { isOpen: boolean, onToggle: (
             <button 
                 onClick={onToggle}
                 disabled={disabled}
+                data-tutorial-id="SHOP_SIGN"
                 className={`group relative w-24 md:w-36 h-10 md:h-16 perspective-1000 cursor-pointer disabled:cursor-not-allowed`}
             >
                 <div className={`relative w-full h-full transition-transform duration-700 preserve-3d ${isOpen ? '' : 'rotate-y-180'}`}>
@@ -83,7 +84,13 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   };
 
   const handleRefuse = () => actions.dismissCustomer();
-  const handleToggleShop = () => actions.toggleShop();
+  
+  const handleToggleShop = () => {
+      if (!isShopOpen && state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE') {
+          actions.setTutorialStep('SELL_ITEM_GUIDE');
+      }
+      actions.toggleShop();
+  };
 
   const hasItem = () => {
       if (!activeCustomer) return false;
@@ -97,6 +104,9 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   };
 
   const canAffordOpen = state.stats.energy >= GAME_CONFIG.ENERGY_COST.OPEN_SHOP;
+  
+  // Tutorial Lock: Block closing shop when waiting for Pip
+  const isTutorialSellStep = state.tutorialStep === 'SELL_ITEM_GUIDE';
 
   return (
     <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
@@ -116,7 +126,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <ShopSign 
             isOpen={isShopOpen} 
             onToggle={handleToggleShop} 
-            disabled={!isShopOpen && !canAffordOpen}
+            disabled={(!isShopOpen && !canAffordOpen) || isTutorialSellStep}
         />
 
         {/* Queue Display */}
@@ -217,7 +227,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     }}
                     options={[
                         { label: `Sell (${activeCustomer.request.price} G)`, action: handleSell, variant: 'primary', disabled: !hasItem() },
-                        { label: "Refuse", action: handleRefuse, variant: 'danger' }
+                        { label: "Refuse", action: handleRefuse, variant: 'danger', disabled: isTutorialSellStep }
                     ]}
                     className="w-full relative pointer-events-auto"
                 />
