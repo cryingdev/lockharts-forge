@@ -29,7 +29,15 @@ export const useShopService = () => {
 
         const scheduleNextArrival = () => {
             // Tutorial check: If waiting for the first sell, Pip enqueues immediately
+            // Also block arrivals if we are in the middle of tutorial dialogues
             const isTutorialSignStep = state.tutorialStep === 'SELL_ITEM_GUIDE';
+            const isMidDialogue = state.tutorialStep === 'PIP_PRAISE' || state.tutorialStep === 'DRAGON_TALK' || state.tutorialStep === 'TUTORIAL_END_MONOLOGUE';
+            
+            if (isMidDialogue) {
+                if (arrivalTimerRef.current) clearTimeout(arrivalTimerRef.current);
+                return;
+            }
+
             const interval = isTutorialSignStep ? 500 : (Math.random() * SHOP_CONFIG.ARRIVAL.VARIANCE_MS + SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS);
             
             arrivalTimerRef.current = setTimeout(() => {
@@ -99,7 +107,9 @@ export const useShopService = () => {
     // --- 3. Patience Timer Logic ---
     useEffect(() => {
         // Disable patience timer during tutorial to prevent Pip from leaving
-        if (!activeCustomer || state.tutorialStep === 'SELL_ITEM_GUIDE') {
+        const isTutorialDialogue = state.tutorialStep === 'SELL_ITEM_GUIDE' || state.tutorialStep === 'PIP_PRAISE' || state.tutorialStep === 'DRAGON_TALK';
+        
+        if (!activeCustomer || isTutorialDialogue) {
             if (patienceTimerRef.current) clearTimeout(patienceTimerRef.current);
             return;
         }

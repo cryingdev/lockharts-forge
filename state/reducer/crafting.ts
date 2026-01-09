@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
 import { getEnergyCost, generateEquipment } from '../../utils/craftingLogic';
@@ -80,8 +81,8 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     const masteryCount = state.craftingMastery[item.id] || 0;
 
     const equipment = generateEquipment(item, quality, masteryCount, bonus);
-    const newInventory = [...state.inventory];
     
+    // Create actual inventory item
     const newItem: InventoryItem = {
         id: equipment.id, 
         name: equipment.name,
@@ -93,7 +94,8 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         equipmentData: equipment
     };
 
-    newInventory.push(newItem);
+    // IMMEDIATELY add to inventory copy
+    const newInventory = [...state.inventory, newItem];
 
     const newMastery = { ...state.craftingMastery };
     newMastery[item.id] = (masteryCount || 0) + masteryGain;
@@ -114,7 +116,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         inventory: newInventory,
         unlockedTabs: newUnlockedTabs,
         craftingMastery: newMastery,
-        lastCraftedItem: newItem,
+        lastCraftedItem: newItem, // This triggers the guidance popup
         logs: [logMsg, ...state.logs]
     };
 };

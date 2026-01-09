@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Anvil, Play, Upload, User, Info, FastForward } from 'lucide-react';
 import { getAssetUrl } from '../utils';
@@ -13,7 +14,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showCredits, setShowCredits] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
-    const VERSION = "0.1.36";
+    const VERSION = "0.1.37";
 
     // 세이브 파일 존재 여부를 체크하는 함수
     const checkSaves = useCallback(() => {

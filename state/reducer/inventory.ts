@@ -125,7 +125,6 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
 
 export const handleInstallFurnace = (state: GameState): GameState => {
     let newUnlockedTabs = [...state.unlockedTabs];
-    // No automatic tab unlock here anymore
 
     return {
         ...state,
@@ -142,8 +141,8 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     let itemName = 'Item';
     let newKnownMercenaries = [...state.knownMercenaries];
     let logMessage = '';
-    let newActiveCustomer = state.activeCustomer;
     let newTutorialStep = state.tutorialStep;
+    let newActiveCustomer = state.activeCustomer;
 
     const isShopSale = !!customer;
 
@@ -165,36 +164,45 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
 
     if (customer) {
         const existingMercIdx = newKnownMercenaries.findIndex(m => m.id === customer.id);
+        const isPipTutorial = newTutorialStep === 'SELL_ITEM_GUIDE' && customer.id === 'pip_green';
+        const affinityGain = isPipTutorial ? 10 : 2;
         
         if (existingMercIdx > -1) {
             const merc = { ...newKnownMercenaries[existingMercIdx] };
-            merc.affinity = Math.min(100, (merc.affinity || 0) + 2); 
+            merc.affinity = Math.min(100, (merc.affinity || 0) + affinityGain); 
             merc.visitCount = (merc.visitCount || 0) + 1;
             merc.lastVisitDay = state.stats.day;
             newKnownMercenaries[existingMercIdx] = merc;
-            logMessage = `Sold ${itemName} to ${customer.name}. Affinity rose to ${merc.affinity}.`;
+            logMessage = `Sold ${itemName} to ${customer.name}. Affinity rose by ${affinityGain}.`;
         } else {
             const newMerc: Mercenary = {
                 ...customer,
-                affinity: 2,
+                affinity: affinityGain,
                 visitCount: 1,
                 lastVisitDay: state.stats.day,
                 expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
                 currentXp: 0,
                 xpToNextLevel: 100,
-                status: 'VISITOR' // Explicitly set status to VISITOR for new contacts
+                status: 'VISITOR'
             };
             newKnownMercenaries.push(newMerc);
-            logMessage = `Sold ${itemName} to ${customer.name}. (New Contact)`;
+            logMessage = `Sold ${itemName} to ${customer.name}. (New Contact, Affinity +${affinityGain})`;
         }
 
-        // Tutorial completion transition: Move to monologue after Pip's sale
-        if (newTutorialStep === 'SELL_ITEM_GUIDE' && customer.id === 'pip_green') {
-            newTutorialStep = 'TUTORIAL_END_MONOLOGUE';
+        // --- IMMEDIATE UI UPDATE ---
+        // Sync the affinity gain to the active customer object so the Shop HUD reflects it immediately
+        if (newActiveCustomer && newActiveCustomer.mercenary.id === customer.id) {
+            newActiveCustomer = {
+                ...newActiveCustomer,
+                mercenary: {
+                    ...newActiveCustomer.mercenary,
+                    affinity: Math.min(100, (newActiveCustomer.mercenary.affinity || 0) + affinityGain)
+                }
+            };
         }
 
-        if (state.activeCustomer && state.activeCustomer.mercenary.id === customer.id) {
-            newActiveCustomer = null; 
+        if (isPipTutorial) {
+            newTutorialStep = 'PIP_PRAISE';
         }
     } else {
         logMessage = `Sold ${itemName} for ${price} Gold.`;
@@ -230,7 +238,6 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
     let logMsg = '';
     let itemUsed = false;
 
-    // Logic per Item ID
     if (itemId === 'energy_potion') {
         const recoverAmount = 25;
         if (newStats.energy >= newStats.maxEnergy) {
@@ -258,7 +265,6 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
 
     if (!itemUsed) return state;
 
-    // Deduct Item
     const newInventory = state.inventory.map(item => {
         if (item.id === itemId) {
             return { ...item, quantity: item.quantity - 1 };

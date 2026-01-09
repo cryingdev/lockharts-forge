@@ -8,7 +8,7 @@ import { handleSleep, handleConfirmSleep } from './reducer/sleep';
 import { handleTriggerEvent, handleCloseEvent, handleToggleJournal } from './reducer/events';
 import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem } from './reducer/inventory';
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
-import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer } from './reducer/shop';
+import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer, handleRefuseCustomer } from './reducer/shop';
 import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
@@ -53,6 +53,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'ENQUEUE_CUSTOMER': return handleEnqueueCustomer(state, action.payload);
     case 'NEXT_CUSTOMER': return handleNextCustomer(state);
     case 'DISMISS_CUSTOMER': return handleDismissCustomer(state);
+    case 'REFUSE_CUSTOMER': return handleRefuseCustomer(state, action.payload);
 
     // Mercenaries
     case 'ADD_KNOWN_MERCENARY': return handleAddKnownMercenary(state, action.payload);

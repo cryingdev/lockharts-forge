@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -124,6 +123,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     enqueueCustomer: (customer: ShopCustomer) => dispatch({ type: 'ENQUEUE_CUSTOMER', payload: customer }),
     nextCustomer: () => dispatch({ type: 'NEXT_CUSTOMER' }),
     dismissCustomer: () => dispatch({ type: 'DISMISS_CUSTOMER' }),
+    refuseCustomer: (mercenaryId: string, affinityLoss: number) => dispatch({ type: 'REFUSE_CUSTOMER', payload: { mercenaryId, affinityLoss } }),
 
     setCrafting: (isCrafting: boolean) => dispatch({ type: 'SET_CRAFTING', payload: isCrafting }),
     updateForgeStatus: (temp: number) => dispatch({ type: 'UPDATE_FORGE_STATUS', payload: { temp } }),

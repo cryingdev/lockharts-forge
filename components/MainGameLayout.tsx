@@ -189,7 +189,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
     const isActive = activeTab === id;
     
     // Tutorial override: SHOP is considered unlocked if we are in the Shop Guide steps
-    const isShopTutorialStep = (state.tutorialStep === 'SHOP_INTRO_PROMPT' || state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' || state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE' || state.tutorialStep === 'SELL_ITEM_GUIDE');
+    const isShopTutorialStep = (state.tutorialStep === 'SHOP_INTRO_PROMPT' || state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' || state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE' || state.tutorialStep === 'SELL_ITEM_GUIDE' || state.tutorialStep === 'PIP_PRAISE' || state.tutorialStep === 'DRAGON_TALK' || state.tutorialStep === 'TUTORIAL_END_MONOLOGUE');
     const isUnlocked = state.unlockedTabs.includes(id) || (id === 'SHOP' && isShopTutorialStep);
     
     const isHighlighted = (state.tutorialStep === 'MARKET_GUIDE' && id === 'MARKET') || 
@@ -197,9 +197,10 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                          (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' && id === 'SHOP');
 
     const handleTabClick = () => {
-        // Block tab switching during forced sale tutorial
-        if (state.tutorialStep === 'SELL_ITEM_GUIDE') {
-            actions.showToast("Finalize the sale to Pip first.");
+        // Block tab switching during narrative sequence
+        const isMidDialogue = state.tutorialStep === 'SELL_ITEM_GUIDE' || state.tutorialStep === 'PIP_PRAISE' || state.tutorialStep === 'DRAGON_TALK' || state.tutorialStep === 'TUTORIAL_END_MONOLOGUE';
+        if (isMidDialogue) {
+            actions.showToast("Continue the dialogue first.");
             return;
         }
 
@@ -273,7 +274,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   return (
     <div className="h-[100dvh] w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500 px-safe">
       
-      {state.tutorialStep && state.hasCompletedPrologue && (
+      {state.tutorialStep && state.hasCompletedPrologue && !state.isCrafting && state.tutorialStep !== 'TUTORIAL_END_MONOLOGUE' && state.tutorialStep !== 'PIP_PRAISE' && state.tutorialStep !== 'DRAGON_TALK' && (
           <TutorialOverlay 
             step={state.tutorialStep} 
             onSkip={() => setShowSkipConfirm(true)}
@@ -303,7 +304,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
               <div className="w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto">
                   <DialogueBox 
                     speaker="Lockhart"
-                    text="Check out the summary. The quality and stats of the weapon are determined by my focus in the forge. A higher mastery of the blueprint also grants permanent bonuses. Let's finish this piece."
+                    text="Check out the summary. The quality and stats of the weapon are determined by my focus in the forge. a higher mastery of the blueprint also grants permanent bonuses. Let's finish this piece."
                     options={[{ 
                         label: "Continue", 
                         action: () => actions.setTutorialStep('FINALIZE_FORGE_GUIDE'),
@@ -324,25 +325,6 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                     options={[{ 
                         label: "Continue", 
                         action: () => actions.setTutorialStep('OPEN_SHOP_TAB_GUIDE'),
-                        variant: 'primary' 
-                    }]}
-                  />
-              </div>
-          </div>
-      )}
-
-      {/* Global Tutorial Conclusion monologue */}
-      {state.tutorialStep === 'TUTORIAL_END_MONOLOGUE' && (
-          <div className="fixed inset-0 z-[2500] flex flex-col justify-end items-center bg-black/60 backdrop-blur-md pb-6 md:pb-12 px-4 pointer-events-none">
-              <div className="w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto">
-                  <DialogueBox 
-                    speaker="Lockhart"
-                    text="Finally... the first sale. It's just a simple bronze blade, but it marks the beginning of my resurgence. I will rebuild this forge, piece by piece, until the name Lockhart once again commands respect across the realm. Every strike of my hammer brings me closer to the day I face that dragon. ... I miss my people. I miss my home. But I will not falter. My business starts now."
-                    options={[{ 
-                        label: "The Forge is Open", 
-                        action: () => {
-                            actions.completeTutorial(); 
-                        },
                         variant: 'primary' 
                     }]}
                   />

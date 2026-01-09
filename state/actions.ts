@@ -29,6 +29,7 @@ export type GameAction =
   | { type: 'ENQUEUE_CUSTOMER'; payload: ShopCustomer }
   | { type: 'NEXT_CUSTOMER' }
   | { type: 'DISMISS_CUSTOMER' }
+  | { type: 'REFUSE_CUSTOMER'; payload: { mercenaryId: string; affinityLoss: number } }
   | { type: 'SET_CRAFTING'; payload: boolean }
   | { type: 'UPDATE_FORGE_STATUS'; payload: { temp: number } }
   | { type: 'TOGGLE_JOURNAL' }

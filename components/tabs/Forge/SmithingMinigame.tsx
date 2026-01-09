@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Phaser from 'phaser';
 import { X } from 'lucide-react';
@@ -9,6 +10,7 @@ interface SmithingMinigameProps {
   onComplete: (score: number, bonus?: number) => void;
   onClose: () => void;
   difficulty?: number;
+  isTutorial?: boolean;
 }
 
 function getViewport() {
@@ -17,7 +19,7 @@ function getViewport() {
   return { vw: Math.floor(vw), vh: Math.floor(vh) };
 }
 
-const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose, difficulty = 1 }) => {
+const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose, difficulty = 1, isTutorial = false }) => {
   const { state, actions } = useGame();
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -105,7 +107,9 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       gameRef.current = game;
 
       const handleHeatUp = () => {
-        actionsRef.current.consumeItem(MATERIALS.CHARCOAL.id, 1);
+        if (!isTutorial) {
+            actionsRef.current.consumeItem(MATERIALS.CHARCOAL.id, 1);
+        }
         const scene = game.scene.getScene('SmithingScene') as SmithingScene;
         if (scene) scene.heatUp();
       };
@@ -114,7 +118,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
         onComplete: (score: number, bonus?: number) => onCompleteRef.current(score, bonus),
         difficulty,
         initialTemp,
-        charcoalCount,
+        charcoalCount: isTutorial ? '∞' : charcoalCount,
         onStatusUpdate: (t: number) => actionsRef.current.updateForgeStatus(t),
         onHeatUpRequest: handleHeatUp,
       });
@@ -148,19 +152,15 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       vv?.removeEventListener('resize', sync);
       window.removeEventListener('resize', sync);
       window.removeEventListener('orientationchange', onOrientationChange);
-
-      // 게임 파괴는 “컴포넌트 언마운트”일 때만
-      // (difficulty 변경 같은 걸로 재생성 원하면 여기 조건을 바꾸면 됨)
     };
-    // isReady / difficulty 변경으로 재생성하고 싶으면 아래 deps 조정
-  }, [isReady, difficulty]); // ← difficulty 바뀌면 유지/재시작 정책 선택 가능
+  }, [isReady, difficulty, isTutorial]);
 
   // charcoalCount 실시간 반영
   useEffect(() => {
     if (!gameRef.current) return;
     const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
-    if (scene) scene.updateCharcoalCount(charcoalCount);
-  }, [charcoalCount]);
+    if (scene) scene.updateCharcoalCount(isTutorial ? '∞' : charcoalCount);
+  }, [charcoalCount, isTutorial]);
 
   // 언마운트 시 game destroy
   useEffect(() => {

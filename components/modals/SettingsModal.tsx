@@ -82,7 +82,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
 
                     {/* Footer */}
                     <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0">
-                        <span className="text-[10px] text-stone-600 font-mono uppercase tracking-[0.2em]">Build v0.1.36</span>
+                        <span className="text-[10px] text-stone-600 font-mono uppercase tracking-[0.2em]">Build v0.1.37</span>
                     </div>
                 </div>
             </div>

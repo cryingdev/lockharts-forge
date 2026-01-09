@@ -36,6 +36,8 @@ export interface GameContextType {
     enqueueCustomer: (customer: ShopCustomer) => void;
     nextCustomer: () => void;
     dismissCustomer: () => void;
+    // Added missing refuseCustomer method definition
+    refuseCustomer: (mercenaryId: string, affinityLoss: number) => void;
 
     setCrafting: (isCrafting: boolean) => void;
     updateForgeStatus: (temp: number) => void;

@@ -55,11 +55,15 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const charcoalCount = getInventoryCount('charcoal');
   const hasFuel = charcoalCount > 0;
   
+  // Tutorial Exception: Allow entry during the tutorial forging step even without fuel
+  const isTutorialForging = tutorialStep === 'START_FORGING_GUIDE';
+
   const canEnterForge = useMemo(() => {
       if (!selectedItem) return false;
       if (selectedItem.craftingType === 'WORKBENCH') return true;
+      if (isTutorialForging) return true; // Tutorial bypass
       return hasFuel || hasHeat;
-  }, [selectedItem, hasFuel, hasHeat]);
+  }, [selectedItem, hasFuel, hasHeat, isTutorialForging]);
   
   const requiredEnergy = useMemo(() => {
       if (!selectedItem) return GAME_CONFIG.ENERGY_COST.CRAFT;
@@ -101,7 +105,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       );
   }, [activeCategory, groupedItems]);
 
-  // Fix: Reset or update expanded subcategory when category changes to ensure content visibility
   useEffect(() => {
       if (visibleSubCats.length > 0) {
           const isCurrentValid = visibleSubCats.some(sc => sc.id === expandedSubCat);
@@ -157,13 +160,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           return;
       }
 
-      if (state.tutorialStep === 'START_FORGING_GUIDE') {
-          actions.setTutorialStep(null); 
-      }
-
       actions.startCrafting(selectedItem);
       setIsPanelOpen(false); 
-  }, [actions, selectedItem, isRequirementMet, canAffordResources, hasEnergy, canEnterForge, state.tutorialStep]);
+  }, [actions, selectedItem, isRequirementMet, canAffordResources, hasEnergy, canEnterForge]);
 
   const cancelCrafting = useCallback(() => {
       if (selectedItem) actions.cancelCrafting(selectedItem);
@@ -173,13 +172,17 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
+        // If this was the tutorial sword being crafted while the tutorial was active
+        const wasTutorialStep = tutorialStep === 'START_FORGING_GUIDE' && selectedItem.id === 'sword_bronze_t1';
+        
         actions.finishCrafting(selectedItem, score, bonus);
-        if (selectedItem.id === 'sword_bronze_t1') {
+        
+        if (wasTutorialStep) {
             actions.setTutorialStep('CRAFT_RESULT_PROMPT');
         }
     }
     setIsPanelOpen(true);
-  }, [selectedItem, actions]);
+  }, [selectedItem, actions, tutorialStep]);
   
   const handleMouseEnter = useCallback((item: EquipmentItem, e: React.MouseEvent) => {
       setHoveredItem(item);
@@ -264,7 +267,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       );
   };
 
-  // --- Mastery Radial Logic ---
   const masteryInfo = useMemo(() => {
     if (!selectedItem) return null;
     const count = craftingMastery[selectedItem.id] || 0;
@@ -313,7 +315,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const handleQuickCraft = useCallback(() => {
       if (!selectedItem || !masteryInfo) return;
 
-      // Tiered checks for Quick Craft
       if (!isRequirementMet) {
           actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
           return;
@@ -328,7 +329,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           return;
       }
 
-      // Fuel logic for Smithing Quick Craft
       if (selectedItem.craftingType === 'FORGE') {
           if (charcoalCount < quickCraftFuelCost) {
               actions.showToast(`Insufficient charcoal! Need ${quickCraftFuelCost} fuel.`);
@@ -337,7 +337,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           actions.consumeItem('charcoal', quickCraftFuelCost);
       }
 
-      // Determine quality and mastery gain based on current rank
       let quality = 50;
       let masteryGain = 0.5;
 
@@ -349,9 +348,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           masteryGain = 0.7;
       }
 
-      // Deduct resources and energy
       actions.startCrafting(selectedItem);
-      // Immediately finalize with specific parameters
       actions.finishCrafting(selectedItem, quality, 0, masteryGain);
   }, [selectedItem, masteryInfo, isRequirementMet, canAffordResources, hasEnergy, actions, charcoalCount, quickCraftFuelCost]);
 
@@ -361,6 +358,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     const isMissingFuelOnly = selectedItem && selectedItem.craftingType === 'FORGE' && canAffordResources(selectedItem) && !canEnterForge && hasEnergy && isRequirementMet;
     const hasAlreadyCraftedOnce = selectedItem ? (craftingMastery[selectedItem.id] || 0) > 0 : false;
     
+    // Check if this is the active tutorial craft (Bronze Shortsword while in START_FORGING_GUIDE)
+    const isCurrentTutorialCraft = selectedItem?.id === 'sword_bronze_t1' && tutorialStep === 'START_FORGING_GUIDE';
+
     return (
         <div className="relative h-full w-full bg-stone-950 overflow-hidden" style={{ backgroundImage: `url(${getAssetUrl('tile_forge.png')})`, backgroundRepeat: 'repeat', backgroundBlendMode: 'multiply' }}>
         
@@ -486,7 +486,24 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             </div>
         </div>
         {isCrafting && selectedItem && (
-            <div className="absolute inset-0 z-50 animate-in fade-in zoom-in-95 duration-300 bg-stone-950">{selectedItem.craftingType === 'FORGE' ? <SmithingMinigame difficulty={selectedItem.tier} onComplete={handleMinigameComplete} onClose={cancelCrafting} /> : <WorkbenchMinigame difficulty={selectedItem.tier} onComplete={handleMinigameComplete} onClose={cancelCrafting} subCategoryId={selectedItem.subCategoryId} itemImage={selectedItem.image || `${selectedItem.id}.png`} />}</div>
+            <div className="absolute inset-0 z-50 animate-in fade-in zoom-in-95 duration-300 bg-stone-950">
+              {selectedItem.craftingType === 'FORGE' ? (
+                <SmithingMinigame 
+                  difficulty={selectedItem.tier} 
+                  onComplete={handleMinigameComplete} 
+                  onClose={cancelCrafting} 
+                  isTutorial={isCurrentTutorialCraft}
+                />
+              ) : (
+                <WorkbenchMinigame 
+                  difficulty={selectedItem.tier} 
+                  onComplete={handleMinigameComplete} 
+                  onClose={cancelCrafting} 
+                  subCategoryId={selectedItem.subCategoryId} 
+                  itemImage={selectedItem.image || `${selectedItem.id}.png`} 
+                />
+              )}
+            </div>
         )}
         {hoveredItem && (
             <div className="fixed z-[60] pointer-events-none w-56 md:w-64 bg-stone-950/95 border border-stone-700 rounded-lg shadow-2xl backdrop-blur-sm p-3 md:p-4 animate-in fade-in duration-150" style={{ top: tooltipPos.y, left: tooltipPos.x }}>
@@ -502,7 +519,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
         )}
         </div>
     );
-  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo, handleQuickCraft, quickCraftFuelCost, actions, state.tutorialStep]);
+  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo, handleQuickCraft, quickCraftFuelCost, actions, state.tutorialStep, isTutorialForging, tutorialStep]);
   return content;
 };
 
