@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -90,6 +89,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
         };
 
         animRef.current = requestAnimationFrame(animate);
+        // Fix: cancelAnimationFrame expects a number (the request ID), not a function.
         return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
     }, [step, !!targetRect]);
 
@@ -202,7 +202,6 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 <div className="absolute top-0 pointer-events-auto bg-transparent" style={{ top, height, left: left + width, right: 0 }} />
             </div>
 
-            {/* key를 config.targetId와 currentLabel의 조합으로 설정하여 문구 변경 시에도 재렌더링 유도 */}
             <div 
                 key={`${config.targetId}-${currentLabel}`}
                 className="absolute animate-in fade-in zoom-in-95 duration-300" 
@@ -420,16 +419,19 @@ const TutorialScene: React.FC = () => {
             {/* Controls Panel */}
             {isStarted && mode === 'FURNACE_RESTORED' && (
                 <div className="absolute top-[15dvh] right-[5vw] z-[3040] flex flex-col items-center gap-6 animate-in slide-in-from-right-8 duration-700 pointer-events-auto">
-                    {/* Temp Gauge */}
+                    {/* Temp Gauge - Container handles border and padding */}
                     <div className="flex flex-col items-center">
                         <span className="text-[10px] font-black text-stone-300 uppercase tracking-tighter mb-2 font-mono drop-shadow-md">
                             {Math.floor(20 + (temp / 100) * 1480)}°C
                         </span>
-                        <div className="w-7 h-48 md:h-64 bg-stone-950 rounded-full border-2 border-stone-800 p-1 relative shadow-2xl">
-                            <div 
-                                className={`absolute bottom-1 left-1 right-1 rounded-full transition-all duration-300 ${temp < 30 ? 'bg-blue-600' : temp > 80 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'}`}
-                                style={{ height: `${temp}%`, minHeight: '4px' }}
-                            />
+                        <div className="w-7 h-48 md:h-64 bg-stone-950 rounded-full border-2 border-stone-800 relative shadow-2xl overflow-hidden">
+                            {/* Inner wrapper with absolute positioning for padding logic */}
+                            <div className="absolute inset-1 rounded-full overflow-hidden">
+                                <div 
+                                    className={`absolute bottom-0 left-0 right-0 rounded-full transition-all duration-300 ${temp < 30 ? 'bg-blue-600' : temp > 80 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'}`}
+                                    style={{ height: `${temp}%` }}
+                                />
+                            </div>
                         </div>
                     </div>
 

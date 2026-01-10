@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -64,12 +63,14 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   // Track affinity for logic (though we trigger hearts manually now)
   const prevAffinityRef = useRef<number>(0);
 
-  const spawnHearts = useCallback(() => {
-    const newHearts = Array.from({ length: 14 }).map((_, i) => ({
+  const spawnHearts = useCallback((count: number) => {
+    const newHearts = Array.from({ length: count }).map((_, i) => ({
         id: Date.now() + i,
-        left: 35 + Math.random() * 30, // Random range around center
-        delay: Math.random() * 0.7, 
-        size: 18 + Math.random() * 22
+        // Centralized range around the character (40% to 60%) to match Tavern
+        left: 40 + Math.random() * 20, 
+        delay: Math.random() * 0.5, 
+        // Reduced size (16px to 28px) to match Tavern interaction
+        size: 16 + Math.random() * 12
     }));
     setFloatingHearts(prev => [...prev, ...newHearts]);
     // Clear hearts after animation ends
@@ -111,6 +112,8 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const handleSell = () => {
       if (!activeCustomer) return;
       const { mercenary, request } = activeCustomer;
+      const isPipTutorial = tutorialStep === 'SELL_ITEM_GUIDE' && mercenary.id === 'pip_green';
+      const affinityGain = isPipTutorial ? 10 : 2;
       
       // 1. Trigger Reducer (Gold + Affinity + Inventory)
       if (request.type === 'RESOURCE') {
@@ -120,8 +123,8 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
           if (matchingItem) actions.sellItem(matchingItem.id, 1, request.price, matchingItem.id, mercenary);
       }
 
-      // 2. Trigger Visual Feedback IMMEDIATELY
-      spawnHearts();
+      // 2. Trigger Visual Feedback with count matching affinity gain
+      spawnHearts(affinityGain);
       setSaleCompleted(true);
   };
 
@@ -131,9 +134,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
       const { mercenary } = activeCustomer;
       const affinity = mercenary.affinity || 0;
       
-      // Logic for reaction:
-      // High affinity (>40): 80% chance Polite, 20% chance Angry
-      // Low affinity: 30% chance Polite, 70% chance Angry
       const politeChance = affinity > 40 ? 0.8 : 0.3;
       const isPolite = Math.random() < politeChance;
 
@@ -174,10 +174,8 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
   const canAffordOpen = state.stats.energy >= GAME_CONFIG.ENERGY_COST.OPEN_SHOP;
   
-  // Tutorial Lock: Block closing shop when waiting for Pip
   const isTutorialActive = tutorialStep === 'SELL_ITEM_GUIDE' || tutorialStep === 'PIP_PRAISE' || tutorialStep === 'DRAGON_TALK';
 
-  // Narrative Script Mapping
   const tutorialDialogue = {
     PIP_PRAISE: {
         speaker: activeCustomer?.mercenary.name || "Pip the Green",
@@ -210,7 +208,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
           `"A fair price for quality steel. May your bellows never tire, smith."`,
           `"You truly have the Lockhart touch. This will serve me well in the ruins."`
       ];
-      // Deterministic based on customer ID
       const index = (activeCustomer?.id.length || 0) % lines.length;
       return lines[index];
   };
@@ -288,7 +285,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
                         <div className="flex flex-col leading-tight min-w-0">
-                            <span className="font-black text-amber-500 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{activeCustomer.mercenary.job}</span>
+                            <span className="font-black text-amber-50 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{activeCustomer.mercenary.job}</span>
                             <span className="text-stone-500 text-[8px] md:text-[10px] font-mono">Lv.{activeCustomer.mercenary.level}</span>
                         </div>
                         <div className={`flex items-center gap-1 font-bold bg-stone-950/20 px-1 md:px-1.5 py-0.5 rounded border ${refusalReaction === 'ANGRY' ? 'text-red-500 border-red-900/30' : 'text-pink-400 border-pink-900/30'}`}>

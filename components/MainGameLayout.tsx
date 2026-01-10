@@ -55,6 +55,20 @@ const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
     OPEN_SHOP_SIGN_GUIDE: { targetId: 'SHOP_SIGN', label: 'Open the Shop', direction: 'bottom' },
 };
 
+const TUTORIAL_CONTEXT_SCRIPTS: Record<string, string> = {
+    MARKET_GUIDE: "A forge without a roar is just a cold pile of stone. There should be a replacement furnace at the Market... let's head there.",
+    FURNACE_GUIDE: "There it is. Not quite the grand hearth of my ancestors, but it will bring fire back to Lockhart's Forge.",
+    OPEN_SHOPPING_CART: "I should check my cart before I leave. Accuracy in the ledger is as important as the strike of the hammer.",
+    CLOSE_SHOPPING_CART: "The list is complete. Now, let's settle the account and bring the heat home.",
+    PAY_NOW: "The gold is yours, the future is mine. Now to return and relight the embers.",
+    FORGE_TAB_GUIDE: "The furnace is set. The air smells of potential again. I should prepare to craft my first blade.",
+    SELECT_SWORD_GUIDE: "A Bronze Shortsword. A simple pattern, but a reliable test for this new unit.",
+    // START_FORGING_GUIDE is intentionally empty to avoid covering the button
+    // FINALIZE_FORGE_GUIDE removed to avoid overlapping the 'Finalize Forge' button
+    OPEN_SHOP_TAB_GUIDE: "A blade without a wielder is just cold metal. Let's see if any travelers seek Lockhart steel.",
+    OPEN_SHOP_SIGN_GUIDE: "The forge is alive. The shop must follow. Flip the sign and let them come.",
+};
+
 const TutorialOverlay = ({ step, onSkip }: { step: string, onSkip: () => void }) => {
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [animatedRadius, setAnimatedRadius] = useState(2000);
@@ -63,6 +77,7 @@ const TutorialOverlay = ({ step, onSkip }: { step: string, onSkip: () => void })
     
     // 모델에서 현재 단계 설정 가져오기
     const config = TUTORIAL_STEPS_CONFIG[step];
+    const monologue = TUTORIAL_CONTEXT_SCRIPTS[step];
 
     const updateRect = useCallback(() => {
         if (!config) return;
@@ -88,7 +103,7 @@ const TutorialOverlay = ({ step, onSkip }: { step: string, onSkip: () => void })
         setAnimatedRadius(2000);
 
         const startTime = performance.now();
-        const duration = 1300; // 1.3초로 더 천천히 줄어들게 조정
+        const duration = 1300; // 1.3초로 부드럽게 조정
 
         const animate = (now: number) => {
             const elapsed = now - startTime;
@@ -258,7 +273,6 @@ const TutorialOverlay = ({ step, onSkip }: { step: string, onSkip: () => void })
                                 <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />
                             </mask>
                         </defs>
-                        {/* 스포트라이트 오버레이: 반지름이 줄어들 때 어두운 투명도도 같이 조절하여 부드러운 전환 */}
                         <rect 
                             width="100%" 
                             height="100%" 
@@ -279,6 +293,18 @@ const TutorialOverlay = ({ step, onSkip }: { step: string, onSkip: () => void })
                             </div>
                         </div>
                     </div>
+
+                    {/* Monologue Box inside Tutorial Overlay - No options for immediate action */}
+                    {monologue && (
+                        <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none">
+                            <DialogueBox 
+                                speaker="Lockhart"
+                                text={monologue}
+                                options={[]}
+                                className="w-full relative pointer-events-none"
+                            />
+                        </div>
+                    )}
 
                     <div className="absolute border-2 border-amber-400/50 rounded-full animate-ping pointer-events-none" style={{ left: centerX - (Math.max(width, height) / 1.3), top: centerY - (Math.max(width, height) / 1.3), width: (Math.max(width, height) / 1.3) * 2, height: (Math.max(width, height) / 1.3) * 2 }} />
                 </>
