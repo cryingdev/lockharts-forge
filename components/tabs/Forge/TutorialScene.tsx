@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -41,6 +40,7 @@ const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
     FURNACE_MAXED: { text: "Magnificent. The forge is finally alive and roaring. I'm ready to begin the work of retribution." }
 };
 
+// 상호작용 단계 설정 모델링
 const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
     WAIT_HEAT: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
     WAIT_PUMP: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
@@ -49,8 +49,8 @@ const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
 const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumpedOnce: boolean }) => {
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [animatedRadius, setAnimatedRadius] = useState(2000);
-    const requestRef = useRef<number | null>(null);
-    const animRef = useRef<number | null>(null);
+    const requestRef = useRef<number>(null);
+    const animRef = useRef<number>(null);
     const config = SCENE_STEPS_CONFIG[step];
     
     const updateRect = useCallback(() => {
@@ -65,6 +65,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
         requestRef.current = requestAnimationFrame(updateRect);
     }, [config]);
 
+    // 반지름 축소 애니메이션 (아이리스 효과)
     useEffect(() => {
         if (!targetRect) return;
         const targetR = Math.max(targetRect.width, targetRect.height) / 1.3;
@@ -72,7 +73,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
         setAnimatedRadius(2000);
 
         const startTime = performance.now();
-        const duration = 1300;
+        const duration = 1300; // 1.3초로 애니메이션 속도 감속
 
         const animate = (now: number) => {
             const elapsed = now - startTime;
@@ -88,12 +89,13 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
         };
 
         animRef.current = requestAnimationFrame(animate);
-        return () => { if (animRef.current !== null) cancelAnimationFrame(animRef.current); };
+        // Fix: cancelAnimationFrame expects a number (the request ID), not a function.
+        return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
     }, [step, !!targetRect]);
 
     useEffect(() => {
         requestRef.current = requestAnimationFrame(updateRect);
-        return () => { if (requestRef.current !== null) cancelAnimationFrame(requestRef.current); };
+        return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
     }, [updateRect]);
 
     if (!config || !targetRect) return null;
@@ -136,6 +138,34 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
             animationClass = 'animate-bounce-x';
             containerLayout = 'flex-row';
             labelMargin = 'ml-3';
+            break;
+        case 'topleft':
+            pointerStyles = { left: left - 5, top: top - 5, transform: 'translate(-100%, -100%)' };
+            iconRotation = 'rotate(135deg)';
+            animationClass = 'animate-bounce-tl';
+            containerLayout = 'flex-col-reverse items-end';
+            labelMargin = 'mb-2 mr-2';
+            break;
+        case 'topright':
+            pointerStyles = { left: left + width + 5, top: top - 5, transform: 'translate(0, -100%)' };
+            iconRotation = 'rotate(-135deg)';
+            animationClass = 'animate-bounce-tr';
+            containerLayout = 'flex-col-reverse items-start';
+            labelMargin = 'mb-2 ml-2';
+            break;
+        case 'bottomleft':
+            pointerStyles = { left: left - 5, top: top + height + 5, transform: 'translate(-100%, 0)' };
+            iconRotation = 'rotate(45deg)';
+            animationClass = 'animate-bounce-bl';
+            containerLayout = 'flex-col items-end';
+            labelMargin = 'mt-2 mr-2';
+            break;
+        case 'bottomright':
+            pointerStyles = { left: left + width + 5, top: top + height + 5, transform: 'translate(0, 0)' };
+            iconRotation = 'rotate(-45deg)';
+            animationClass = 'animate-bounce-br';
+            containerLayout = 'flex-col items-start';
+            labelMargin = 'mt-2 ml-2';
             break;
         default:
             pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
@@ -184,6 +214,8 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                     </div>
                 </div>
             </div>
+
+            <div className="absolute border-2 border-amber-400/50 rounded-full animate-ping pointer-events-none" style={{ left: centerX - (Math.max(width, height) / 1.3), top: centerY - (Math.max(width, height) / 1.3), width: (Math.max(width, height) / 1.3) * 2, height: (Math.max(width, height) / 1.3) * 2 }} />
         </div>
     );
 };
@@ -213,6 +245,7 @@ const TutorialScene: React.FC = () => {
         }
     }, [seq]);
 
+    // 단계가 변경될 때마다 펌프 여부 초기화
     useEffect(() => {
         setHasPumpedOnce(false);
     }, [seq]);
@@ -228,6 +261,7 @@ const TutorialScene: React.FC = () => {
 
     const handleStart = () => {
         if (isStarted) return;
+        
         if (mode === 'FURNACE_RESTORED') {
             setShowFlash(true);
             setTimeout(() => {
@@ -305,63 +339,160 @@ const TutorialScene: React.FC = () => {
             onClick={handleStart}
         >
             <style>{`
-                @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
+                @keyframes bounce-x {
+                    0%, 100% { transform: translateX(0); }
+                    50% { transform: translateX(12px); }
+                }
+                @keyframes bounce-x-reverse {
+                    0%, 100% { transform: translateX(0); }
+                    50% { transform: translateX(-12px); }
+                }
+                @keyframes bounce-reverse {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-12px); }
+                }
+                @keyframes bounce-tl {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(8px, 8px); }
+                }
+                @keyframes bounce-tr {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(-8px, -8px); }
+                }
+                @keyframes bounce-bl {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(8px, -8px); }
+                }
+                @keyframes bounce-br {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(-8px, -8px); }
+                }
                 .animate-bounce-x { animation: bounce-x 1s infinite; }
+                .animate-bounce-x-reverse { animation: bounce-x-reverse 1s infinite; }
+                .animate-bounce-reverse { animation: bounce-reverse 1s infinite; }
+                .animate-bounce-tl { animation: bounce-tl 1s infinite; }
+                .animate-bounce-tr { animation: bounce-tr 1s infinite; }
+                .animate-bounce-bl { animation: bounce-bl 1s infinite; }
+                .animate-bounce-br { animation: bounce-br 1s infinite; }
                 @keyframes flash-out { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
                 .animate-flash-out { animation: flash-out 0.8s ease-out forwards; }
             `}</style>
 
+            {/* Background Layer */}
             <div className="absolute inset-0 z-0 pointer-events-none">
-                <img src={getAssetUrl(bgImage)} className="w-full h-full object-cover opacity-80 scale-105" alt="Forge Background" />
+                <img 
+                    src={getAssetUrl(bgImage)} 
+                    className="w-full h-full object-cover opacity-80 scale-105" 
+                    alt="Forge Background"
+                />
                 <div className="absolute inset-0 bg-black/30"></div>
             </div>
 
+            {/* Atmosphere */}
+            <div className="absolute inset-0 pointer-events-none z-10">
+                <div className="w-full h-full bg-amber-900/5 animate-pulse"></div>
+            </div>
+
+            {/* Skip Button */}
             <div className="absolute top-4 left-4 z-[4000] pointer-events-auto">
-                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-4 py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-500 hover:text-stone-300 rounded-full transition-all text-[11px] font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group">
-                    <FastForward className="w-3.5 h-3.5 group-hover:animate-pulse" /> Skip Tutorial
+                <button 
+                    onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-500 hover:text-stone-300 rounded-full transition-all text-[11px] font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group"
+                >
+                    <FastForward className="w-3.5 h-3.5 group-hover:animate-pulse" />
+                    Skip Tutorial
                 </button>
             </div>
 
+            {/* Flash Effect */}
             {showFlash && <div className="absolute inset-0 z-[4000] bg-white animate-flash-out pointer-events-none"></div>}
 
+            {/* Initial Text Prompt */}
             {!isStarted && !showFlash && (
                 <div className="relative z-20 flex flex-col items-center animate-pulse pointer-events-none">
-                    <span className="text-amber-500 font-black uppercase tracking-[0.4em] text-[10px] md:text-sm drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]">{promptText}</span>
+                    <span className="text-amber-500 font-black uppercase tracking-[0.4em] text-[10px] md:text-sm drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]">
+                        {promptText}
+                    </span>
                 </div>
             )}
 
+            {/* Controls Panel */}
             {isStarted && mode === 'FURNACE_RESTORED' && (
                 <div className="absolute top-[15dvh] right-[5vw] z-[3040] flex flex-col items-center gap-6 animate-in slide-in-from-right-8 duration-700 pointer-events-auto">
+                    {/* Temp Gauge - Container handles border and padding */}
                     <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-black text-stone-300 uppercase tracking-tighter mb-2 font-mono drop-shadow-md">{Math.floor(20 + (temp / 100) * 1480)}°C</span>
+                        <span className="text-[10px] font-black text-stone-300 uppercase tracking-tighter mb-2 font-mono drop-shadow-md">
+                            {Math.floor(20 + (temp / 100) * 1480)}°C
+                        </span>
                         <div className="w-7 h-48 md:h-64 bg-stone-950 rounded-full border-2 border-stone-800 relative shadow-2xl overflow-hidden">
+                            {/* Inner wrapper with absolute positioning for padding logic */}
                             <div className="absolute inset-1 rounded-full overflow-hidden">
-                                <div className={`absolute bottom-0 left-0 right-0 rounded-full transition-all duration-300 ${temp < 30 ? 'bg-blue-600' : temp > 80 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'}`} style={{ height: `${temp}%` }} />
+                                <div 
+                                    className={`absolute bottom-0 left-0 right-0 rounded-full transition-all duration-300 ${temp < 30 ? 'bg-blue-600' : temp > 80 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'}`}
+                                    style={{ height: `${temp}%` }}
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <button id="tutorial-bellows" onClick={(e) => { e.stopPropagation(); handlePump(); }} disabled={seq !== 'WAIT_PUMP'} className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group ${seq === 'WAIT_PUMP' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'} ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}`}>
+                    {/* Bellows */}
+                    <button 
+                        id="tutorial-bellows"
+                        onClick={(e) => { e.stopPropagation(); handlePump(); }}
+                        disabled={seq !== 'WAIT_PUMP'}
+                        className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group
+                            ${seq === 'WAIT_PUMP' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}
+                            ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}
+                        `}
+                    >
                         <Zap className={`w-6 h-6 md:w-10 md:h-10 ${seq === 'WAIT_PUMP' ? 'text-amber-400' : 'text-stone-600'}`} />
                         <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-1">Pump</span>
                     </button>
 
-                    <button id="tutorial-heat" onClick={(e) => { e.stopPropagation(); handleHeatUp(); }} disabled={seq !== 'WAIT_HEAT'} className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl ${seq === 'WAIT_HEAT' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}`}>
+                    {/* Heat Up */}
+                    <button 
+                        id="tutorial-heat"
+                        onClick={(e) => { e.stopPropagation(); handleHeatUp(); }}
+                        disabled={seq !== 'WAIT_HEAT'}
+                        className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl
+                            ${seq === 'WAIT_HEAT' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}
+                        `}
+                    >
                         <Flame className={`w-5 h-5 md:w-8 md:h-8 ${seq === 'WAIT_HEAT' ? 'text-orange-400' : 'text-stone-600'}`} />
                         <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest mt-1">Ignite</span>
                     </button>
                 </div>
             )}
 
+            {/* Dialogue Box */}
             {isStarted && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 pointer-events-none">
-                    <DialogueBox speaker={mode === 'PROLOGUE' || seq !== 'FINAL_TALK' ? "Lockhart" : "Master Smith"} text={dialogue.text} options={['WAIT_HEAT', 'WAIT_PUMP'].includes(seq) ? [] : [{ label: "Continue", action: handleNext, variant: 'primary' }]} className="w-full relative pointer-events-auto" />
+                    <DialogueBox 
+                        speaker={mode === 'PROLOGUE' || seq !== 'FINAL_TALK' ? "Lockhart" : "Master Smith"}
+                        text={dialogue.text}
+                        options={['WAIT_HEAT', 'WAIT_PUMP'].includes(seq) ? [] : [
+                            { label: "Continue", action: handleNext, variant: 'primary' }
+                        ]}
+                        className="w-full relative pointer-events-auto"
+                    />
                 </div>
             )}
 
-            {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />}
+            {/* Local Spotlight 모델링 적용 */}
+            {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && (
+                <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />
+            )}
 
-            <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked." confirmLabel="Skip Everything" cancelLabel="Keep Playing" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
+            <ConfirmationModal 
+                isOpen={showSkipConfirm}
+                title="Skip Tutorial?"
+                message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked."
+                confirmLabel="Skip Everything"
+                cancelLabel="Keep Playing"
+                onConfirm={handleConfirmSkip}
+                onCancel={() => setShowSkipConfirm(false)}
+                isDanger={true}
+            />
         </div>
     );
 };

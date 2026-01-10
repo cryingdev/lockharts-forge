@@ -1,11 +1,11 @@
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useGame } from '../../../context/GameContext';
-import DialogueBox from '../../DialogueBox';
 import {
   Store,
   ShoppingCart,
   ShoppingBag,
+  AlertCircle,
   Coins,
   ChevronRight,
   ChevronLeft,
@@ -13,8 +13,7 @@ import {
   Plus,
   Minus,
   Package,
-  MessageSquare,
-  ArrowLeft,
+  CreditCard,
 } from 'lucide-react';
 import { MATERIALS } from '../../../data/materials';
 import { MARKET_CATALOG } from '../../../data/market/index';
@@ -24,79 +23,15 @@ interface MarketTabProps {
   onNavigate: (tab: any) => void;
 }
 
-type MarketViewMode = 'INTERACTION' | 'CATALOG';
-
-/**
- * GarrickSprite: 3프레임 스프라이트 시트를 이용한 눈 깜빡임 애니메이션 컴포넌트
- */
-const GarrickSprite = () => {
-  const [frame, setFrame] = useState(0); // 0: Open, 1: Half, 2: Closed
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const blink = useCallback(() => {
-    setFrame(1);
-    setTimeout(() => {
-      setFrame(2);
-      setTimeout(() => {
-        setFrame(1);
-        setTimeout(() => {
-          setFrame(0);
-          scheduleNextBlink();
-        }, 80);
-      }, 100);
-    }, 80);
-  }, []);
-
-  const scheduleNextBlink = useCallback(() => {
-    const delay = 3000 + Math.random() * 4000;
-    timerRef.current = setTimeout(blink, delay);
-  }, [blink]);
-
-  useEffect(() => {
-    scheduleNextBlink();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [scheduleNextBlink]);
-
-  return (
-    <div className="relative w-full h-full flex items-end justify-center pointer-events-none">
-      {/* 캐릭터 뒤 광원 효과 */}
-      <div className="absolute bottom-[25%] left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full -z-10 animate-pulse"></div>
-      
-      {/* Garrick Sprite Container - 비율 453.3 : 1058 유지 */}
-      <div 
-        className="relative h-[65dvh] md:h-[72dvh] flex justify-center overflow-hidden bottom-[2dvh]"
-        style={{ aspectRatio: '453.3 / 1058' }}
-      >
-        <div 
-          className="h-full w-full transition-transform duration-75 ease-linear"
-          style={{
-            backgroundImage: `url(${getAssetUrl('garrick_standing_sprite.png')})`,
-            backgroundSize: '300% 100%',
-            backgroundPosition: `${frame * 50}% 0%`,
-            imageRendering: 'pixelated',
-            filter: 'drop-shadow(0 0 40px rgba(0,0,0,0.85))'
-          }}
-        />
-      </div>
-      
-      {/* 바닥 그림자 */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-48 h-8 bg-black/60 blur-3xl rounded-full -z-10"></div>
-    </div>
-  );
-};
-
 const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
 
-  const [viewMode, setViewMode] = useState<MarketViewMode>('INTERACTION');
-  const [dialogue, setDialogue] = useState("Ah, Lockhart. I heard the hammer falling on that old anvil again. Good to see you haven't given up on the family trade.");
-  
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isCartOpen, setIsCartOpen] = useState(false);
+
   const [itemMultipliers, setItemMultipliers] = useState<Record<string, number>>({});
 
+  // 롱터치 가속 관련 Ref
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentInterval = useRef<number>(200);
   const [pressingItemId, setPressingItemId] = useState<string | null>(null);
@@ -119,18 +54,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   const totalCost = calculateTotal();
 
-  const handleTalk = () => {
-    const lines = [
-      "The roads are getting dangerous. My suppliers are demanding hazard pay, which means my prices might sting a bit.",
-      "Looking for something specific? If it's for metalwork, I've got the basics covered.",
-      "I remember your grandfather. He could forge a blade that could cut through silk and stone in the same breath.",
-      "The village feels quieter since the fire. But your forge... it's a sign of hope, I suppose.",
-      "Don't go getting yourself killed in those ruins. I need my best customers alive and paying!",
-      "If you're looking for rarer materials, you'll have to prove that forge of yours is worth the investment."
-    ];
-    setDialogue(lines[Math.floor(Math.random() * lines.length)]);
-  };
-
   const addToCart = (itemId: string, amount: number = 1) => {
     const isOneTimeItem = itemId === 'furnace' || itemId === 'workbench' || itemId.startsWith('scroll_');
     const availableStock = state.marketStock[itemId] || 0;
@@ -141,6 +64,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     const canAddCount = Math.min(amount, availableStock - currentInCart);
     if (canAddCount <= 0) return false;
 
+    // 튜토리얼 중 용광로를 클릭하면 장바구니 열기 가이드로 전환
     if (itemId === 'furnace' && state.tutorialStep === 'FURNACE_GUIDE') {
         actions.setTutorialStep('OPEN_SHOPPING_CART');
     }
@@ -252,6 +176,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
       return;
     }
 
+    // 튜토리얼 중 Pay Now를 클릭하면 튜토리얼 종료
     if (state.tutorialStep === 'PAY_NOW') {
         actions.setTutorialStep(null);
     }
@@ -267,105 +192,37 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   };
 
   const toggleCart = () => {
+    // 튜토리얼 중 장바구니를 열면 닫기 가이드로 전환
     if (!isCartOpen && state.tutorialStep === 'OPEN_SHOPPING_CART') {
         actions.setTutorialStep('CLOSE_SHOPPING_CART');
     } 
+    // 튜토리얼 중 장바구니를 닫으면 결제 버튼 가이드로 전환
     else if (isCartOpen && state.tutorialStep === 'CLOSE_SHOPPING_CART') {
         actions.setTutorialStep('PAY_NOW');
     }
     setIsCartOpen(!isCartOpen);
   };
 
-  const handleBrowseGoods = () => {
-    if (state.tutorialStep === 'BROWSE_GOODS_GUIDE') {
-        actions.setTutorialStep('FURNACE_GUIDE');
-    }
-    setViewMode('CATALOG');
-  };
-
-  // --- RENDERING ---
-
-  if (viewMode === 'INTERACTION') {
-    return (
-      <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
-        {/* Background */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={getAssetUrl('garricks_store_bg.png')} 
-            alt="Garrick's Store" 
-            className="absolute top-0 opacity-60 w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #292524, #1c1917)';
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30"></div>
-        </div>
-
-        {/* Garrick Placement */}
-        <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
-          <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-1000 ease-out">
-            <GarrickSprite />
-          </div>
-        </div>
-
-        {/* Counter Overlay (Conceptual Bottom Shadow) */}
-        <div className="absolute bottom-0 w-full h-[25dvh] z-20 pointer-events-none bg-gradient-to-t from-black/90 to-transparent"></div>
-
-        {/* Interaction HUD */}
-        <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center pointer-events-none gap-4">
-          
-          <div className="flex justify-end w-full gap-3 pointer-events-auto pr-4">
-             <button 
-                onClick={handleTalk}
-                className="flex items-center gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
-              >
-                <MessageSquare className="w-4 h-4 text-amber-500" />
-                <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
-              </button>
-              
-              <button 
-                onClick={handleBrowseGoods}
-                data-tutorial-id="BROWSE_GOODS_BUTTON"
-                className={`flex items-center gap-2 px-8 py-2.5 md:py-3.5 bg-amber-700/90 hover:bg-amber-600 border border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95 ${state.tutorialStep === 'BROWSE_GOODS_GUIDE' ? 'ring-4 ring-amber-400 animate-pulse z-[2100]' : ''}`}
-              >
-                <ShoppingBag className="w-4 h-4 text-white" />
-                <span className="font-black text-[9px] md:text-xs text-white uppercase tracking-widest">Browse Goods</span>
-              </button>
-          </div>
-
-          <DialogueBox 
-            speaker="Garrick"
-            text={dialogue}
-            className="w-full relative pointer-events-auto"
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-full w-full flex bg-stone-950 relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
+    <div className="h-full w-full flex bg-stone-950 relative overflow-hidden">
+      {/* ✅ 메인 카탈로그: 너비를 w-full로 고정하여 장바구니 상태와 무관하게 일정하게 유지 */}
       <div className="flex flex-col h-full w-full relative shrink-0">
-        <div className="bg-stone-900/90 backdrop-blur-md p-3 md:p-5 border-b border-stone-800 flex items-center justify-between z-10 shrink-0 shadow-lg">
+        <div className="bg-stone-900/80 backdrop-blur-md p-3 md:p-5 border-b border-stone-800 flex items-center justify-between z-10 shrink-0">
           <div className="flex items-center gap-2 md:gap-4">
-            <button 
-              onClick={() => setViewMode('INTERACTION')}
-              className="bg-stone-800 hover:bg-stone-700 p-2 md:p-3 rounded-xl border border-stone-700 transition-all active:scale-90"
-              title="Back to Garrick"
-            >
-              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-stone-300" />
-            </button>
+            <div className="bg-amber-900/30 p-1.5 md:p-2.5 rounded-xl border border-amber-700/50">
+              <Store className="w-4 h-4 md:w-6 md:h-6 text-amber-500" />
+            </div>
             <div>
               <h2 className="text-sm md:text-2xl font-black text-stone-100 font-serif tracking-tight uppercase leading-none">
-                Garrick's Wares
+                Market
               </h2>
-              <span className="text-[7px] md:text-[10px] font-mono font-bold text-amber-600 block mt-1 uppercase tracking-wider">
-                Tier {currentTier} Supplies Available
+              <span className="text-[7px] md:text-[9px] font-mono font-bold text-amber-600 block mt-1 uppercase">
+                Tier {currentTier} Supplies
               </span>
             </div>
           </div>
 
+          {/* Quick Pay Button in Header */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleBuy}
@@ -398,7 +255,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 md:p-6 custom-scrollbar pb-24">
-          <div className="grid gap-1.5 md:gap-4 max-w-7xl mx-auto content-start grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 lg:grid-cols-8">
+          {/* ✅ 그리드 고정: 컬럼 수를 고정하여 UI 변동 방지 */}
+          <div className="grid gap-1.5 md:gap-4 max-w-7xl mx-auto content-start grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
             {MARKET_CATALOG.map(marketItem => {
               const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
               const isScrollItem = marketItem.id.startsWith('scroll_');
@@ -442,7 +300,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                 <div
                   key={marketItem.id}
                   data-tutorial-id={marketItem.id === 'furnace' ? 'FURNACE_ITEM' : undefined}
-                  className={`group relative flex flex-col items-center p-1 md:p-2 rounded-lg md:rounded-xl border transition-all h-[140px] md:h-[220px] justify-between overflow-hidden shadow-sm select-none ${
+                  className={`group relative flex flex-col items-center p-1 md:p-2 rounded-lg md:rounded-xl border transition-all h-[130px] md:h-[210px] justify-between overflow-hidden shadow-sm select-none ${
                     pressingItemId === marketItem.id
                       ? 'scale-[0.97] border-amber-500 bg-amber-900/10'
                       : isSoldOut
@@ -465,6 +323,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     {isSoldOut ? 'X' : stockLeft}
                   </div>
 
+                  {/* ✅ 아이콘 영역: 크기를 더욱 키움 */}
                   <div
                     className={`flex-1 w-full flex items-center justify-center transition-all relative mt-1 overflow-hidden rounded-lg
                       ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-stone-800/50 group-hover:scale-105 active:scale-95'}
@@ -480,7 +339,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                   >
                     <img
                       src={getAssetUrl(`${marketItem.id}.png`)}
-                      className="w-12 h-12 md:w-24 md:h-24 object-contain drop-shadow-md pointer-events-none"
+                      className="w-14 h-14 md:w-26 md:h-26 object-contain drop-shadow-md pointer-events-none"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                         e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -561,11 +420,13 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         </div>
       </div>
 
+      {/* ✅ 장바구니 오버랩 드로어: absolute 포지션으로 카탈로그 위에 덮어씌움 */}
       <div
         className={`absolute top-0 right-0 h-full bg-stone-900/95 backdrop-blur-3xl border-l border-stone-800 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] z-[100] flex flex-col transition-all duration-500 ease-in-out ${
           isCartOpen ? 'w-[85%] sm:w-[50%] md:w-80 translate-x-0' : 'w-0 translate-x-full border-none'
         }`}
       >
+        {/* 토글 버튼: 장바구니 패널의 왼쪽에 고정되어 함께 이동 */}
         <button
           onClick={toggleCart}
           data-tutorial-id="CART_TOGGLE"
@@ -598,7 +459,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
           <div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2.5 custom-scrollbar">
             {Object.keys(cart).length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-stone-700 text-center px-4">
-                <ShoppingCart className="w-8 h-8 md:w-10 md:h-10 opacity-10 mb-2" />
+                <ShoppingBag className="w-8 h-8 md:w-10 md:h-10 opacity-10 mb-2" />
                 <p className="italic font-medium text-[8px] md:text-[10px] uppercase tracking-widest">Cart is empty</p>
               </div>
             ) : (

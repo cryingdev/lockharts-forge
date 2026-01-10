@@ -40,6 +40,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     onClose();
   }, [onClose]);
 
+  // container size ready 체크
   useEffect(() => {
     const checkSize = () => {
       const el = containerRef.current;
@@ -57,7 +58,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     const ensureWrapperSize = () => {
       const { vh } = getViewport();
       el.style.width = '100%';
-      el.style.height = `${vh}px`;
+      el.style.height = `${vh}px`;     // ✅ 100dvh 보다 안정적(특히 iOS)
       el.style.overflow = 'hidden';
       el.style.touchAction = 'none';
     };
@@ -79,7 +80,9 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       resizePhaserToWrapper();
     };
 
+    // --- create game once ---
     if (!gameRef.current) {
+      // 초기 온도(초기 값만 캡처)
       const initialTemp = Math.max(
         0,
         (state.forgeTemperature || 0) - ((Date.now() - (state.lastForgeTime || 0)) / 1000) * 5
@@ -94,21 +97,10 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
         height: Math.floor(el.clientHeight) || 1,
         backgroundColor: '#0c0a09',
         scene: [SmithingScene],
-        pauseOnBlur: false,
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
         },
-        render: {
-            pixelArt: true,
-            antialias: false
-        },
-        callbacks: {
-            postBoot: (game) => {
-                game.events.on('blur', () => {});
-                game.events.on('focus', () => {});
-            }
-        }
       };
 
       const game = new Phaser.Game(config);
@@ -132,13 +124,18 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       });
 
       sync();
+    } else {
+      sync();
     }
 
+    // --- listeners ---
     const vv = window.visualViewport;
+
     const onOrientationChange = () => {
       sync();
       setTimeout(sync, 80);
       setTimeout(sync, 180);
+      setTimeout(sync, 320);
     };
 
     vv?.addEventListener('resize', sync);
@@ -148,26 +145,29 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     const ro = new ResizeObserver(() => requestAnimationFrame(sync));
     ro.observe(el);
 
+    sync();
+
     return () => {
       ro.disconnect();
       vv?.removeEventListener('resize', sync);
       window.removeEventListener('resize', sync);
       window.removeEventListener('orientationchange', onOrientationChange);
     };
-  }, [isReady, difficulty, isTutorial, state.forgeTemperature, state.lastForgeTime, charcoalCount, actionsRef]);
+  }, [isReady, difficulty, isTutorial]);
 
+  // charcoalCount 실시간 반영
   useEffect(() => {
     if (!gameRef.current) return;
     const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
     if (scene) scene.updateCharcoalCount(isTutorial ? '∞' : charcoalCount);
   }, [charcoalCount, isTutorial]);
 
+  // 언마운트 시 game destroy
   useEffect(() => {
     return () => {
       if (gameRef.current) {
-        const game = gameRef.current;
+        gameRef.current.destroy(true);
         gameRef.current = null;
-        game.destroy(true, false);
       }
     };
   }, []);
