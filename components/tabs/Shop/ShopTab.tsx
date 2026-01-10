@@ -36,13 +36,13 @@ const ShopSign = ({ isOpen, onToggle, disabled }: { isOpen: boolean, onToggle: (
                 <div className={`relative w-full h-full transition-transform duration-700 preserve-3d ${isOpen ? '' : 'rotate-y-180'}`}>
                     <div className="absolute inset-0 backface-hidden bg-[#5d4037] border md:border-2 border-[#3e2723] rounded shadow-lg flex flex-col items-center justify-center p-0.5 md:p-1">
                         <div className="w-full h-full border border-[#795548]/30 rounded flex flex-col items-center justify-center">
-                             <span className="text-[8px] md:text-[10px] text-[#8d6e63] font-bold uppercase tracking-widest leading-none">The Forge is</span>
+                             <span className="text-[8px] md:text-[10px] text-[#8d6e63] font-bold uppercase tracking-widest leading-none">The Shop is</span>
                              <span className="text-sm md:text-xl font-black text-emerald-400 font-serif tracking-tighter drop-shadow-sm">OPEN</span>
                         </div>
                     </div>
                     <div className="absolute inset-0 backface-hidden rotate-y-180 bg-[#3e2723] border md:border-2 border-[#1b0000] rounded shadow-lg flex flex-col items-center justify-center p-0.5 md:p-1">
                         <div className="w-full h-full border border-[#5d4037]/30 rounded flex flex-col items-center justify-center">
-                             <span className="text-[8px] md:text-[10px] text-[#5d4037] font-bold uppercase tracking-widest leading-none">The Forge is</span>
+                             <span className="text-[8px] md:text-[10px] text-[#5d4037] font-bold uppercase tracking-widest leading-none">The Shop is</span>
                              <span className="text-sm md:text-xl font-black text-stone-500 font-serif tracking-tighter drop-shadow-sm">CLOSED</span>
                         </div>
                     </div>
@@ -153,8 +153,10 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   };
   
   const handleToggleShop = () => {
-      if (!isShopOpen && state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE') {
-          actions.setTutorialStep('OPEN_SHOP_SIGN_GUIDE');
+      if (!isShopOpen) {
+          if (state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE') {
+              actions.setTutorialStep('SELL_ITEM_GUIDE');
+          }
       }
       actions.toggleShop();
   };
@@ -193,7 +195,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
     TUTORIAL_END_MONOLOGUE: {
         speaker: "Lockhart",
         text: "Finally... the first sale. It's just a simple bronze blade, but it marks the beginning of my resurgence. I will rebuild this forge, piece by piece, until the name Lockhart once again commands respect across the realm. Every strike of my hammer brings me closer to the day I face that dragon. ... I miss my people. I miss my home. But I will not falter. My business starts now.",
-        options: [{ label: "The Forge is Open", action: () => actions.completeTutorial(), variant: 'primary' as const }]
+        options: [{ label: "The Shop is Open", action: () => actions.completeTutorial(), variant: 'primary' as const }]
     }
   };
 

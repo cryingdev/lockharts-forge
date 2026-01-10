@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
 import { getAssetUrl } from '../../../utils';
@@ -15,6 +15,14 @@ type SequenceStep =
     | 'WAIT_CONTINUE_BELLOWS' 
     | 'WAIT_PUMP' 
     | 'FINAL_TALK';
+
+type TutorialDirection = 'top' | 'bottom' | 'left' | 'right' | 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
+
+interface SceneStepConfig {
+    targetId: string;
+    label: string;
+    direction: TutorialDirection;
+}
 
 const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
     PROLOGUE_0: { text: "I have just returned from the hill after burying my family... My hands, stained with earth, are still trembling." },
@@ -33,40 +41,182 @@ const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
     FURNACE_MAXED: { text: "Magnificent. The forge is finally alive and roaring. I'm ready to begin the work of retribution." }
 };
 
-const LocalSpotlight = ({ targetId, label }: { targetId: string, label: string }) => {
-    const [rect, setRect] = useState<DOMRect | null>(null);
+// 상호작용 단계 설정 모델링
+const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
+    WAIT_HEAT: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
+    WAIT_PUMP: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
+};
+
+const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumpedOnce: boolean }) => {
+    const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+    const [animatedRadius, setAnimatedRadius] = useState(2000);
+    const requestRef = useRef<number>(null);
+    const animRef = useRef<number>(null);
+    const config = SCENE_STEPS_CONFIG[step];
     
+    const updateRect = useCallback(() => {
+        if (!config) return;
+        const el = document.getElementById(config.targetId);
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                setTargetRect(rect);
+            }
+        }
+        requestRef.current = requestAnimationFrame(updateRect);
+    }, [config]);
+
+    // 반지름 축소 애니메이션 (아이리스 효과)
     useEffect(() => {
-        const update = () => {
-            const el = document.getElementById(targetId);
-            if (el) setRect(el.getBoundingClientRect());
+        if (!targetRect) return;
+        const targetR = Math.max(targetRect.width, targetRect.height) / 1.3;
+        
+        setAnimatedRadius(2000);
+
+        const startTime = performance.now();
+        const duration = 1300; // 1.3초로 애니메이션 속도 감속
+
+        const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            
+            const nextR = 2000 - (2000 - targetR) * easeOut;
+            setAnimatedRadius(nextR);
+
+            if (progress < 1) {
+                animRef.current = requestAnimationFrame(animate);
+            }
         };
-        update();
-        const interval = setInterval(update, 100);
-        return () => clearInterval(interval);
-    }, [targetId]);
 
-    if (!rect) return null;
+        animRef.current = requestAnimationFrame(animate);
+        return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+    }, [step, !!targetRect]);
 
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const radius = Math.max(rect.width, rect.height) / 1.2;
+    useEffect(() => {
+        requestRef.current = requestAnimationFrame(updateRect);
+        return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
+    }, [updateRect]);
+
+    if (!config || !targetRect) return null;
+
+    const { top, left, width, height } = targetRect;
+    const centerX = left + width / 2;
+    const centerY = top + height / 2;
+
+    let pointerStyles = {};
+    let iconRotation = '';
+    let animationClass = '';
+    let containerLayout = '';
+    let labelMargin = '';
+
+    switch (config.direction) {
+        case 'top':
+            pointerStyles = { left: centerX, top: top - 15, transform: 'translate(-50%, -100%)' };
+            iconRotation = 'rotate(180deg)';
+            animationClass = 'animate-bounce-reverse';
+            containerLayout = 'flex-col-reverse';
+            labelMargin = 'mb-3';
+            break;
+        case 'bottom':
+            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
+            iconRotation = '';
+            animationClass = 'animate-bounce';
+            containerLayout = 'flex-col';
+            labelMargin = 'mt-3';
+            break;
+        case 'left':
+            pointerStyles = { left: left - 15, top: centerY, transform: 'translate(-100%, -50%)' };
+            iconRotation = 'rotate(90deg)';
+            animationClass = 'animate-bounce-x-reverse';
+            containerLayout = 'flex-row-reverse';
+            labelMargin = 'mr-3';
+            break;
+        case 'right':
+            pointerStyles = { left: left + width + 15, top: centerY, transform: 'translateY(-50%)' };
+            iconRotation = 'rotate(-90deg)';
+            animationClass = 'animate-bounce-x';
+            containerLayout = 'flex-row';
+            labelMargin = 'ml-3';
+            break;
+        case 'topleft':
+            pointerStyles = { left: left - 5, top: top - 5, transform: 'translate(-100%, -100%)' };
+            iconRotation = 'rotate(135deg)';
+            animationClass = 'animate-bounce-tl';
+            containerLayout = 'flex-col-reverse items-end';
+            labelMargin = 'mb-2 mr-2';
+            break;
+        case 'topright':
+            pointerStyles = { left: left + width + 5, top: top - 5, transform: 'translate(0, -100%)' };
+            iconRotation = 'rotate(-135deg)';
+            animationClass = 'animate-bounce-tr';
+            containerLayout = 'flex-col-reverse items-start';
+            labelMargin = 'mb-2 ml-2';
+            break;
+        case 'bottomleft':
+            pointerStyles = { left: left - 5, top: top + height + 5, transform: 'translate(-100%, 0)' };
+            iconRotation = 'rotate(45deg)';
+            animationClass = 'animate-bounce-bl';
+            containerLayout = 'flex-col items-end';
+            labelMargin = 'mt-2 mr-2';
+            break;
+        case 'bottomright':
+            pointerStyles = { left: left + width + 5, top: top + height + 5, transform: 'translate(0, 0)' };
+            iconRotation = 'rotate(-45deg)';
+            animationClass = 'animate-bounce-br';
+            containerLayout = 'flex-col items-start';
+            labelMargin = 'mt-2 ml-2';
+            break;
+        default:
+            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
+            iconRotation = '';
+            animationClass = 'animate-bounce';
+            containerLayout = 'flex-col';
+            labelMargin = 'mt-3';
+            break;
+    }
+
+    const currentLabel = (step === 'WAIT_PUMP' && hasPumpedOnce) ? "Keep Pump!" : config.label;
 
     return (
-        <div className="fixed inset-0 z-[3050] pointer-events-none">
-            <svg className="absolute inset-0 w-full h-full">
+        <div className="fixed inset-0 z-[3050] pointer-events-none overflow-hidden">
+            <svg className="absolute inset-0 w-full h-full pointer-events-none">
                 <defs>
-                    <mask id="local-spotlight-mask">
+                    <mask id="tutorial-mask-local">
                         <rect width="100%" height="100%" fill="white" />
-                        <circle cx={centerX} cy={centerY} r={radius} fill="black" />
+                        <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />
                     </mask>
                 </defs>
-                <rect width="100%" height="100%" fill="rgba(0,0,0,0.75)" mask="url(#local-spotlight-mask)" />
+                <rect 
+                    width="100%" 
+                    height="100%" 
+                    fill={`rgba(0,0,0,${Math.min(0.75, 1.5 - (animatedRadius / 1000))})`} 
+                    mask="url(#tutorial-mask-local)" 
+                />
             </svg>
-            <div className="absolute animate-bounce flex flex-col items-center" style={{ left: centerX, top: rect.bottom + 20, transform: 'translateX(-50%)' }}>
-                <Pointer className="w-10 h-10 text-amber-400 drop-shadow-lg" />
-                <div className="mt-2 px-3 py-1 bg-amber-600 text-white text-[10px] font-black uppercase rounded-full border border-amber-400 shadow-xl">{label}</div>
+
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 left-0 w-full pointer-events-auto bg-transparent" style={{ height: top }} />
+                <div className="absolute left-0 w-full pointer-events-auto bg-transparent" style={{ top: top + height, bottom: 0 }} />
+                <div className="absolute top-0 left-0 pointer-events-auto bg-transparent" style={{ top, height, width: left }} />
+                <div className="absolute top-0 pointer-events-auto bg-transparent" style={{ top, height, left: left + width, right: 0 }} />
             </div>
+
+            {/* key를 config.targetId와 currentLabel의 조합으로 설정하여 문구 변경 시에도 재렌더링 유도 */}
+            <div 
+                key={`${config.targetId}-${currentLabel}`}
+                className="absolute animate-in fade-in zoom-in-95 duration-300" 
+                style={pointerStyles}
+            >
+                <div className={`flex items-center ${containerLayout} ${animationClass}`}>
+                    <Pointer className={`w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]`} style={{ transform: iconRotation.includes('rotate') ? iconRotation : undefined }} />
+                    <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl whitespace-nowrap border-2 border-amber-400`}>
+                        {currentLabel}
+                    </div>
+                </div>
+            </div>
+
+            <div className="absolute border-2 border-amber-400/50 rounded-full animate-ping pointer-events-none" style={{ left: centerX - (Math.max(width, height) / 1.3), top: centerY - (Math.max(width, height) / 1.3), width: (Math.max(width, height) / 1.3) * 2, height: (Math.max(width, height) / 1.3) * 2 }} />
         </div>
     );
 };
@@ -77,6 +227,7 @@ const TutorialScene: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [temp, setTemp] = useState(0); 
     const [isPumping, setIsPumping] = useState(false);
+    const [hasPumpedOnce, setHasPumpedOnce] = useState(false);
     const [showFlash, setShowFlash] = useState(false);
     const [isStarted, setIsStarted] = useState(false);
     const [showSkipConfirm, setShowSkipConfirm] = useState(false);
@@ -93,6 +244,11 @@ const TutorialScene: React.FC = () => {
             }, 50);
             return () => clearInterval(timer);
         }
+    }, [seq]);
+
+    // 단계가 변경될 때마다 펌프 여부 초기화
+    useEffect(() => {
+        setHasPumpedOnce(false);
     }, [seq]);
 
     const bgImage = useMemo(() => {
@@ -113,8 +269,8 @@ const TutorialScene: React.FC = () => {
                 setIsStarted(true);
                 setSeq('POST_REPLACE_TALK');
                 setCurrentStep(0);
-            }, 200);
-            setTimeout(() => setShowFlash(false), 1000);
+            }, 50);
+            setTimeout(() => setShowFlash(false), 800);
         } else {
             setIsStarted(true);
         }
@@ -128,6 +284,7 @@ const TutorialScene: React.FC = () => {
 
     const handlePump = () => {
         setIsPumping(true);
+        setHasPumpedOnce(true);
         setTemp(prev => Math.min(100, prev + 5));
         setTimeout(() => setIsPumping(false), 300);
         if (seq === 'WAIT_PUMP' && temp + 5 >= 100) {
@@ -182,10 +339,54 @@ const TutorialScene: React.FC = () => {
             className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer"
             onClick={handleStart}
         >
+            <style>{`
+                @keyframes bounce-x {
+                    0%, 100% { transform: translateX(0); }
+                    50% { transform: translateX(12px); }
+                }
+                @keyframes bounce-x-reverse {
+                    0%, 100% { transform: translateX(0); }
+                    50% { transform: translateX(-12px); }
+                }
+                @keyframes bounce-reverse {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-12px); }
+                }
+                @keyframes bounce-tl {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(8px, 8px); }
+                }
+                @keyframes bounce-tr {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(-8px, -8px); }
+                }
+                @keyframes bounce-bl {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(8px, -8px); }
+                }
+                @keyframes bounce-br {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(-8px, -8px); }
+                }
+                .animate-bounce-x { animation: bounce-x 1s infinite; }
+                .animate-bounce-x-reverse { animation: bounce-x-reverse 1s infinite; }
+                .animate-bounce-reverse { animation: bounce-reverse 1s infinite; }
+                .animate-bounce-tl { animation: bounce-tl 1s infinite; }
+                .animate-bounce-tr { animation: bounce-tr 1s infinite; }
+                .animate-bounce-bl { animation: bounce-bl 1s infinite; }
+                .animate-bounce-br { animation: bounce-br 1s infinite; }
+                @keyframes flash-out { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+                .animate-flash-out { animation: flash-out 0.8s ease-out forwards; }
+            `}</style>
+
             {/* Background Layer */}
             <div className="absolute inset-0 z-0 pointer-events-none">
-                <img key={bgImage} src={getAssetUrl(bgImage)} className="w-full h-full object-cover opacity-60 transition-all duration-1000 scale-105" />
-                <div className="absolute inset-0 bg-stone-950/20 backdrop-blur-[1px]"></div>
+                <img 
+                    src={getAssetUrl(bgImage)} 
+                    className="w-full h-full object-cover opacity-80 scale-105" 
+                    alt="Forge Background"
+                />
+                <div className="absolute inset-0 bg-black/30"></div>
             </div>
 
             {/* Atmosphere */}
@@ -221,7 +422,7 @@ const TutorialScene: React.FC = () => {
                 <div className="absolute top-[15dvh] right-[5vw] z-[3040] flex flex-col items-center gap-6 animate-in slide-in-from-right-8 duration-700 pointer-events-auto">
                     {/* Temp Gauge */}
                     <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-black text-stone-500 uppercase tracking-tighter mb-2 font-mono">
+                        <span className="text-[10px] font-black text-stone-300 uppercase tracking-tighter mb-2 font-mono drop-shadow-md">
                             {Math.floor(20 + (temp / 100) * 1480)}°C
                         </span>
                         <div className="w-7 h-48 md:h-64 bg-stone-950 rounded-full border-2 border-stone-800 p-1 relative shadow-2xl">
@@ -275,9 +476,10 @@ const TutorialScene: React.FC = () => {
                 </div>
             )}
 
-            {/* Local Spotlights */}
-            {isStarted && seq === 'WAIT_HEAT' && <LocalSpotlight targetId="tutorial-heat" label="Ignite Furnace" />}
-            {isStarted && seq === 'WAIT_PUMP' && <LocalSpotlight targetId="tutorial-bellows" label="Pump Bellows" />}
+            {/* Local Spotlight 모델링 적용 */}
+            {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && (
+                <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />
+            )}
 
             <ConfirmationModal 
                 isOpen={showSkipConfirm}
@@ -289,11 +491,6 @@ const TutorialScene: React.FC = () => {
                 onCancel={() => setShowSkipConfirm(false)}
                 isDanger={true}
             />
-
-            <style>{`
-                @keyframes flash-out { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
-                .animate-flash-out { animation: flash-out 0.8s ease-out forwards; }
-            `}</style>
         </div>
     );
 };

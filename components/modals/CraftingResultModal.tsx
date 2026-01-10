@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
-// Added missing 'Sparkles' import from lucide-react
-import { Hammer, Sword, Shield, Zap, Brain, Check, Star, ArrowUp, ArrowDown, Award, Sparkles } from 'lucide-react';
+import { Hammer, Sword, Shield, Zap, Brain, Check, Star, ArrowUp, ArrowDown, Award, Sparkles, Lock } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
 import { EquipmentStats } from '../../models/Equipment';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
@@ -55,7 +54,6 @@ const CraftingResultModal = () => {
     // Animation Effect
     useEffect(() => {
         if (masteryInfo) {
-            // Start from slightly less or zero to show growth
             setAnimatedProgress(0);
             const timer = setTimeout(() => {
                 setAnimatedProgress(masteryInfo.progress);
@@ -91,7 +89,12 @@ const CraftingResultModal = () => {
     const label = getQualityLabel(data.quality);
     const qColor = getQualityColor(data.quality);
 
+    // Tutorial Lock Logic: Disable button during monologue monologue to prevent sequence breaks
+    const isLockedByTutorial = state.tutorialStep === 'CRAFT_RESULT_PROMPT';
+
     const handleFinalize = () => {
+        if (isLockedByTutorial) return;
+
         if (state.tutorialStep === 'FINALIZE_FORGE_GUIDE') {
             actions.setTutorialStep('SHOP_INTRO_PROMPT');
         }
@@ -125,14 +128,10 @@ const CraftingResultModal = () => {
                 {/* Header */}
                 <div className="bg-stone-850 p-4 md:p-6 border-b border-stone-800 flex flex-col items-center text-center shrink-0">
                     
-                    {/* Radial Mastery Gauge around Item */}
                     <div className="relative mb-4 group">
                         <div className={`w-24 h-24 md:w-32 md:h-32 bg-stone-900 rounded-full flex items-center justify-center relative z-10 p-2 md:p-3 border border-stone-800/50 shadow-2xl`}>
-                            {/* Radial SVG Gauge */}
                             <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none scale-105" viewBox="0 0 100 100">
-                                {/* Background Track */}
                                 <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-stone-950/40" />
-                                {/* Progress Arc */}
                                 <circle 
                                     cx="50" cy="50" r="46" 
                                     stroke="currentColor" strokeWidth="4" fill="transparent"
@@ -145,7 +144,6 @@ const CraftingResultModal = () => {
                             
                             <img src={imageUrl} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-2xl z-20 relative" />
                             
-                            {/* Rank Badge */}
                             <div className={`absolute -bottom-1 -right-1 md:bottom-0 md:right-0 z-30 px-1.5 py-0.5 rounded-full border border-stone-700 bg-stone-900 shadow-xl flex items-center gap-1 animate-in slide-in-from-right-2 duration-700`}>
                                 <Star className={`w-2 h-2 md:w-3 md:h-3 fill-current ${masteryInfo.textClass}`} />
                                 <span className={`text-[7px] md:text-[9px] font-black uppercase tracking-tighter ${masteryInfo.textClass}`}>{masteryInfo.label}</span>
@@ -180,10 +178,23 @@ const CraftingResultModal = () => {
                 <div className="p-4 border-t border-stone-800 bg-stone-850 shrink-0">
                     <button 
                         onClick={handleFinalize} 
+                        disabled={isLockedByTutorial}
                         data-tutorial-id="FINALIZE_BUTTON"
-                        className="w-full py-3 md:py-4 bg-amber-700 hover:bg-amber-600 text-white font-black rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 text-xs md:text-base uppercase tracking-widest"
+                        className={`w-full py-3 md:py-4 font-black rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all text-xs md:text-base uppercase tracking-widest border-b-4 ${
+                            isLockedByTutorial 
+                            ? 'bg-stone-800 text-stone-600 border-stone-900 grayscale cursor-not-allowed' 
+                            : 'bg-amber-700 hover:bg-amber-600 text-white border-amber-900 active:scale-95'
+                        }`}
                     >
-                        <Check className="w-4 h-4" /> Finalize Forge
+                        {isLockedByTutorial ? (
+                            <>
+                                <Lock className="w-4 h-4" /> Review Results...
+                            </>
+                        ) : (
+                            <>
+                                <Check className="w-4 h-4" /> Finalize Forge
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

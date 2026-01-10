@@ -33,24 +33,41 @@ interface MainGameLayoutProps {
     onLoadFromSettings: (data: any, index: number) => void;
 }
 
+// 튜토리얼 단계별 설정을 모델화
+type TutorialDirection = 'top' | 'bottom' | 'left' | 'right' | 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
+interface StepConfig {
+    targetId: string;
+    label: string;
+    direction: TutorialDirection;
+}
+
+const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
+    MARKET_GUIDE: { targetId: 'MARKET_TAB', label: 'Visit the Market', direction: 'bottom' },
+    FURNACE_GUIDE: { targetId: 'FURNACE_ITEM', label: 'Select the Furnace', direction: 'bottomright' },
+    OPEN_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Open the Cart', direction: 'topleft' },
+    CLOSE_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Close the Cart', direction: 'topright' },
+    PAY_NOW: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottomleft' },
+    FORGE_TAB_GUIDE: { targetId: 'FORGE_TAB', label: 'Open Forge', direction: 'bottom' },
+    SELECT_SWORD_GUIDE: { targetId: 'SWORD_RECIPE', label: 'Select Sword', direction: 'bottom' },
+    START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', label: 'Start Forging', direction: 'bottom' },
+    FINALIZE_FORGE_GUIDE: { targetId: 'FINALIZE_BUTTON', label: 'Complete Forge', direction: 'bottom' },
+    OPEN_SHOP_TAB_GUIDE: { targetId: 'SHOP_TAB', label: 'Open Shop', direction: 'bottom' },
+    OPEN_SHOP_SIGN_GUIDE: { targetId: 'SHOP_SIGN', label: 'Open the Shop', direction: 'bottom' },
+};
+
 const TutorialOverlay = ({ step, onSkip }: { step: string, onSkip: () => void }) => {
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+    const [animatedRadius, setAnimatedRadius] = useState(2000);
     const requestRef = useRef<number>(null);
+    const animRef = useRef<number>(null);
+    
+    // 모델에서 현재 단계 설정 가져오기
+    const config = TUTORIAL_STEPS_CONFIG[step];
 
     const updateRect = useCallback(() => {
-        let id = '';
-        if (step === 'MARKET_GUIDE') id = 'MARKET_TAB';
-        else if (step === 'FURNACE_GUIDE') id = 'FURNACE_ITEM';
-        else if (step === 'OPEN_SHOPPING_CART' || step === 'CLOSE_SHOPPING_CART') id = 'CART_TOGGLE';
-        else if (step === 'PAY_NOW') id = 'PAY_NOW_BUTTON';
-        else if (step === 'FORGE_TAB_GUIDE') id = 'FORGE_TAB';
-        else if (step === 'SELECT_SWORD_GUIDE') id = 'SWORD_RECIPE';
-        else if (step === 'START_FORGING_GUIDE') id = 'START_FORGING_BUTTON';
-        else if (step === 'FINALIZE_FORGE_GUIDE') id = 'FINALIZE_BUTTON';
-        else if (step === 'OPEN_SHOP_TAB_GUIDE') id = 'SHOP_TAB';
-        else if (step === 'OPEN_SHOP_SIGN_GUIDE') id = 'SHOP_SIGN';
+        if (!config) return;
         
-        const el = document.querySelector(`[data-tutorial-id="${id}"]`);
+        const el = document.querySelector(`[data-tutorial-id="${config.targetId}"]`);
         if (el) {
             const rect = el.getBoundingClientRect();
             if (rect.width > 0 && rect.height > 0) {
@@ -60,34 +77,161 @@ const TutorialOverlay = ({ step, onSkip }: { step: string, onSkip: () => void })
             setTargetRect(null);
         }
         requestRef.current = requestAnimationFrame(updateRect);
-    }, [step]);
+    }, [config]);
+
+    // 반지름 축소 애니메이션 (아이리스 효과)
+    useEffect(() => {
+        if (!targetRect) return;
+        const targetR = Math.max(targetRect.width, targetRect.height) / 1.3;
+        
+        // 단계가 바뀔 때(혹은 타겟이 처음 잡힐 때) 반지름 리셋
+        setAnimatedRadius(2000);
+
+        const startTime = performance.now();
+        const duration = 1300; // 1.3초로 더 천천히 줄어들게 조정
+
+        const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease-out cubic
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            
+            const nextR = 2000 - (2000 - targetR) * easeOut;
+            setAnimatedRadius(nextR);
+
+            if (progress < 1) {
+                animRef.current = requestAnimationFrame(animate);
+            }
+        };
+
+        animRef.current = requestAnimationFrame(animate);
+        return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+    }, [config?.targetId, !!targetRect]);
 
     useEffect(() => {
         requestRef.current = requestAnimationFrame(updateRect);
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
     }, [updateRect]);
 
+    if (!config) return null;
+
     const { top, left, width, height } = targetRect || { top: 0, left: 0, width: 0, height: 0 };
     const centerX = left + width / 2;
     const centerY = top + height / 2;
-    const radius = Math.max(width, height) / 1.3;
 
-    let label = 'Guide';
-    if (step === 'MARKET_GUIDE') label = 'Visit the Market';
-    else if (step === 'FURNACE_GUIDE') label = 'Select the Furnace';
-    else if (step === 'OPEN_SHOPPING_CART') label = 'Open the Cart';
-    else if (step === 'CLOSE_SHOPPING_CART') label = 'Close the Cart';
-    else if (step === 'PAY_NOW') label = 'Finalize Purchase';
-    else if (step === 'FORGE_TAB_GUIDE') label = 'Open Forge';
-    else if (step === 'SELECT_SWORD_GUIDE') label = 'Select Sword';
-    else if (step === 'START_FORGING_GUIDE') label = 'Start Forging';
-    else if (step === 'FINALIZE_FORGE_GUIDE') label = 'Complete Forge';
-    else if (step === 'OPEN_SHOP_TAB_GUIDE') label = 'Open Shop';
-    else if (step === 'OPEN_SHOP_SIGN_GUIDE') label = 'Open the Forge';
+    // 방향에 따른 스타일 및 회전 값 결정
+    let pointerStyles = {};
+    let iconRotation = '';
+    let animationClass = '';
+    let containerLayout = '';
+    let labelMargin = '';
+
+    switch (config.direction) {
+        case 'top':
+            pointerStyles = { left: centerX, top: top - 15, transform: 'translate(-50%, -100%)' };
+            iconRotation = 'rotate(180deg)';
+            animationClass = 'animate-bounce-reverse';
+            containerLayout = 'flex-col-reverse';
+            labelMargin = 'mb-3';
+            break;
+        case 'bottom':
+            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
+            iconRotation = '';
+            animationClass = 'animate-bounce';
+            containerLayout = 'flex-col';
+            labelMargin = 'mt-3';
+            break;
+        case 'left':
+            pointerStyles = { left: left - 15, top: centerY, transform: 'translate(-100%, -50%)' };
+            iconRotation = 'rotate(90deg)';
+            animationClass = 'animate-bounce-x-reverse';
+            containerLayout = 'flex-row-reverse';
+            labelMargin = 'mr-3';
+            break;
+        case 'right':
+            pointerStyles = { left: left + width + 15, top: centerY, transform: 'translateY(-50%)' };
+            iconRotation = 'rotate(-90deg)';
+            animationClass = 'animate-bounce-x';
+            containerLayout = 'flex-row';
+            labelMargin = 'ml-3';
+            break;
+        case 'topleft':
+            pointerStyles = { left: left - 5, top: top - 5, transform: 'translate(-100%, -100%)' };
+            iconRotation = 'rotate(135deg)';
+            animationClass = 'animate-bounce-tl';
+            containerLayout = 'flex-col-reverse items-end';
+            labelMargin = 'mb-2 mr-2';
+            break;
+        case 'topright':
+            pointerStyles = { left: left + 5, top: top - 5, transform: 'translate(0, -100%)' };
+            iconRotation = 'rotate(-135deg)';
+            animationClass = 'animate-bounce-tr';
+            containerLayout = 'flex-col-reverse items-start';
+            labelMargin = 'mb-2 ml-2';
+            break;
+        case 'bottomleft':
+            pointerStyles = { left: left - width - 5, top: top + height + 5, transform: 'translate(0, 0)' };
+            iconRotation = 'rotate(45deg)';
+            animationClass = 'animate-bounce-bl';
+            containerLayout = 'flex-col items-end';
+            labelMargin = 'mt-2 mr-2';
+            break;
+        case 'bottomright':
+            pointerStyles = { left: left + 5, top: top + height + 5, transform: 'translate(0, 0)' };
+            iconRotation = 'rotate(-45deg)';
+            animationClass = 'animate-bounce-br';
+            containerLayout = 'flex-col items-start';
+            labelMargin = 'mt-2 ml-2';
+            break;
+        default:
+            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
+            iconRotation = '';
+            animationClass = 'animate-bounce';
+            containerLayout = 'flex-col';
+            labelMargin = 'mt-3';
+            break;
+    }
 
     return (
         <div className="fixed inset-0 z-[2000] pointer-events-none overflow-hidden">
-            {/* Skip Button Area (Interactive) */}
+            <style>{`
+                @keyframes bounce-x {
+                    0%, 100% { transform: translateX(0); }
+                    50% { transform: translateX(12px); }
+                }
+                @keyframes bounce-x-reverse {
+                    0%, 100% { transform: translateX(0); }
+                    50% { transform: translateX(-12px); }
+                }
+                @keyframes bounce-reverse {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-12px); }
+                }
+                @keyframes bounce-tl {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(8px, 8px); }
+                }
+                @keyframes bounce-tr {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(-8px, -8px); }
+                }
+                @keyframes bounce-bl {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(8px, -8px); }
+                }
+                @keyframes bounce-br {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(-8px, -8px); }
+                }
+                .animate-bounce-x { animation: bounce-x 1s infinite; }
+                .animate-bounce-x-reverse { animation: bounce-x-reverse 1s infinite; }
+                .animate-bounce-reverse { animation: bounce-reverse 1s infinite; }
+                .animate-bounce-tl { animation: bounce-tl 1s infinite; }
+                .animate-bounce-tr { animation: bounce-tr 1s infinite; }
+                .animate-bounce-bl { animation: bounce-bl 1s infinite; }
+                .animate-bounce-br { animation: bounce-br 1s infinite; }
+            `}</style>
+
             <div className="absolute top-4 left-4 pointer-events-auto">
                 <button 
                     onClick={onSkip}
@@ -111,22 +255,32 @@ const TutorialOverlay = ({ step, onSkip }: { step: string, onSkip: () => void })
                         <defs>
                             <mask id="tutorial-mask">
                                 <rect width="100%" height="100%" fill="white" />
-                                <circle cx={centerX} cy={centerY} r={radius} fill="black" />
+                                <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />
                             </mask>
                         </defs>
-                        <rect width="100%" height="100%" fill="rgba(0,0,0,0.75)" mask="url(#tutorial-mask)" />
+                        {/* 스포트라이트 오버레이: 반지름이 줄어들 때 어두운 투명도도 같이 조절하여 부드러운 전환 */}
+                        <rect 
+                            width="100%" 
+                            height="100%" 
+                            fill={`rgba(0,0,0,${Math.min(0.75, 1.5 - (animatedRadius / 1000))})`} 
+                            mask="url(#tutorial-mask)" 
+                        />
                     </svg>
 
-                    <div className="absolute transition-all duration-300 ease-out" style={{ left: centerX, top: top + height + 15, transform: 'translateX(-50%)' }}>
-                        <div className="flex flex-col items-center animate-bounce">
-                            <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" />
-                            <div className="mt-3 px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl whitespace-nowrap border-2 border-amber-400">
-                                {label}
+                    <div 
+                        key={config.targetId}
+                        className="absolute animate-in fade-in zoom-in-95 duration-300" 
+                        style={pointerStyles}
+                    >
+                        <div className={`flex items-center ${containerLayout} ${animationClass}`}>
+                            <Pointer className={`w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]`} style={{ transform: iconRotation.includes('rotate') ? iconRotation : undefined }} />
+                            <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl whitespace-nowrap border-2 border-amber-400`}>
+                                {config.label}
                             </div>
                         </div>
                     </div>
 
-                    <div className="absolute border-2 border-amber-400/50 rounded-full animate-ping pointer-events-none" style={{ left: centerX - radius, top: centerY - radius, width: radius * 2, height: radius * 2 }} />
+                    <div className="absolute border-2 border-amber-400/50 rounded-full animate-ping pointer-events-none" style={{ left: centerX - (Math.max(width, height) / 1.3), top: centerY - (Math.max(width, height) / 1.3), width: (Math.max(width, height) / 1.3) * 2, height: (Math.max(width, height) / 1.3) * 2 }} />
                 </>
             )}
         </div>
@@ -345,14 +499,14 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
           
           <div className={`absolute left-0 top-0 bottom-0 z-30 w-12 flex items-center transition-all duration-300 transform-gpu ${showLeftArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-events-none'}`}>
               <div className="absolute inset-0 bg-gradient-to-r from-stone-900 via-stone-900/90 to-transparent" />
-              <button onClick={() => scrollTabs('LEFT')} className="relative h-full w-full flex items-center pl-2 group/arrow"><ChevronLeft className="w-5 h-5 text-amber-500 group-hover:scale-125 transition-transform drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" /></button>
+              <button onClick={() => scrollTabs('LEFT')} className="relative h-full w-full flex items-center pl-2 group/arrow"><ChevronLeft className="w-5 h-5 text-amber-50 group-hover:scale-125 transition-transform drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" /></button>
           </div>
 
           <div ref={scrollRef} onScroll={updateArrows} className="flex overflow-x-auto no-scrollbar flex-1 min-w-0 touch-pan-x scroll-smooth snap-x snap-mandatory overscroll-behavior-x-contain" style={{ WebkitOverflowScrolling: 'touch' }}>{allTabs.map(tab => renderTabButton(tab))}</div>
 
           <div className={`absolute right-0 top-0 bottom-0 z-30 w-12 flex items-center justify-end transition-all duration-300 transform-gpu ${showRightArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-events-none'}`}>
               <div className="absolute inset-0 bg-gradient-to-l from-stone-900 via-stone-900/90 to-transparent" />
-              <button onClick={() => scrollTabs('RIGHT')} className="relative h-full w-full flex items-center justify-end pr-2 group/arrow"><ChevronRight className="w-5 h-5 text-amber-500 group-hover:scale-125 transition-transform drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" /></button>
+              <button onClick={() => scrollTabs('RIGHT')} className="relative h-full w-full flex items-center justify-end pr-2 group/arrow"><ChevronRight className="w-5 h-5 text-amber-50 group-hover:scale-125 transition-transform drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" /></button>
           </div>
         </div>
       </div>
