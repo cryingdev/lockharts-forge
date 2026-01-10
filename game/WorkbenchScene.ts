@@ -58,15 +58,15 @@ function rdp(points: Point[], epsilon: number): Point[] {
 }
 
 export default class WorkbenchScene extends Phaser.Scene {
-  public add!: Phaser.GameObjects.GameObjectFactory;
-  public tweens!: Phaser.Tweens.TweenManager;
-  public scale!: Phaser.Scale.ScaleManager;
-  public input!: Phaser.Input.InputPlugin;
-  public time!: Phaser.Time.Clock;
-  public load!: Phaser.Loader.LoaderPlugin;
-  public textures!: Phaser.Textures.TextureManager;
-  public events!: Phaser.Events.EventEmitter;
-  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
+  // public add!: Phaser.GameObjects.GameObjectFactory;
+  // public tweens!: Phaser.Tweens.TweenManager;
+  // public scale!: Phaser.Scale.ScaleManager;
+  // public input!: Phaser.Input.InputPlugin;
+  // public time!: Phaser.Time.Clock;
+  // public load!: Phaser.Loader.LoaderPlugin;
+  // public textures!: Phaser.Textures.TextureManager;
+  // public events!: Phaser.Events.EventEmitter;
+  // public cameras!: Phaser.Cameras.Scene2D.CameraManager;
 
   private interactables: Interactable[] = [];
   
