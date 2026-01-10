@@ -49,7 +49,7 @@ const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
     PAY_NOW: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottomleft' },
     FORGE_TAB_GUIDE: { targetId: 'FORGE_TAB', label: 'Open Forge', direction: 'bottom' },
     SELECT_SWORD_GUIDE: { targetId: 'SWORD_RECIPE', label: 'Select Sword', direction: 'bottom' },
-    START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', label: 'Start Forging', direction: 'bottom' },
+    START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', label: 'Start Forging', direction: 'right' },
     FINALIZE_FORGE_GUIDE: { targetId: 'FINALIZE_BUTTON', label: 'Complete Forge', direction: 'bottom' },
     OPEN_SHOP_TAB_GUIDE: { targetId: 'SHOP_TAB', label: 'Open Shop', direction: 'bottom' },
     OPEN_SHOP_SIGN_GUIDE: { targetId: 'SHOP_SIGN', label: 'Open the Shop', direction: 'bottom' },
