@@ -82,10 +82,17 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
         height: Math.floor(el.clientHeight) || 1,
         backgroundColor: '#0c0a09',
         scene: [WorkbenchScene],
+        pauseOnBlur: false,
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
         },
+        callbacks: {
+            postBoot: (game) => {
+                game.events.on('blur', () => {});
+                game.events.on('focus', () => {});
+            }
+        }
       };
 
       const game = new Phaser.Game(config);
@@ -131,8 +138,9 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
   useEffect(() => {
     return () => {
       if (gameRef.current) {
-        gameRef.current.destroy(true);
+        const game = gameRef.current;
         gameRef.current = null;
+        game.destroy(true, false);
       }
     };
   }, []);

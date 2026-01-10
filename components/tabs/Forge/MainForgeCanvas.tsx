@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import MainForgeScene, { MainForgeData } from '../../../game/MainForgeScene';
@@ -40,21 +41,44 @@ const MainForgeCanvas = () => {
 
     let resizeObserver: ResizeObserver | null = null;
 
+    // 만약 이미 게임이 존재한다면, 장면만 재시작하되 컨텍스트가 닫혔는지 확인
     if (gameRef.current) {
-        const scene = gameRef.current.scene.getScene('MainForgeScene');
-        if (scene) {
-            scene.scene.restart(sceneData);
+        try {
+            const scene = gameRef.current.scene.getScene('MainForgeScene');
+            // isRunning이 true이고 renderer 컨텍스트가 유효할 때만 진행
+            if (scene && gameRef.current.isRunning) {
+                scene.scene.restart(sceneData);
+            } else {
+                throw new Error("Context closed or game not running");
+            }
+        } catch (e) {
+            console.warn("Phaser context invalid, recreating game instance.");
+            gameRef.current.destroy(true);
+            gameRef.current = null;
         }
-    } else {
+    }
+
+    if (!gameRef.current) {
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO,
             parent: containerRef.current,
             width: containerRef.current.clientWidth,
             height: containerRef.current.clientHeight,
             backgroundColor: '#0c0a09',
+            pauseOnBlur: false,
             scale: {
                 mode: Phaser.Scale.RESIZE,
                 autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            render: {
+                transparent: false,
+                antialias: true
+            },
+            callbacks: {
+                postBoot: (game) => {
+                    game.events.on('blur', () => {});
+                    game.events.on('focus', () => {});
+                }
             },
             scene: [MainForgeScene],
         };
@@ -63,7 +87,6 @@ const MainForgeCanvas = () => {
         gameRef.current = game;
         game.scene.start('MainForgeScene', sceneData);
 
-        // ResizeObserver for dynamic layout shifts
         resizeObserver = new ResizeObserver((entries) => {
             for (let entry of entries) {
                 const { width, height } = entry.contentRect;
@@ -83,8 +106,9 @@ const MainForgeCanvas = () => {
   useEffect(() => {
       return () => {
           if (gameRef.current) {
-              gameRef.current.destroy(true);
+              const game = gameRef.current;
               gameRef.current = null;
+              game.destroy(true, false); // true: 캔버스 제거, false: 즉시 가비지 컬렉션 허용 시도
           }
       }
   }, []);

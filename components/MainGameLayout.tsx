@@ -43,13 +43,14 @@ interface StepConfig {
 
 const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
     MARKET_GUIDE: { targetId: 'MARKET_TAB', label: 'Visit the Market', direction: 'bottom' },
+    BROWSE_GOODS_GUIDE: { targetId: 'BROWSE_GOODS_BUTTON', label: 'Browse Goods', direction: 'top' },
     FURNACE_GUIDE: { targetId: 'FURNACE_ITEM', label: 'Select the Furnace', direction: 'bottomright' },
     OPEN_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Open the Cart', direction: 'topleft' },
     CLOSE_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Close the Cart', direction: 'topright' },
     PAY_NOW: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottomleft' },
     FORGE_TAB_GUIDE: { targetId: 'FORGE_TAB', label: 'Open Forge', direction: 'bottom' },
     SELECT_SWORD_GUIDE: { targetId: 'SWORD_RECIPE', label: 'Select Sword', direction: 'bottom' },
-    START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', label: 'Start Forging', direction: 'bottom' },
+    START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', label: 'Start Forging', direction: 'right' },
     FINALIZE_FORGE_GUIDE: { targetId: 'FINALIZE_BUTTON', label: 'Complete Forge', direction: 'bottom' },
     OPEN_SHOP_TAB_GUIDE: { targetId: 'SHOP_TAB', label: 'Open Shop', direction: 'bottom' },
     OPEN_SHOP_SIGN_GUIDE: { targetId: 'SHOP_SIGN', label: 'Open the Shop', direction: 'bottom' },
@@ -57,14 +58,13 @@ const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
 
 const TUTORIAL_CONTEXT_SCRIPTS: Record<string, string> = {
     MARKET_GUIDE: "A forge without a roar is just a cold pile of stone. There should be a replacement furnace at the Market... let's head there.",
+    BROWSE_GOODS_GUIDE: "Garrick usually keeps the heavy equipment in the back. Let's see his catalog.",
     FURNACE_GUIDE: "There it is. Not quite the grand hearth of my ancestors, but it will bring fire back to Lockhart's Forge.",
     OPEN_SHOPPING_CART: "I should check my cart before I leave. Accuracy in the ledger is as important as the strike of the hammer.",
     CLOSE_SHOPPING_CART: "The list is complete. Now, let's settle the account and bring the heat home.",
     PAY_NOW: "The gold is yours, the future is mine. Now to return and relight the embers.",
     FORGE_TAB_GUIDE: "The furnace is set. The air smells of potential again. I should prepare to craft my first blade.",
     SELECT_SWORD_GUIDE: "A Bronze Shortsword. A simple pattern, but a reliable test for this new unit.",
-    // START_FORGING_GUIDE is intentionally empty to avoid covering the button
-    // FINALIZE_FORGE_GUIDE removed to avoid overlapping the 'Finalize Forge' button
     OPEN_SHOP_TAB_GUIDE: "A blade without a wielder is just cold metal. Let's see if any travelers seek Lockhart steel.",
     OPEN_SHOP_SIGN_GUIDE: "The forge is alive. The shop must follow. Flip the sign and let them come.",
 };
@@ -395,7 +395,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         }
 
         if (state.tutorialStep === 'MARKET_GUIDE' && id === 'MARKET') {
-            actions.setTutorialStep('FURNACE_GUIDE');
+            actions.setTutorialStep('BROWSE_GOODS_GUIDE');
         } else if (state.tutorialStep === 'FORGE_TAB_GUIDE' && id === 'FORGE') {
             actions.setTutorialStep('SELECT_SWORD_GUIDE');
         } else if (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' && id === 'SHOP') {
