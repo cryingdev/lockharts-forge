@@ -344,9 +344,13 @@ const TutorialScene: React.FC = () => {
                 <div className="absolute inset-0 bg-black/30"></div>
             </div>
 
+            {/* GLOBAL SKIP BUTTON - Unified Style */}
             <div className="absolute top-4 right-4 z-[6000] pointer-events-auto">
-                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-4 py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-50 hover:text-stone-300 rounded-full transition-all text-[11px] font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group">
-                    <FastForward className="w-3.5 h-3.5 group-hover:animate-pulse" /> Skip Tutorial
+                <button 
+                    onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} 
+                    className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500/50 text-stone-300 hover:text-amber-400 rounded-full transition-all text-[10px] md:text-xs font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group ring-2 ring-white/5 active:scale-95"
+                >
+                    <FastForward className="w-3 h-3 md:w-4 md:h-4 group-hover:animate-pulse" /> Skip Tutorial
                 </button>
             </div>
 

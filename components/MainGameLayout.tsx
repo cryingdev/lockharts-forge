@@ -26,6 +26,7 @@ import SettingsModal from './modals/SettingsModal';
 import TutorialScene from './tabs/Forge/TutorialScene';
 import DialogueBox from './DialogueBox';
 import ConfirmationModal from './modals/ConfirmationModal';
+import TutorialCompleteModal from './modals/TutorialCompleteModal';
 
 interface MainGameLayoutProps {
     onQuit: () => void;
@@ -115,37 +116,67 @@ const TutorialOverlay = ({ step }: { step: string }) => {
     let containerLayout = '';
     let labelMargin = '';
 
+    const cardinalBuffer = 12;
+
     switch (config.direction) {
         case 'top':
-            pointerStyles = { left: centerX, top: top - 15, transform: 'translate(-50%, -100%)' };
+            pointerStyles = { left: centerX, top: top - cardinalBuffer, transform: 'translate(-50%, -100%)' };
             iconRotation = 'rotate(180deg)';
             animationClass = 'animate-bounce-reverse';
             containerLayout = 'flex-col-reverse';
             labelMargin = 'mb-3';
             break;
         case 'bottom':
-            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
+            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
             iconRotation = '';
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
             labelMargin = 'mt-3';
             break;
         case 'left':
-            pointerStyles = { left: left - 15, top: centerY, transform: 'translate(-100%, -50%)' };
+            pointerStyles = { left: left - cardinalBuffer, top: centerY, transform: 'translate(-100%, -50%)' };
             iconRotation = 'rotate(90deg)';
             animationClass = 'animate-bounce-x-reverse';
             containerLayout = 'flex-row-reverse';
             labelMargin = 'mr-3';
             break;
         case 'right':
-            pointerStyles = { left: left + width + 15, top: centerY, transform: 'translateY(-50%)' };
+            pointerStyles = { left: left + width + cardinalBuffer, top: centerY, transform: 'translateY(-50%)' };
             iconRotation = 'rotate(-90deg)';
             animationClass = 'animate-bounce-x';
             containerLayout = 'flex-row';
             labelMargin = 'ml-3';
             break;
+        case 'topleft':
+            pointerStyles = { left, top, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(135deg)';
+            animationClass = 'animate-bounce-tl';
+            containerLayout = 'flex-col-reverse items-end';
+            labelMargin = 'mb-2 mr-2';
+            break;
+        case 'topright':
+            pointerStyles = { left: left + width, top, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(-135deg)';
+            animationClass = 'animate-bounce-tr';
+            containerLayout = 'flex-col-reverse items-start';
+            labelMargin = 'mb-2 ml-2';
+            break;
+        case 'bottomleft':
+            pointerStyles = { left, top: top + height, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(45deg)';
+            animationClass = 'animate-bounce-bl';
+            containerLayout = 'flex-col items-end';
+            labelMargin = 'mt-2 mr-2';
+            break;
+        case 'bottomright':
+            pointerStyles = { left: left + width, top: top + height, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(-45deg)';
+            animationClass = 'animate-bounce-br';
+            containerLayout = 'flex-col items-start';
+            labelMargin = 'mt-2 ml-2';
+            break;
         default:
-            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
+            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
             iconRotation = '';
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
@@ -159,9 +190,17 @@ const TutorialOverlay = ({ step }: { step: string }) => {
                 @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
                 @keyframes bounce-x-reverse { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
                 @keyframes bounce-reverse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+                @keyframes bounce-tl { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-8px, -8px); } }
+                @keyframes bounce-tr { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, -8px); } }
+                @keyframes bounce-bl { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-8px, 8px); } }
+                @keyframes bounce-br { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, 8px); } }
                 .animate-bounce-x { animation: bounce-x 1s infinite; }
                 .animate-bounce-x-reverse { animation: bounce-x-reverse 1s infinite; }
                 .animate-bounce-reverse { animation: bounce-reverse 1s infinite; }
+                .animate-bounce-tl { animation: bounce-tl 1s infinite; }
+                .animate-bounce-tr { animation: bounce-tr 1s infinite; }
+                .animate-bounce-bl { animation: bounce-bl 1s infinite; }
+                .animate-bounce-br { animation: bounce-br 1s infinite; }
             `}</style>
 
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
@@ -306,14 +345,14 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   return (
     <div className="h-[100dvh] w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500 px-safe">
       
-      {/* GLOBAL SKIP BUTTON - Always on top during tutorial */}
+      {/* GLOBAL SKIP BUTTON - Unified Style */}
       {isAnyTutorialActive && (
           <div className="fixed top-4 right-4 z-[6000] pointer-events-auto">
               <button 
                 onClick={() => setShowSkipConfirm(true)} 
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-50 hover:text-stone-300 rounded-full transition-all text-[10px] font-black uppercase tracking-tighter shadow-2xl backdrop-blur-md group ring-2 ring-amber-500/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500/50 text-stone-300 hover:text-amber-400 rounded-full transition-all text-[10px] md:text-xs font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group ring-2 ring-white/5 active:scale-95"
               >
-                  <FastForward className="w-3 h-3 group-hover:animate-pulse" /> Skip Tutorial
+                  <FastForward className="w-3 h-3 md:w-4 md:h-4 group-hover:animate-pulse" /> Skip Tutorial
               </button>
           </div>
       )}
@@ -370,6 +409,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
       <div className="h-[env(safe-area-inset-bottom)] bg-stone-900 shrink-0"></div>
       <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} />
+      <TutorialCompleteModal />
       <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Skipping will unlock all systems immediately. Grant full access?" confirmLabel="Yes, Skip It" cancelLabel="Continue Guide" onConfirm={() => { actions.completeTutorial(); setShowSkipConfirm(false); }} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
     </div>
   );

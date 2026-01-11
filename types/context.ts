@@ -1,4 +1,3 @@
-
 import { GameState, GameSettings } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -73,6 +72,7 @@ export interface GameContextType {
     completePrologue: () => void;
     // Added missing completeTutorial action
     completeTutorial: () => void;
+    dismissTutorialComplete: () => void;
 
     updateSettings: (settings: Partial<GameSettings>) => void;
 

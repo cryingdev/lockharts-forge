@@ -1,4 +1,3 @@
-
 import { GameEvent } from '../types/events';
 import { EquipmentItem, InventoryItem } from '../types/inventory';
 import { EquipmentSlotType } from '../models/Equipment';
@@ -55,6 +54,7 @@ export type GameAction =
   | { type: 'SET_ACTIVE_TUTORIAL_SCENE'; payload: TutorialSceneMode | null }
   | { type: 'COMPLETE_PROLOGUE' }
   | { type: 'COMPLETE_TUTORIAL' }
+  | { type: 'DISMISS_TUTORIAL_COMPLETE' }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<GameSettings> }
   // Manual Dungeon Actions
   | { type: 'START_MANUAL_DUNGEON'; payload: { dungeonId: string; partyIds: string[] } }
