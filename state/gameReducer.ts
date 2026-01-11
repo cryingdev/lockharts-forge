@@ -1,4 +1,3 @@
-
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -103,11 +102,14 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             unlockedTabs: finalTabs,
             stats: {
                 ...state.stats,
-                tierLevel: 1 // Advance to Tier 1 immediately on skip
+                tierLevel: Math.max(state.stats.tierLevel, 1) // Advance to Tier 1 immediately on skip
             },
             forge: { ...state.forge, hasFurnace: true }, // Ensure furnace is restored if skipped
-            logs: ["Tutorial skipped. Lockhart's Forge is fully operational.", ...state.logs]
+            showTutorialCompleteModal: true,
+            logs: ["Tutorial completed. Lockhart's Forge is fully operational.", ...state.logs]
         };
+    case 'DISMISS_TUTORIAL_COMPLETE':
+        return { ...state, showTutorialCompleteModal: false };
 
     // User Preferences
     case 'UPDATE_SETTINGS':

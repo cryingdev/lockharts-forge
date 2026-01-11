@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
@@ -26,9 +25,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-200 px-[10%] py-[15%]" onClick={onCancel}>
+        <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-200 px-[10%] py-[15%]" onClick={onCancel}>
             <div 
-                className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-[90vw] max-w-[400px] h-fit max-h-full min-h-[180px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto"
+                className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-[88vw] max-w-[400px] h-fit max-h-full min-h-[180px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -46,7 +45,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     </p>
                 </div>
 
-                {/* Footer - 모바일에서 버튼이 영역을 벗어나지 않도록 flex-col 대응 */}
+                {/* Footer - Vertical stack for mobile */}
                 <div className="p-4 md:p-6 bg-stone-900 border-t border-stone-800 flex flex-col-reverse sm:flex-row gap-2 md:gap-3 shrink-0">
                     <button 
                         onClick={onCancel}

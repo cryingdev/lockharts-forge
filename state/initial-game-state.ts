@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { MATERIALS } from '../data/materials';
@@ -63,6 +62,7 @@ export const createInitialGameState = (): GameState => ({
     isCrafting: false,
     showSleepModal: false,
     showJournal: false,
+    showTutorialCompleteModal: false,
     toast: null,
     
     // Progression

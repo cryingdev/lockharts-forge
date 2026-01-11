@@ -1,11 +1,13 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameProvider } from './context/GameContext';
 import IntroScreen from './components/IntroScreen';
 import TitleScreen from './components/TitleScreen';
+// Fix: Use default import for MainGameLayout as it is exported as default in its source file
 import MainGameLayout from './components/MainGameLayout';
 import { getNextAvailableSlot } from './utils/saveSystem';
 import { GameState } from './types/game-state';
+// Moved useGame import from line 72 to the top of the file
+import { useGame } from './context/GameContext';
 
 type GameView = 'INTRO' | 'TITLE' | 'GAME';
 
@@ -72,7 +74,6 @@ const App = () => {
  * GameLoader 컴포넌트:
  * GameProvider 내부에서 실행되어, 로드할 데이터가 있는 경우 상태를 즉시 교체합니다.
  */
-import { useGame } from './context/GameContext';
 const GameLoader: React.FC<{ initialData: GameState | null, children: React.ReactNode }> = ({ initialData, children }) => {
     const { actions } = useGame();
     const isFirstRun = React.useRef(true);

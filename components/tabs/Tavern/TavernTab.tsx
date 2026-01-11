@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { createRandomMercenary, getUnmetNamedMercenary } from '../../../utils/mercenaryGenerator';
 import { Heart, PlusCircle, Coins, Lock, CalendarClock, Map, Zap, UserPlus, AlertTriangle } from 'lucide-react';
@@ -28,13 +29,24 @@ const EnergyBattery = ({ value }: { value: number }) => {
     );
 };
 
-const TavernTab = () => {
+interface TavernTabProps {
+    activeTab?: string;
+}
+
+const TavernTab: React.FC<TavernTabProps> = ({ activeTab }) => {
     const { state, actions } = useGame();
     const { gold } = state.stats;
     const [selectedMercId, setSelectedMercId] = useState<string | null>(null);
     const [mercToRecall, setMercToRecall] = useState<string | null>(null);
 
     const SCOUT_COST = 50;
+
+    // 탭이 전환되었을 때(활성 탭이 TAVERN이 아니게 될 때) 선택된 용병 초기화
+    useEffect(() => {
+        if (activeTab !== 'TAVERN') {
+            setSelectedMercId(null);
+        }
+    }, [activeTab]);
 
     const handleScout = () => {
         if (state.stats.gold < SCOUT_COST) {

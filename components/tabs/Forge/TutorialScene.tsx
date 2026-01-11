@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
 import { getAssetUrl } from '../../../utils';
 import { TutorialSceneMode } from '../../../types/game-state';
-import { Flame, Zap, Pointer, FastForward } from 'lucide-react';
+// Fix: changed 'HandPointer' to 'Pointer' as it is the correct name in lucide-react
+import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 
 type SequenceStep = 
@@ -24,6 +24,11 @@ interface SceneStepConfig {
     direction: TutorialDirection;
 }
 
+const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
+    WAIT_HEAT: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
+    WAIT_PUMP: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
+};
+
 const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
     PROLOGUE_0: { text: "I have just returned from the hill after burying my family... My hands, stained with earth, are still trembling." },
     PROLOGUE_1: { text: "The forge has been ruthlessly trampled by their hands. Everything I built... gone in a single night of fire and blood." },
@@ -39,11 +44,6 @@ const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
     FURNACE_BELLOWS_MONO: { text: "If the temperature drops below 400°C, the bellows won't be enough to bring it back to a roar. I must act while the embers are hot." },
     FURNACE_PUMP_PROMPT: { text: "Let's see if we can reach the forging temperature. Pump it to the limit!" },
     FURNACE_MAXED: { text: "Magnificent. The forge is finally alive and roaring. I'm ready to begin the work of retribution." }
-};
-
-const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
-    WAIT_HEAT: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
-    WAIT_PUMP: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
 };
 
 const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumpedOnce: boolean }) => {
@@ -68,25 +68,17 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
     useEffect(() => {
         if (!targetRect) return;
         const targetR = Math.max(targetRect.width, targetRect.height) / 1.3;
-        
         setAnimatedRadius(2000);
-
         const startTime = performance.now();
         const duration = 1300;
-
         const animate = (now: number) => {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
             const easeOut = 1 - Math.pow(1 - progress, 3);
-            
             const nextR = 2000 - (2000 - targetR) * easeOut;
             setAnimatedRadius(nextR);
-
-            if (progress < 1) {
-                animRef.current = requestAnimationFrame(animate);
-            }
+            if (progress < 1) animRef.current = requestAnimationFrame(animate);
         };
-
         animRef.current = requestAnimationFrame(animate);
         return () => { if (animRef.current !== null) cancelAnimationFrame(animRef.current); };
     }, [step, !!targetRect]);
@@ -102,44 +94,76 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
     const centerX = left + width / 2;
     const centerY = top + height / 2;
 
-    let pointerStyles = {};
+    let pointerStyles: React.CSSProperties = {};
     let iconRotation = '';
     let animationClass = '';
     let containerLayout = '';
     let labelMargin = '';
 
+    const cardinalBuffer = 12;
+
+    // HandPointer (Pointer icon) points UP (North) by default.
+    // translate offsets are fine-tuned to land the finger tip (top-center of svg) on the target point.
     switch (config.direction) {
         case 'top':
-            pointerStyles = { left: centerX, top: top - 15, transform: 'translate(-50%, -100%)' };
-            iconRotation = 'rotate(180deg)';
+            pointerStyles = { left: centerX, top: top - cardinalBuffer, transform: 'translate(-50%, -100%)' };
+            iconRotation = 'rotate(180deg)'; // Point DOWN
             animationClass = 'animate-bounce-reverse';
             containerLayout = 'flex-col-reverse';
             labelMargin = 'mb-3';
             break;
         case 'bottom':
-            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
-            iconRotation = '';
+            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
+            iconRotation = 'rotate(0deg)'; // Point UP
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
             labelMargin = 'mt-3';
             break;
         case 'left':
-            pointerStyles = { left: left - 15, top: centerY, transform: 'translate(-100%, -50%)' };
-            iconRotation = 'rotate(90deg)';
+            pointerStyles = { left: left - cardinalBuffer, top: centerY, transform: 'translate(-100%, -50%)' };
+            iconRotation = 'rotate(90deg)'; // Point RIGHT
             animationClass = 'animate-bounce-x-reverse';
             containerLayout = 'flex-row-reverse';
             labelMargin = 'mr-3';
             break;
         case 'right':
-            pointerStyles = { left: left + width + 15, top: centerY, transform: 'translateY(-50%)' };
-            iconRotation = 'rotate(-90deg)';
+            pointerStyles = { left: left + width + cardinalBuffer, top: centerY, transform: 'translateY(-50%)' };
+            iconRotation = 'rotate(-90deg)'; // Point LEFT
             animationClass = 'animate-bounce-x';
             containerLayout = 'flex-row';
             labelMargin = 'ml-3';
             break;
+        case 'topleft':
+            pointerStyles = { left, top, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(135deg)'; // SE
+            animationClass = 'animate-bounce-tl';
+            containerLayout = 'flex-col-reverse items-end';
+            labelMargin = 'mb-2 mr-2';
+            break;
+        case 'topright':
+            pointerStyles = { left: left + width, top, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(-135deg)'; // SW
+            animationClass = 'animate-bounce-tr';
+            containerLayout = 'flex-col-reverse items-start';
+            labelMargin = 'mb-2 ml-2';
+            break;
+        case 'bottomleft':
+            pointerStyles = { left, top: top + height, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(45deg)'; // NE
+            animationClass = 'animate-bounce-bl';
+            containerLayout = 'flex-col items-end';
+            labelMargin = 'mt-2 mr-2';
+            break;
+        case 'bottomright':
+            pointerStyles = { left: left + width, top: top + height, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(-45deg)'; // NW
+            animationClass = 'animate-bounce-br';
+            containerLayout = 'flex-col items-start';
+            labelMargin = 'mt-2 ml-2';
+            break;
         default:
-            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
-            iconRotation = '';
+            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
+            iconRotation = 'rotate(0deg)';
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
             labelMargin = 'mt-3';
@@ -173,12 +197,12 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
             </div>
 
             <div 
-                key={`${config.targetId}-${currentLabel}`}
+                key={`${config.targetId}-${currentLabel}-${config.direction}`}
                 className="absolute animate-in fade-in zoom-in-95 duration-300" 
                 style={pointerStyles}
             >
                 <div className={`flex items-center ${containerLayout} ${animationClass}`}>
-                    <Pointer className={`w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]`} style={{ transform: iconRotation.includes('rotate') ? iconRotation : undefined }} />
+                    <Pointer className={`w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]`} style={{ transform: iconRotation }} />
                     <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl whitespace-nowrap border-2 border-amber-400`}>
                         {currentLabel}
                     </div>
@@ -301,12 +325,16 @@ const TutorialScene: React.FC = () => {
 
     return (
         <div 
-            className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer"
+            className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer px-safe"
             onClick={handleStart}
         >
             <style>{`
                 @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
+                @keyframes bounce-x-reverse { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
+                @keyframes bounce-reverse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
                 .animate-bounce-x { animation: bounce-x 1s infinite; }
+                .animate-bounce-x-reverse { animation: bounce-x-reverse 1s infinite; }
+                .animate-bounce-reverse { animation: bounce-reverse 1s infinite; }
                 @keyframes flash-out { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
                 .animate-flash-out { animation: flash-out 0.8s ease-out forwards; }
             `}</style>
@@ -316,9 +344,13 @@ const TutorialScene: React.FC = () => {
                 <div className="absolute inset-0 bg-black/30"></div>
             </div>
 
-            <div className="absolute top-4 left-4 z-[4000] pointer-events-auto">
-                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-4 py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-500 hover:text-stone-300 rounded-full transition-all text-[11px] font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group">
-                    <FastForward className="w-3.5 h-3.5 group-hover:animate-pulse" /> Skip Tutorial
+            {/* GLOBAL SKIP BUTTON - Unified Style */}
+            <div className="absolute top-4 right-4 z-[6000] pointer-events-auto">
+                <button 
+                    onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} 
+                    className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500/50 text-stone-300 hover:text-amber-400 rounded-full transition-all text-[10px] md:text-xs font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group ring-2 ring-white/5 active:scale-95"
+                >
+                    <FastForward className="w-3 h-3 md:w-4 md:h-4 group-hover:animate-pulse" /> Skip Tutorial
                 </button>
             </div>
 
@@ -328,6 +360,10 @@ const TutorialScene: React.FC = () => {
                 <div className="relative z-20 flex flex-col items-center animate-pulse pointer-events-none">
                     <span className="text-amber-500 font-black uppercase tracking-[0.4em] text-[10px] md:text-sm drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]">{promptText}</span>
                 </div>
+            )}
+
+            {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && (
+                <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />
             )}
 
             {isStarted && mode === 'FURNACE_RESTORED' && (
@@ -354,12 +390,10 @@ const TutorialScene: React.FC = () => {
             )}
 
             {isStarted && (
-                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 pointer-events-none">
+                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-[5000] pointer-events-none">
                     <DialogueBox speaker={mode === 'PROLOGUE' || seq !== 'FINAL_TALK' ? "Lockhart" : "Master Smith"} text={dialogue.text} options={['WAIT_HEAT', 'WAIT_PUMP'].includes(seq) ? [] : [{ label: "Continue", action: handleNext, variant: 'primary' }]} className="w-full relative pointer-events-auto" />
                 </div>
             )}
-
-            {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />}
 
             <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked." confirmLabel="Skip Everything" cancelLabel="Keep Playing" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
         </div>

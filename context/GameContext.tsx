@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -172,8 +171,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     setTutorialStep: (step: GameState['tutorialStep']) => dispatch({ type: 'SET_TUTORIAL_STEP', payload: step }),
     setTutorialScene: (mode: GameState['activeTutorialScene']) => dispatch({ type: 'SET_ACTIVE_TUTORIAL_SCENE', payload: mode }),
     completePrologue: () => dispatch({ type: 'COMPLETE_PROLOGUE' }),
-    // Added missing completeTutorial implementation
-    completeTutorial: () => dispatch({ type: 'COMPLETE_TUTORIAL' })
+    completeTutorial: () => dispatch({ type: 'COMPLETE_TUTORIAL' }),
+    dismissTutorialComplete: () => dispatch({ type: 'DISMISS_TUTORIAL_COMPLETE' })
   }), [dispatch]); 
 
   return (

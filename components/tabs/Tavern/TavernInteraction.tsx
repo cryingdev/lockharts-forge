@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { ArrowLeft, Heart, Coins, Gift, MessageSquare, UserPlus, Info, Zap, Package, X, ChevronRight, Search, Wrench, LogOut, Star, UserMinus, Ban } from 'lucide-react';
+import { ArrowLeft, Heart, Gift, MessageSquare, UserPlus, Package, X, Star, Wrench, Search, UserMinus, Ban } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { Mercenary } from '../../../models/Mercenary';
 import { CONTRACT_CONFIG, calculateHiringCost } from '../../../config/contract-config';
@@ -165,7 +166,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     };
 
     return (
-        <div className="relative h-full w-full bg-stone-950 overflow-hidden flex flex-col items-center justify-center">
+        <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center">
             
             <style>
                 {`
@@ -193,8 +194,18 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            {/* Mercenary Info HUD */}
-            <div className="absolute top-4 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
+            {/* EXIT BUTTON - Top Left */}
+            <button 
+                onClick={onBack}
+                className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 hover:text-red-100 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
+                title="Leave Interaction"
+            >
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                <span className="text-xs font-black uppercase tracking-widest">Back</span>
+            </button>
+
+            {/* Mercenary Info HUD - Shifted down to accommodate the Exit button */}
+            <div className="absolute top-20 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
                         <div className="flex flex-col leading-tight min-w-0">
@@ -282,17 +293,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 {/* Interaction Action Bars */}
                 <div className={`flex flex-col items-end gap-2 w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
                     
-                    {/* Top Row: 나가기 버튼 단독 배치 */}
-                    <div className="flex justify-end w-full">
-                        <button 
-                            onClick={onBack}
-                            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-3 bg-red-950/45 hover:bg-red-900/60 border border-red-900/50 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
-                        >
-                            <LogOut className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
-                        </button>
-                    </div>
-
-                    {/* Bottom Row: 기능 버튼들 (우측 정렬 & 개행 가능) */}
+                    {/* Action Buttons (Right Aligned) */}
                     <div className="flex flex-wrap items-center justify-end gap-1.5 md:gap-3 w-full">
                         <button 
                             onClick={handleTalk}
