@@ -37,7 +37,8 @@ export default class SmithingScene extends Phaser.Scene {
   private approachRing!: Phaser.GameObjects.Graphics;
   private targetOutlineGraphics!: Phaser.GameObjects.Graphics;
 
-  private progressBar!: Phaser.GameObjects.Rectangle;
+  private progressBar!: Phaser.GameObjects.Graphics;
+  private progBg!: Phaser.GameObjects.Graphics;
   private comboText!: Phaser.GameObjects.Text;
   private infoText!: Phaser.GameObjects.Text;
   private qualityText!: Phaser.GameObjects.Text;
@@ -49,13 +50,11 @@ export default class SmithingScene extends Phaser.Scene {
   private billetImage?: Phaser.GameObjects.Image;
   private manualControlsContainer!: Phaser.GameObjects.Container;
   
-  // Tool Switcher UI
   private toolSwitcherContainer!: Phaser.GameObjects.Container;
   private hammerBtn!: Phaser.GameObjects.Container;
   private tongsBtn!: Phaser.GameObjects.Container;
   private currentTool: SmithingTool = 'HAMMER';
 
-  // Gizmo dragging state
   private isRotatingManual = false;
   private isMovingManualX = false;
   private isMovingManualY = false;
@@ -66,7 +65,6 @@ export default class SmithingScene extends Phaser.Scene {
   private isSnapped = false;
   private snapTween?: Phaser.Tweens.Tween;
 
-  // Outline based hit area
   private hitPoly!: Phaser.Geom.Polygon;
   private outlineCache: Map<string, Point[]> = new Map();
 
@@ -105,17 +103,19 @@ export default class SmithingScene extends Phaser.Scene {
   private currentSpeedMult = 1.0;
 
   private readonly UI_PAD_TOP = 18;
-  private readonly UI_PAD_SIDE = 12; 
-  private readonly UI_PAD_BOTTOM = 24;
-  private readonly UI_GAP = 14;
+  private readonly UI_PAD_SIDE = 16; 
+  private readonly UI_PAD_BOTTOM = 28;
+  private readonly UI_GAP = 18;
 
-  private readonly TEMP_GAUGE_H_MIN = 110;
+  private readonly TEMP_GAUGE_H_MIN = 80;
 
-  private tempBar!: Phaser.GameObjects.Rectangle;
+  private tempBarGraphics!: Phaser.GameObjects.Graphics;
+  private tempBgGraphics!: Phaser.GameObjects.Graphics;
   private tempValueText!: Phaser.GameObjects.Text;
 
   private bellowsContainer!: Phaser.GameObjects.Container;
   private bellowsSprite!: Phaser.GameObjects.Sprite;
+  private bellowsBg!: Phaser.GameObjects.Arc;
 
   private heatUpBtnContainer!: Phaser.GameObjects.Container;
   private uiContainer!: Phaser.GameObjects.Container;
@@ -134,11 +134,9 @@ export default class SmithingScene extends Phaser.Scene {
   private readonly BILLET_W_ON_ANVIL = 0.80; 
   private readonly BILLET_ANGLE_DEG = -12;
 
-  // 마그넷 스냅 임계값
   private readonly SNAP_DIST_THRESHOLD = 25;
   private readonly SNAP_ANGLE_THRESHOLD = Phaser.Math.DegToRad(6);
 
-  // 모루 타격 지점 상수 (원본 이미지 크기: 1024x559 기준)
   private readonly ANVIL_ORIGINAL_W = 1024;
   private readonly ANVIL_ORIGINAL_H = 559;
   private readonly ANVIL_HIT_X = 630;
@@ -200,8 +198,6 @@ export default class SmithingScene extends Phaser.Scene {
     this.load.image('blade_stage_4', getAssetUrl('billet_blade_04.png'));
     this.load.image('blade_stage_5', getAssetUrl('billet_blade_05.png'));
     this.load.spritesheet('bellows', getAssetUrl('bellows_sprite.png'), { frameWidth: 298, frameHeight: 188 });
-    
-    // Tools UI assets
     this.load.image('icon_hammer', getAssetUrl('hammer.png'));
     this.load.image('icon_tongs', getAssetUrl('tongs.png'));
   }
@@ -261,18 +257,25 @@ export default class SmithingScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer, objs: any[]) => {
         const x = pointer.x; const y = pointer.y;
         
-        if (this.isBellowsClick(objs)) { this.pumpBellows(); return; }
-        if (this.isHeatUpClick(objs)) { this.requestHeatUp(); return; }
-        if (objs.some(obj => obj.parentContainer === this.toolSwitcherContainer || obj === this.toolSwitcherContainer)) return;
+        // 버튼 클릭 여부 확인
+        const isBellowsClick = this.isBellowsClick(objs);
+        const isHeatUpClick = this.isHeatUpClick(objs);
+        // 도구 전환 UI 클릭 여부 확인
+        const isSwitcherClick = objs.some(obj => obj.parentContainer === this.toolSwitcherContainer || obj === this.toolSwitcherContainer);
+        
+        // UI 요소를 직접 클릭한 경우 동작 처리
+        if (isBellowsClick) { this.pumpBellows(); return; }
+        if (isHeatUpClick) { this.requestHeatUp(); return; }
+        
+        // UI 클릭이 아니거나 빈 공간인 경우 타격 가능하도록 수정 (이전의 isRightPanelArea 제한 제거)
+        if (isSwitcherClick) return;
 
         if (!this.isPlaying) { this.handleStartTap(x, y); return; }
 
         if (this.currentTool === 'HAMMER') {
-          // 아웃라인 내부 타격 여부 체크
           if (this.isPointerInHitArea(x, y)) {
             this.handleHammerSwing(x, y);
           } else { 
-            // 아웃라인 밖을 때렸을 때 (모루 위인지 배경인지에 따라 피드백 다르게 가능)
             const isOnAnvil = this.anvilImage.getBounds().contains(x, y);
             this.handleMiss(x, y, isOnAnvil ? 'STRUCK ANVIL' : 'MISS'); 
           }
@@ -322,9 +325,9 @@ export default class SmithingScene extends Phaser.Scene {
     this.root.add(this.toolSwitcherContainer);
 
     const createToolBtn = (x: number, y: number, key: string, tool: SmithingTool) => {
-        const size = 64;
-        const bg = this.add.circle(0, 0, size/2, 0x1c1917, 0.85).setStrokeStyle(3, 0x57534e).setInteractive({ useHandCursor: true });
-        const icon = this.add.image(0, 0, key).setDisplaySize(size * 0.6, size * 0.6);
+        const size = 110; 
+        const bg = this.add.circle(0, 0, size/2, 0x1c1917, 0.9).setStrokeStyle(5, 0x57534e).setInteractive({ useHandCursor: true });
+        const icon = this.add.image(0, 0, key).setDisplaySize(size * 0.65, size * 0.65);
         const container = this.add.container(x, y, [bg, icon]);
         
         bg.on('pointerdown', (p: any, lx: any, ly: any, event: any) => {
@@ -334,14 +337,14 @@ export default class SmithingScene extends Phaser.Scene {
             } else {
                 this.switchTool(tool);
             }
-            this.tweens.add({ targets: container, scale: 0.9, duration: 60, yoyo: true });
+            this.tweens.add({ targets: container, scale: 0.85, duration: 80, yoyo: true });
         });
 
         return container;
     };
 
     this.hammerBtn = createToolBtn(0, 0, 'icon_hammer', 'HAMMER');
-    this.tongsBtn = createToolBtn(75, 0, 'icon_tongs', 'TONGS');
+    this.tongsBtn = createToolBtn(125, 0, 'icon_tongs', 'TONGS'); 
     this.toolSwitcherContainer.add([this.hammerBtn, this.tongsBtn]);
   }
 
@@ -352,10 +355,10 @@ export default class SmithingScene extends Phaser.Scene {
     const tonBg = this.tongsBtn.list[0] as Phaser.GameObjects.Arc;
 
     if (tool === 'HAMMER') {
-        hamBg.setStrokeStyle(4, 0xfbbf24);
+        hamBg.setStrokeStyle(6, 0xfbbf24);
         hamBg.setFillStyle(0x451a03, 1);
-        tonBg.setStrokeStyle(3, 0x57534e);
-        tonBg.setFillStyle(0x1c1917, 0.85);
+        tonBg.setStrokeStyle(4, 0x57534e);
+        tonBg.setFillStyle(0x1c1917, 0.9);
 
         if (this.manualControlsContainer) this.manualControlsContainer.setVisible(false);
         this.targetRing.setVisible(this.isPlaying);
@@ -363,10 +366,10 @@ export default class SmithingScene extends Phaser.Scene {
         if (this.isPlaying) this.resetRing();
         this.targetOutlineGraphics.setVisible(false);
     } else {
-        tonBg.setStrokeStyle(4, 0xfbbf24);
+        tonBg.setStrokeStyle(6, 0xfbbf24);
         tonBg.setFillStyle(0x451a03, 1);
-        hamBg.setStrokeStyle(3, 0x57534e);
-        hamBg.setFillStyle(0x1c1917, 0.85);
+        hamBg.setStrokeStyle(4, 0x57534e);
+        hamBg.setFillStyle(0x1c1917, 0.9);
 
         if (this.manualControlsContainer) this.manualControlsContainer.setVisible(true);
         this.targetRing.setVisible(false);
@@ -433,7 +436,6 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   private checkMagnetSnap() {
-    // TONGS 모드가 아니면 자석 효과를 적용하지 않음
     if (this.currentTool !== 'TONGS') return;
     if (this.isSnapped || (this.snapTween && this.snapTween.isPlaying())) return;
 
@@ -472,10 +474,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   private applyKickback(intensity: number) {
       if (!this.billetContainer) return;
-      
-      // 타격 시 스냅 상태 해제
       this.isSnapped = false;
-      
       const posRange = intensity * 15;
       const angleRange = intensity * 8;
       const dx = Phaser.Math.FloatBetween(-posRange, posRange);
@@ -497,30 +496,35 @@ export default class SmithingScene extends Phaser.Scene {
   private isHeatUpClick(objs: any[]) { return objs.includes(this.heatUpBtnContainer) || this.heatUpBtnContainer.list.some((c) => objs.includes(c)); }
 
   private setupUI() {
-    this.progressBar = this.add.rectangle(0, 25, 0.1, 14, 0xeab308).setOrigin(0, 0.5);
-    const progBg = this.add.rectangle(0, 25, 250, 18, 0x000000, 0.5).setStrokeStyle(2, 0x57534e).setName('progBg').setOrigin(0, 0.5);
+    this.progBg = this.add.graphics();
+    this.progressBar = this.add.graphics();
     this.qualityText = this.add.text(0, 55, 'PRISTINE', { fontFamily: 'Grenze Gotisch', fontSize: '18px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
-    this.uiContainer.add([progBg, this.progressBar, this.qualityText]);
-    this.tempBar = this.add.rectangle(0, 0, 16, 200, 0x3b82f6).setOrigin(0.5, 1).setScale(1, 0);
+    this.uiContainer.add([this.progBg, this.progressBar, this.qualityText]);
+    
+    this.tempBgGraphics = this.add.graphics();
+    this.tempBarGraphics = this.add.graphics();
     this.tempValueText = this.add.text(0, 0, '20°C', { fontFamily: 'Grenze', fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-    this.uiContainer.add([
-      this.add.rectangle(0, 0, 28, 210, 0x1c1917).setStrokeStyle(3, 0x57534e).setName('tempFrame'),
-      this.add.rectangle(0, 0, 22, 200, 0x0c0a09).setName('tempBg'),
-      this.tempBar, this.tempValueText,
-    ]);
+    this.uiContainer.add([this.tempBgGraphics, this.tempBarGraphics, this.tempValueText]);
+
+    const r = 48; 
+
+    // Bellows 버튼 구성 (Heat 버튼과 스타일 통일)
     this.bellowsContainer = this.add.container(0, 0);
-    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(1); 
-    const pumpTxt = this.add.text(0, 22, 'PUMP', { fontSize: '10px', color: '#fde68a', fontFamily: 'Grenze', fontStyle: 'bold' }).setOrigin(0.5);
-    this.bellowsContainer.add([this.bellowsSprite, pumpTxt]).setInteractive(new Phaser.Geom.Rectangle(-149, -94, 298, 188), Phaser.Geom.Rectangle.Contains);
+    this.bellowsBg = this.add.circle(0, 0, r, 0x1c1917, 1).setStrokeStyle(3, 0x10b981).setName('btnBg');
+    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(0.28); // 영역 내 안착을 위해 스케일 소폭 하향
+    const pumpTxt = this.add.text(0, 30, 'PUMP', { fontSize: '12px', color: '#fde68a', fontFamily: 'Grenze', fontStyle: 'bold' }).setOrigin(0.5);
+    this.bellowsContainer.add([this.bellowsBg, this.bellowsSprite, pumpTxt]).setInteractive(new Phaser.Geom.Circle(0, 0, r), Phaser.Geom.Circle.Contains);
     this.bellowsSprite.on('animationcomplete-bellows_pump', () => { this.isPumping = false; });
+    
     this.heatUpBtnContainer = this.add.container(0, 0);
-    const r = 35; 
     const btnBg = this.add.circle(0, 0, r, 0x1c1917, 1).setStrokeStyle(3, 0x57534e).setName('btnBg');
-    const btnIcon = this.add.text(0, -8, '🔥', { fontSize: '18px' }).setOrigin(0.5).setName('btnIcon');
-    const btnLabel = this.add.text(0, 8, 'HEAT', { fontSize: '10px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'Grenze' }).setOrigin(0.5);
-    const countTxt = this.add.text(0, 22, `x${this.charcoalCount}`, { fontSize: '12px', color: '#78716c', fontFamily: 'Grenze' }).setOrigin(0.5).setName('countTxt');
+    const btnIcon = this.add.text(0, -10, '🔥', { fontSize: '24px' }).setOrigin(0.5).setName('btnIcon');
+    const btnLabel = this.add.text(0, 10, 'HEAT', { fontSize: '12px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'Grenze' }).setOrigin(0.5);
+    const countTxt = this.add.text(0, 30, `x${this.charcoalCount}`, { fontSize: '12px', color: '#78716c', fontFamily: 'Grenze' }).setOrigin(0.5).setName('countTxt');
     this.heatUpBtnContainer.add([btnBg, btnIcon, btnLabel, countTxt]).setInteractive(new Phaser.Geom.Circle(0, 0, r), Phaser.Geom.Circle.Contains);
+    
     this.uiContainer.add([this.bellowsContainer, this.heatUpBtnContainer]);
+    
     this.comboText = this.add.text(0, 0, '', { fontFamily: 'Grenze Gotisch', fontSize: '36px', color: '#fcd34d', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setAlpha(0).setDepth(26);
     this.infoText = this.add.text(0, 0, this.isReadyToStart ? 'TOUCH TO START' : 'FORGE IS COLD\nADD FUEL', {
         fontFamily: 'Grenze Gotisch', fontSize: '24px', color: this.isReadyToStart ? '#fbbf24' : '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 5,
@@ -652,7 +656,7 @@ export default class SmithingScene extends Phaser.Scene {
       const basis = Math.min(sw, sh); 
       this.startRadius = Phaser.Math.Clamp(basis * (portrait ? 0.28 : 0.35), 105, 240);
       
-      const isCompact = sh < 450; 
+      const isCompact = sh < 500; 
       this.repositionUI(sw, sh, portrait, isCompact);
       if (this.isPlaying && this.currentTool === 'HAMMER') this.resetRing();
 
@@ -661,8 +665,8 @@ export default class SmithingScene extends Phaser.Scene {
           this.manualControlsContainer.setScale(invScale * (this.uiScale || 1.0));
       }
 
-      const swX = this.UI_PAD_SIDE + 40;
-      const swY = sh - this.UI_PAD_BOTTOM - 20;
+      const swX = this.UI_PAD_SIDE + 65; 
+      const swY = sh - this.UI_PAD_BOTTOM - 40;
       this.toolSwitcherContainer.setPosition(swX, swY).setScale(this.uiScale || 1.0);
     };
     if (this.lastPortrait === undefined) { this.lastPortrait = nextPortrait; this.isPortrait = nextPortrait; apply(w, h, nextPortrait); return; }
@@ -687,38 +691,62 @@ export default class SmithingScene extends Phaser.Scene {
     if (!this.uiContainer) return;
     const padTop = this.UI_PAD_TOP; 
     const padBottom = this.UI_PAD_BOTTOM; const gap = this.UI_GAP;
+    
+    const progWidth = Math.min(sw * (portrait ? 0.72 : 0.6), 340);
+    this.updateProgressBar();
+    this.qualityText.setPosition(this.centerX, padTop + 45).setFontSize(isCompact ? '16px' : '18px');
+
     const sideAreaWidth = Math.min(sw, sh) * 0.18;
     const rightX = sw - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
-    const progBg = this.uiContainer.getByName('progBg') as Phaser.GameObjects.Rectangle;
-    const progWidth = Math.min(sw * (portrait ? 0.72 : 0.6), 340);
-    const progX = this.centerX - progWidth / 2;
-    progBg.setPosition(progX, padTop + 10).setSize(progWidth, 18);
-    this.progressBar.setPosition(progX, padTop + 10);
-    this.updateProgressBar();
-    this.qualityText.setPosition(this.centerX, padTop + 40).setFontSize(isCompact ? '16px' : '18px');
-    const bellowsScale = sideAreaWidth / 298;
-    this.bellowsContainer.setScale(bellowsScale);
-    const heatScale = sideAreaWidth / 70;
-    this.heatUpBtnContainer.setScale(heatScale);
-    const bellowsH = 188 * bellowsScale;
-    const heatUpH = 70 * heatScale;
-    const heatUpY = sh - padBottom - (heatUpH / 2);
-    const bellowsY = heatUpY - (heatUpH / 2) - gap - (bellowsH / 2);
-    this.heatUpBtnContainer.setPosition(rightX, heatUpY); 
-    this.bellowsContainer.setPosition(rightX, bellowsY);
-    const tFrame = this.uiContainer.getByName('tempFrame') as Phaser.GameObjects.Rectangle;
-    const tBg = this.uiContainer.getByName('tempBg') as Phaser.GameObjects.Rectangle;
-    const gaugeTop = padTop + 70; const gaugeBottomLimit = bellowsY - (bellowsH / 2) - gap;
-    const availableH = Math.max(0, gaugeBottomLimit - gaugeTop);
-    let gaugeH = Math.min(availableH, sh * 0.6);
-    if (availableH >= this.TEMP_GAUGE_H_MIN) { gaugeH = Math.max(gaugeH, this.TEMP_GAUGE_H_MIN); } else { gaugeH = availableH; }
-    const gaugeCenterY = gaugeTop + gaugeH / 2;
-    tFrame.setPosition(rightX, gaugeCenterY).setSize(28, gaugeH + 10);
-    tBg.setPosition(rightX, gaugeCenterY).setSize(22, gaugeH);
-    this.tempBar.setSize(16, gaugeH); this.tempBar.setPosition(rightX, gaugeCenterY + gaugeH / 2);
-    this.tempValueText.setPosition(rightX, gaugeCenterY - gaugeH / 2 - 16).setFontSize(isCompact ? '12px' : '14px');
+    const panelStartY = sh * 0.45;
+    const panelEndY = sh - padBottom;
+
+    const btnScale = sideAreaWidth / 100; 
+    const btnH = 100 * btnScale;
+    
+    const heatUpY = panelEndY - (btnH / 2);
+    const bellowsY = heatUpY - (btnH / 2) - gap - (btnH / 2);
+    
+    this.heatUpBtnContainer.setPosition(rightX, heatUpY).setScale(btnScale);
+    this.bellowsContainer.setPosition(rightX, bellowsY).setScale(btnScale);
+    
+    const gaugeTopLimit = panelStartY + 35;
+    const gaugeBottomLimit = bellowsY - (btnH / 2) - gap;
+    const gaugeH = Math.max(this.TEMP_GAUGE_H_MIN, gaugeBottomLimit - gaugeTopLimit);
+    const gaugeCenterY = gaugeTopLimit + (gaugeH / 2);
+
+    this.tempValueText.setPosition(rightX, gaugeCenterY - gaugeH / 2 - 25).setFontSize(isCompact ? '12px' : '14px');
+    
+    this.refreshTempGaugeVisuals(rightX, gaugeCenterY, gaugeH);
+
     const infoY = portrait ? sh * 0.3 : this.centerY - (isCompact ? 80 : 140);
     this.infoText.setPosition(this.centerX, infoY).setFontSize(portrait ? (isCompact ? '20px' : '24px') : (isCompact ? '20px' : '26px'));
+  }
+
+  private refreshTempGaugeVisuals(x: number, y: number, h: number) {
+      const ratio = this.temperature / 100;
+      
+      this.tempBgGraphics.clear();
+      // 배경 라운드 (완전한 캡슐형)
+      this.tempBgGraphics.fillStyle(0x1c1917, 1);
+      this.tempBgGraphics.fillRoundedRect(x - 15, y - (h + 10) / 2, 30, h + 10, 15); 
+      this.tempBgGraphics.lineStyle(3, 0x57534e, 1);
+      this.tempBgGraphics.strokeRoundedRect(x - 15, y - (h + 10) / 2, 30, h + 10, 15);
+      
+      this.tempBgGraphics.fillStyle(0x0c0a09, 1);
+      this.tempBgGraphics.fillRoundedRect(x - 11, y - h / 2, 22, h, 11);
+
+      this.tempBarGraphics.clear();
+      if (ratio > 0) {
+          const barH = h * ratio;
+          let barColor = 0xeab308; 
+          if (ratio < 0.4) barColor = 0x3b82f6; 
+          else if (ratio > 0.7) barColor = 0xef4444;
+          
+          this.tempBarGraphics.fillStyle(barColor, 1);
+          // 바 라운드 (캡슐형)
+          this.tempBarGraphics.fillRoundedRect(x - 8, y + h / 2 - barH, 16, barH, 8); 
+      }
   }
 
   private rebuildHitPoly() {
@@ -784,9 +812,24 @@ export default class SmithingScene extends Phaser.Scene {
 
   private refreshVisuals() {
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
-    const ratio = this.temperature / 100; this.tempBar.scaleY = ratio; this.tempValueText.setText(`${Math.floor(20 + ratio * 1480)}°C`);
-    let barColor = 0xeab308; if (ratio < 0.4) barColor = 0x3b82f6; else if (ratio > 0.7) barColor = 0xef4444;
-    this.tempBar.setFillStyle(barColor);
+    const ratio = this.temperature / 100;
+    this.tempValueText.setText(`${Math.floor(20 + ratio * 1480)}°C`);
+    
+    if (this.tempBarGraphics) {
+        const sideAreaWidth = Math.min(this.viewW, this.viewH) * 0.18;
+        const rightX = this.viewW - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
+        const panelStartY = this.viewH * 0.45;
+        const btnScale = sideAreaWidth / 100;
+        const btnH = 100 * btnScale;
+        const heatUpY = (this.viewH - this.UI_PAD_BOTTOM) - (btnH / 2);
+        const bellowsY = heatUpY - (btnH / 2) - this.UI_GAP - (btnH / 2);
+        const gaugeTopLimit = panelStartY + 35;
+        const gaugeBottomLimit = bellowsY - (btnH / 2) - this.UI_GAP;
+        const gaugeH = Math.max(this.TEMP_GAUGE_H_MIN, gaugeBottomLimit - gaugeTopLimit);
+        const gaugeCenterY = gaugeTopLimit + (gaugeH / 2);
+        this.refreshTempGaugeVisuals(rightX, gaugeCenterY, gaugeH);
+    }
+
     const progress = Phaser.Math.Clamp(this.score / this.targetScore, 0, 1);
     const stage = Math.min(5, Math.floor(progress * 6)); 
     this.setBilletStage(stage);
@@ -826,7 +869,14 @@ export default class SmithingScene extends Phaser.Scene {
     const b = Math.floor(255 + (targetRGB.blue - 255) * colorT);
     const ringColor = Phaser.Display.Color.GetColor(r, g, b);
     const ringAlpha = 0.6 + (colorT * 0.3);
-    this.approachRing.clear().lineStyle(6, ringColor, ringAlpha).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
+    
+    // 외곽 approachRing에도 부드러운 배경 채우기 추가 (요청 사항 반영)
+    this.approachRing.clear()
+        .lineStyle(6, ringColor, ringAlpha)
+        .fillStyle(ringColor, ringAlpha * 0.15) 
+        .fillCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius))
+        .strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
+
     if (this.currentRadius < this.targetRadius - 25) { this.combo = 0; this.resetRing(); }
   }
 
@@ -850,13 +900,34 @@ export default class SmithingScene extends Phaser.Scene {
         attempts++;
     }
     if (this.isPlaying && this.currentTool === 'HAMMER') { 
-      this.targetRing.clear().fillStyle(this.currentTargetColor, 0.2).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(4, this.currentTargetColor, 0.7).strokeCircle(this.hitX, this.hitY, this.targetRadius); 
+      this.targetRing.clear()
+        .fillStyle(this.currentTargetColor, 0.25)
+        .fillCircle(this.hitX, this.hitY, this.targetRadius)
+        .lineStyle(4, this.currentTargetColor, 0.7)
+        .strokeCircle(this.hitX, this.hitY, this.targetRadius); 
     }
   }
 
   private updateProgressBar() {
-    const progBg = this.uiContainer.getByName('progBg') as Phaser.GameObjects.Rectangle;
-    if (!progBg) return; this.progressBar.width = Math.max(0.1, Phaser.Math.Clamp((this.score / this.targetScore) * progBg.width, 0, progBg.width));
+    if (!this.progBg || !this.progressBar) return;
+    const progWidth = Math.min(this.viewW * (this.isPortrait ? 0.72 : 0.6), 340);
+    const progX = this.centerX - progWidth / 2;
+    const padTop = this.UI_PAD_TOP + 10;
+    
+    this.progBg.clear();
+    // 완성도 게이지 배경 채우기
+    this.progBg.fillStyle(0x1c1917, 1);
+    this.progBg.fillRoundedRect(progX, padTop, progWidth, 18, 9); 
+    this.progBg.lineStyle(2, 0x57534e, 1);
+    this.progBg.strokeRoundedRect(progX, padTop, progWidth, 18, 9);
+    
+    this.progressBar.clear();
+    const ratio = Phaser.Math.Clamp(this.score / this.targetScore, 0, 1);
+    if (ratio > 0) {
+        this.progressBar.fillStyle(0xeab308, 1);
+        // 내부 바 라운드 처리 (캡슐형)
+        this.progressBar.fillRoundedRect(progX + 2, padTop + 2, (progWidth - 4) * ratio, 14, 7); 
+    }
   }
 
   private createSparks(count: number, color: number, scale: number, key: string, x: number, y: number) {
@@ -887,6 +958,17 @@ export default class SmithingScene extends Phaser.Scene {
   private pumpBellows() {
     this.isPumping = true; 
     this.bellowsSprite.play('bellows_pump', true); 
+    
+    // 버튼 배경 애니메이션 효과 강화
+    this.tweens.add({
+        targets: this.bellowsBg,
+        alpha: { from: 1, to: 0.7 },
+        scale: { from: 1, to: 1.1 },
+        duration: 150,
+        yoyo: true,
+        ease: 'Cubic.out'
+    });
+
     if (this.temperature > 0) { this.temperature = Math.min(100, this.temperature + 5); if (!this.isPlaying && !this.isReadyToStart) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } }
   }
 
