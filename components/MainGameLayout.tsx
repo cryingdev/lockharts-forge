@@ -41,13 +41,6 @@ interface StepConfig {
 
 const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
     MARKET_GUIDE: { targetId: 'MARKET_TAB', label: 'Visit the Market', direction: 'bottom' },
-    BROWSE_GOODS_GUIDE: { targetId: 'BROWSE_GOODS_BUTTON', label: 'Browse Goods', direction: 'top' },
-    FURNACE_GUIDE: { targetId: 'FURNACE_ITEM', label: 'Select the Furnace', direction: 'bottomright' },
-    OPEN_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Open the Cart', direction: 'topleft' },
-    CLOSE_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Close the Cart', direction: 'topright' },
-    PAY_NOW: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottomleft' },
-    TALK_TO_GARRICK_AFTER_PURCHASE: { targetId: 'GARRICK_TALK_BUTTON', label: 'Talk to Garrick', direction: 'top' },
-    LEAVE_MARKET_GUIDE: { targetId: 'MARKET_BACK_BUTTON', label: 'Return to Forge', direction: 'bottom' },
     FORGE_TAB_GUIDE: { targetId: 'FORGE_TAB', label: 'Open Forge', direction: 'bottom' },
     SELECT_SWORD_GUIDE: { targetId: 'SWORD_RECIPE', label: 'Select Sword', direction: 'bottom' },
     START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', label: 'Start Forging', direction: 'right' },
@@ -58,13 +51,6 @@ const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
 
 const TUTORIAL_CONTEXT_SCRIPTS: Record<string, { speaker: string, text: string }> = {
     MARKET_GUIDE: { speaker: "Lockhart", text: "A forge without a roar is just a cold pile of stone. There should be a replacement furnace at the Market... let's head there." },
-    BROWSE_GOODS_GUIDE: { speaker: "Garrick", text: "Welcome back, smith! I've been keeping the heavy equipment in the back. Open up my catalog and see if something catches your eye." },
-    FURNACE_GUIDE: { speaker: "Garrick", text: "There it is! A fine piece of engineering. It's not as grand as your old one, but it'll bring the fire back to your lineage in no time." },
-    OPEN_SHOPPING_CART: { speaker: "Garrick", text: "Going to settle the bill? Open your cart on the right. I like my ledgers clean, and I'm sure you do too." },
-    CLOSE_SHOPPING_CART: { speaker: "Garrick", text: "Everything look correct? Good. Now close the list so we can talk business and get that unit delivered." },
-    PAY_NOW: { speaker: "Garrick", text: "Hand over the coin, and the future is yours. I'll make sure it's at your doorstep before you even get home." },
-    TALK_TO_GARRICK_AFTER_PURCHASE: { speaker: "Lockhart", text: "I should say goodbye to Garrick before I leave. He's been helpful during this difficult time." },
-    LEAVE_MARKET_GUIDE: { speaker: "Garrick", text: "Safe travels, Lockhart. Don't let those embers go cold again. Come back when you need real steel supplies!" },
     FORGE_TAB_GUIDE: { speaker: "Lockhart", text: "The furnace is set. The air smells of potential again. I should prepare to craft my first blade." },
     SELECT_SWORD_GUIDE: { speaker: "Lockhart", text: "A Bronze Shortsword. A simple pattern, but a reliable test for this new unit." },
     OPEN_SHOP_TAB_GUIDE: { speaker: "Lockhart", text: "A blade without a wielder is just cold metal. Let's see if any travelers seek Lockhart steel." },
@@ -158,49 +144,13 @@ const TutorialOverlay = ({ step }: { step: string }) => {
             containerLayout = 'flex-row';
             labelMargin = 'ml-3';
             break;
-        case 'topleft':
-            pointerStyles = { left: left - 5, top: top - 5, transform: 'translate(-100%, -100%)' };
-            iconRotation = 'rotate(135deg)';
-            animationClass = 'animate-bounce-tl';
-            containerLayout = 'flex-col-reverse items-end';
-            labelMargin = 'mb-2 mr-2';
+        default:
+            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
+            iconRotation = '';
+            animationClass = 'animate-bounce';
+            containerLayout = 'flex-col';
+            labelMargin = 'mt-3';
             break;
-        case 'topright':
-            pointerStyles = { left: left + 5, top: top - 5, transform: 'translate(0, -100%)' };
-            iconRotation = 'rotate(-135deg)';
-            animationClass = 'animate-bounce-tr';
-            containerLayout = 'flex-col-reverse items-start';
-            labelMargin = 'mb-2 ml-2';
-            break;
-        case 'bottomleft':
-            pointerStyles = { left: left - 5, top: top + height + 5, transform: 'translate(-100%, 0)' };
-            iconRotation = 'rotate(45deg)';
-            animationClass = 'animate-bounce-bl';
-            containerLayout = 'flex-col items-end';
-            labelMargin = 'mt-2 mr-2';
-            break;
-        case 'bottomright':
-            pointerStyles = { left: left + 5, top: top + height + 5, transform: 'translate(0, 0)' };
-            iconRotation = 'rotate(-45deg)';
-            animationClass = 'animate-bounce-br';
-            containerLayout = 'flex-col items-start';
-            labelMargin = 'mt-2 ml-2';
-            break;
-    }
-
-    const dialogueOptions = [];
-    if (step === 'BROWSE_GOODS_GUIDE') {
-        dialogueOptions.push({ 
-            label: "Browse Goods", 
-            action: () => actions.setTutorialStep('FURNACE_GUIDE'), 
-            variant: 'primary' as const 
-        });
-    } else if (step === 'TALK_TO_GARRICK_AFTER_PURCHASE') {
-        dialogueOptions.push({ 
-            label: "Talk", 
-            action: () => actions.setTutorialStep('LEAVE_MARKET_GUIDE'), 
-            variant: 'primary' as const 
-        });
     }
 
     return (
@@ -209,32 +159,21 @@ const TutorialOverlay = ({ step }: { step: string }) => {
                 @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
                 @keyframes bounce-x-reverse { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
                 @keyframes bounce-reverse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-                @keyframes bounce-tl { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-8px, -8px); } }
-                @keyframes bounce-tr { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, -8px); } }
-                @keyframes bounce-bl { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-8px, 8px); } }
-                @keyframes bounce-br { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, 8px); } }
                 .animate-bounce-x { animation: bounce-x 1s infinite; }
                 .animate-bounce-x-reverse { animation: bounce-x-reverse 1s infinite; }
                 .animate-bounce-reverse { animation: bounce-reverse 1s infinite; }
-                .animate-bounce-tl { animation: bounce-tl 1s infinite; }
-                .animate-bounce-tr { animation: bounce-tr 1s infinite; }
-                .animate-bounce-bl { animation: bounce-bl 1s infinite; }
-                .animate-bounce-br { animation: bounce-br 1s infinite; }
             `}</style>
 
-            {/* Full-Screen Background Mask */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
                 <defs>
-                    <mask id="tutorial-mask">
+                    <mask id="tutorial-mask-layout">
                         <rect width="100%" height="100%" fill="white" />
-                        {/* Target focus hole */}
                         {targetRect && <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />}
                     </mask>
                 </defs>
-                <rect width="100%" height="100%" fill={`rgba(0,0,0,${Math.min(0.75, 1.5 - (animatedRadius / 1000))})`} mask="url(#tutorial-mask)" />
+                <rect width="100%" height="100%" fill={`rgba(0,0,0,${Math.min(0.75, 1.5 - (animatedRadius / 1000))})`} mask="url(#tutorial-mask-layout)" />
             </svg>
 
-            {/* Interaction Blocking Layer (Hole for Pointer Events) */}
             {targetRect && (
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-0 left-0 w-full pointer-events-auto bg-transparent" style={{ height: top }} />
@@ -244,7 +183,6 @@ const TutorialOverlay = ({ step }: { step: string }) => {
                 </div>
             )}
 
-            {/* Pointer Icon */}
             {targetRect && (
                 <div key={config.targetId} className="absolute animate-in fade-in zoom-in-95 duration-300" style={pointerStyles}>
                     <div className={`flex items-center ${containerLayout} ${animationClass}`}>
@@ -256,13 +194,12 @@ const TutorialOverlay = ({ step }: { step: string }) => {
                 </div>
             )}
 
-            {/* Narrative - Elevated Z-Index to Float Above Mask */}
             {script && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
                     <DialogueBox 
                         speaker={script.speaker} 
                         text={script.text} 
-                        options={dialogueOptions} 
+                        options={[]} 
                         className="w-full relative pointer-events-auto" 
                     />
                 </div>
@@ -381,7 +318,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
           </div>
       )}
 
-      {isAnyTutorialActive && !['TUTORIAL_END_MONOLOGUE', 'PIP_PRAISE', 'DRAGON_TALK', 'CRAFT_PROMPT', 'CRAFT_RESULT_PROMPT', 'SHOP_INTRO_PROMPT'].includes(state.tutorialStep!) && (
+      {isAnyTutorialActive && TUTORIAL_STEPS_CONFIG[state.tutorialStep!] && (
           <TutorialOverlay step={state.tutorialStep!} />
       )}
 

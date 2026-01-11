@@ -1,4 +1,3 @@
-
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -106,7 +105,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
                 tierLevel: 1 // Advance to Tier 1 immediately on skip
             },
             forge: { ...state.forge, hasFurnace: true }, // Ensure furnace is restored if skipped
-            logs: ["Tutorial skipped. Lockhart's Forge is fully operational.", ...state.logs]
+            logs: ["Tutorial completed. Lockhart's Forge is fully operational.", ...state.logs]
         };
 
     // User Preferences

@@ -15,6 +15,7 @@ import {
   MessageSquare,
   ArrowLeft,
   X,
+  Pointer
 } from 'lucide-react';
 import { MATERIALS } from '../../../data/materials';
 import { MARKET_CATALOG } from '../../../data/market/index';
@@ -25,6 +26,254 @@ interface MarketTabProps {
 }
 
 type MarketViewMode = 'INTERACTION' | 'CATALOG';
+
+type SequenceStep = 
+    | 'BROWSE_GOODS_GUIDE'
+    | 'FURNACE_GUIDE'
+    | 'OPEN_SHOPPING_CART'
+    | 'CLOSE_SHOPPING_CART'
+    | 'PAY_NOW'
+    | 'TALK_TO_GARRICK_AFTER_PURCHASE'
+    | 'LEAVE_MARKET_GUIDE';
+
+type TutorialDirection = 'top' | 'bottom' | 'left' | 'right' | 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
+
+interface SceneStepConfig {
+    targetId: string;
+    label: string;
+    direction: TutorialDirection;
+}
+
+const SCENE_STEPS_CONFIG: Record<SequenceStep, SceneStepConfig> = {
+    BROWSE_GOODS_GUIDE: { targetId: 'BROWSE_GOODS_BUTTON', label: 'Browse Goods', direction: 'top' },
+    FURNACE_GUIDE: { targetId: 'FURNACE_ITEM', label: 'Select the Furnace', direction: 'bottomleft' },
+    OPEN_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Open the Cart', direction: 'left' },
+    CLOSE_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Close the Cart', direction: 'right' },
+    PAY_NOW: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottomleft' },
+    TALK_TO_GARRICK_AFTER_PURCHASE: { targetId: 'GARRICK_TALK_BUTTON', label: 'Talk to Garrick', direction: 'top' },
+    LEAVE_MARKET_GUIDE: { targetId: 'MARKET_BACK_BUTTON', label: 'Return to Forge', direction: 'bottom' },
+};
+
+const SCRIPTS: Record<SequenceStep, { speaker: string, text: string }> = {
+    BROWSE_GOODS_GUIDE: { speaker: "Garrick", text: "Welcome back, smith! I've been keeping the heavy equipment in the back. Open up my catalog and see if something catches your eye." },
+    FURNACE_GUIDE: { speaker: "Garrick", text: "There it is! A fine piece of engineering. It's not as grand as your old one, but it'll bring the fire back to your lineage in no time." },
+    OPEN_SHOPPING_CART: { speaker: "Garrick", text: "Going to settle the bill? Open your cart on the right. I like my ledgers clean, and I'm sure you do too." },
+    CLOSE_SHOPPING_CART: { speaker: "Garrick", text: "Everything look correct? Good. Now close the list so we can talk business and get that unit delivered." },
+    PAY_NOW: { speaker: "Garrick", text: "Hand over the coin, and the future is yours. I'll make sure it's at your doorstep before you even get home." },
+    TALK_TO_GARRICK_AFTER_PURCHASE: { speaker: "Lockhart", text: "I should say goodbye to Garrick before I leave. He's been helpful during this difficult time." },
+    LEAVE_MARKET_GUIDE: { speaker: "Garrick", text: "Safe travels, Lockhart. Don't let those embers go cold again. Come back when you need real steel supplies!" },
+};
+
+const LocalSpotlight = ({ step }: { step: SequenceStep }) => {
+    const { actions } = useGame();
+    const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+    const [animatedRadius, setAnimatedRadius] = useState(2000);
+    const requestRef = useRef<number | null>(null);
+    const animRef = useRef<number | null>(null);
+    
+    const config = SCENE_STEPS_CONFIG[step];
+    const script = SCRIPTS[step];
+
+    const updateRect = useCallback(() => {
+        if (!config) return;
+        const el = document.querySelector(`[data-tutorial-id="${config.targetId}"]`);
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) setTargetRect(rect);
+            else setTargetRect(null);
+        } else {
+            setTargetRect(null);
+        }
+        requestRef.current = requestAnimationFrame(updateRect);
+    }, [config]);
+
+    useEffect(() => {
+        if (!targetRect) return; 
+        const targetR = Math.max(targetRect.width, targetRect.height) / 1.3;
+        setAnimatedRadius(2000);
+        const startTime = performance.now();
+        const duration = 1300;
+        const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const nextR = 2000 - (2000 - targetR) * easeOut;
+            setAnimatedRadius(nextR);
+            if (progress < 1) animRef.current = requestAnimationFrame(animate);
+        };
+        animRef.current = requestAnimationFrame(animate);
+        return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+    }, [config?.targetId, !!targetRect]);
+
+    useEffect(() => {
+        requestRef.current = requestAnimationFrame(updateRect);
+        return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
+    }, [updateRect]);
+
+    if (!config) return null;
+
+    const { top, left, width, height } = targetRect || { top: 0, left: 0, width: 0, height: 0 };
+    const centerX = left + width / 2;
+    const centerY = top + height / 2;
+
+    let pointerStyles: React.CSSProperties = {};
+    let iconRotation = '';
+    let animationClass = '';
+    let containerLayout = '';
+    let labelMargin = '';
+
+    // Standard buffers for cardinal directions
+    const cardinalBuffer = 12;
+
+    // Pointer icon (Lucide "Pointer") points UP (North, 0deg) by default.
+    // Diagonal translation logic to precisely align finger tip to target corners.
+    switch (config.direction) {
+        case 'top':
+            pointerStyles = { left: centerX, top: top - cardinalBuffer, transform: 'translate(-50%, -100%)' };
+            iconRotation = 'rotate(180deg)'; // Point DOWN
+            animationClass = 'animate-bounce-reverse';
+            containerLayout = 'flex-col-reverse';
+            labelMargin = 'mb-3';
+            break;
+        case 'bottom':
+            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
+            iconRotation = 'rotate(0deg)'; // Point UP
+            animationClass = 'animate-bounce';
+            containerLayout = 'flex-col';
+            labelMargin = 'mt-3';
+            break;
+        case 'left':
+            pointerStyles = { left: left - cardinalBuffer, top: centerY, transform: 'translate(-100%, -50%)' };
+            iconRotation = 'rotate(90deg)'; // Point RIGHT
+            animationClass = 'animate-bounce-x-reverse';
+            containerLayout = 'flex-row-reverse';
+            labelMargin = 'mr-3';
+            break;
+        case 'right':
+            pointerStyles = { left: left + width + cardinalBuffer, top: centerY, transform: 'translateY(-50%)' };
+            iconRotation = 'rotate(-90deg)'; // Point LEFT
+            animationClass = 'animate-bounce-x';
+            containerLayout = 'flex-row';
+            labelMargin = 'ml-3';
+            break;
+        case 'topleft':
+            // Anchor to top-left corner and center the element on it
+            pointerStyles = { left:left - 5, top, transform: 'translate(-50%, -100%)' };
+            iconRotation = 'rotate(135deg)'; // SE
+            animationClass = 'animate-bounce-tl';
+            containerLayout = 'flex-col-reverse items-end';
+            labelMargin = 'mb-2 mr-2';
+            break;
+        case 'topright':
+            // Anchor to top-right corner and center the element on it
+            pointerStyles = { left: left + width, top, transform: 'translate(-50%, -100%)' };
+            iconRotation = 'rotate(-135deg)'; // SW
+            animationClass = 'animate-bounce-tr';
+            containerLayout = 'flex-col-reverse items-start';
+            labelMargin = 'mb-2 ml-2';
+            break;
+        case 'bottomleft':
+            // Anchor to bottom-left corner and center the element on it
+            pointerStyles = { left: left - 5, top: top + height, transform: 'translate(-50%, -25%)' };
+            iconRotation = 'rotate(45deg)'; // NE
+            animationClass = 'animate-bounce-bl';
+            containerLayout = 'flex-col items-end';
+            labelMargin = 'mt-2 mr-2';
+            break;
+        case 'bottomright':
+            // Anchor to bottom-right corner and center the element on it
+            pointerStyles = { left: left + width + 5, top: top + height, transform: 'translate(-50%, -25%)' };
+            iconRotation = 'rotate(-45deg)'; // NW
+            animationClass = 'animate-bounce-br';
+            containerLayout = 'flex-col items-start';
+            labelMargin = 'mt-2 ml-2';
+            break;
+        default:
+            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
+            iconRotation = 'rotate(0deg)';
+            animationClass = 'animate-bounce';
+            containerLayout = 'flex-col';
+            labelMargin = 'mt-3';
+            break;
+    }
+
+    const dialogueOptions = [];
+    if (step === 'BROWSE_GOODS_GUIDE') {
+        dialogueOptions.push({ 
+            label: "Browse Goods", 
+            action: () => actions.setTutorialStep('FURNACE_GUIDE'), 
+            variant: 'primary' as const 
+        });
+    } else if (step === 'TALK_TO_GARRICK_AFTER_PURCHASE') {
+        dialogueOptions.push({ 
+            label: "Talk", 
+            action: () => actions.setTutorialStep('LEAVE_MARKET_GUIDE'), 
+            variant: 'primary' as const 
+        });
+    }
+
+    return (
+        <div className="fixed inset-0 z-[4000] pointer-events-none overflow-hidden">
+            <style>{`
+                @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
+                @keyframes bounce-x-reverse { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
+                @keyframes bounce-reverse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+                @keyframes bounce-tl { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-8px, -8px); } }
+                @keyframes bounce-tr { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, -8px); } }
+                @keyframes bounce-bl { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-8px, 8px); } }
+                @keyframes bounce-br { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, 8px); } }
+                .animate-bounce-x { animation: bounce-x 1s infinite; }
+                .animate-bounce-x-reverse { animation: bounce-x-reverse 1s infinite; }
+                .animate-bounce-reverse { animation: bounce-reverse 1s infinite; }
+                .animate-bounce-tl { animation: bounce-tl 1s infinite; }
+                .animate-bounce-tr { animation: bounce-tr 1s infinite; }
+                .animate-bounce-bl { animation: bounce-bl 1s infinite; }
+                .animate-bounce-br { animation: bounce-br 1s infinite; }
+            `}</style>
+
+            <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                <defs>
+                    <mask id="tutorial-mask-market">
+                        <rect width="100%" height="100%" fill="white" />
+                        {targetRect && <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />}
+                    </mask>
+                </defs>
+                <rect width="100%" height="100%" fill={`rgba(0,0,0,${Math.min(0.75, 1.5 - (animatedRadius / 1000))})`} mask="url(#tutorial-mask-market)" />
+            </svg>
+
+            {targetRect && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-0 left-0 w-full pointer-events-auto bg-transparent" style={{ height: top }} />
+                    <div className="absolute left-0 w-full pointer-events-auto bg-transparent" style={{ top: top + height, bottom: 0 }} />
+                    <div className="absolute top-0 left-0 pointer-events-auto bg-transparent" style={{ top, height, width: left }} />
+                    <div className="absolute top-0 pointer-events-auto bg-transparent" style={{ top, height, left: left + width, right: 0 }} />
+                </div>
+            )}
+
+            {targetRect && (
+                <div key={`${config.targetId}-${config.direction}`} className="absolute animate-in fade-in zoom-in-95 duration-300" style={pointerStyles}>
+                    <div className={`flex items-center ${containerLayout} ${animationClass}`}>
+                        <Pointer className={`w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]`} style={{ transform: iconRotation }} />
+                        <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl whitespace-nowrap border-2 border-amber-400`}>
+                            {config.label}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {script && (
+                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
+                    <DialogueBox 
+                        speaker={script.speaker} 
+                        text={script.text} 
+                        options={dialogueOptions} 
+                        className="w-full relative pointer-events-auto" 
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
 
 /**
  * GarrickSprite: 3프레임 스프라이트 시트를 이용한 눈 깜빡임 애니메이션 컴포넌트
@@ -102,14 +351,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const { hasFurnace, hasWorkbench } = state.forge;
   const currentTier = state.stats.tierLevel;
 
-  // 튜토리얼 진행 여부 판별 (마켓 관련 단계들)
-  const isTutorialActive = !!state.tutorialStep && [
-    'MARKET_GUIDE', 'BROWSE_GOODS_GUIDE', 'FURNACE_GUIDE', 
-    'OPEN_SHOPPING_CART', 'CLOSE_SHOPPING_CART', 'PAY_NOW', 
-    'TALK_TO_GARRICK_AFTER_PURCHASE', 'LEAVE_MARKET_GUIDE'
-  ].includes(state.tutorialStep);
+  const currentTutorialStep = state.tutorialStep as SequenceStep | null;
+  const isLocalTutorialStep = currentTutorialStep && SCENE_STEPS_CONFIG[currentTutorialStep];
 
-  // 튜토리얼 단계가 FURNACE_GUIDE로 바뀌면 자동으로 CATALOG 모드로 전환
   useEffect(() => {
     if (state.tutorialStep === 'FURNACE_GUIDE') {
         setViewMode('CATALOG');
@@ -299,7 +543,12 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center animate-in fade-in duration-500">
+    <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center animate-in fade-in duration-500 px-safe">
+      
+      {isLocalTutorialStep && (
+          <LocalSpotlight step={currentTutorialStep!} />
+      )}
+
       {/* Background - Base for both modes */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -314,12 +563,12 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30"></div>
       </div>
 
-      {/* 퇴장 버튼: 튜토리얼 중이고 마지막 단계가 아니면 숨김 */}
-      {(!isTutorialActive || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
+      {/* 퇴장 버튼 */}
+      {(!isLocalTutorialStep || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
         <button 
             onClick={handleBackToForge}
             data-tutorial-id="MARKET_BACK_BUTTON"
-            className={`absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 hover:text-red-100 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group ${state.tutorialStep === 'LEAVE_MARKET_GUIDE' ? 'z-[2100] ring-4 ring-amber-400 animate-pulse' : ''}`}
+            className={`absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 hover:text-red-100 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group`}
             title="Leave Market"
         >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -339,12 +588,12 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-end pointer-events-none pb-[6dvh] md:pb-[12dvh]">
           <div className="w-[92vw] md:w-[85vw] max-w-5xl flex flex-col items-center gap-4">
             
-            {/* 인터렉션 버튼: 튜토리얼 중에는 완전히 숨김 (Overlay에서 처리) */}
-            {!isTutorialActive && (
+            {!isLocalTutorialStep && (
               <div className="flex justify-end w-full gap-3 pointer-events-auto pr-4">
                 <button 
                     onClick={handleTalk}
-                    className="flex items-center gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
+                    data-tutorial-id="GARRICK_TALK_BUTTON"
+                    className="flex items-center gap-1.5 md:gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
                   >
                     <MessageSquare className="w-4 h-4 text-amber-500" />
                     <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
@@ -352,7 +601,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                   
                   <button 
                     onClick={() => setViewMode('CATALOG')}
-                    className="flex items-center gap-2 px-8 py-2.5 md:py-3.5 bg-amber-700/90 hover:bg-amber-600 border border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
+                    data-tutorial-id="BROWSE_GOODS_BUTTON"
+                    className="flex items-center gap-1.5 md:gap-2 px-8 py-2.5 md:py-3.5 bg-amber-700/90 hover:bg-amber-600 border border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
                   >
                     <ShoppingBag className="w-4 h-4 text-white" />
                     <span className="font-black text-[9px] md:text-xs text-white uppercase tracking-widest">Browse Goods</span>
@@ -360,8 +610,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
               </div>
             )}
 
-            {/* 튜토리얼 중에는 MarketTab 고유 대화창을 숨김 (MainGameLayout 오버레이가 대신 표시) */}
-            {!isTutorialActive && (
+            {!isLocalTutorialStep && (
               <DialogueBox 
                 speaker="Garrick"
                 text={dialogue}
@@ -381,8 +630,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             {/* Overlay Header */}
             <div className="bg-stone-850 p-3 md:p-5 border-b border-stone-800 flex items-center justify-between shrink-0 shadow-lg">
               <div className="flex items-center gap-2 md:gap-4">
-                {/* 튜토리얼 중에는 뒤로가기 불가능 */}
-                {!isTutorialActive && (
+                {!isLocalTutorialStep && (
                     <button 
                     onClick={() => setViewMode('INTERACTION')}
                     className="bg-stone-800 hover:bg-stone-700 p-2 md:p-3 rounded-xl border border-stone-700 transition-all active:scale-90"
@@ -391,7 +639,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-stone-300" />
                     </button>
                 )}
-                <div className={isTutorialActive ? 'ml-2' : ''}>
+                <div className={isLocalTutorialStep ? 'ml-2' : ''}>
                   <h2 className="text-sm md:text-2xl font-black text-stone-100 font-serif tracking-tight uppercase leading-none">
                     Garrick's Wares
                   </h2>
@@ -412,7 +660,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                         : totalCost > state.stats.gold
                           ? 'bg-red-900/40 border-red-700 text-red-300'
                           : 'bg-amber-600 hover:bg-amber-500 border-amber-400 text-white shadow-[0_0_20px_rgba(217,119,6,0.2)]'
-                    } ${state.tutorialStep === 'PAY_NOW' ? 'z-[2100] ring-4 ring-amber-400 animate-pulse' : ''}`}
+                    }`}
                   >
                     <div className="relative">
                       <ShoppingCart className={`w-3.5 h-3.5 md:w-5 md:h-5 ${cartItemCount > 0 ? 'animate-bounce' : ''}`} />
@@ -441,7 +689,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                 <div className="grid gap-1.5 md:gap-4 content-start grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 lg:grid-cols-6">
                   {MARKET_CATALOG.map(marketItem => {
                     const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
-                    const isScrollItem = marketItem.id.startsWith('scroll_');
                     const isOwned =
                       (marketItem.id === 'furnace' && state.forge.hasFurnace) ||
                       (marketItem.id === 'workbench' && state.forge.hasWorkbench);
@@ -487,7 +734,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                             : isSoldOut
                               ? 'bg-stone-900 border-stone-800 opacity-40 grayscale'
                               : 'bg-stone-850 border-stone-800'
-                        } ${marketItem.id === 'furnace' && state.tutorialStep === 'FURNACE_GUIDE' ? 'z-[2100] ring-4 ring-amber-400' : ''}`}
+                        }`}
                       >
                         {invCount > 0 && (
                           <div className="absolute top-0.5 left-0.5 px-1 py-0 rounded text-[6px] md:text-[8px] font-black uppercase tracking-tighter border z-10 bg-slate-900/80 border-slate-600 text-slate-300 flex items-center gap-0.5">
@@ -510,7 +757,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                           onPointerLeave={handleEndLongPress}
                           onPointerCancel={handleEndLongPress}
                         >
-                          {/* Fix: Changed 'url' to 'src' to fix TypeScript error */}
                           <img
                             src={getAssetUrl(`${marketItem.id}.png`)}
                             className="w-10 h-10 md:w-20 md:h-20 object-contain drop-shadow-md pointer-events-none"
@@ -523,7 +769,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                         </div>
 
                         <div className="w-full text-center mb-0.5">
-                          <h4 className={`text-[7px] md:text-[10px] font-black leading-none truncate px-1 ${isKeyItem || isScrollItem ? 'text-amber-400' : 'text-stone-400'}`}>
+                          <h4 className={`text-[7px] md:text-[10px] font-black leading-none truncate px-1 ${marketItem.id === 'furnace' || marketItem.id === 'workbench' || marketItem.id.startsWith('scroll_') ? 'text-amber-400' : 'text-stone-400'}`}>
                             {itemName}
                           </h4>
                         </div>
@@ -582,7 +828,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-stone-100 font-bold text-[8px] md:text-11px] truncate leading-tight">{name}</div>
-                              <div className="text-amber-600 font-mono text-[8px] md:text-[10px] font-black">{marketItem.price * (count as number)} G</div>
+                              <div className="text-amber-600 font-mono text-[8px] md:text-10px] font-black">{marketItem.price * (count as number)} G</div>
                             </div>
                             <button type="button" onClick={() => deleteFromCart(id)} className="p-1 hover:text-red-500 transition-colors shrink-0">
                               <X className="w-3 h-3 md:w-4 md:h-4" />

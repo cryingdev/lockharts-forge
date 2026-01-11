@@ -3,7 +3,8 @@ import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
 import { getAssetUrl } from '../../../utils';
 import { TutorialSceneMode } from '../../../types/game-state';
-import { Flame, Zap, FastForward, MousePointer2 as Pointer } from 'lucide-react';
+// Fix: changed 'HandPointer' to 'Pointer' as it is the correct name in lucide-react
+import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 
 type SequenceStep = 
@@ -67,25 +68,17 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
     useEffect(() => {
         if (!targetRect) return;
         const targetR = Math.max(targetRect.width, targetRect.height) / 1.3;
-        
         setAnimatedRadius(2000);
-
         const startTime = performance.now();
         const duration = 1300;
-
         const animate = (now: number) => {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
             const easeOut = 1 - Math.pow(1 - progress, 3);
-            
             const nextR = 2000 - (2000 - targetR) * easeOut;
             setAnimatedRadius(nextR);
-
-            if (progress < 1) {
-                animRef.current = requestAnimationFrame(animate);
-            }
+            if (progress < 1) animRef.current = requestAnimationFrame(animate);
         };
-
         animRef.current = requestAnimationFrame(animate);
         return () => { if (animRef.current !== null) cancelAnimationFrame(animRef.current); };
     }, [step, !!targetRect]);
@@ -107,38 +100,70 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
     let containerLayout = '';
     let labelMargin = '';
 
+    const cardinalBuffer = 12;
+
+    // HandPointer (Pointer icon) points UP (North) by default.
+    // translate offsets are fine-tuned to land the finger tip (top-center of svg) on the target point.
     switch (config.direction) {
         case 'top':
-            pointerStyles = { left: centerX, top: top - 15, transform: 'translate(-50%, -100%)' };
-            iconRotation = 'rotate(180deg)';
+            pointerStyles = { left: centerX, top: top - cardinalBuffer, transform: 'translate(-50%, -100%)' };
+            iconRotation = 'rotate(180deg)'; // Point DOWN
             animationClass = 'animate-bounce-reverse';
             containerLayout = 'flex-col-reverse';
             labelMargin = 'mb-3';
             break;
         case 'bottom':
-            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
-            iconRotation = '';
+            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
+            iconRotation = 'rotate(0deg)'; // Point UP
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
             labelMargin = 'mt-3';
             break;
         case 'left':
-            pointerStyles = { left: left - 15, top: centerY, transform: 'translate(-100%, -50%)' };
-            iconRotation = 'rotate(90deg)';
+            pointerStyles = { left: left - cardinalBuffer, top: centerY, transform: 'translate(-100%, -50%)' };
+            iconRotation = 'rotate(90deg)'; // Point RIGHT
             animationClass = 'animate-bounce-x-reverse';
             containerLayout = 'flex-row-reverse';
             labelMargin = 'mr-3';
             break;
         case 'right':
-            pointerStyles = { left: left + width + 15, top: centerY, transform: 'translateY(-50%)' };
-            iconRotation = 'rotate(-90deg)';
+            pointerStyles = { left: left + width + cardinalBuffer, top: centerY, transform: 'translateY(-50%)' };
+            iconRotation = 'rotate(-90deg)'; // Point LEFT
             animationClass = 'animate-bounce-x';
             containerLayout = 'flex-row';
             labelMargin = 'ml-3';
             break;
+        case 'topleft':
+            pointerStyles = { left, top, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(135deg)'; // SE
+            animationClass = 'animate-bounce-tl';
+            containerLayout = 'flex-col-reverse items-end';
+            labelMargin = 'mb-2 mr-2';
+            break;
+        case 'topright':
+            pointerStyles = { left: left + width, top, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(-135deg)'; // SW
+            animationClass = 'animate-bounce-tr';
+            containerLayout = 'flex-col-reverse items-start';
+            labelMargin = 'mb-2 ml-2';
+            break;
+        case 'bottomleft':
+            pointerStyles = { left, top: top + height, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(45deg)'; // NE
+            animationClass = 'animate-bounce-bl';
+            containerLayout = 'flex-col items-end';
+            labelMargin = 'mt-2 mr-2';
+            break;
+        case 'bottomright':
+            pointerStyles = { left: left + width, top: top + height, transform: 'translate(-50%, -50%)' };
+            iconRotation = 'rotate(-45deg)'; // NW
+            animationClass = 'animate-bounce-br';
+            containerLayout = 'flex-col items-start';
+            labelMargin = 'mt-2 ml-2';
+            break;
         default:
-            pointerStyles = { left: centerX, top: top + height + 15, transform: 'translateX(-50%)' };
-            iconRotation = '';
+            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
+            iconRotation = 'rotate(0deg)';
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
             labelMargin = 'mt-3';
@@ -153,7 +178,6 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 <defs>
                     <mask id="tutorial-mask-local">
                         <rect width="100%" height="100%" fill="white" />
-                        {/* Focus hole for the interactive object */}
                         <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />
                     </mask>
                 </defs>
@@ -165,7 +189,6 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 />
             </svg>
 
-            {/* Interaction blocker with hole for pointer events */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full pointer-events-auto bg-transparent" style={{ height: top }} />
                 <div className="absolute left-0 w-full pointer-events-auto bg-transparent" style={{ top: top + height, bottom: 0 }} />
@@ -174,12 +197,12 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
             </div>
 
             <div 
-                key={`${config.targetId}-${currentLabel}`}
+                key={`${config.targetId}-${currentLabel}-${config.direction}`}
                 className="absolute animate-in fade-in zoom-in-95 duration-300" 
                 style={pointerStyles}
             >
                 <div className={`flex items-center ${containerLayout} ${animationClass}`}>
-                    <Pointer className={`w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]`} style={{ transform: iconRotation.includes('rotate') ? iconRotation : undefined }} />
+                    <Pointer className={`w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]`} style={{ transform: iconRotation }} />
                     <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl whitespace-nowrap border-2 border-amber-400`}>
                         {currentLabel}
                     </div>
@@ -302,7 +325,7 @@ const TutorialScene: React.FC = () => {
 
     return (
         <div 
-            className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer"
+            className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer px-safe"
             onClick={handleStart}
         >
             <style>{`
