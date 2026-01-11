@@ -68,15 +68,15 @@ const SleepModal = () => {
             </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer - Redesigned to match Standard Primary Button Style */}
         <div className="p-5 md:p-7 bg-indigo-950/40 border-t border-indigo-500/20 shrink-0">
             <button 
                 onClick={actions.confirmSleep}
-                className="w-full py-4 md:py-5 bg-indigo-700 hover:bg-indigo-600 text-white font-black rounded-2xl shadow-2xl transition-all flex items-center justify-center gap-4 active:scale-95 border-b-4 border-indigo-900 group"
+                className="w-full py-3.5 md:py-5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl md:rounded-2xl shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95 border-b-4 border-amber-800 group text-[11px] md:text-base uppercase tracking-[0.2em]"
             >
-                <BedDouble className="w-6 h-6 text-indigo-200 group-hover:animate-bounce" />
-                <span className="text-base md:text-xl uppercase tracking-widest font-serif italic">Rest for the Day</span>
-                <ChevronRight className="w-5 h-5 opacity-50" />
+                <BedDouble className="w-5 h-5 md:w-7 md:h-7 text-amber-100 group-hover:animate-bounce" />
+                <span className="font-serif italic">Rest for the Day</span>
+                <ChevronRight className="w-4 h-4 md:w-6 md:h-6 opacity-50 hidden xs:block" />
             </button>
         </div>
       </div>

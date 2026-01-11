@@ -122,68 +122,61 @@ const LocalSpotlight = ({ step }: { step: SequenceStep }) => {
     let containerLayout = '';
     let labelMargin = '';
 
-    // Standard buffers for cardinal directions
     const cardinalBuffer = 12;
 
-    // Pointer icon (Lucide "Pointer") points UP (North, 0deg) by default.
-    // Diagonal translation logic to precisely align finger tip to target corners.
     switch (config.direction) {
         case 'top':
             pointerStyles = { left: centerX, top: top - cardinalBuffer, transform: 'translate(-50%, -100%)' };
-            iconRotation = 'rotate(180deg)'; // Point DOWN
+            iconRotation = 'rotate(180deg)';
             animationClass = 'animate-bounce-reverse';
             containerLayout = 'flex-col-reverse';
             labelMargin = 'mb-3';
             break;
         case 'bottom':
             pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
-            iconRotation = 'rotate(0deg)'; // Point UP
+            iconRotation = 'rotate(0deg)';
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
             labelMargin = 'mt-3';
             break;
         case 'left':
             pointerStyles = { left: left - cardinalBuffer, top: centerY, transform: 'translate(-100%, -50%)' };
-            iconRotation = 'rotate(90deg)'; // Point RIGHT
+            iconRotation = 'rotate(90deg)';
             animationClass = 'animate-bounce-x-reverse';
             containerLayout = 'flex-row-reverse';
             labelMargin = 'mr-3';
             break;
         case 'right':
             pointerStyles = { left: left + width + cardinalBuffer, top: centerY, transform: 'translateY(-50%)' };
-            iconRotation = 'rotate(-90deg)'; // Point LEFT
+            iconRotation = 'rotate(-90deg)';
             animationClass = 'animate-bounce-x';
             containerLayout = 'flex-row';
             labelMargin = 'ml-3';
             break;
         case 'topleft':
-            // Anchor to top-left corner and center the element on it
             pointerStyles = { left:left - 5, top, transform: 'translate(-50%, -100%)' };
-            iconRotation = 'rotate(135deg)'; // SE
+            iconRotation = 'rotate(135deg)';
             animationClass = 'animate-bounce-tl';
             containerLayout = 'flex-col-reverse items-end';
             labelMargin = 'mb-2 mr-2';
             break;
         case 'topright':
-            // Anchor to top-right corner and center the element on it
             pointerStyles = { left: left + width, top, transform: 'translate(-50%, -100%)' };
-            iconRotation = 'rotate(-135deg)'; // SW
+            iconRotation = 'rotate(-135deg)';
             animationClass = 'animate-bounce-tr';
             containerLayout = 'flex-col-reverse items-start';
             labelMargin = 'mb-2 ml-2';
             break;
         case 'bottomleft':
-            // Anchor to bottom-left corner and center the element on it
             pointerStyles = { left: left - 5, top: top + height, transform: 'translate(-50%, -25%)' };
-            iconRotation = 'rotate(45deg)'; // NE
+            iconRotation = 'rotate(45deg)';
             animationClass = 'animate-bounce-bl';
             containerLayout = 'flex-col items-end';
             labelMargin = 'mt-2 mr-2';
             break;
         case 'bottomright':
-            // Anchor to bottom-right corner and center the element on it
             pointerStyles = { left: left + width + 5, top: top + height, transform: 'translate(-50%, -25%)' };
-            iconRotation = 'rotate(-45deg)'; // NW
+            iconRotation = 'rotate(-45deg)';
             animationClass = 'animate-bounce-br';
             containerLayout = 'flex-col items-start';
             labelMargin = 'mt-2 ml-2';
@@ -275,9 +268,6 @@ const LocalSpotlight = ({ step }: { step: SequenceStep }) => {
     );
 };
 
-/**
- * GarrickSprite: 3프레임 스프라이트 시트를 이용한 눈 깜빡임 애니메이션 컴포넌트
- */
 const GarrickSprite = () => {
   const [frame, setFrame] = useState(0); 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -342,11 +332,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [itemMultipliers, setItemMultipliers] = useState<Record<string, number>>({});
-
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const currentInterval = useRef<number>(200);
-  const [pressingItemId, setPressingItemId] = useState<string | null>(null);
-  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
 
   const { hasFurnace, hasWorkbench } = state.forge;
   const currentTier = state.stats.tierLevel;
@@ -446,57 +431,11 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     });
   };
 
-  const startContinuousAdd = (itemId: string) => {
-    const success = addToCart(itemId, 1);
-    if (!success) {
-      handleEndLongPress();
-      return;
-    }
-    currentInterval.current = Math.max(50, currentInterval.current * 0.85);
-    longPressTimer.current = setTimeout(() => startContinuousAdd(itemId), currentInterval.current);
-  };
-
-  const startContinuousRemove = (itemId: string) => {
-    const success = removeFromCart(itemId);
-    if (!success) {
-      handleEndLongPress();
-      return;
-    }
-    currentInterval.current = Math.max(50, currentInterval.current * 0.85);
-    longPressTimer.current = setTimeout(() => startContinuousRemove(itemId), currentInterval.current);
-  };
-
-  const handleStartLongPress = (e: React.PointerEvent, itemId: string, isRemove: boolean = false) => {
-    if (isRemove) setRemovingItemId(itemId);
-    else setPressingItemId(itemId);
-
-    currentInterval.current = 220;
-
-    if (isRemove) {
-      const success = removeFromCart(itemId);
-      if (!success) {
-        setRemovingItemId(null);
-        return;
-      }
-    } else {
-      const amount = itemMultipliers[itemId] || 1;
-      const success = addToCart(itemId, amount);
-      if (!success) {
-        setPressingItemId(null);
-        return;
-      }
-    }
-
-    longPressTimer.current = setTimeout(() => {
-      if (isRemove) startContinuousRemove(itemId);
-      else startContinuousAdd(itemId);
-    }, 500);
-  };
-
-  const handleEndLongPress = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    setPressingItemId(null);
-    setRemovingItemId(null);
+  const setItemMultiplier = (itemId: string, value: number) => {
+    setItemMultipliers(prev => ({
+      ...prev,
+      [itemId]: value
+    }));
   };
 
   const handleBuy = () => {
@@ -686,7 +625,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             <div className="flex-1 flex overflow-hidden">
               {/* Grid of Items */}
               <div className="flex-1 overflow-y-auto p-2 md:p-6 custom-scrollbar pb-24">
-                <div className="grid gap-1.5 md:gap-4 content-start grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 lg:grid-cols-6">
+                <div className="grid gap-2.5 md:gap-6 content-start grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {MARKET_CATALOG.map(marketItem => {
                     const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
                     const isOwned =
@@ -723,73 +662,98 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     const stockLeft = (state.marketStock[marketItem.id] || 0) - (cart[marketItem.id] || 0);
                     const isSoldOut = stockLeft <= 0;
                     const invCount = state.inventory.find(i => i.id === marketItem.id)?.quantity || 0;
+                    const currentMultiplier = itemMultipliers[marketItem.id] || 1;
 
                     return (
                       <div
                         key={marketItem.id}
                         data-tutorial-id={marketItem.id === 'furnace' ? 'FURNACE_ITEM' : undefined}
-                        className={`group relative flex flex-col items-center p-1 md:p-2 rounded-xl border transition-all h-[130px] md:h-[180px] justify-between overflow-hidden shadow-sm select-none ${
-                          pressingItemId === marketItem.id
-                            ? 'scale-[0.97] border-amber-500 bg-amber-900/10'
-                            : isSoldOut
-                              ? 'bg-stone-900 border-stone-800 opacity-40 grayscale'
-                              : 'bg-stone-850 border-stone-800'
+                        className={`group relative flex flex-col items-center p-2 rounded-2xl border transition-all h-[170px] md:h-[220px] justify-between overflow-hidden shadow-md select-none ${
+                          isSoldOut
+                            ? 'bg-stone-900 border-stone-800 opacity-40 grayscale'
+                            : 'bg-stone-850 border-stone-800 hover:border-stone-600'
                         }`}
                       >
                         {invCount > 0 && (
-                          <div className="absolute top-0.5 left-0.5 px-1 py-0 rounded text-[6px] md:text-[8px] font-black uppercase tracking-tighter border z-10 bg-slate-900/80 border-slate-600 text-slate-300 flex items-center gap-0.5">
-                            <Package className="w-1.5 h-1.5 md:w-2 md:h-2" />
+                          <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[7px] md:text-[9px] font-black uppercase tracking-tighter border z-10 bg-slate-900/80 border-slate-600 text-slate-300 flex items-center gap-1">
+                            <Package className="w-2 h-2 md:w-3 md:h-3" />
                             <span>{invCount}</span>
                           </div>
                         )}
 
-                        <div className={`absolute top-0.5 right-0.5 px-1 py-0 rounded text-[6px] md:text-[8px] font-black tracking-tighter border z-10 ${stockLeft > 0 ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' : 'bg-red-950/60 border-red-500/40 text-red-500'}`}>
+                        <div className={`absolute top-1 right-1 px-1.5 py-0.5 rounded text-[7px] md:text-[9px] font-black tracking-tighter border z-10 ${stockLeft > 0 ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' : 'bg-red-950/60 border-red-500/40 text-red-500'}`}>
                           {isSoldOut ? 'X' : stockLeft}
                         </div>
 
+                        {/* 아이콘 클릭 영역: 클릭 시 현재 배율만큼 담기 */}
                         <div
                           className={`flex-1 w-full flex items-center justify-center transition-all relative mt-1 overflow-hidden rounded-lg
                             ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-stone-800/50 group-hover:scale-105 active:scale-95'}
-                            touch-none
                           `}
-                          onPointerDown={(e) => { if (!isSoldOut) handleStartLongPress(e, marketItem.id); }}
-                          onPointerUp={handleEndLongPress}
-                          onPointerLeave={handleEndLongPress}
-                          onPointerCancel={handleEndLongPress}
+                          onClick={() => { if (!isSoldOut) addToCart(marketItem.id, currentMultiplier); }}
                         >
                           <img
                             src={getAssetUrl(`${marketItem.id}.png`)}
-                            className="w-10 h-10 md:w-20 md:h-20 object-contain drop-shadow-md pointer-events-none"
+                            className="w-12 h-12 md:w-24 md:h-24 object-contain drop-shadow-md pointer-events-none"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                               e.currentTarget.nextElementSibling?.classList.remove('hidden');
                             }}
                           />
-                          <div className="hidden text-base md:text-2xl pointer-events-none">📦</div>
+                          <div className="hidden text-xl md:text-3xl pointer-events-none">📦</div>
                         </div>
 
-                        <div className="w-full text-center mb-0.5">
-                          <h4 className={`text-[7px] md:text-[10px] font-black leading-none truncate px-1 ${marketItem.id === 'furnace' || marketItem.id === 'workbench' || marketItem.id.startsWith('scroll_') ? 'text-amber-400' : 'text-stone-400'}`}>
+                        {/* 수량 선택 버튼: 1, 5, 10 (재고량에 따라 활성화/비활성화) */}
+                        {!isSoldOut && !isKeyItem && !marketItem.id.startsWith('scroll_') && (
+                            <div className="flex items-center gap-1.5 mb-1.5 scale-90 md:scale-100">
+                                {[1, 5, 10].map(val => {
+                                    const isDisabled = stockLeft < val;
+                                    return (
+                                        <button 
+                                            key={val}
+                                            type="button"
+                                            disabled={isDisabled}
+                                            onClick={() => setItemMultiplier(marketItem.id, val)}
+                                            className={`w-6 h-6 md:w-8 md:h-8 rounded-full border text-[8px] md:text-[10px] font-black transition-all flex items-center justify-center ${
+                                                isDisabled 
+                                                ? 'bg-stone-900 border-stone-800 text-stone-700 opacity-20 grayscale cursor-not-allowed'
+                                                : currentMultiplier === val 
+                                                    ? 'bg-amber-600 border-amber-400 text-white shadow-[0_0_8px_rgba(217,119,6,0.3)]' 
+                                                    : 'bg-stone-900 border-stone-700 text-stone-500 hover:text-stone-300'
+                                            }`}
+                                        >
+                                            {val}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        <div className="w-full text-center mb-1">
+                          <h4 className={`text-[8px] md:text-[11px] font-black leading-none truncate px-1 ${marketItem.id === 'furnace' || marketItem.id === 'workbench' || marketItem.id.startsWith('scroll_') ? 'text-amber-400' : 'text-stone-400'}`}>
                             {itemName}
                           </h4>
                         </div>
 
+                        {/* 가격 클릭 영역: 클릭 시 현재 배율만큼 담기 */}
                         <div
-                          className={`w-full py-0.5 md:py-1 rounded-b-lg border-t flex items-center justify-center gap-0.5 font-mono font-black transition-all text-[7px] md:text-xs
-                            ${isSoldOut ? 'bg-stone-900 border-stone-800 text-stone-700' : 'bg-stone-950 border-stone-800 text-amber-500 cursor-pointer hover:bg-amber-900/20'}
+                          className={`w-full py-1 md:py-2 rounded-b-xl border-t flex flex-col items-center justify-center gap-0.5 font-mono font-black transition-all
+                            ${isSoldOut ? 'bg-stone-900 border-stone-800 text-stone-700' : 'bg-stone-950 border-stone-800 text-amber-500 cursor-pointer hover:bg-amber-900/20 active:scale-95'}
                           `}
-                          onPointerDown={(e) => { if (!isSoldOut) handleStartLongPress(e, marketItem.id); }}
-                          onPointerUp={handleEndLongPress}
-                          onPointerLeave={handleEndLongPress}
-                          onPointerCancel={handleEndLongPress}
+                          onClick={() => { if (!isSoldOut) addToCart(marketItem.id, currentMultiplier); }}
                         >
-                          <span className="pointer-events-none">{marketItem.price}</span>
-                          <Coins className="w-2 h-2 md:w-3 md:h-3" />
+                          <div className="flex items-center gap-1 text-[8px] md:text-sm">
+                            <span>{marketItem.price * currentMultiplier}</span>
+                            <Coins className="w-2.5 h-2.5 md:w-4 md:h-4 text-amber-500" />
+                          </div>
+                          {currentMultiplier > 1 && (
+                              <span className="text-[6px] md:text-[8px] opacity-50 font-sans uppercase">({currentMultiplier} units)</span>
+                          )}
                         </div>
 
                         {isSoldOut && (
                           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-[0.5px]">
-                            <span className="bg-red-600 text-white text-[6px] md:text-[8px] font-black px-1.5 py-0.5 rounded rotate-12 shadow-md">SOLD</span>
+                            <span className="bg-red-600 text-white text-[7px] md:text-[10px] font-black px-2 py-0.5 rounded rotate-12 shadow-md uppercase tracking-widest">Sold Out</span>
                           </div>
                         )}
                       </div>
@@ -810,7 +774,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                       Cart Contents
                     </h3>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 custom-scrollbar">
+                  <div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-3 custom-scrollbar">
                     {Object.keys(cart).length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center text-stone-700 text-center px-4">
                         <ShoppingCart className="w-6 h-6 md:w-8 md:h-8 opacity-10 mb-2" />
@@ -822,17 +786,43 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                         const name = id === 'furnace' ? 'Furnace' : id === 'workbench' ? 'Workbench' : MATERIALS[id.toUpperCase() as keyof typeof MATERIALS]?.name || id;
                         if (!marketItem) return null;
                         return (
-                          <div key={id} className="flex items-center gap-1.5 bg-stone-900/60 p-1.5 md:p-2 rounded-xl border border-stone-800 select-none">
-                            <div className="w-7 h-7 md:w-10 md:h-10 bg-stone-950 rounded-lg border border-stone-800 flex items-center justify-center shrink-0">
-                              <img src={getAssetUrl(`${id}.png`)} className="w-5 h-5 h-7 md:w-7 md:h-7 object-contain" />
+                          <div key={id} className="flex flex-col gap-1.5 bg-stone-900/60 p-2 md:p-3 rounded-xl border border-stone-800 select-none shadow-inner">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 md:w-12 md:h-12 bg-stone-950 rounded-lg border border-stone-800 flex items-center justify-center shrink-0 shadow-inner">
+                                  <img src={getAssetUrl(`${id}.png`)} className="w-6 h-6 md:w-9 md:h-9 object-contain" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-stone-100 font-bold text-[10px] md:text-sm truncate leading-tight">{name}</div>
+                                  <div className="text-amber-600 font-mono text-[9px] md:text-xs font-black">{marketItem.price * (count as number)} G</div>
+                                </div>
+                                <button type="button" onClick={() => deleteFromCart(id)} className="p-1.5 text-stone-600 hover:text-red-500 transition-colors shrink-0">
+                                  <X className="w-4 h-4" />
+                                </button>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-stone-100 font-bold text-[8px] md:text-11px] truncate leading-tight">{name}</div>
-                              <div className="text-amber-600 font-mono text-[8px] md:text-10px] font-black">{marketItem.price * (count as number)} G</div>
+                            
+                            {/* Quantity Controls */}
+                            <div className="flex items-center justify-between bg-black/40 rounded-lg p-1 md:p-1.5 border border-white/5">
+                                <div className="flex items-center gap-1 ml-1">
+                                    <span className="text-[10px] md:text-sm font-mono font-black text-stone-200">{count}</span>
+                                    <span className="text-[8px] md:text-[9px] text-stone-500 font-black uppercase tracking-tighter">EA</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <button 
+                                        type="button"
+                                        onClick={() => removeFromCart(id)} 
+                                        className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-stone-800 hover:bg-stone-700 rounded-md border border-stone-700 text-stone-300 transition-all active:scale-90"
+                                    >
+                                        <Minus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => addToCart(id, 1)} 
+                                        className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-stone-800 hover:bg-stone-700 rounded-md border border-stone-700 text-stone-300 transition-all active:scale-90"
+                                    >
+                                        <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                    </button>
+                                </div>
                             </div>
-                            <button type="button" onClick={() => deleteFromCart(id)} className="p-1 hover:text-red-500 transition-colors shrink-0">
-                              <X className="w-3 h-3 md:w-4 md:h-4" />
-                            </button>
                           </div>
                         );
                       })
@@ -849,13 +839,13 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                       type="button"
                       onClick={handleBuy}
                       className={`w-full py-2 md:py-3 rounded-xl font-black text-[9px] md:text-xs transition-all flex items-center justify-center gap-1.5 shadow-xl ${
-                        totalCost > state.stats.gold ? 'bg-stone-800 text-stone-300' : 
+                        totalCost > state.stats.gold ? 'bg-red-900/60 text-red-100 border border-red-500/50' : 
                         totalCost === 0 ? 'bg-stone-800 text-stone-500 grayscale opacity-60' :
                         'bg-amber-600 hover:bg-amber-500 text-white'
                       }`}
                     >
                       <ShoppingBag className="w-3 h-3" />
-                      <span>{totalCost > state.stats.gold ? 'No Funds' : 'Buy'}</span>
+                      <span>{totalCost > state.stats.gold ? 'Insufficient Funds' : 'Buy Now'}</span>
                     </button>
                   </div>
                 </div>

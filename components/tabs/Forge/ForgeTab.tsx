@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
@@ -198,7 +197,11 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       const viewportH = window.innerHeight;
       let finalX = x + 20;
       let finalY = y + 20;
-      if (finalX + 240 > viewportW) finalX = x - 260;
+      
+      // Calculate dynamic tooltip width for boundary check
+      const tooltipW = viewportW < 768 ? Math.max(160, viewportW * 0.4) : 256; // 0.4vw or md:w-64
+
+      if (finalX + tooltipW > viewportW) finalX = x - tooltipW - 20;
       if (finalY + 160 > viewportH) finalY = y - 180;
       setTooltipPos({ x: finalX, y: finalY });
   };
@@ -506,7 +509,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             </div>
         )}
         {hoveredItem && (
-            <div className="fixed z-[60] pointer-events-none w-56 md:w-64 bg-stone-950/95 border border-stone-700 rounded-lg shadow-2xl backdrop-blur-sm p-3 md:p-4 animate-in fade-in duration-150" style={{ top: tooltipPos.y, left: tooltipPos.x }}>
+            <div className="fixed z-[60] pointer-events-none w-[40vw] min-w-[160px] md:w-64 bg-stone-950/95 border border-stone-700 rounded-lg shadow-2xl backdrop-blur-sm p-3 md:p-4 animate-in fade-in duration-150" style={{ top: tooltipPos.y, left: tooltipPos.x }}>
                 <h4 className="font-bold text-stone-200 border-b border-stone-800 pb-2 mb-2 flex justify-between items-center"><span className="text-[10px] md:text-xs">Requirements</span><span className="text-[9px] md:text-[10px] font-normal text-stone-500 uppercase">Tier {hoveredItem.tier}</span></h4>
                 <div className="space-y-1.5">{hoveredItem.requirements.map((req, idx) => {
                     const currentCount = getInventoryCount(req.id);
