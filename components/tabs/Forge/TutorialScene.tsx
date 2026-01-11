@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
 import { getAssetUrl } from '../../../utils';
 import { TutorialSceneMode } from '../../../types/game-state';
-import { Flame, Zap, Pointer, FastForward } from 'lucide-react';
+import { Flame, Zap, FastForward, MousePointer2 as Pointer } from 'lucide-react';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 
 type SequenceStep = 
@@ -24,6 +23,11 @@ interface SceneStepConfig {
     direction: TutorialDirection;
 }
 
+const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
+    WAIT_HEAT: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
+    WAIT_PUMP: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
+};
+
 const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
     PROLOGUE_0: { text: "I have just returned from the hill after burying my family... My hands, stained with earth, are still trembling." },
     PROLOGUE_1: { text: "The forge has been ruthlessly trampled by their hands. Everything I built... gone in a single night of fire and blood." },
@@ -39,11 +43,6 @@ const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
     FURNACE_BELLOWS_MONO: { text: "If the temperature drops below 400°C, the bellows won't be enough to bring it back to a roar. I must act while the embers are hot." },
     FURNACE_PUMP_PROMPT: { text: "Let's see if we can reach the forging temperature. Pump it to the limit!" },
     FURNACE_MAXED: { text: "Magnificent. The forge is finally alive and roaring. I'm ready to begin the work of retribution." }
-};
-
-const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
-    WAIT_HEAT: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
-    WAIT_PUMP: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
 };
 
 const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumpedOnce: boolean }) => {
@@ -102,7 +101,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
     const centerX = left + width / 2;
     const centerY = top + height / 2;
 
-    let pointerStyles = {};
+    let pointerStyles: React.CSSProperties = {};
     let iconRotation = '';
     let animationClass = '';
     let containerLayout = '';
@@ -154,6 +153,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 <defs>
                     <mask id="tutorial-mask-local">
                         <rect width="100%" height="100%" fill="white" />
+                        {/* Focus hole for the interactive object */}
                         <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />
                     </mask>
                 </defs>
@@ -165,6 +165,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 />
             </svg>
 
+            {/* Interaction blocker with hole for pointer events */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full pointer-events-auto bg-transparent" style={{ height: top }} />
                 <div className="absolute left-0 w-full pointer-events-auto bg-transparent" style={{ top: top + height, bottom: 0 }} />
@@ -306,7 +307,11 @@ const TutorialScene: React.FC = () => {
         >
             <style>{`
                 @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
+                @keyframes bounce-x-reverse { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
+                @keyframes bounce-reverse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
                 .animate-bounce-x { animation: bounce-x 1s infinite; }
+                .animate-bounce-x-reverse { animation: bounce-x-reverse 1s infinite; }
+                .animate-bounce-reverse { animation: bounce-reverse 1s infinite; }
                 @keyframes flash-out { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
                 .animate-flash-out { animation: flash-out 0.8s ease-out forwards; }
             `}</style>
@@ -316,8 +321,8 @@ const TutorialScene: React.FC = () => {
                 <div className="absolute inset-0 bg-black/30"></div>
             </div>
 
-            <div className="absolute top-4 left-4 z-[4000] pointer-events-auto">
-                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-4 py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-500 hover:text-stone-300 rounded-full transition-all text-[11px] font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group">
+            <div className="absolute top-4 right-4 z-[6000] pointer-events-auto">
+                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-4 py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-50 hover:text-stone-300 rounded-full transition-all text-[11px] font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group">
                     <FastForward className="w-3.5 h-3.5 group-hover:animate-pulse" /> Skip Tutorial
                 </button>
             </div>
@@ -328,6 +333,10 @@ const TutorialScene: React.FC = () => {
                 <div className="relative z-20 flex flex-col items-center animate-pulse pointer-events-none">
                     <span className="text-amber-500 font-black uppercase tracking-[0.4em] text-[10px] md:text-sm drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]">{promptText}</span>
                 </div>
+            )}
+
+            {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && (
+                <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />
             )}
 
             {isStarted && mode === 'FURNACE_RESTORED' && (
@@ -354,12 +363,10 @@ const TutorialScene: React.FC = () => {
             )}
 
             {isStarted && (
-                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 pointer-events-none">
+                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-[5000] pointer-events-none">
                     <DialogueBox speaker={mode === 'PROLOGUE' || seq !== 'FINAL_TALK' ? "Lockhart" : "Master Smith"} text={dialogue.text} options={['WAIT_HEAT', 'WAIT_PUMP'].includes(seq) ? [] : [{ label: "Continue", action: handleNext, variant: 'primary' }]} className="w-full relative pointer-events-auto" />
                 </div>
             )}
-
-            {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />}
 
             <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked." confirmLabel="Skip Everything" cancelLabel="Keep Playing" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
         </div>

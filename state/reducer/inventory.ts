@@ -56,7 +56,6 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
     let logUpdates: string[] = [`Bought supplies for ${totalCost} Gold.`];
     let newMarketStock = { ...state.marketStock };
     let newUnlockedTabs = [...state.unlockedTabs];
-    let newActiveTutorialScene = state.activeTutorialScene;
 
     if (!newUnlockedTabs.includes('INVENTORY')) {
         newUnlockedTabs.push('INVENTORY');
@@ -81,10 +80,6 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
                 newForgeState.hasFurnace = true;
                 if (newTierLevel === 0) newTierLevel = 1; 
                 logUpdates.unshift('Furnace acquired! The restoration process has begun.');
-                
-                // Set the next tutorial scene mode
-                newActiveTutorialScene = 'FURNACE_RESTORED';
-                
                 return; 
             }
             if (buyItem.id === 'workbench') {
@@ -118,7 +113,6 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
         inventory: newInventory,
         marketStock: newMarketStock,
         unlockedTabs: newUnlockedTabs,
-        activeTutorialScene: newActiveTutorialScene,
         logs: [...logUpdates, ...state.logs]
     };
 };
