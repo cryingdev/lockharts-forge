@@ -1,4 +1,6 @@
 
+
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Phaser from 'phaser';
 import { X, Scissors } from 'lucide-react';
@@ -82,7 +84,7 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
         height: Math.floor(el.clientHeight) || 1,
         backgroundColor: '#0c0a09',
         scene: [WorkbenchScene],
-        pauseOnBlur: false,
+        // Fix: Removed 'pauseOnBlur' as it is not a recognized property in some GameConfig type definitions
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,

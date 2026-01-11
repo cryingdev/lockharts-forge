@@ -94,7 +94,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
         height: Math.floor(el.clientHeight) || 1,
         backgroundColor: '#0c0a09',
         scene: [SmithingScene],
-        pauseOnBlur: false,
+        // Fix: Removed 'pauseOnBlur' as it is not a recognized property in some GameConfig type definitions
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
