@@ -266,13 +266,12 @@ export default class SmithingScene extends Phaser.Scene {
         // UI 요소를 직접 클릭한 경우 동작 처리
         if (isBellowsClick) { this.pumpBellows(); return; }
         if (isHeatUpClick) { this.requestHeatUp(); return; }
-        
-        // UI 클릭이 아니거나 빈 공간인 경우 타격 가능하도록 수정 (이전의 isRightPanelArea 제한 제거)
         if (isSwitcherClick) return;
 
         if (!this.isPlaying) { this.handleStartTap(x, y); return; }
 
         if (this.currentTool === 'HAMMER') {
+          // 강화된 판정 로직 사용
           if (this.isPointerInHitArea(x, y)) {
             this.handleHammerSwing(x, y);
           } else { 
@@ -756,14 +755,31 @@ export default class SmithingScene extends Phaser.Scene {
     const rad = Phaser.Math.DegToRad(this.billetContainer.angle);
     const cos = Math.cos(rad); 
     const sin = Math.sin(rad);
-    const scale = this.billetContainer.scaleX;
+    
+    // 판정 너그러움: 실제 이미지보다 25% 더 큰 히트박스 생성
+    const hitDetectionScale = this.billetContainer.scaleX * 1.25;
+    
     const cx = this.billetContainer.x;
     const cy = this.billetContainer.y;
-    const transformed = localPoints.map(p => ({ x: cx + (p.x * scale * cos - p.y * scale * sin), y: cy + (p.x * scale * sin + p.y * scale * cos) }));
+    const transformed = localPoints.map(p => ({ 
+        x: cx + (p.x * hitDetectionScale * cos - p.y * hitDetectionScale * sin), 
+        y: cy + (p.x * hitDetectionScale * sin + p.y * hitDetectionScale * cos) 
+    }));
     this.hitPoly = new Phaser.Geom.Polygon(transformed);
   }
 
-  private isPointerInHitArea(px: number, py: number) { return this.hitPoly && Phaser.Geom.Polygon.Contains(this.hitPoly, px, py); }
+  private isPointerInHitArea(px: number, py: number) { 
+      // 1. 확장된 다각형 영역 체크
+      const inPoly = this.hitPoly && Phaser.Geom.Polygon.Contains(this.hitPoly, px, py);
+      if (inPoly) return true;
+
+      // 2. 중심점 근접 판정 보정 (금속이 얇은 경우에도 리듬 타겟 근처를 때리면 인정)
+      const distToCenter = Phaser.Math.Distance.Between(px, py, this.hitX, this.hitY);
+      // 타겟 링 반경 + 5px 정도의 여유를 줌 (UI 스케일 보정)
+      if (distToCenter < (this.targetRadius + 5) * this.uiScale) return true;
+
+      return false;
+  }
 
   private handleStartTap(x: number, y: number) {
     if (this.isReadyToStart) {
@@ -796,6 +812,7 @@ export default class SmithingScene extends Phaser.Scene {
   private handleMiss(x?: number, y?: number, customText?: string) {
     this.score = Math.max(0, this.score - 5); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 5);
     this.cameras.main.shake(100, 0.01); this.showFeedback(customText ?? 'MISS', 0xef4444, 1.0, x ?? this.hitX, y ?? this.hitY);
+    // 빗나갔을 때 반동 강도 1.5 유지
     this.applyKickback(1.5); 
     this.updateProgressBar(); this.resetRing();
   }
