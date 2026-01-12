@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { ArrowLeft, Heart, Gift, MessageSquare, UserPlus, Package, X, Star, Wrench, Search, UserMinus, Ban } from 'lucide-react';
+import { ArrowLeft, Heart, Gift, MessageSquare, UserPlus, Package, X, Star, Wrench, Search, UserMinus, Ban, Lock, Unlock, Sword, Shield } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { Mercenary } from '../../../models/Mercenary';
 import { CONTRACT_CONFIG, calculateHiringCost } from '../../../config/contract-config';
 import { InventoryItem } from '../../../types/inventory';
 import MercenaryDetailModal from '../../modals/MercenaryDetailModal';
+import { ItemSelectorList } from '../../ItemSelectorList';
 
 interface TavernInteractionProps {
     mercenary: Mercenary;
@@ -114,6 +114,10 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     };
 
     const handleSelectItemForGift = (item: InventoryItem) => {
+        if (item.isLocked) {
+            actions.showToast("Cannot gift locked items.");
+            return;
+        }
         setPendingGiftItem(item);
         setShowGiftMenu(false);
         const raritySuffix = item.type === 'EQUIPMENT' ? ` (${item.equipmentData?.rarity})` : '';
@@ -135,6 +139,16 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const handleCancelGift = () => {
         setPendingGiftItem(null);
         setDialogue(`(You pull your hand back.) "Actually, never mind."`);
+    };
+
+    const getQualityLabel = (q: number): string => {
+        if (q >= 110) return 'MASTERWORK';
+        if (q >= 100) return 'PRISTINE';
+        if (q >= 90) return 'SUPERIOR';
+        if (q >= 80) return 'FINE';
+        if (q >= 70) return 'STANDARD';
+        if (q >= 60) return 'RUSTIC';
+        return 'CRUDE';
     };
 
     const giftableItems = state.inventory.filter(i => 
@@ -374,7 +388,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
 
             {showGiftMenu && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-                    <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[85vh]">
+                    <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[85vh]">
                         <div className="p-3 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="bg-pink-900/30 p-1.5 rounded-lg border border-pink-700/50">
@@ -386,43 +400,14 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
-                        <div className="p-3 overflow-y-auto grid grid-cols-2 gap-2 custom-scrollbar flex-1 min-h-0">
-                            {giftableItems.length === 0 ? (
-                                <div className="col-span-2 py-12 text-center opacity-50">
-                                    <Package className="w-8 h-8 text-stone-500 mx-auto mb-2" />
-                                    <p className="text-[10px] text-stone-600 italic">Inventory is empty.</p>
-                                </div>
-                            ) : (
-                                giftableItems.map(item => {
-                                    const isEquipment = item.type === 'EQUIPMENT';
-                                    const rarity = item.equipmentData?.rarity;
-                                    const rarityColor = getRarityColor(rarity);
-
-                                    return (
-                                        <button 
-                                            key={item.id} 
-                                            onClick={() => handleSelectItemForGift(item)}
-                                            className={`flex items-center gap-2 p-2 bg-stone-800 hover:bg-stone-750 border rounded-xl transition-all group text-left ${isEquipment ? 'border-amber-900/30' : 'border-stone-700'}`}
-                                        >
-                                            <div className="w-8 h-8 bg-stone-950 rounded-lg border border-stone-800 flex items-center justify-center text-lg shrink-0">
-                                                <img src={getItemImageUrl(item)} className="w-6 h-6 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                                                <span className="hidden text-xl">📦</span>
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className={`text-[10px] font-bold truncate ${isEquipment ? 'text-stone-200' : 'text-stone-300'}`}>{item.name}</div>
-                                                <div className="flex items-center gap-1 leading-none mt-0.5">
-                                                    {isEquipment ? (
-                                                        <span className={`text-[7px] font-black uppercase tracking-tighter ${rarityColor}`}>{rarity}</span>
-                                                    ) : (
-                                                        <div className="text-[8px] text-stone-500 font-mono">x{item.quantity}</div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </button>
-                                    );
-                                })
-                            )}
-                        </div>
+                        
+                        <ItemSelectorList 
+                            items={giftableItems}
+                            onSelect={(item) => handleSelectItemForGift(item)}
+                            onToggleLock={(id) => actions.toggleLockItem(id)}
+                            customerMarkup={1.0}
+                            emptyMessage="Your storage is empty."
+                        />
                     </div>
                 </div>
             )}

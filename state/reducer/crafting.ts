@@ -1,10 +1,9 @@
 
 import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
-import { getEnergyCost, generateEquipment } from '../../utils/craftingLogic';
+import { getEnergyCost, generateEquipment, calcCraftExp, getSmithingLevel, getUnlockedTier } from '../../utils/craftingLogic';
 import { MATERIALS } from '../../data/materials';
 
-// Helper for Quality Label mapping (110+ is Masterwork)
 const getQualityLabel = (q: number): string => {
     if (q >= 110) return "MASTERWORK";
     if (q >= 100) return "PRISTINE";
@@ -22,14 +21,12 @@ export const handleStartCrafting = (state: GameState, payload: { item: Equipment
 
     if (state.stats.energy < energyCost) return state;
 
-    // Check Resources
     const hasResources = item.requirements.every(req => {
         const invItem = state.inventory.find(i => i.id === req.id);
         return invItem && invItem.quantity >= req.count;
     });
     if (!hasResources) return state;
 
-    // Deduct Resources
     let newInventory = [...state.inventory];
     item.requirements.forEach(req => {
         newInventory = newInventory.map(invItem => {
@@ -53,7 +50,6 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
     const masteryCount = state.craftingMastery[item.id] || 0;
     const energyCost = getEnergyCost(item, masteryCount);
 
-    // Refund Resources
     let newInventory = [...state.inventory];
     item.requirements.forEach(req => {
         const existing = newInventory.find(i => i.id === req.id);
@@ -79,10 +75,28 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
 export const handleFinishCrafting = (state: GameState, payload: { item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number }): GameState => {
     const { item, quality, bonus = 0, masteryGain = 1 } = payload;
     const masteryCount = state.craftingMastery[item.id] || 0;
+    const isFirstCraft = masteryCount === 0;
+
+    // Calculate EXP - 퀄리티 수치를 직접 전달
+    const expGain = calcCraftExp({
+        tier: item.tier,
+        quality01: quality / 100,
+        isQuickCraft: masteryGain < 1.0,
+        isFirstCraft,
+        quality: quality
+    });
+
+    const isForge = item.craftingType === 'FORGE';
+    const oldExp = isForge ? state.stats.smithingExp : state.stats.workbenchExp;
+    const newExp = oldExp + expGain;
+    
+    const oldLevel = getSmithingLevel(oldExp);
+    const newLevel = getSmithingLevel(newExp);
+    const oldTier = getUnlockedTier(oldLevel);
+    const newTier = getUnlockedTier(newLevel);
 
     const equipment = generateEquipment(item, quality, masteryCount, bonus);
     
-    // Create actual inventory item
     const newItem: InventoryItem = {
         id: equipment.id, 
         name: equipment.name,
@@ -94,15 +108,15 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         equipmentData: equipment
     };
 
-    // IMMEDIATELY add to inventory copy
     const newInventory = [...state.inventory, newItem];
 
     const newMastery = { ...state.craftingMastery };
     newMastery[item.id] = (masteryCount || 0) + masteryGain;
 
     const label = getQualityLabel(quality);
-    let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}!`;
-    if (bonus > 0) logMsg += ` Minigame technique applied a stat bonus.`;
+    let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}! (+${expGain} XP)`;
+    if (bonus > 0) logMsg += ` Pinned technique applied +${bonus} enhancements.`;
+    if (newLevel > oldLevel) logMsg += ` Level Up! (Lv.${newLevel})`;
 
     let newUnlockedTabs = [...state.unlockedTabs];
     if (!newUnlockedTabs.includes('INVENTORY')) {
@@ -116,7 +130,13 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         inventory: newInventory,
         unlockedTabs: newUnlockedTabs,
         craftingMastery: newMastery,
-        lastCraftedItem: newItem, // This triggers the guidance popup
+        lastCraftedItem: newItem, 
+        stats: {
+            ...state.stats,
+            smithingExp: isForge ? newExp : state.stats.smithingExp,
+            workbenchExp: !isForge ? newExp : state.stats.workbenchExp
+        },
+        unlockedTierPopup: newTier > oldTier ? { type: item.craftingType, tier: newTier } : state.unlockedTierPopup,
         logs: [logMsg, ...state.logs]
     };
 };

@@ -1,3 +1,4 @@
+
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -5,13 +6,14 @@ import { GameAction } from './actions';
 import { handleRepairWork } from './reducer/repair';
 import { handleSleep, handleConfirmSleep } from './reducer/sleep';
 import { handleTriggerEvent, handleCloseEvent, handleToggleJournal } from './reducer/events';
-import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem } from './reducer/inventory';
+import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem, handleToggleLockItem } from './reducer/inventory';
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
 import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer, handleRefuseCustomer } from './reducer/shop';
 import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon } from './reducer/manualDungeon';
+import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -38,12 +40,14 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'INSTALL_FURNACE': return handleInstallFurnace(state);
     case 'SELL_ITEM': return handleSellItem(state, action.payload);
     case 'USE_ITEM': return handleUseItem(state, action.payload);
+    case 'TOGGLE_LOCK_ITEM': return handleToggleLockItem(state, action.payload);
 
     // Crafting
     case 'START_CRAFTING': return handleStartCrafting(state, action.payload);
     case 'CANCEL_CRAFTING': return handleCancelCrafting(state, action.payload);
     case 'FINISH_CRAFTING': return handleFinishCrafting(state, action.payload);
     case 'DISMISS_CRAFTING_RESULT': return { ...state, lastCraftedItem: null };
+    case 'DISMISS_TIER_UNLOCK': return { ...state, unlockedTierPopup: null };
     case 'SET_CRAFTING': return handleSetCrafting(state, action.payload);
     case 'UPDATE_FORGE_STATUS': return handleUpdateForgeStatus(state, action.payload);
 
@@ -63,6 +67,10 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'TALK_MERCENARY': return handleTalkMercenary(state, action.payload);
     case 'ALLOCATE_STAT': return handleAllocateStat(state, action.payload);
     case 'UPDATE_MERCENARY_STATS': return handleUpdateMercenaryStats(state, action.payload);
+
+    // Garrick Market
+    case 'TALK_GARRICK': return handleTalkGarrick(state);
+    case 'GIFT_GARRICK': return handleGiftGarrick(state, action.payload);
 
     // Expedition
     case 'START_EXPEDITION': return handleStartExpedition(state, action.payload);

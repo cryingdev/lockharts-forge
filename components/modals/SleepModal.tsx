@@ -1,11 +1,15 @@
-import React, { useMemo } from 'react';
+
+import React, { useMemo, useRef } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Moon, BedDouble, ChevronRight, X, Coins, ShoppingBag, Users, Map } from 'lucide-react';
 import { calculateDailyWage } from '../../config/contract-config';
 
 const SleepModal = () => {
   const { state, actions } = useGame();
-  const { gold, dailyFinancials } = state.stats;
+  const { gold, dailyFinancials, day } = state.stats;
+
+  // 1. 모든 훅은 조건부 반환문(Early Return)보다 앞에 정의되어야 합니다.
+  const initialDayRef = useRef(day);
 
   const { totalWages } = useMemo(() => {
       const hired = state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
@@ -13,11 +17,17 @@ const SleepModal = () => {
       return { totalWages: wages };
   }, [state.knownMercenaries]);
 
+  // 2. 훅 정의가 끝난 후 조건부 반환을 수행합니다.
+  if (!state.showSleepModal) {
+      initialDayRef.current = day; // 닫혀있을 때는 현재 날짜 동기화
+      return null;
+  }
+
+  const isTransitioning = day > initialDayRef.current;
+
   const totalIncome = dailyFinancials.incomeShop + dailyFinancials.incomeInventory + dailyFinancials.incomeDungeon + dailyFinancials.incomeRepair;
   const totalExpenses = dailyFinancials.expenseMarket + totalWages + dailyFinancials.expenseScout;
   const netChange = totalIncome - totalExpenses;
-
-  if (!state.showSleepModal) return null;
 
   const FinancialRow = ({ label, value, icon: Icon, isNegative = false, isSub = false }: { label: string, value: number, icon: any, isNegative?: boolean, isSub?: boolean }) => (
     <div className={`flex justify-between items-center gap-8 text-[10px] md:text-sm ${isSub ? 'pl-6 border-l border-indigo-900/30 ml-2 py-0.5' : 'py-1'}`}>
@@ -33,7 +43,7 @@ const SleepModal = () => {
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/95 backdrop-blur-md px-[10%] py-[15%] animate-in fade-in duration-700 overflow-hidden">
-      <div className="relative w-fit max-w-[500px] h-fit max-h-full min-h-[200px] min-w-[280px] bg-indigo-950/20 border-2 border-indigo-500/30 rounded-3xl shadow-[0_0_60px_rgba(55,48,163,0.2)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 mx-auto">
+      <div className={`relative w-fit max-w-[500px] h-fit max-h-full min-h-[200px] min-w-[280px] bg-indigo-950/20 border-2 border-indigo-500/30 rounded-3xl shadow-[0_0_60px_rgba(55,48,163,0.2)] flex flex-col overflow-hidden transition-all duration-300 mx-auto ${isTransitioning ? 'opacity-0 scale-95 pointer-events-none' : 'animate-in zoom-in-95 duration-500'}`}>
         
         {/* Header */}
         <div className="bg-indigo-950/40 p-5 border-b border-indigo-500/20 flex items-center justify-between shrink-0">
@@ -68,7 +78,7 @@ const SleepModal = () => {
             </div>
         </div>
 
-        {/* Footer - Redesigned to match Standard Primary Button Style */}
+        {/* Footer */}
         <div className="p-5 md:p-7 bg-indigo-950/40 border-t border-indigo-500/20 shrink-0">
             <button 
                 onClick={actions.confirmSleep}

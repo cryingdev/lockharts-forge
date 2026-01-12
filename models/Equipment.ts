@@ -59,6 +59,9 @@ export interface Equipment {
     value: number;
   };
 
+  // 강화 시스템
+  enhancementCount: number; // 5콤보마다 누적된 강화 횟수
+
   // 특수 능력
   specialAbilities: SpecialAbility[];
   

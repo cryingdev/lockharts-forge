@@ -7,6 +7,61 @@ const mapSubCategoryToType = (subCat: string): EquipmentType => {
     return subCat as EquipmentType; 
 };
 
+/**
+ * 상향 조정된 레벨별 누적 경험치 테이블
+ * 아이템 품질(약 100)이 그대로 경험치가 되므로 요구량을 대폭 늘림
+ */
+export const LEVEL_EXP_TABLE = [
+    0,      // Lv 1
+    500,    // Lv 2 (약 5번 제작)
+    1200,   // Lv 3
+    2200,   // Lv 4
+    3500,   // Lv 5 (Tier 2 Unlock)
+    5200,   // Lv 6
+    7500,   // Lv 7
+    10500,  // Lv 8
+    14500,  // Lv 9
+    20000,  // Lv 10 (Tier 3 Unlock)
+    27000,  // Lv 11
+    36000,  // Lv 12
+    47000,  // Lv 13
+    60000,  // Lv 14
+    75000,  // Lv 15
+    95000   // Lv 16 (Tier 4 Unlock)
+];
+
+export function getSmithingLevel(exp: number): number {
+  let level = 1;
+  for (let i = 0; i < LEVEL_EXP_TABLE.length; i++) {
+    if (exp >= LEVEL_EXP_TABLE[i]) level = i + 1;
+  }
+  return level;
+}
+
+export function getUnlockedTier(level: number): number {
+  if (level >= 16) return 4;
+  if (level >= 10) return 3;
+  if (level >= 5) return 2;
+  return 1;
+}
+
+export function calcCraftExp(args: {
+  tier: number;
+  quality01: number;      // 0~1 (Internal multiplier, will use quality value instead)
+  isQuickCraft: boolean;
+  isFirstCraft: boolean;
+  quality?: number;       // The actual quality value (0-120)
+}): number {
+  const { quality = 0, isQuickCraft } = args;
+
+  // 제작된 아이템의 퀄리티를 그대로 경험치로 반환
+  // 퀵 크래프트(간이 제작)시에는 효율이 50%로 감소
+  const baseExp = quality;
+  const quickMult = isQuickCraft ? 0.5 : 1.0;
+
+  return Math.round(baseExp * quickMult);
+}
+
 export const getEnergyCost = (item: EquipmentItem, masteryCount: number): number => {
     let cost = 20; 
     if (masteryCount >= MASTERY_THRESHOLDS.ARTISAN) {
@@ -15,7 +70,7 @@ export const getEnergyCost = (item: EquipmentItem, masteryCount: number): number
     return Math.max(5, cost);
 };
 
-export const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number, bonus: number = 0): Equipment => {
+export const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number, enhancementCount: number = 0): Equipment => {
     let statMultiplier = 1.0;
     let priceMultiplier = 1.0;
     let namePrefix = '';
@@ -30,13 +85,6 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         namePrefix = MASTERY_THRESHOLDS.ADEPT_BONUS.prefix;
     }
 
-    let rarity = EquipmentRarity.COMMON;
-    if (quality >= 110) rarity = EquipmentRarity.LEGENDARY; 
-    else if (quality >= 100) rarity = EquipmentRarity.EPIC;  
-    else if (quality >= 85) rarity = EquipmentRarity.RARE;
-    else if (quality >= 60) rarity = EquipmentRarity.UNCOMMON;
-
-    // 적용: 최소 품질 배율을 0.2로 설정하여 능력치가 0이 되는 것을 방지
     const qualityMultiplier = Math.max(0.2, quality / 100); 
     const finalMultiplier = qualityMultiplier * statMultiplier;
 
@@ -49,23 +97,21 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         magicalDefense: Math.round(base.magicalDefense * finalMultiplier),
     };
 
-    let appliedBonus: Equipment['appliedBonus'] = undefined;
-
-    if (bonus > 0) {
-        let targetStat: keyof EquipmentStats = 'physicalAttack';
-        if (stats.magicalAttack > stats.physicalAttack) {
-            targetStat = 'magicalAttack';
-        } else if (stats.physicalDefense > stats.physicalAttack && stats.physicalDefense > stats.magicalAttack) {
-            targetStat = 'physicalDefense';
-        } else if (stats.magicalDefense > stats.physicalAttack && stats.magicalDefense > stats.magicalAttack) {
-            targetStat = 'magicalDefense';
-        }
-        
-        stats[targetStat] += bonus;
-        appliedBonus = { stat: targetStat, value: bonus };
+    const statKeys: (keyof EquipmentStats)[] = ['physicalAttack', 'physicalDefense', 'magicalAttack', 'magicalDefense'];
+    for (let i = 0; i < enhancementCount; i++) {
+        const randomKey = statKeys[Math.floor(Math.random() * statKeys.length)];
+        stats[randomKey] = Math.round(stats[randomKey] * 1.02);
     }
 
-    const price = Math.round(recipe.baseValue * finalMultiplier * priceMultiplier);
+    const rarityScore = quality + (enhancementCount * 2);
+    
+    let rarity = EquipmentRarity.COMMON;
+    if (rarityScore >= 125) rarity = EquipmentRarity.LEGENDARY; 
+    else if (rarityScore >= 110) rarity = EquipmentRarity.EPIC;  
+    else if (rarityScore >= 95) rarity = EquipmentRarity.RARE;
+    else if (rarityScore >= 75) rarity = EquipmentRarity.UNCOMMON;
+
+    const price = Math.round(recipe.baseValue * finalMultiplier * priceMultiplier * (1 + enhancementCount * 0.05));
 
     return {
         id: `${recipe.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -79,13 +125,14 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         image: recipe.image,
         description: recipe.description,
         stats: stats,
-        appliedBonus,
+        enhancementCount,
         specialAbilities: [], 
         durability: recipe.maxDurability, 
         maxDurability: recipe.maxDurability,
         isRepairable: recipe.isRepairable,
         equipRequirements: recipe.equipRequirements,
         craftedDate: Date.now(),
+        crafterName: 'Lockhart',
         previousOwners: [], 
         slotType: recipe.slotType,
         isTwoHanded: recipe.isTwoHanded

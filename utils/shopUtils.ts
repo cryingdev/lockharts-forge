@@ -1,4 +1,3 @@
-
 import { Mercenary } from '../models/Mercenary';
 import { ShopCustomer } from '../types/index';
 import { EQUIPMENT_ITEMS } from '../data/equipment';
@@ -20,6 +19,7 @@ export const generateShopRequest = (merc: Mercenary): ShopCustomer => {
     let requestedId = '';
     let price = 0;
     let dialogue = '';
+    let markup = 1.1 + Math.random() * 0.4;
 
     // Filter Equipment based on Job Class and Tier 1
     const allowedSubCats = JOB_PREFERENCES[merc.job] || [];
@@ -37,14 +37,16 @@ export const generateShopRequest = (merc: Mercenary): ShopCustomer => {
     
     if (target) {
         requestedId = target.id;
-        price = Math.ceil(target.baseValue * (1.1 + Math.random() * 0.4));
+        // Current offered price as a preview (calculated for 100 quality)
+        price = Math.ceil(target.baseValue * markup);
         dialogue = `I require a ${target.name}.`;
     } else {
         // Ultimate fallback (Should never happen if gameData is correct)
         // Defaults to the first item in the game data to prevent crash
         const fallback = EQUIPMENT_ITEMS[0];
         requestedId = fallback.id;
-        price = fallback.baseValue;
+        markup = 1.2;
+        price = Math.ceil(fallback.baseValue * markup);
         dialogue = `I'll take a ${fallback.name}.`;
     }
 
@@ -64,6 +66,7 @@ export const generateShopRequest = (merc: Mercenary): ShopCustomer => {
             type: 'EQUIPMENT',
             requestedId,
             price,
+            markup,
             dialogue
         },
         entryTime: Date.now()

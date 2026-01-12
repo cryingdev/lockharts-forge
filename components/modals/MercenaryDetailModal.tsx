@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Mercenary } from '../../models/Mercenary';
@@ -29,6 +28,16 @@ const StatDiff = ({ current, next, isPercent = false }: { current: number, next:
             <span>{isPercent ? Math.abs(diff).toFixed(1) : Math.abs(Math.round(diff))}</span>
         </div>
     );
+};
+
+const getRarityClasses = (rarity?: string) => {
+    switch (rarity) {
+        case 'Legendary': return 'text-amber-400 border-amber-500/50 bg-amber-950/40';
+        case 'Epic': return 'text-purple-400 border-purple-500/50 bg-purple-950/40';
+        case 'Rare': return 'text-blue-400 border-blue-500/50 bg-blue-950/40';
+        case 'Uncommon': return 'text-emerald-400 border-emerald-500/50 bg-emerald-950/40';
+        default: return 'text-stone-400 border-stone-700/50 bg-stone-900/40';
+    }
 };
 
 const MercenaryPaperDoll = ({ 
@@ -94,11 +103,8 @@ const MercenaryPaperDoll = ({
         );
     };
 
-    const cpDiff = nextCombatPower - baseCombatPower;
-
     return (
         <div className="w-[42%] h-full relative bg-stone-900/40 flex flex-col overflow-hidden border-r border-white/5">
-            {/* Left Header */}
             <div className="p-3 md:p-6 flex flex-col gap-0.5 md:gap-1 shrink-0 bg-stone-950/40 border-b border-white/5 backdrop-blur-md z-30">
                 <h2 className="text-xs md:text-2xl font-black text-stone-100 font-serif truncate leading-none">{mercenary.name}</h2>
                 <div className="flex justify-between items-end">
@@ -119,7 +125,6 @@ const MercenaryPaperDoll = ({
                 </div>
             </div>
 
-            {/* Paper Doll Area */}
             <div className="flex-1 relative w-full flex items-center justify-center overflow-hidden min-h-0">
                 <div className="relative h-[90%] w-full flex items-center justify-center pointer-events-none opacity-80">
                     <img 
@@ -200,7 +205,6 @@ const MercenaryStatsPanel = ({
 
     return (
         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6 flex flex-col gap-4 md:gap-6 min-h-0 bg-stone-900/10">
-            {/* Level & XP */}
             <div className="bg-stone-950/40 p-2 md:p-5 rounded-xl border border-white/5 shadow-inner shrink-0">
                 <div className="flex justify-between items-end mb-1 md:mb-2 leading-none">
                     <span className="text-amber-500 font-black font-mono text-[10px] md:text-lg uppercase tracking-tight">LV {mercenary.level}</span>
@@ -211,7 +215,6 @@ const MercenaryStatsPanel = ({
                 </div>
             </div>
             
-            {/* Attribute Points */}
             <div className="bg-stone-950/60 rounded-xl border border-stone-800 p-3 md:p-6 shrink-0 relative overflow-hidden">
                 <div className="flex justify-between items-center mb-3 md:mb-4 px-1">
                     <h4 className="text-[8px] md:text-xs font-black text-stone-500 uppercase tracking-widest flex items-center gap-1.5 md:gap-2"><Star className="w-3 h-3 text-amber-600" /> Attributes</h4>
@@ -253,7 +256,6 @@ const MercenaryStatsPanel = ({
                 )}
             </div>
 
-            {/* Vital Bars */}
             <div className="grid grid-cols-2 gap-2 md:gap-6 shrink-0">
                 <div className="bg-stone-950/40 p-2 md:p-5 rounded-xl border border-white/5 flex items-center gap-2 md:gap-4 shadow-sm">
                     <div className="p-1.5 md:p-3 bg-red-950/40 rounded-lg text-red-500 border border-red-900/30"><Heart className="w-4 h-4 md:w-7 md:h-7" /></div>
@@ -271,7 +273,6 @@ const MercenaryStatsPanel = ({
                 </div>
             </div>
 
-            {/* Battle Stats Grid */}
             <div className="space-y-2 md:space-y-3 pb-6 shrink-0">
                 <h4 className="text-[8px] md:text-xs font-black text-stone-500 uppercase tracking-widest flex items-center gap-1.5 px-1"><Sword className="w-3 h-3" /> Battle Performance</h4>
                 <div className="grid grid-cols-2 gap-1.5 md:gap-4">
@@ -311,9 +312,18 @@ const EquipmentInventoryList = ({
             : inventory;
     }, [inventory, selectedSlotFilter]);
 
+    const getQualityLabel = (q: number): string => {
+        if (q >= 110) return 'MASTERWORK';
+        if (q >= 100) return 'PRISTINE';
+        if (q >= 90) return 'SUPERIOR';
+        if (q >= 80) return 'FINE';
+        if (q >= 70) return 'STANDARD';
+        if (q >= 60) return 'RUSTIC';
+        return 'CRUDE';
+    };
+
     return (
         <div className="flex-1 flex flex-col min-h-0 bg-stone-950/40">
-            {/* List Header */}
             <div className="p-3 md:p-6 bg-stone-900/60 border-b border-white/5 flex justify-between items-center shrink-0 z-10 backdrop-blur-md">
                 <h3 className="text-[9px] md:text-xs font-black text-stone-400 uppercase tracking-widest flex items-center gap-2">
                     <Box className="w-4 h-4 text-amber-600" /> 
@@ -335,23 +345,26 @@ const EquipmentInventoryList = ({
                         const reqs = item.equipmentData.equipRequirements || {};
                         const failedStats = Object.entries(reqs).filter(([stat, val]) => totalMercStats[stat as keyof PrimaryStats] < (val as number));
                         const canEquip = failedStats.length === 0;
+                        const rarityClasses = getRarityClasses(item.equipmentData.rarity);
                         let imageUrl = item.equipmentData.image ? getAssetUrl(item.equipmentData.image) : (item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`));
 
                         return (
                             <div 
                                 key={item.id}
                                 onClick={() => !isSelected && onSelect(item.id)}
-                                className={`flex flex-col gap-2 p-3 md:p-5 rounded-xl border transition-all ${isSelected ? 'border-amber-500 bg-stone-900/80' : 'border-stone-800 bg-stone-900/30'} cursor-pointer group ${!canEquip ? 'opacity-60' : ''}`}
+                                className={`flex flex-col gap-2 p-3 md:p-5 rounded-xl border transition-all ${isSelected ? 'border-amber-500 bg-stone-900/80 shadow-inner' : 'border-stone-800 bg-stone-900/30'} cursor-pointer group ${!canEquip ? 'opacity-60' : ''}`}
                             >
                                 <div className="flex items-center gap-3 md:gap-4">
-                                    <div className="w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-lg border border-stone-800 flex items-center justify-center shrink-0">
+                                    <div className={`w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-lg border-2 flex items-center justify-center shrink-0 ${rarityClasses}`}>
                                         <img src={imageUrl} className="w-8 h-8 md:w-12 md:h-12 object-contain" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="text-[11px] md:text-lg font-black truncate text-stone-200">{item.name}</div>
-                                        <div className="flex items-center gap-2 text-[8px] md:text-[11px] mt-0.5">
-                                            <span className="text-stone-600 font-mono">#{item.id.slice(-4)}</span>
-                                            <span className="text-amber-600 font-black uppercase tracking-widest">{item.equipmentData.rarity}</span>
+                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                            <span className={`text-[7px] md:text-[9px] px-1.5 py-0.5 rounded font-black uppercase border leading-none ${rarityClasses}`}>
+                                                {item.equipmentData.rarity}
+                                            </span>
+                                            <span className="text-[7px] md:text-[9px] text-stone-600 font-mono font-bold">LV.{item.equipmentData.quality >= 100 ? 'EX' : 'ST'}</span>
                                         </div>
                                     </div>
                                     {!isReadOnly && isSelected && canEquip && (
@@ -368,18 +381,11 @@ const EquipmentInventoryList = ({
                                         <ShieldAlert className="w-3 h-3" />
                                         DUR: {item.equipmentData.durability}/{item.equipmentData.maxDurability}
                                     </div>
-                                    {Object.keys(reqs).length > 0 && (
-                                        <div className="flex flex-wrap gap-1 justify-end">
-                                            {Object.entries(reqs).map(([stat, val]) => {
-                                                const met = totalMercStats[stat as keyof PrimaryStats] >= (val as number);
-                                                return (
-                                                    <span key={stat} className={`text-[7px] md:text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase border ${met ? 'text-stone-700 border-stone-800' : 'text-red-500 border-red-900/30 bg-red-950/20'}`}>
-                                                        {stat} {val}
-                                                    </span>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[7px] md:text-[9px] text-amber-600 font-black uppercase tracking-tighter bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-900/20">
+                                            {getQualityLabel(item.equipmentData.quality)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -413,7 +419,6 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
     const currentEquipmentStats = (Object.values(mercenary.equipment) as (Equipment | null)[]).map(eq => eq?.stats).filter(Boolean);
     const currentStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
     const currentAttackType = mergedPrimary.int > mergedPrimary.str ? 'MAGICAL' : 'PHYSICAL';
-    // Fix: Added missing mercenary.job argument to calculateCombatPower call
     const currentCombatPower = calculateCombatPower(currentStats, mercenary.job, currentAttackType);
 
     let previewStats: DerivedStats | null = null;
@@ -426,7 +431,6 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
             else if (item.slotType === 'OFF_HAND' && previewEq.MAIN_HAND?.isTwoHanded) previewEq.MAIN_HAND = null;
             previewEq[item.slotType] = item;
             previewStats = applyEquipmentBonuses(baseDerived, (Object.values(previewEq) as (Equipment | null)[]).map(e => e?.stats).filter(Boolean) as any);
-            // Fix: Added missing mercenary.job argument to calculateCombatPower call
             previewCombatPower = calculateCombatPower(previewStats, mercenary.job, currentAttackType);
         }
     }
@@ -436,7 +440,6 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
 
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-2 md:p-6 py-[15dvh] md:py-6 animate-in fade-in duration-300 overflow-hidden">
-            {/* Global Close Button - Repositioned to avoid overlap with tabs */}
             <button 
                 onClick={onClose} 
                 className="fixed top-4 right-4 z-[1050] p-1.5 md:p-3 bg-red-900/30 hover:bg-red-600 rounded-full text-red-500 hover:text-white border border-red-500/30 transition-all shadow-2xl backdrop-blur-md active:scale-90"
@@ -458,7 +461,6 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
 
                 <div className="flex-1 bg-stone-900/30 flex flex-col h-full overflow-hidden">
                     <div className="flex border-b border-white/5 bg-stone-950/80 shrink-0 z-20 backdrop-blur-3xl pr-16 md:pr-0">
-                        {/* Tab Menu - With Safe Margin and No-Wrap */}
                         <button 
                             onClick={() => setActiveTab('STATS')}
                             className={`flex-1 py-3 md:py-6 text-[10px] md:text-sm font-black uppercase tracking-widest flex items-center justify-center gap-1.5 md:gap-3 transition-all whitespace-nowrap ${activeTab === 'STATS' ? 'text-amber-400 bg-stone-900/60 border-b-2 border-amber-500' : 'text-stone-600 hover:text-stone-300'}`}

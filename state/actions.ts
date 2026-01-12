@@ -1,3 +1,4 @@
+
 import { GameEvent } from '../types/events';
 import { EquipmentItem, InventoryItem } from '../types/inventory';
 import { EquipmentSlotType } from '../models/Equipment';
@@ -21,6 +22,7 @@ export type GameAction =
   | { type: 'CANCEL_CRAFTING'; payload: { item: EquipmentItem } }
   | { type: 'FINISH_CRAFTING'; payload: { item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number } }
   | { type: 'DISMISS_CRAFTING_RESULT' }
+  | { type: 'DISMISS_TIER_UNLOCK' }
   | { type: 'SELL_ITEM'; payload: { itemId: string; count: number; price: number; equipmentInstanceId?: string; customer?: Mercenary } }
   | { type: 'TOGGLE_SHOP' }
   | { type: 'ADD_KNOWN_MERCENARY'; payload: Mercenary }
@@ -36,14 +38,18 @@ export type GameAction =
   | { type: 'FIRE_MERCENARY'; payload: { mercenaryId: string } }
   | { type: 'GIVE_GIFT'; payload: { mercenaryId: string; itemId: string } }
   | { type: 'TALK_MERCENARY'; payload: { mercenaryId: string } }
+  // Added missing expedition and equipment actions
   | { type: 'START_EXPEDITION'; payload: { dungeonId: string; partyIds: string[] } }
   | { type: 'COMPLETE_EXPEDITION'; payload: { expeditionId: string } }
-  | { type: 'CLAIM_EXPEDITION'; payload: { expeditionId: string } }
   | { type: 'ABORT_EXPEDITION'; payload: { expeditionId: string } }
+  | { type: 'CLAIM_EXPEDITION'; payload: { expeditionId: string; rescuedNpcId?: string } }
   | { type: 'DISMISS_DUNGEON_RESULT' }
   | { type: 'EQUIP_ITEM'; payload: { mercenaryId: string; inventoryItemId: string } }
   | { type: 'UNEQUIP_ITEM'; payload: { mercenaryId: string; slot: EquipmentSlotType } }
   | { type: 'USE_ITEM'; payload: { itemId: string } }
+  | { type: 'TOGGLE_LOCK_ITEM'; payload: { itemId: string } }
+  | { type: 'TALK_GARRICK' }
+  | { type: 'GIFT_GARRICK'; payload: { itemId: string } }
   | { type: 'ALLOCATE_STAT'; payload: { mercenaryId: string; stat: keyof PrimaryStats } }
   | { type: 'UPDATE_MERCENARY_STATS'; payload: { mercenaryId: string; stats: PrimaryStats } }
   | { type: 'SET_UI_EFFECT'; payload: { effect: keyof GameState['uiEffects']; value: boolean } }

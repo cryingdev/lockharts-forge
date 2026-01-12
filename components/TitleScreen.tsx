@@ -36,12 +36,24 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
 
     const handleContinue = () => {
         const info = getLatestSaveInfo();
-        if (info) onLoadGame(info.data, info.index);
+        if (info) {
+            // 버전 검증
+            if (info.data.version !== VERSION) {
+                alert(`Cannot load: Version mismatch.\n\nSave: v${info.data.version || '0.1.36'}\nApp: v${VERSION}\n\nPlease start a New Game or use a compatible save.`);
+                return;
+            }
+            onLoadGame(info.data, info.index);
+        }
     };
 
     const handleLoadFromSlot = (index: number) => {
         const data = loadFromSlot(index);
         if (data) {
+            // 버전 검증
+            if (data.version !== VERSION) {
+                alert(`Cannot load: Version mismatch.\n\nSave: v${data.version || '0.1.36'}\nApp: v${VERSION}`);
+                return;
+            }
             onLoadGame(data, index);
             setShowLoadModal(false);
         }

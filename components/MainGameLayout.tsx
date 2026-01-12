@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
@@ -22,6 +23,7 @@ import SleepModal from './modals/SleepModal';
 import JournalModal from './modals/JournalModal';
 import DungeonResultModal from './modals/DungeonResultModal';
 import CraftingResultModal from './modals/CraftingResultModal';
+import TierUnlockModal from './modals/TierUnlockModal';
 import SettingsModal from './modals/SettingsModal';
 import TutorialScene from './tabs/Forge/TutorialScene';
 import DialogueBox from './DialogueBox';
@@ -253,9 +255,54 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
 
+  // Smooth Sleep Transition State
+  const [isSleeping, setIsSleeping] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+  const [zzzText, setZzzText] = useState('');
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+
+  const prevDayRef = useRef(state.stats.day);
+  
+  useEffect(() => {
+    if (state.stats.day > prevDayRef.current) {
+        setIsSleeping(true);
+        setIsFadingOut(false);
+        setActiveTab('FORGE');
+
+        // Hold the dark screen for 1 second
+        const sleepTimer = setTimeout(() => {
+            setIsFadingOut(true);
+            const clearTimer = setTimeout(() => {
+                setIsSleeping(false);
+                setIsFadingOut(false);
+                actions.closeRest();
+            }, 1000); 
+            return () => clearTimeout(clearTimer);
+        }, 1000); 
+
+        prevDayRef.current = state.stats.day;
+        return () => clearTimeout(sleepTimer);
+    }
+    prevDayRef.current = state.stats.day;
+  }, [state.stats.day, actions]);
+
+  // ZZZ Animation Logic
+  useEffect(() => {
+    if (isSleeping && !isFadingOut) {
+        const frames = ['z', 'zz', 'zzz', 'zz'];
+        let idx = 0;
+        const timer = setInterval(() => {
+            setZzzText(frames[idx % frames.length]);
+            idx++;
+        }, 250);
+        return () => clearInterval(timer);
+    } else {
+        setZzzText('');
+    }
+  }, [isSleeping, isFadingOut]);
 
   const updateArrows = useCallback(() => {
     if (scrollRef.current) {
@@ -330,8 +377,8 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
   const allTabs = [
     { id: 'FORGE' as const, icon: Anvil, label: 'Forge' },
+    { id: 'INVENTORY' as const, icon: Package, label: 'Storage' },
     { id: 'MARKET' as const, icon: ShoppingBag, label: 'Market' },
-    { id: 'INVENTORY' as const, icon: Package, label: 'Items' },
     { id: 'SHOP' as const, icon: Coins, label: 'Shop', badge: activeTab !== 'SHOP' ? totalShopVisitors : 0 },
     { id: 'TAVERN' as const, icon: Beer, label: 'Tavern' },
     { id: 'DUNGEON' as const, icon: MapIcon, label: 'Dungeon', badge: completedExpeditionsCount },
@@ -345,6 +392,27 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   return (
     <div className="h-[100dvh] w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500 px-safe">
       
+      {/* FULL SCREEN SLEEP TRANSITION OVERLAY */}
+      {isSleeping && (
+          <div 
+            className={`fixed inset-0 z-[10000] bg-black pointer-events-auto transition-opacity ${isFadingOut ? 'opacity-0 duration-[1000ms] ease-out' : 'opacity-100 duration-0'}`}
+          >
+              {/* ZZZ Animation Effect */}
+              {!isFadingOut && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-4 animate-in fade-in duration-500">
+                          <span className="text-amber-500 font-serif italic text-5xl md:text-7xl tracking-widest drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]">
+                              {zzzText}
+                          </span>
+                          <span className="text-stone-700 font-black uppercase tracking-[0.4em] text-[10px] md:text-xs">
+                              Resting...
+                          </span>
+                      </div>
+                  </div>
+              )}
+          </div>
+      )}
+
       {/* GLOBAL SKIP BUTTON - Unified Style */}
       {isAnyTutorialActive && (
           <div className="fixed top-4 right-4 z-[6000] pointer-events-auto">
@@ -384,15 +452,15 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
           </div>
       )}
 
-      <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ease-in-out ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : 'translate-y-0 h-auto opacity-100'}`}>
+      <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ease-in-out ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : '-translate-y-0 h-auto opacity-100'}`}>
         <Header activeTab={activeTab} onTabChange={setActiveTab} onSettingsClick={() => setIsSettingsOpen(true)} />
         <div className="bg-stone-900 border-b border-stone-800 flex items-center relative z-10 overflow-hidden isolate h-11 md:h-14">
-          <div className={`absolute left-0 top-0 bottom-0 z-30 w-12 flex items-center transition-all duration-300 transform-gpu ${showLeftArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-events-none'}`}>
-              <div className="absolute inset-0 bg-gradient-to-r from-stone-900 via-stone-900/90 to-transparent" /><button onClick={() => scrollTabs('LEFT')} className="relative h-full w-full flex items-center pl-2 group/arrow"><ChevronLeft className="w-5 h-5 text-amber-5 group-hover:scale-125 transition-transform drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" /></button>
+          <div className={`absolute left-0 top-0 bottom-0 z-30 w-12 flex items-center transition-all duration-300 transform-gpu ${showLeftArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-none'}`}>
+              <div className="absolute inset-0 bg-gradient-to-r from-stone-900 via-stone-900/90 to-transparent" /><button onClick={() => scrollTabs('LEFT')} className="relative h-full w-full flex items-center pl-2 group/arrow"><ChevronLeft className="w-5 h-5 text-amber-5 group-hover:scale-125 transition-transform drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" /></button>
           </div>
           <div ref={scrollRef} onScroll={updateArrows} className="flex overflow-x-auto no-scrollbar flex-1 min-w-0 touch-pan-x scroll-smooth snap-x snap-mandatory overscroll-behavior-x-contain" style={{ WebkitOverflowScrolling: 'touch' }}>{allTabs.map(tab => renderTabButton(tab))}</div>
-          <div className={`absolute right-0 top-0 bottom-0 z-30 w-12 flex items-center justify-end transition-all duration-300 transform-gpu ${showRightArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-events-none'}`}>
-              <div className="absolute inset-0 bg-gradient-to-l from-stone-900 via-stone-900/90 to-transparent" /><button onClick={() => scrollTabs('RIGHT')} className="relative h-full w-full flex items-center justify-end pr-2 group/arrow"><ChevronRight className="w-5 h-5 text-amber-5 group-hover:scale-125 transition-transform drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" /></button>
+          <div className={`absolute right-0 top-0 bottom-0 z-30 w-12 flex items-center justify-end transition-all duration-300 transform-gpu ${showRightArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-none'}`}>
+              <div className="absolute inset-0 bg-gradient-to-l from-stone-900 via-stone-900/90 to-transparent" /><button onClick={() => scrollTabs('RIGHT')} className="relative h-full w-full flex items-center justify-end pr-2 group/arrow"><ChevronRight className="w-5 h-5 text-amber-5 group-hover:scale-125 transition-transform drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" /></button>
           </div>
         </div>
       </div>
@@ -409,6 +477,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
       <div className="h-[env(safe-area-inset-bottom)] bg-stone-900 shrink-0"></div>
       <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} />
+      <TierUnlockModal />
       <TutorialCompleteModal />
       <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Skipping will unlock all systems immediately. Grant full access?" confirmLabel="Yes, Skip It" cancelLabel="Continue Guide" onConfirm={() => { actions.completeTutorial(); setShowSkipConfirm(false); }} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
     </div>

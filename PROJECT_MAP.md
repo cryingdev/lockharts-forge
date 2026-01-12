@@ -70,4 +70,5 @@ This document provides a comprehensive structural map of the project, detailing 
 *   **UI Customization**: Added setting to toggle Header Log Ticker row.
 *   **Mobile Optimization**: Header and Modals refined for 320px+ screens.
 *   **Tutorial Polish**: Integrated the prologue sequence and furnace ignition steps.
+*   **UX Refinement**: Tab order adjusted to Forge / Storage / Market for better logical flow.
 *   **System**: version incremented to `v0.1.38`.

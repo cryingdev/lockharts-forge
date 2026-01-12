@@ -1,3 +1,4 @@
+
 import { GameState, GameSettings } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -24,6 +25,7 @@ export interface GameContextType {
     finishCrafting: (item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number) => void;
     craftItem: (item: EquipmentItem; quality: number) => void; 
     dismissCraftingResult: () => void;
+    dismissTierUnlock: () => void;
     
     buyItems: (items: { id: string; count: number }[], totalCost: number) => void;
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => void;
@@ -46,6 +48,9 @@ export interface GameContextType {
     fireMercenary: (mercenaryId: string) => void;
     giveGift: (mercenaryId: string, itemId: string) => void;
     talkMercenary: (mercenaryId: string) => void;
+    // Added missing Garrick interaction actions
+    talkGarrick: () => void;
+    giftGarrick: (payload: { itemId: string }) => void;
 
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
     completeExpedition: (expeditionId: string) => void;
@@ -58,6 +63,8 @@ export interface GameContextType {
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => void;
 
     useItem: (itemId: string) => void;
+    // Added missing toggleLockItem to satisfy interface requirements
+    toggleLockItem: (itemId: string) => void;
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => void;
     updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;
 

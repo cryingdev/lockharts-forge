@@ -4,6 +4,7 @@ export interface ShopRequest {
     type: 'RESOURCE' | 'EQUIPMENT';
     requestedId: string;
     price: number;
+    markup?: number; // Markup percentage offered by the customer
     dialogue: string;
 }
 

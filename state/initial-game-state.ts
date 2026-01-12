@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { MATERIALS } from '../data/materials';
@@ -22,6 +23,8 @@ export const createInitialGameState = (): GameState => ({
         maxEnergy: 100,
         day: 1,
         tierLevel: 0,
+        smithingExp: 0,
+        workbenchExp: 0,
         dailyFinancials: {
             incomeShop: 0,
             incomeInventory: 0,
@@ -57,6 +60,8 @@ export const createInitialGameState = (): GameState => ({
 
     // Market Initial Stock
     marketStock: MARKET_CATALOG.reduce((acc, item) => ({ ...acc, [item.id]: item.maxStock }), {}),
+    garrickAffinity: 0,
+    talkedToGarrickToday: false,
 
     // Game Logic State
     isCrafting: false,
@@ -69,6 +74,7 @@ export const createInitialGameState = (): GameState => ({
     craftingMastery: {},
     unlockedRecipes: [],
     unlockedTabs: ['FORGE', 'MARKET'],
+    unlockedTierPopup: null,
     tutorialStep: null,
     activeTutorialScene: 'PROLOGUE',
     hasCompletedPrologue: false,

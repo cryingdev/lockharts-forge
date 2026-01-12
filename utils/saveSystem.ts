@@ -1,8 +1,9 @@
+
 import { GameState } from '../types/game-state';
 
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 const META_KEY = 'lockharts_forge_meta';
-const APP_VERSION = '0.1.36';
+const APP_VERSION = '0.1.38';
 
 export interface SaveMetadata {
     index: number;
@@ -35,6 +36,7 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
     try {
         const dataToSave = {
             ...state,
+            version: APP_VERSION, // 데이터 본체에 버전 정보 추가
             activeEvent: null,
             showSleepModal: false,
             showJournal: false,
@@ -73,7 +75,7 @@ export const saveToStorage = (state: GameState) => {
     return saveToSlot(0, state);
 };
 
-export const loadFromSlot = (slotIndex: number): GameState | null => {
+export const loadFromSlot = (slotIndex: number): (GameState & { version?: string }) | null => {
     try {
         const data = localStorage.getItem(`${SAVE_PREFIX}${slotIndex}`);
         return data ? JSON.parse(data) : null;
@@ -83,7 +85,7 @@ export const loadFromSlot = (slotIndex: number): GameState | null => {
 };
 
 // 불러올 때 마지막 저장된 데이터와 그 인덱스를 함께 리턴하는 헬퍼
-export const getLatestSaveInfo = (): { data: GameState, index: number } | null => {
+export const getLatestSaveInfo = (): { data: GameState & { version?: string }, index: number } | null => {
     const meta = getSaveMetadataList();
     if (meta.length === 0) return null;
     const index = meta[0].index;
