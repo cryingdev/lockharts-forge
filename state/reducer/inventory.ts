@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../../types/index';
 import { MATERIALS } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -113,6 +112,7 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
         inventory: newInventory,
         marketStock: newMarketStock,
         unlockedTabs: newUnlockedTabs,
+        garrickAffinity: Math.min(100, state.garrickAffinity + 1), // 감사의 호감도 +1
         logs: [...logUpdates, ...state.logs]
     };
 };
@@ -143,10 +143,18 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     if (equipmentInstanceId) {
         const itemIndex = newInventory.findIndex(i => i.id === equipmentInstanceId);
         if (itemIndex > -1) {
+            // Locked check for safety
+            if (newInventory[itemIndex].isLocked) return state;
+
             itemName = newInventory[itemIndex].name;
             newInventory.splice(itemIndex, 1);
         }
     } else {
+        const itemIndex = newInventory.findIndex(i => i.id === itemId);
+        if (itemIndex > -1) {
+            if (newInventory[itemIndex].isLocked) return state;
+        }
+
         newInventory = newInventory.map(item => {
             if (item.id === itemId) {
                 itemName = item.name;
@@ -272,5 +280,19 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
         inventory: newInventory,
         unlockedRecipes: newUnlockedRecipes,
         logs: [logMsg, ...state.logs]
+    };
+};
+
+export const handleToggleLockItem = (state: GameState, payload: { itemId: string }): GameState => {
+    const newInventory = state.inventory.map(item => {
+        if (item.id === payload.itemId) {
+            return { ...item, isLocked: !item.isLocked };
+        }
+        return item;
+    });
+
+    return {
+        ...state,
+        inventory: newInventory
     };
 };

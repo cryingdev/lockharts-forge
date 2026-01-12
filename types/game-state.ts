@@ -90,6 +90,8 @@ export interface GameState {
 
   // Market State
   marketStock: Record<string, number>; // Remaining quantity per item ID
+  garrickAffinity: number;
+  talkedToGarrickToday: boolean;
 
   // Game Logic Control
   isCrafting: boolean; // Is the player currently in the minigame?

@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { Store, Coins, PackageOpen, Heart, Users, ArrowLeft, ZapOff } from 'lucide-react';
+import { Store, Coins, PackageOpen, Heart, Users, ArrowLeft, ZapOff, Info, Check, X, Lock, Star, Sword, Shield, Zap, Brain, ChevronRight, Search, Unlock, Sparkles } from 'lucide-react';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { MATERIALS } from '../../../data/materials';
 import { getAssetUrl } from '../../../utils';
 import { GAME_CONFIG } from '../../../config/game-config';
+import { InventoryItem } from '../../../types/inventory';
+import { ItemSelectorList } from '../../ItemSelectorList';
 
 interface ShopTabProps {
     onNavigate: (tab: any) => void;
@@ -54,37 +56,32 @@ const ShopSign = ({ isOpen, onToggle, disabled }: { isOpen: boolean, onToggle: (
 const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   const { isShopOpen } = state.forge;
-  const { activeCustomer, shopQueue, tutorialStep } = state;
+  const { activeCustomer, shopQueue, tutorialStep, inventory } = state;
   const [counterImgError, setCounterImgError] = useState(false);
   const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
   const [saleCompleted, setSaleCompleted] = useState(false);
   const [refusalReaction, setRefusalReaction] = useState<'POLITE' | 'ANGRY' | null>(null);
   
-  // Track affinity for logic (though we trigger hearts manually now)
-  const prevAffinityRef = useRef<number>(0);
+  const [showInstanceSelector, setShowInstanceSelector] = useState(false);
+  const [selectedInstance, setSelectedInstance] = useState<InventoryItem | null>(null);
 
   const spawnHearts = useCallback((count: number) => {
     const newHearts = Array.from({ length: count }).map((_, i) => ({
         id: Date.now() + i,
-        // Centralized range around the character (40% to 60%) to match Tavern
         left: 40 + Math.random() * 20, 
         delay: Math.random() * 0.5, 
-        // Reduced size (16px to 28px) to match Tavern interaction
         size: 16 + Math.random() * 12
     }));
     setFloatingHearts(prev => [...prev, ...newHearts]);
-    // Clear hearts after animation ends
     setTimeout(() => setFloatingHearts([]), 3500);
   }, []);
 
-  // Sync basic state when customer changes
   useEffect(() => {
     if (!activeCustomer) {
         setSaleCompleted(false);
         setRefusalReaction(null);
-        prevAffinityRef.current = 0;
-    } else {
-        prevAffinityRef.current = activeCustomer.mercenary.affinity;
+        setShowInstanceSelector(false);
+        setSelectedInstance(null);
     }
   }, [activeCustomer]);
 
@@ -95,6 +92,26 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
     return res ? res.name : id;
   };
 
+  const getQualityLabel = (q: number): string => {
+      if (q >= 110) return 'MASTERWORK';
+      if (q >= 100) return 'PRISTINE';
+      if (q >= 90) return 'SUPERIOR';
+      if (q >= 80) return 'FINE';
+      if (q >= 70) return 'STANDARD';
+      if (q >= 60) return 'RUSTIC';
+      return 'CRUDE';
+  };
+
+  const getRarityClasses = (rarity?: string) => {
+    switch (rarity) {
+        case 'Legendary': return 'text-amber-400 border-amber-500/50 bg-amber-950/40';
+        case 'Epic': return 'text-purple-400 border-purple-500/50 bg-purple-950/40';
+        case 'Rare': return 'text-blue-400 border-blue-500/50 bg-blue-950/40';
+        case 'Uncommon': return 'text-emerald-400 border-emerald-500/50 bg-emerald-950/40';
+        default: return 'text-stone-400 border-stone-700/50 bg-stone-900/40';
+    }
+  };
+
   const getItemImageUrl = (id: string) => {
       const eq = EQUIPMENT_ITEMS.find(e => e.id === id);
       if (eq && eq.image) return getAssetUrl(eq.image);
@@ -103,46 +120,81 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
       return getAssetUrl(`${id}.png`);
   };
 
+  const getInventoryItemImageUrl = (item: InventoryItem) => {
+    if (item.type === 'EQUIPMENT' && item.equipmentData) {
+        if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
+        return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
+    }
+    return getAssetUrl(`${item.id}.png`);
+  };
+
   const getItemIcon = (id: string) => {
       const eq = EQUIPMENT_ITEMS.find(e => e.id === id);
       if (eq) return eq.icon;
       return '📦';
   };
 
-  const handleSell = () => {
+  const matchingItems = useMemo(() => {
+      if (!activeCustomer) return [];
+      const { request } = activeCustomer;
+      if (request.type === 'RESOURCE') {
+          return inventory.filter(i => i.id === request.requestedId);
+      } else {
+          return inventory.filter(i => i.id.startsWith(request.requestedId));
+      }
+  }, [activeCustomer, inventory]);
+
+  const handleSellClick = () => {
       if (!activeCustomer) return;
+      if (matchingItems.length > 1) {
+          setShowInstanceSelector(true);
+      } else if (matchingItems.length === 1) {
+          const item = matchingItems[0];
+          if (item.isLocked) {
+              actions.showToast("Cannot sell locked items.");
+              return;
+          }
+          executeSell(item);
+      }
+  };
+
+  const executeSell = (item: InventoryItem) => {
+      if (!activeCustomer || !item) return;
+      if (item.isLocked) {
+          actions.showToast("Item is locked and cannot be sold.");
+          return;
+      }
       const { mercenary, request } = activeCustomer;
       const isPipTutorial = tutorialStep === 'SELL_ITEM_GUIDE' && mercenary.id === 'pip_green';
       const affinityGain = isPipTutorial ? 10 : 2;
       
-      // 1. Trigger Reducer (Gold + Affinity + Inventory)
-      if (request.type === 'RESOURCE') {
-          actions.sellItem(request.requestedId, 1, request.price, undefined, mercenary);
+      const markup = request.markup || 1.25;
+      const finalPrice = Math.ceil(item.baseValue * markup);
+
+      if (item.type === 'RESOURCE') {
+          actions.sellItem(item.id, 1, finalPrice, undefined, mercenary);
       } else {
-          const matchingItem = state.inventory.find(i => i.equipmentData && i.id.startsWith(request.requestedId));
-          if (matchingItem) actions.sellItem(matchingItem.id, 1, request.price, matchingItem.id, mercenary);
+          actions.sellItem(item.id, 1, finalPrice, item.id, mercenary);
       }
 
-      // 2. Trigger Visual Feedback with count matching affinity gain
       spawnHearts(affinityGain);
       setSaleCompleted(true);
+      setShowInstanceSelector(false);
+      setSelectedInstance(null);
   };
 
   const handleRefuse = () => {
       if (!activeCustomer) return;
-      
       const { mercenary } = activeCustomer;
       const affinity = mercenary.affinity || 0;
-      
       const politeChance = affinity > 40 ? 0.8 : 0.3;
       const isPolite = Math.random() < politeChance;
-
       if (isPolite) {
           setRefusalReaction('POLITE');
-          actions.refuseCustomer(mercenary.id, 0); // No affinity loss
+          actions.refuseCustomer(mercenary.id, 0);
       } else {
           setRefusalReaction('ANGRY');
-          actions.refuseCustomer(mercenary.id, 5); // Affinity -5
+          actions.refuseCustomer(mercenary.id, 5);
       }
   };
 
@@ -153,27 +205,14 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   };
   
   const handleToggleShop = () => {
-      if (!isShopOpen) {
-          if (state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE') {
-              actions.setTutorialStep('SELL_ITEM_GUIDE');
-          }
+      if (!isShopOpen && state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE') {
+          actions.setTutorialStep('SELL_ITEM_GUIDE');
       }
       actions.toggleShop();
   };
 
-  const hasItem = () => {
-      if (!activeCustomer) return false;
-      const { request } = activeCustomer;
-      if (request.type === 'RESOURCE') {
-          const item = state.inventory.find(i => i.id === request.requestedId);
-          return item && item.quantity > 0;
-      } else {
-          return state.inventory.some(i => i.id.startsWith(request.requestedId));
-      }
-  };
-
+  const hasItem = matchingItems.some(i => !i.isLocked);
   const canAffordOpen = state.stats.energy >= GAME_CONFIG.ENERGY_COST.OPEN_SHOP;
-  
   const isTutorialActive = tutorialStep === 'SELL_ITEM_GUIDE' || tutorialStep === 'PIP_PRAISE' || tutorialStep === 'DRAGON_TALK';
 
   const tutorialDialogue = {
@@ -185,10 +224,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
     DRAGON_TALK: {
         speaker: activeCustomer?.mercenary.name || "Pip the Green",
         text: "The village... it hasn't been the same since the Dragon's fire. I lost my brother that night. I see that same shadow in your eyes, smith. We all lost someone. Good luck with the forge.",
-        options: [{ label: "Farewell", action: () => {
-            handleFarewell();
-            actions.setTutorialStep('TUTORIAL_END_MONOLOGUE');
-        }, variant: 'primary' as const }]
+        options: [{ label: "Farewell", action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_MONOLOGUE'); }, variant: 'primary' as const }]
     },
     TUTORIAL_END_MONOLOGUE: {
         speaker: "Lockhart",
@@ -208,55 +244,34 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
           `"A fair price for quality steel. May your bellows never tire, smith."`,
           `"You truly have the Lockhart touch. This will serve me well in the ruins."`
       ];
-      const index = (activeCustomer?.id.length || 0) % lines.length;
-      return lines[index];
+      return lines[(activeCustomer?.id.length || 0) % lines.length];
   };
 
   const getRefusalDialogue = () => {
       if (refusalReaction === 'POLITE') {
-          const lines = [
+          return [
               `"I see. Perhaps another time then. Safe forging, smith."`,
               `"Ah, a shame. I'll keep looking elsewhere for now."`,
               `"Understandable. A Lockhart's work shouldn't be rushed. Farewell."`,
               `"I'll come back when your anvil is hotter. Until next time."`
-          ];
-          return lines[(activeCustomer?.id.length || 0) % lines.length];
+          ][(activeCustomer?.id.length || 0) % 4];
       } else {
-          const lines = [
+          return [
               `"What? I walked all this way for nothing? Hmph. Don't expect me back soon."`,
               `"A cold welcome for a paying customer... I'll find a better forge."`,
               `"Unbelievable. My old blade has more edge than your business sense!"`,
               `"I thought the Lockharts were more reliable. Guess I was wrong."`
-          ];
-          return lines[(activeCustomer?.id.length || 0) % lines.length];
+          ][(activeCustomer?.id.length || 0) % 4];
       }
   };
 
   return (
     <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
-        
-        <style>
-            {`
-                @keyframes heartFloatUp {
-                    0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
-                    20% { opacity: 1; }
-                    100% { transform: translateY(-350px) translateX(var(--wobble)) scale(1.4); opacity: 0; }
-                }
-                .animate-heart {
-                    animation: heartFloatUp 2.5s ease-out forwards;
-                }
-            `}
-        </style>
-
         <div className="absolute inset-0 z-0">
             <img 
                 src={getAssetUrl('shop_bg.jpeg')} 
-                alt="Shop Interior" 
                 className="absolute top-0 opacity-60 w-full h-full object-cover"
-                onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #292524, #1c1917)';
-                }}
+                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #292524, #1c1917)'; }}
             />
         </div>
 
@@ -266,7 +281,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             disabled={(!isShopOpen && !canAffordOpen) || isTutorialActive}
         />
 
-        {/* Queue Display */}
         {isShopOpen && !currentTutorialDialogue && (
             <div className="absolute top-20 md:top-28 right-4 z-50 flex items-center gap-1.5 md:gap-2 bg-stone-900/90 px-2 md:px-4 py-1 md:py-1.5 rounded-xl border border-stone-700 text-stone-200 shadow-xl backdrop-blur-md">
                 <div className="bg-stone-800 p-1 md:p-1.5 rounded-full">
@@ -279,7 +293,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        {/* Mercenary Info HUD */}
         {isShopOpen && activeCustomer && tutorialStep !== 'TUTORIAL_END_MONOLOGUE' && (
             <div className="absolute top-4 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
@@ -293,7 +306,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                             <span className="font-mono text-[9px] md:text-xs">{activeCustomer.mercenary.affinity}</span>
                         </div>
                     </div>
-                    
                     <div className="space-y-1.5 md:space-y-2.5">
                         <div className="flex flex-col gap-0.5">
                             <div className="flex justify-between items-center text-[7px] md:text-[9px] font-mono text-stone-500 px-0.5">
@@ -318,31 +330,19 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        {/* Character Placement */}
-        <div className="absolute inset-0 z-20 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
+        <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
             {isShopOpen && activeCustomer && tutorialStep !== 'TUTORIAL_END_MONOLOGUE' && (
                <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
                    <div className="relative h-[75dvh] md:h-[110dvh] w-auto flex justify-center bottom-[12dvh] md:bottom-0 md:translate-y-[20dvh]">
-                       
-                       {/* Floating Hearts Container - RENDERED BEFORE IMAGE (BEHIND) */}
                        {floatingHearts.map(heart => (
                            <Heart 
                                 key={heart.id}
                                 className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)] z-0"
-                                style={{
-                                    left: `${heart.left}%`,
-                                    bottom: '40%',
-                                    width: heart.size,
-                                    height: heart.size,
-                                    animationDelay: `${heart.delay}s`,
-                                    '--wobble': `${(Math.random() - 0.5) * 60}px`
-                                } as React.CSSProperties}
+                                style={{ left: `${heart.left}%`, bottom: '40%', width: heart.size, height: heart.size, animationDelay: `${heart.delay}s`, '--wobble': `${(Math.random() - 0.5) * 60}px` } as React.CSSProperties}
                            />
                        ))}
-
                        <img 
                            src={activeCustomer.mercenary.sprite ? getAssetUrl(activeCustomer.mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
-                           alt="Adventurer"
                            className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${refusalReaction === 'ANGRY' ? 'brightness-50 sepia-50' : ''}`}
                        />
                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-black/60 blur-3xl rounded-full -z-10"></div>
@@ -351,12 +351,10 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             )}
         </div>
 
-        {/* Shop Counter */}
-        <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-30 flex items-end justify-center pointer-events-none">
+        <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 flex items-end justify-center pointer-events-none">
             {!counterImgError ? (
                 <img 
                     src={getAssetUrl('shop_counter.png')} 
-                    alt="Shop Counter"
                     className="w-full h-full object-cover object-top filter drop-shadow-[0_-30px_50px_rgba(0,0,0,0.8)]"
                     onError={() => setCounterImgError(true)}
                 />
@@ -367,7 +365,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             )}
         </div>
 
-        {/* Bottom UI 컨테이너 */}
         <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center pointer-events-none">
             {isShopOpen && currentTutorialDialogue ? (
                  <DialogueBox 
@@ -381,18 +378,14 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     <DialogueBox 
                         speaker={activeCustomer.mercenary.name}
                         text={getThanksDialogue()}
-                        options={[
-                            { label: "Farewell", action: handleFarewell, variant: 'primary' }
-                        ]}
+                        options={[{ label: "Farewell", action: handleFarewell, variant: 'primary' }]}
                         className="w-full relative pointer-events-auto"
                     />
                 ) : refusalReaction ? (
                     <DialogueBox 
                         speaker={activeCustomer.mercenary.name}
                         text={getRefusalDialogue()}
-                        options={[
-                            { label: "Farewell", action: handleFarewell, variant: refusalReaction === 'ANGRY' ? 'danger' : 'neutral' }
-                        ]}
+                        options={[{ label: "Farewell", action: handleFarewell, variant: refusalReaction === 'ANGRY' ? 'danger' : 'neutral' }]}
                         className="w-full relative pointer-events-auto"
                     />
                 ) : (
@@ -406,7 +399,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                             price: activeCustomer.request.price
                         }}
                         options={[
-                            { label: `Sell (${activeCustomer.request.price} G)`, action: handleSell, variant: 'primary', disabled: !hasItem() },
+                            { label: `Sell`, action: handleSellClick, variant: 'primary', disabled: !hasItem },
                             { label: "Refuse", action: handleRefuse, variant: 'danger', disabled: isTutorialActive }
                         ]}
                         className="w-full relative pointer-events-auto"
@@ -414,6 +407,98 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                 )
             ) : null}
         </div>
+
+        {showInstanceSelector && activeCustomer && (
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300 pointer-events-auto">
+                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-row shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="flex-1 flex flex-col border-r border-stone-800 bg-stone-925/50 overflow-hidden">
+                        <div className="p-4 md:p-6 border-b border-stone-800 flex justify-between items-center bg-stone-900 shrink-0">
+                            <div>
+                                <h3 className="font-serif font-black text-xl text-stone-100 uppercase tracking-tighter">Select Instance</h3>
+                                <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest mt-0.5">Which one will you part with?</p>
+                            </div>
+                            <button onClick={() => setShowInstanceSelector(false)} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-5 h-5" /></button>
+                        </div>
+                        <ItemSelectorList 
+                            items={matchingItems}
+                            onSelect={(item) => setSelectedInstance(item)}
+                            onToggleLock={(id) => actions.toggleLockItem(id)}
+                            customerMarkup={activeCustomer.request.markup || 1.25}
+                        />
+                    </div>
+                    <div className="hidden md:flex w-72 lg:w-96 flex-col bg-stone-900 overflow-hidden">
+                        <div className="p-6 border-b border-stone-800 flex items-center gap-3 shrink-0">
+                            <Info className="w-5 h-5 text-stone-500" />
+                            <h3 className="font-bold text-stone-400 uppercase tracking-widest text-sm">Item Inspection</h3>
+                        </div>
+                        <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col min-h-0">
+                            {selectedInstance ? (
+                                <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="flex flex-col items-center text-center">
+                                        <div className={`w-24 h-24 bg-stone-950 rounded-full border-2 flex items-center justify-center mb-3 shadow-2xl relative ${getRarityClasses(selectedInstance.equipmentData?.rarity)}`}>
+                                            <img src={getInventoryItemImageUrl(selectedInstance)} className={`w-16 h-16 object-contain ${selectedInstance.isLocked ? 'opacity-50 grayscale' : ''}`} />
+                                            {selectedInstance.isLocked && (
+                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-600 p-2 rounded-full border-2 border-stone-900 shadow-xl">
+                                                    <Lock className="w-6 h-6 text-white" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <h4 className="text-xl font-bold text-amber-500 font-serif leading-none">{selectedInstance.name}</h4>
+                                        <div className="flex flex-col items-center gap-1.5 mt-2.5">
+                                            <div className={`px-3 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm ${getRarityClasses(selectedInstance.equipmentData?.rarity)}`}>
+                                                {selectedInstance.equipmentData?.rarity}
+                                            </div>
+                                            <div className={`px-2 py-0.5 rounded border border-stone-800 bg-stone-950 text-[8px] font-bold uppercase flex items-center gap-1 ${selectedInstance.equipmentData?.quality && selectedInstance.equipmentData.quality >= 100 ? 'text-amber-400' : 'text-stone-500'}`}>
+                                                <Sparkles className="w-2.5 h-2.5 fill-current" /> {getQualityLabel(selectedInstance.equipmentData?.quality || 100)} Grade
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {selectedInstance.equipmentData && (
+                                        <div className="space-y-4">
+                                            <h5 className="text-[10px] font-black text-stone-600 uppercase tracking-widest border-b border-stone-800 pb-1 flex items-center gap-2"><Sword className="w-3 h-3" /> Performance</h5>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {[
+                                                    { label: 'P.ATK', value: selectedInstance.equipmentData.stats.physicalAttack, icon: <Sword className="w-3 h-3 text-orange-500" /> },
+                                                    { label: 'P.DEF', value: selectedInstance.equipmentData.stats.physicalDefense, icon: <Shield className="w-3 h-3 text-blue-500" /> },
+                                                    { label: 'M.ATK', value: selectedInstance.equipmentData.stats.magicalAttack, icon: <Zap className="w-3 h-3 text-blue-400" /> },
+                                                    { label: 'M.DEF', value: selectedInstance.equipmentData.stats.magicalDefense, icon: <Brain className="w-3 h-3 text-purple-400" /> }
+                                                ].map(s => (
+                                                    <div key={s.label} className="bg-stone-950/50 p-2 rounded-lg border border-stone-800 flex justify-between items-center">
+                                                        <span className="text-[9px] font-bold text-stone-500 flex items-center gap-1">{s.icon} {s.label}</span>
+                                                        <span className="font-mono text-xs font-black text-stone-200">{s.value}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-auto pt-6 space-y-3">
+                                        <div className="flex justify-between items-center px-1">
+                                            <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Offered Price</span>
+                                            <span className={`text-2xl font-mono font-black ${selectedInstance.isLocked ? 'text-stone-600' : 'text-emerald-400'}`}>{Math.ceil(selectedInstance.baseValue * (activeCustomer.request.markup || 1.25))} G</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => executeSell(selectedInstance)}
+                                            disabled={selectedInstance.isLocked}
+                                            className={`w-full py-4 font-black rounded-xl shadow-xl transition-all active:scale-95 border-b-4 flex items-center justify-center gap-2 uppercase tracking-[0.2em] ${selectedInstance.isLocked ? 'bg-stone-800 border-stone-900 text-stone-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800'}`}
+                                        >
+                                            {selectedInstance.isLocked ? <Lock className="w-5 h-5" /> : <Check className="w-5 h-5" />}
+                                            {selectedInstance.isLocked ? "Locked" : "Confirm Sale"}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-stone-700 italic text-center p-8 gap-4 opacity-50">
+                                    <Search className="w-12 h-12" />
+                                    <p className="text-sm">Select an item to inspect its quality and stats before finalizing the contract.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {!isShopOpen && (
             <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
@@ -425,9 +510,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                                 <ZapOff className="w-8 h-8 md:w-10 md:h-10 text-red-50 animate-pulse" />
                             </div>
                             <h3 className="text-xl md:text-2xl font-black text-red-100 font-serif uppercase tracking-tight">Exhausted</h3>
-                            <p className="text-stone-500 text-xs md:text-base mt-2 mb-6 leading-relaxed">
-                                You lack the energy to manage the counter. Take a rest to recover.
-                            </p>
+                            <p className="text-stone-500 text-xs md:text-base mt-2 mb-6 leading-relaxed">You lack the energy to manage the counter. Take a rest to recover.</p>
                             <button onClick={() => onNavigate('FORGE')} className="w-full py-3 md:py-4 bg-stone-900 hover:bg-stone-800 text-stone-200 rounded-xl font-black text-xs md:text-sm transition-all border border-stone-700 pointer-events-auto flex items-center justify-center gap-2 uppercase tracking-widest"><ArrowLeft className="w-4 h-4" />Back to Forge</button>
                         </div>
                     ) : (

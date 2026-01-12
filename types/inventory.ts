@@ -17,6 +17,7 @@ export interface ItemDefinition {
 export interface InventoryItem extends ItemDefinition {
   quantity: number;
   equipmentData?: Equipment; 
+  isLocked?: boolean;
 }
 
 export type EquipmentCategory = 'WEAPON' | 'ARMOR';

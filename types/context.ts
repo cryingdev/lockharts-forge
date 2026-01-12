@@ -46,6 +46,9 @@ export interface GameContextType {
     fireMercenary: (mercenaryId: string) => void;
     giveGift: (mercenaryId: string, itemId: string) => void;
     talkMercenary: (mercenaryId: string) => void;
+    // Added missing Garrick interaction actions
+    talkGarrick: () => void;
+    giftGarrick: (payload: { itemId: string }) => void;
 
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
     completeExpedition: (expeditionId: string) => void;
@@ -58,6 +61,8 @@ export interface GameContextType {
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => void;
 
     useItem: (itemId: string) => void;
+    // Added missing toggleLockItem to satisfy interface requirements
+    toggleLockItem: (itemId: string) => void;
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => void;
     updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;
 

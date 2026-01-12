@@ -57,6 +57,8 @@ export const createInitialGameState = (): GameState => ({
 
     // Market Initial Stock
     marketStock: MARKET_CATALOG.reduce((acc, item) => ({ ...acc, [item.id]: item.maxStock }), {}),
+    garrickAffinity: 0,
+    talkedToGarrickToday: false,
 
     // Game Logic State
     isCrafting: false,

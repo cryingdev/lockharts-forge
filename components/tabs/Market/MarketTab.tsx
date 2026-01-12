@@ -15,11 +15,20 @@ import {
   MessageSquare,
   ArrowLeft,
   X,
-  Pointer
+  Pointer,
+  Heart,
+  Gift,
+  Lock,
+  Unlock,
+  Sword,
+  Shield,
+  Star
 } from 'lucide-react';
 import { MATERIALS } from '../../../data/materials';
 import { MARKET_CATALOG } from '../../../data/market/index';
 import { getAssetUrl } from '../../../utils';
+import { InventoryItem } from '../../../types/inventory';
+import { ItemSelectorList } from '../../ItemSelectorList';
 
 interface MarketTabProps {
   onNavigate: (tab: any) => void;
@@ -42,6 +51,13 @@ interface SceneStepConfig {
     targetId: string;
     label: string;
     direction: TutorialDirection;
+}
+
+interface FloatingHeart {
+    id: number;
+    left: number;
+    delay: number;
+    size: number;
 }
 
 const SCENE_STEPS_CONFIG: Record<SequenceStep, SceneStepConfig> = {
@@ -268,7 +284,7 @@ const LocalSpotlight = ({ step }: { step: SequenceStep }) => {
     );
 };
 
-const GarrickSprite = () => {
+const GarrickSprite = ({ floatingHearts }: { floatingHearts: FloatingHeart[] }) => {
   const [frame, setFrame] = useState(0); 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -302,8 +318,24 @@ const GarrickSprite = () => {
     <div className="relative w-full h-full flex items-end justify-center pointer-events-none">
       <div className="absolute bottom-[25%] left-1/2 -translate-x-1/2 w-80 h-80 bg-amber-500/10 blur-[100px] rounded-full -z-10 animate-pulse"></div>
       
+      {/* Floating Hearts Behind Sprite */}
+      {floatingHearts.map(heart => (
+           <Heart 
+                key={heart.id}
+                className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)] z-0"
+                style={{
+                    left: `${heart.left}%`,
+                    bottom: '40%',
+                    width: heart.size,
+                    height: heart.size,
+                    animationDelay: `${heart.delay}s`,
+                    '--wobble': `${(Math.random() - 0.5) * 60}px`
+                } as React.CSSProperties}
+           />
+       ))}
+
       <div 
-        className="relative h-[75dvh] md:h-[110dvh] flex justify-center overflow-hidden bottom-[12dvh] md:bottom-0 md:translate-y-[15dvh]"
+        className="relative h-[75dvh] md:h-[110dvh] flex justify-center overflow-hidden bottom-[12dvh] md:bottom-0 md:translate-y-[15dvh] z-10"
         style={{ aspectRatio: '453.3 / 1058' }}
       >
         <div 
@@ -333,6 +365,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [itemMultipliers, setItemMultipliers] = useState<Record<string, number>>({});
 
+  const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+
   const { hasFurnace, hasWorkbench } = state.forge;
   const currentTier = state.stats.tierLevel;
 
@@ -346,6 +381,27 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         setViewMode('INTERACTION');
     }
   }, [state.tutorialStep]);
+
+  const spawnHearts = useCallback((count: number) => {
+    const newHearts = Array.from({ length: count }).map((_, i) => ({
+        id: Date.now() + i,
+        left: 40 + Math.random() * 20, 
+        delay: Math.random() * 0.5, 
+        size: 16 + Math.random() * 12
+    }));
+    setFloatingHearts(prev => [...prev, ...newHearts]);
+    setTimeout(() => setFloatingHearts([]), 3500);
+  }, []);
+
+  // Track affinity for logic (trigger hearts when affinity increases)
+  const prevAffinityRef = useRef<number>(state.garrickAffinity);
+  useEffect(() => {
+      if (state.garrickAffinity > prevAffinityRef.current) {
+          const diff = state.garrickAffinity - prevAffinityRef.current;
+          spawnHearts(Math.min(10, diff * 2));
+      }
+      prevAffinityRef.current = state.garrickAffinity;
+  }, [state.garrickAffinity, spawnHearts]);
 
   const cartItemCount = useMemo(
     () => (Object.values(cart) as number[]).reduce((a, b) => a + b, 0),
@@ -362,6 +418,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const totalCost = calculateTotal();
 
   const handleTalk = () => {
+    if (!state.talkedToGarrickToday) {
+        actions.talkGarrick();
+    }
+
     const lines = [
       "The roads are getting dangerous. My suppliers are demanding hazard pay, which means my prices might sting a bit.",
       "Looking for something specific? If it's for metalwork, I've got the basics covered.",
@@ -371,6 +431,17 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
       "If you're looking for rarer materials, you'll have to prove that forge of yours is worth the investment."
     ];
     setDialogue(lines[Math.floor(Math.random() * lines.length)]);
+  };
+
+  const handleGift = (itemId: string) => {
+    const item = state.inventory.find(i => i.id === itemId);
+    if (item?.isLocked) {
+        actions.showToast("Cannot gift locked items.");
+        return;
+    }
+    actions.giftGarrick({ itemId });
+    setShowGiftModal(false);
+    setDialogue("For me? Hah, you're a thoughtful one, Lockhart. I'll make sure to remember this kindness.");
   };
 
   const addToCart = (itemId: string, amount: number = 1) => {
@@ -481,9 +552,53 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     onNavigate('FORGE');
   };
 
+  const getQualityLabel = (q: number): string => {
+      if (q >= 110) return 'MASTERWORK';
+      if (q >= 100) return 'PRISTINE';
+      if (q >= 90) return 'SUPERIOR';
+      if (q >= 80) return 'FINE';
+      if (q >= 70) return 'STANDARD';
+      if (q >= 60) return 'RUSTIC';
+      return 'CRUDE';
+  };
+
+  // Garrick이 판매 중인 아이템 ID 목록
+  const marketItemIds = useMemo(() => MARKET_CATALOG.map(item => item.id), []);
+
+  const giftableItems = state.inventory.filter(i => 
+    (i.type === 'RESOURCE' || 
+    i.type === 'CONSUMABLE' || 
+    i.type === 'EQUIPMENT' ||
+    i.type === 'SCROLL') &&
+    !marketItemIds.includes(i.id) // Garrick이 판매하는 품목 제외
+  );
+
+  const getItemImageUrl = (item: InventoryItem) => {
+    if (item.type === 'SCROLL') return getAssetUrl('scroll.png');
+    if (item.id.startsWith('scroll_') || item.id.startsWith('recipe_scroll_')) return getAssetUrl('scroll.png');
+    if (item.type === 'EQUIPMENT' && item.equipmentData) {
+        if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
+        return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
+    }
+    return getAssetUrl(`${item.id}.png`);
+  };
+
   return (
     <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center animate-in fade-in duration-500 px-safe">
       
+      <style>
+        {`
+            @keyframes heartFloatUp {
+                0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+                20% { opacity: 1; }
+                100% { transform: translateY(-350px) translateX(var(--wobble)) scale(1.4); opacity: 0; }
+            }
+            .animate-heart {
+                animation: heartFloatUp 2.5s ease-out forwards;
+            }
+        `}
+      </style>
+
       {isLocalTutorialStep && (
           <LocalSpotlight step={currentTutorialStep!} />
       )}
@@ -502,6 +617,17 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30"></div>
       </div>
 
+      {/* Garrick Affinity HUD */}
+      <div className="absolute top-4 left-20 z-[1050] animate-in slide-in-from-left-4 duration-500">
+        <div className="bg-stone-900/80 border border-stone-700 px-3 py-1.5 rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2">
+            <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+            <div className="flex flex-col leading-none">
+                <span className="text-[7px] text-stone-500 font-black uppercase tracking-widest">Garrick's Trust</span>
+                <span className="text-sm font-black font-mono text-pink-400">{state.garrickAffinity}</span>
+            </div>
+        </div>
+      </div>
+
       {/* 퇴장 버튼 */}
       {(!isLocalTutorialStep || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
         <button 
@@ -518,7 +644,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
       {/* Garrick Character - Always visible behind UI */}
       <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
         <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-1000 ease-out">
-          <GarrickSprite />
+          <GarrickSprite floatingHearts={floatingHearts} />
         </div>
       </div>
 
@@ -528,16 +654,24 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
           <div className="w-[92vw] md:w-[85vw] max-w-5xl flex flex-col items-center gap-4">
             
             {!isLocalTutorialStep && (
-              <div className="flex justify-end w-full gap-3 pointer-events-auto pr-4">
+              <div className="flex justify-end w-full gap-3 pointer-events-auto pr-0 md:pr-4">
                 <button 
                     onClick={handleTalk}
                     data-tutorial-id="GARRICK_TALK_BUTTON"
-                    className="flex items-center gap-1.5 md:gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
+                    className={`flex items-center gap-1.5 md:gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95 ${state.talkedToGarrickToday ? 'opacity-70' : ''}`}
                   >
                     <MessageSquare className="w-4 h-4 text-amber-500" />
                     <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
                   </button>
                   
+                  <button 
+                    onClick={() => setShowGiftModal(true)}
+                    className="flex items-center gap-1.5 md:gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
+                  >
+                    <Gift className="w-4 h-4 text-pink-500" />
+                    <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
+                  </button>
+
                   <button 
                     onClick={() => setViewMode('CATALOG')}
                     data-tutorial-id="BROWSE_GOODS_BUTTON"
@@ -613,7 +747,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                       <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Checkout</span>
                       <div className="flex items-center gap-0.5 mt-0.5">
                         <span className="text-[9px] md:text-sm font-mono font-black">{totalCost}</span>
-                        <Coins className="w-2.5 h-2.5 md:w-3 md:h-3 text-amber-200" />
+                        <Coins className="w-2.5 h-2.5 md:w-4 md:h-4 text-amber-200" />
                       </div>
                     </div>
                   </button>
@@ -829,7 +963,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     )}
                   </div>
                   <div className="bg-stone-850 p-3 md:p-4 border-t border-stone-800 space-y-2 shrink-0">
-                    <div className="flex justify-between items-center text-[8px] md:text-xs text-stone-500 font-bold uppercase tracking-tighter">
+                    <div className="flex justify-between items-center text-[8px] md:xs text-stone-500 font-bold uppercase tracking-tighter">
                       <span>Total</span>
                       <span className={`text-[11px] md:text-lg font-mono font-black ${totalCost > state.stats.gold ? 'text-red-500' : 'text-emerald-400'}`}>
                         {totalCost}G
@@ -868,6 +1002,33 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
               {isCartOpen ? <ChevronRight className="w-2.5 h-2.5 mt-1" /> : <ChevronLeft className="w-2.5 h-2.5 mt-1" />}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Gift Selection Modal */}
+      {showGiftModal && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+            <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[85vh]">
+                <div className="p-3 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-2">
+                        <div className="bg-pink-900/30 p-1.5 rounded-lg border border-pink-700/50">
+                            <Gift className="w-4 h-4 text-pink-500" />
+                        </div>
+                        <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">Select Gift for Garrick</h3>
+                    </div>
+                    <button onClick={() => setShowGiftModal(false)} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 hover:text-stone-300 transition-colors">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+                
+                <ItemSelectorList 
+                    items={giftableItems}
+                    onSelect={(item) => handleGift(item.id)}
+                    onToggleLock={(id) => actions.toggleLockItem(id)}
+                    customerMarkup={1.0}
+                    emptyMessage="No giftable items in inventory."
+                />
+            </div>
         </div>
       )}
 

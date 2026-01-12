@@ -133,6 +133,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     fireMercenary: (mercenaryId: string) => dispatch({ type: 'FIRE_MERCENARY', payload: { mercenaryId } }),
     giveGift: (mercenaryId: string, itemId: string) => dispatch({ type: 'GIVE_GIFT', payload: { mercenaryId, itemId } }),
     talkMercenary: (mercenaryId: string) => dispatch({ type: 'TALK_MERCENARY', payload: { mercenaryId } }),
+    // Added missing Garrick interaction implementations
+    talkGarrick: () => dispatch({ type: 'TALK_GARRICK' }),
+    giftGarrick: (payload: { itemId: string }) => dispatch({ type: 'GIFT_GARRICK', payload }),
 
     startExpedition: (dungeonId: string, partyIds: string[]) => dispatch({ type: 'START_EXPEDITION', payload: { dungeonId, partyIds } }),
     completeExpedition: (expeditionId: string) => dispatch({ type: 'COMPLETE_EXPEDITION', payload: { expeditionId } }),
@@ -145,6 +148,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => dispatch({ type: 'UNEQUIP_ITEM', payload: { mercenaryId, slot } }),
 
     useItem: (itemId: string) => dispatch({ type: 'USE_ITEM', payload: { itemId } }),
+    toggleLockItem: (itemId: string) => dispatch({ type: 'TOGGLE_LOCK_ITEM', payload: { itemId } }),
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
 
     startManualAssault: (dungeonId: string, partyIds: string[]) => 

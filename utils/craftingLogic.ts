@@ -30,13 +30,18 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         namePrefix = MASTERY_THRESHOLDS.ADEPT_BONUS.prefix;
     }
 
+    // --- NEW RARITY LOGIC ---
+    // Rarity is now determined by a combination of Quality and Bonus Stats.
+    // Quality (up to 120) + (Bonus * 2). 
+    // To get Legendary (125+), you usually need both high quality and a solid bonus.
+    const rarityScore = quality + (bonus * 2);
+    
     let rarity = EquipmentRarity.COMMON;
-    if (quality >= 110) rarity = EquipmentRarity.LEGENDARY; 
-    else if (quality >= 100) rarity = EquipmentRarity.EPIC;  
-    else if (quality >= 85) rarity = EquipmentRarity.RARE;
-    else if (quality >= 60) rarity = EquipmentRarity.UNCOMMON;
+    if (rarityScore >= 125) rarity = EquipmentRarity.LEGENDARY; 
+    else if (rarityScore >= 110) rarity = EquipmentRarity.EPIC;  
+    else if (rarityScore >= 95) rarity = EquipmentRarity.RARE;
+    else if (rarityScore >= 75) rarity = EquipmentRarity.UNCOMMON;
 
-    // 적용: 최소 품질 배율을 0.2로 설정하여 능력치가 0이 되는 것을 방지
     const qualityMultiplier = Math.max(0.2, quality / 100); 
     const finalMultiplier = qualityMultiplier * statMultiplier;
 
