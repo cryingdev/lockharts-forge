@@ -196,7 +196,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       const viewportW = window.innerWidth;
       const viewportH = window.innerHeight;
       let finalX = x + 20;
-      let finalY = y + 20;
+      let finalY = x + 20;
       
       // Calculate dynamic tooltip width for boundary check
       const tooltipW = viewportW < 768 ? Math.max(160, viewportW * 0.4) : 256; // 0.4vw or md:w-64
@@ -307,13 +307,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   }, [selectedItem, craftingMastery]);
 
   const quickCraftFuelCost = useMemo(() => {
-      if (!selectedItem || selectedItem.craftingType !== 'FORGE' || !masteryInfo) return 0;
-      const count = masteryInfo.count;
-      let divisor = 8;
-      if (count >= MASTERY_THRESHOLDS.ARTISAN) divisor = 14;
-      else if (count >= MASTERY_THRESHOLDS.ADEPT) divisor = 12;
-      return Math.ceil(selectedItem.maxDurability / divisor);
-  }, [selectedItem, masteryInfo]);
+      if (!selectedItem || selectedItem.craftingType !== 'FORGE') return 0;
+      const d = selectedItem.maxDurability;
+      if (d <= 80) return 2;
+      if (d <= 150) return 3;
+      if (d <= 300) return 4;
+      return 5;
+  }, [selectedItem]);
 
   const handleQuickCraft = useCallback(() => {
       if (!selectedItem || !masteryInfo) return;
