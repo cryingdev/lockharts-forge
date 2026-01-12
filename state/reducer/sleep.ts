@@ -1,3 +1,4 @@
+
 import { GameState } from '../../types/index';
 import { calculateDailyWage } from '../../config/contract-config';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -92,7 +93,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         activeCustomer: null,
         shopQueue: [],
         isCrafting: false,
-        showSleepModal: false,
+        // showSleepModal: false, // UI 연출을 위해 true 유지
         logs: [logMsg, ...state.logs],
         forgeTemperature: 0,
         lastForgeTime: Date.now(),

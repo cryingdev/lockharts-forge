@@ -66,6 +66,7 @@ export default class SmithingScene extends Phaser.Scene {
   private snapTween?: Phaser.Tweens.Tween;
 
   private hitPoly!: Phaser.Geom.Polygon;
+  private spawnPoly!: Phaser.Geom.Polygon; // 타겟 생성용 폴리곤 (시각적 일치)
   private outlineCache: Map<string, Point[]> = new Map();
 
   private centerX = 0;
@@ -756,16 +757,26 @@ export default class SmithingScene extends Phaser.Scene {
     const cos = Math.cos(rad); 
     const sin = Math.sin(rad);
     
-    // 판정 너그러움: 실제 이미지보다 25% 더 큰 히트박스 생성
-    const hitDetectionScale = this.billetContainer.scaleX * 1.25;
+    // 1. 실제 시각적 범위를 나타내는 폴리곤 (타겟 생성용)
+    const visualScale = this.billetContainer.scaleX;
+    
+    // 2. 판정 너그러움: 실제 이미지보다 10% 더 큰 히트박스 생성 (타격 체크용)
+    const hitDetectionScale = visualScale * 1.1;
     
     const cx = this.billetContainer.x;
     const cy = this.billetContainer.y;
-    const transformed = localPoints.map(p => ({ 
+
+    const transformedHit = localPoints.map(p => ({ 
         x: cx + (p.x * hitDetectionScale * cos - p.y * hitDetectionScale * sin), 
         y: cy + (p.x * hitDetectionScale * sin + p.y * hitDetectionScale * cos) 
     }));
-    this.hitPoly = new Phaser.Geom.Polygon(transformed);
+    this.hitPoly = new Phaser.Geom.Polygon(transformedHit);
+
+    const transformedSpawn = localPoints.map(p => ({ 
+        x: cx + (p.x * visualScale * cos - p.y * visualScale * sin), 
+        y: cy + (p.x * visualScale * sin + p.y * visualScale * cos) 
+    }));
+    this.spawnPoly = new Phaser.Geom.Polygon(transformedSpawn);
   }
 
   private isPointerInHitArea(px: number, py: number) { 
@@ -775,7 +786,7 @@ export default class SmithingScene extends Phaser.Scene {
 
       // 2. 중심점 근접 판정 보정 (금속이 얇은 경우에도 리듬 타겟 근처를 때리면 인정)
       const distToCenter = Phaser.Math.Distance.Between(px, py, this.hitX, this.hitY);
-      // 타겟 링 반경 + 5px 정도의 여유를 줌 (UI 스케일 보정)
+      // 타켓 링 반경 + 5px 정도의 여유를 줌 (UI 스케일 보정)
       if (distToCenter < (this.targetRadius + 5) * this.uiScale) return true;
 
       return false;
@@ -898,7 +909,7 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   private resetRing() {
-    if (this.temperature <= 0 || !this.hitPoly) return; 
+    if (this.temperature <= 0 || !this.spawnPoly) return; 
     this.targetRing.clear(); 
     this.approachRing.clear(); 
     this.currentRadius = this.startRadius; 
@@ -908,14 +919,17 @@ export default class SmithingScene extends Phaser.Scene {
     else if (randType < 0.75) { this.currentTargetColor = 0xfabf24; this.currentSpeedMult = 1.0; } 
     else { this.currentTargetColor = 0xef4444; this.currentSpeedMult = 1.45; }
     this.targetRadius = this.startRadius * Phaser.Math.FloatBetween(0.18, 0.32);
-    const rect = Phaser.Geom.Polygon.GetAABB(this.hitPoly);
+    
+    const rect = Phaser.Geom.Polygon.GetAABB(this.spawnPoly);
     let found = false; let attempts = 0;
-    while (!found && attempts < 15) {
+    while (!found && attempts < 20) {
         const tx = Phaser.Math.FloatBetween(rect.left, rect.right);
         const ty = Phaser.Math.FloatBetween(rect.top, rect.bottom);
-        if (Phaser.Geom.Polygon.Contains(this.hitPoly, tx, ty)) { this.hitX = tx; this.hitY = ty; found = true; }
+        // 타겟 생성은 spawnPoly(1.0 스케일) 내부로만 제한
+        if (Phaser.Geom.Polygon.Contains(this.spawnPoly, tx, ty)) { this.hitX = tx; this.hitY = ty; found = true; }
         attempts++;
     }
+
     if (this.isPlaying && this.currentTool === 'HAMMER') { 
       this.targetRing.clear()
         .fillStyle(this.currentTargetColor, 0.25)

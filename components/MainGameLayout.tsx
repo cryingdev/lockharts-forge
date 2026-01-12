@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
@@ -253,9 +254,54 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
 
+  // Smooth Sleep Transition State
+  const [isSleeping, setIsSleeping] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+  const [zzzText, setZzzText] = useState('');
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+
+  const prevDayRef = useRef(state.stats.day);
+  
+  useEffect(() => {
+    if (state.stats.day > prevDayRef.current) {
+        setIsSleeping(true);
+        setIsFadingOut(false);
+        setActiveTab('FORGE');
+
+        // Hold the dark screen for 1 second
+        const sleepTimer = setTimeout(() => {
+            setIsFadingOut(true);
+            const clearTimer = setTimeout(() => {
+                setIsSleeping(false);
+                setIsFadingOut(false);
+                actions.closeRest();
+            }, 1000); 
+            return () => clearTimeout(clearTimer);
+        }, 1000); 
+
+        prevDayRef.current = state.stats.day;
+        return () => clearTimeout(sleepTimer);
+    }
+    prevDayRef.current = state.stats.day;
+  }, [state.stats.day, actions]);
+
+  // ZZZ Animation Logic
+  useEffect(() => {
+    if (isSleeping && !isFadingOut) {
+        const frames = ['z', 'zz', 'zzz', 'zz'];
+        let idx = 0;
+        const timer = setInterval(() => {
+            setZzzText(frames[idx % frames.length]);
+            idx++;
+        }, 250);
+        return () => clearInterval(timer);
+    } else {
+        setZzzText('');
+    }
+  }, [isSleeping, isFadingOut]);
 
   const updateArrows = useCallback(() => {
     if (scrollRef.current) {
@@ -345,6 +391,27 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   return (
     <div className="h-[100dvh] w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30 animate-in fade-in duration-500 px-safe">
       
+      {/* FULL SCREEN SLEEP TRANSITION OVERLAY */}
+      {isSleeping && (
+          <div 
+            className={`fixed inset-0 z-[10000] bg-black pointer-events-auto transition-opacity ${isFadingOut ? 'opacity-0 duration-[1000ms] ease-out' : 'opacity-100 duration-0'}`}
+          >
+              {/* ZZZ Animation Effect */}
+              {!isFadingOut && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-4 animate-in fade-in duration-500">
+                          <span className="text-amber-500 font-serif italic text-5xl md:text-7xl tracking-widest drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]">
+                              {zzzText}
+                          </span>
+                          <span className="text-stone-700 font-black uppercase tracking-[0.4em] text-[10px] md:text-xs">
+                              Resting...
+                          </span>
+                      </div>
+                  </div>
+              )}
+          </div>
+      )}
+
       {/* GLOBAL SKIP BUTTON - Unified Style */}
       {isAnyTutorialActive && (
           <div className="fixed top-4 right-4 z-[6000] pointer-events-auto">
@@ -384,7 +451,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
           </div>
       )}
 
-      <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ease-in-out ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : 'translate-y-0 h-auto opacity-100'}`}>
+      <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ease-in-out ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : '-translate-y-0 h-auto opacity-100'}`}>
         <Header activeTab={activeTab} onTabChange={setActiveTab} onSettingsClick={() => setIsSettingsOpen(true)} />
         <div className="bg-stone-900 border-b border-stone-800 flex items-center relative z-10 overflow-hidden isolate h-11 md:h-14">
           <div className={`absolute left-0 top-0 bottom-0 z-30 w-12 flex items-center transition-all duration-300 transform-gpu ${showLeftArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-events-none'}`}>

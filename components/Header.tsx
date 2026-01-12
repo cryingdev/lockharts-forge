@@ -10,21 +10,17 @@ interface HeaderProps {
 }
 
 const LogTicker = ({ message }: { message: string }) => {
-  const [displayedText, setDisplayedText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const targetMessage = message || 'The forge is quiet...';
 
   useEffect(() => {
-    if (!message) {
-      setDisplayedText('The forge is quiet...');
-      return;
-    }
-    
-    setDisplayedText('');
+    setCurrentIndex(0);
     let index = 0;
     const speed = 25;
     const timer = setInterval(() => {
-      if (index < message.length) {
-        setDisplayedText(message.slice(0, index + 1));
+      if (index < targetMessage.length) {
         index++;
+        setCurrentIndex(index);
       } else {
         clearInterval(timer);
       }
@@ -36,8 +32,8 @@ const LogTicker = ({ message }: { message: string }) => {
     <div className="flex items-center min-w-0 w-full overflow-hidden h-full">
         <span className="text-amber-600 mr-1.5 md:mr-2 text-[10px] shrink-0 animate-pulse">»</span>
         <span className="text-[10px] md:text-xs font-mono text-stone-400 whitespace-nowrap truncate w-full text-left tracking-tight">
-            {displayedText}
-            <span className="animate-pulse text-amber-500 font-bold ml-0.5">_</span>
+            <span>{targetMessage.slice(0, currentIndex)}</span>
+            <span className="opacity-0">{targetMessage.slice(currentIndex)}</span>
         </span>
     </div>
   );
