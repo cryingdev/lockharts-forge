@@ -617,17 +617,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30"></div>
       </div>
 
-      {/* Garrick Affinity HUD */}
-      <div className="absolute top-4 left-20 z-[1050] animate-in slide-in-from-left-4 duration-500">
-        <div className="bg-stone-900/80 border border-stone-700 px-3 py-1.5 rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2">
-            <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
-            <div className="flex flex-col leading-none">
-                <span className="text-[7px] text-stone-500 font-black uppercase tracking-widest">Garrick's Trust</span>
-                <span className="text-sm font-black font-mono text-pink-400">{state.garrickAffinity}</span>
-            </div>
-        </div>
-      </div>
-
       {/* 퇴장 버튼 */}
       {(!isLocalTutorialStep || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
         <button 
@@ -644,6 +633,18 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
       {/* Garrick Character - Always visible behind UI */}
       <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
         <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-1000 ease-out">
+          
+          {/* Garrick Affinity HUD - Positioned next to him */}
+          <div className="absolute top-[12dvh] md:top-32 left-[calc(50%+85px)] md:left-[calc(50%+180px)] z-[1050] scale-90 md:scale-100 animate-in slide-in-from-right-4 duration-500 pointer-events-auto">
+            <div className="bg-stone-900/85 border-2 border-stone-700 px-3 py-1.5 rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2 ring-1 ring-white/5">
+                <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+                <div className="flex flex-col leading-none">
+                    <span className="text-[7px] text-stone-500 font-black uppercase tracking-widest">Garrick's Trust</span>
+                    <span className="text-sm font-black font-mono text-pink-400">{state.garrickAffinity}</span>
+                </div>
+            </div>
+          </div>
+
           <GarrickSprite floatingHearts={floatingHearts} />
         </div>
       </div>

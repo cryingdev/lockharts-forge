@@ -1,10 +1,8 @@
-
 import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
 import { getEnergyCost, generateEquipment } from '../../utils/craftingLogic';
 import { MATERIALS } from '../../data/materials';
 
-// Helper for Quality Label mapping (110+ is Masterwork)
 const getQualityLabel = (q: number): string => {
     if (q >= 110) return "MASTERWORK";
     if (q >= 100) return "PRISTINE";
@@ -22,14 +20,12 @@ export const handleStartCrafting = (state: GameState, payload: { item: Equipment
 
     if (state.stats.energy < energyCost) return state;
 
-    // Check Resources
     const hasResources = item.requirements.every(req => {
         const invItem = state.inventory.find(i => i.id === req.id);
         return invItem && invItem.quantity >= req.count;
     });
     if (!hasResources) return state;
 
-    // Deduct Resources
     let newInventory = [...state.inventory];
     item.requirements.forEach(req => {
         newInventory = newInventory.map(invItem => {
@@ -53,7 +49,6 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
     const masteryCount = state.craftingMastery[item.id] || 0;
     const energyCost = getEnergyCost(item, masteryCount);
 
-    // Refund Resources
     let newInventory = [...state.inventory];
     item.requirements.forEach(req => {
         const existing = newInventory.find(i => i.id === req.id);
@@ -80,9 +75,9 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     const { item, quality, bonus = 0, masteryGain = 1 } = payload;
     const masteryCount = state.craftingMastery[item.id] || 0;
 
+    // 'bonus' parameter is used as enhancementCount from minigames
     const equipment = generateEquipment(item, quality, masteryCount, bonus);
     
-    // Create actual inventory item
     const newItem: InventoryItem = {
         id: equipment.id, 
         name: equipment.name,
@@ -94,7 +89,6 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         equipmentData: equipment
     };
 
-    // IMMEDIATELY add to inventory copy
     const newInventory = [...state.inventory, newItem];
 
     const newMastery = { ...state.craftingMastery };
@@ -102,7 +96,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
 
     const label = getQualityLabel(quality);
     let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}!`;
-    if (bonus > 0) logMsg += ` Minigame technique applied a stat bonus.`;
+    if (bonus > 0) logMsg += ` Pinned technique applied +${bonus} enhancements.`;
 
     let newUnlockedTabs = [...state.unlockedTabs];
     if (!newUnlockedTabs.includes('INVENTORY')) {
@@ -116,7 +110,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         inventory: newInventory,
         unlockedTabs: newUnlockedTabs,
         craftingMastery: newMastery,
-        lastCraftedItem: newItem, // This triggers the guidance popup
+        lastCraftedItem: newItem, 
         logs: [logMsg, ...state.logs]
     };
 };

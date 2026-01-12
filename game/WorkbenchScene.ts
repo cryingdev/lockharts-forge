@@ -1,4 +1,3 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -11,24 +10,21 @@ type RingType = 'NARROW' | 'MEDIUM' | 'WIDE';
 
 interface Interactable {
   type: 'TAP' | 'DRAG';
-  p: number;        // 시작 지점 (0~1)
-  endP?: number;    // 드래그 종료 지점
+  p: number;        
+  endP?: number;    
   hit: boolean;
   missed: boolean;
-  dragSuccessTicks: number; // 드래그 유지 시간 측정
-  totalTicksInRange: number; // 구간 내 총 체류 시간
-  graphic?: Phaser.GameObjects.Arc; // TAP 전용 그래픽 참조
-  nailHead?: Phaser.GameObjects.Image; // TAP 전용 못 머리 이미지
-  tracedSegments?: { start: number; end: number }[]; // 실제로 터치하여 통과한 구간들
-  startHit?: boolean; // 드래그 시작 터치 성공 여부
-  startHitPerfect?: boolean; // 시작 터치가 퍼펙트였는지 여부
-  missedStart?: boolean; // 시작 지점 터치 타이밍을 완전히 놓쳤는지 여부
-  ringType?: RingType;   // 드래그 시작 링 또는 탭 노드의 크기 유형
+  dragSuccessTicks: number; 
+  totalTicksInRange: number; 
+  graphic?: Phaser.GameObjects.Arc; 
+  nailHead?: Phaser.GameObjects.Image; 
+  tracedSegments?: { start: number; end: number }[]; 
+  startHit?: boolean; 
+  startHitPerfect?: boolean; 
+  missedStart?: boolean; 
+  ringType?: RingType;   
 }
 
-/**
- * Ramer-Douglas-Peucker 단순화용 수직 거리 계산
- */
 function findPerpendicularDistance(p: Point, p1: Point, p2: Point) {
   if (p1.x === p2.x) return Math.abs(p.x - p1.x);
   const slope = (p2.y - p1.y) / (p2.x - p1.x);
@@ -36,19 +32,12 @@ function findPerpendicularDistance(p: Point, p1: Point, p2: Point) {
   return Math.abs(slope * p.x - p.y + intercept) / Math.sqrt(Math.pow(slope, 2) + 1);
 }
 
-/**
- * Ramer-Douglas-Peucker 알고리즘
- */
 function rdp(points: Point[], epsilon: number): Point[] {
   if (points.length < 3) return points;
-  let dmax = 0;
-  let index = 0;
+  let dmax = 0; let index = 0;
   for (let i = 1; i < points.length - 1; i++) {
     const d = findPerpendicularDistance(points[i], points[0], points[points.length - 1]);
-    if (d > dmax) {
-      index = i;
-      dmax = d;
-    }
+    if (d > dmax) { dmax = d; index = i; }
   }
   if (dmax > epsilon) {
     const res1 = rdp(points.slice(0, index + 1), epsilon);
@@ -59,24 +48,23 @@ function rdp(points: Point[], epsilon: number): Point[] {
 }
 
 export default class WorkbenchScene extends Phaser.Scene {
-  /* Fix: Uncommented standard Phaser properties to resolve 'does not exist' errors */
   public add!: Phaser.GameObjects.GameObjectFactory;
   public tweens!: Phaser.Tweens.TweenManager;
   public scale!: Phaser.Scale.ScaleManager;
+  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
   public input!: Phaser.Input.InputPlugin;
   public time!: Phaser.Time.Clock;
+  public events!: Phaser.Events.EventEmitter;
   public load!: Phaser.Loader.LoaderPlugin;
   public textures!: Phaser.Textures.TextureManager;
-  public events!: Phaser.Events.EventEmitter;
-  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
+  public anims!: Phaser.Animations.AnimationManager;
+  public make!: Phaser.GameObjects.GameObjectCreator;
 
   private interactables: Interactable[] = [];
-  
   private cursor!: Phaser.GameObjects.Container;
   private cursorSprite!: Phaser.GameObjects.Image;
   private cursorBar!: Phaser.GameObjects.Rectangle;
   private hammerSprite!: Phaser.GameObjects.Image;
-
   private comboText!: Phaser.GameObjects.Text;
   private progBg!: Phaser.GameObjects.Rectangle;
   private progressBar!: Phaser.GameObjects.Rectangle;
@@ -93,61 +81,33 @@ export default class WorkbenchScene extends Phaser.Scene {
   private confirmedProgress = 0;
   private currentQuality = 100;
   private combo = 0;
+  private enhancementCount = 0; 
   private isFinished = false;
-  private isTransitioning = false; // 페이즈 간 대기 상태 플래그
+  private isTransitioning = false; 
   private currentPhase = 1;
 
-  private onComplete?: (score: number, bonus?: number) => void;
+  private onComplete?: (score: number, enhancementCount: number) => void;
   private itemImage: string = '';
   private subCategoryId: string = '';
   private difficulty: number = 1;
   private isLeatherWork: boolean = false;
+  private centerX = 0; private centerY = 0; private viewW = 0; private viewH = 0; private uiScale = 1;
 
-  private centerX = 0;
-  private centerY = 0;
-  private viewW = 0;
-  private viewH = 0;
-  private uiScale = 1;
-
-  private itemInternalData = {
-    points: [] as Point[],
-    width: 0,
-    height: 0,
-    centerX: 0,
-    centerY: 0,
-    texW: 0,
-    texH: 0
-  };
-
+  private itemInternalData = { points: [] as Point[], width: 0, height: 0, centerX: 0, centerY: 0, texW: 0, texH: 0 };
   private worldPoints: Phaser.Math.Vector2[] = [];
   private cumulativeLengths: number[] = [];
   private totalPathLength = 0;
-
   private dragPenaltyTimer = 0;
 
-  constructor() {
-    super('WorkbenchScene');
-  }
+  constructor() { super('WorkbenchScene'); }
 
-  init(data: { onComplete: (score: number, bonus?: number) => void; difficulty: number; subCategoryId?: string; itemImage?: string }) {
-    this.onComplete = data.onComplete;
-    this.difficulty = data.difficulty;
-    this.itemImage = data.itemImage || '';
-    this.subCategoryId = data.subCategoryId || '';
-    
-    // 가죽 아이템 여부 판별
+  init(data: { onComplete: (score: number, enhancementCount: number) => void; difficulty: number; subCategoryId?: string; itemImage?: string }) {
+    this.onComplete = data.onComplete; this.difficulty = data.difficulty;
+    this.itemImage = data.itemImage || ''; this.subCategoryId = data.subCategoryId || '';
     const leatherCategories = ['CHESTPLATE', 'GLOVES', 'BOOTS'];
     this.isLeatherWork = leatherCategories.includes(this.subCategoryId.toUpperCase());
-
     this.cursorSpeed = 0.00012 + data.difficulty * 0.000020; 
-    this.isFinished = false;
-    this.isTransitioning = false;
-    this.cursorProgress = 0;
-    this.confirmedProgress = 0;
-    this.currentQuality = 100;
-    this.combo = 0;
-    this.currentPhase = 1;
-    this.interactables = [];
+    this.isFinished = false; this.isTransitioning = false; this.cursorProgress = 0; this.confirmedProgress = 0; this.currentQuality = 100; this.combo = 0; this.enhancementCount = 0; this.currentPhase = 1; this.interactables = [];
   }
 
   preload() {
@@ -158,167 +118,86 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.load.image('hammer', getAssetUrl('hammer.png'));
     this.load.image('saw', getAssetUrl('saw.png'));
     this.load.image('spark', getAssetUrl('particle_spark1.png'));
-    if (this.itemImage) {
-        this.load.image('item_source', getAssetUrl(this.itemImage));
-    }
+    if (this.itemImage) this.load.image('item_source', getAssetUrl(this.itemImage));
   }
 
   private getRingColor(type?: RingType): number {
-    if (type === 'NARROW') return 0x22d3ee; // Cyan
-    if (type === 'WIDE') return 0xa855f7;   // Violet
-    return 0x10b981;                        // Emerald (Medium)
+    if (type === 'NARROW') return 0x22d3ee; if (type === 'WIDE') return 0xa855f7; return 0x10b981;
   }
 
   create() {
     this.root = this.add.container(0, 0);
-    
-    this.bgImage = this.add.image(0, 0, 'workbench_bg').setAlpha(0.6).setOrigin(0.5);
-    this.root.add(this.bgImage);
-
-    this.silhouetteGraphics = this.add.graphics().setAlpha(0.2);
-    this.root.add(this.silhouetteGraphics);
-
-    if (this.textures.exists('item_source')) {
-      this.itemSprite = this.add.image(0, 0, 'item_source').setAlpha(0.15);
-      this.root.add(this.itemSprite);
-    }
-
-    this.pathGraphics = this.add.graphics();
-    this.dragPathGraphics = this.add.graphics();
-    this.root.add([this.pathGraphics, this.dragPathGraphics]);
-
+    this.bgImage = this.add.image(0, 0, 'workbench_bg').setAlpha(0.6).setOrigin(0.5); this.root.add(this.bgImage);
+    this.silhouetteGraphics = this.add.graphics().setAlpha(0.2); this.root.add(this.silhouetteGraphics);
+    if (this.textures.exists('item_source')) { this.itemSprite = this.add.image(0, 0, 'item_source').setAlpha(0.15); this.root.add(this.itemSprite); }
+    this.pathGraphics = this.add.graphics(); this.dragPathGraphics = this.add.graphics(); this.root.add([this.pathGraphics, this.dragPathGraphics]);
     this.progBg = this.add.rectangle(0, 0, 300, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e);
     this.progressBar = this.add.rectangle(0, 0, 0.1, 12, 0x10b981).setOrigin(0, 0.5);
     this.qualityText = this.add.text(0, 0, 'PRISTINE', { fontFamily: 'Grenze Gotisch', fontSize: '20px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
     this.root.add([this.progBg, this.progressBar, this.qualityText]);
-
-    // 커서 컨테이너 및 도구들 초기화
     this.cursor = this.add.container(0, 0).setDepth(10);
     this.cursorSprite = this.add.image(0, 0, 'niddle').setOrigin(0.5, 0.98).setScale(0.4);
     this.cursorBar = this.add.rectangle(0, 0, 6, 40, 0xfbbf24).setOrigin(0.5, 1).setStrokeStyle(2, 0xffffff, 0.8);
-    this.cursor.add([this.cursorBar, this.cursorSprite]);
-    this.root.add(this.cursor);
-
-    // 망치 스프라이트 (루트 컨테이너에 추가하여 커서 이동에 독립적으로 애니메이션 가능하게 함)
-    this.hammerSprite = this.add.image(0, 0, 'hammer').setOrigin(0.5, 0.9).setScale(0.35).setAlpha(0).setDepth(25);
-    this.root.add(this.hammerSprite);
-
-    this.comboText = this.add.text(0, 0, '', { fontFamily: 'Grenze Gotisch', fontSize: '42px', color: '#fcd34d', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setAlpha(0).setDepth(20);
-    this.root.add(this.comboText);
-
-    this.generatePathFromTexture();
-    this.handleResize(this.scale.gameSize);
-    this.scale.on('resize', this.handleResize, this);
-
+    this.cursor.add([this.cursorBar, this.cursorSprite]); this.root.add(this.cursor);
+    this.hammerSprite = this.add.image(0, 0, 'hammer').setOrigin(0.5, 0.9).setScale(0.35).setAlpha(0).setDepth(25); this.root.add(this.hammerSprite);
+    this.comboText = this.add.text(0, 0, '', { fontFamily: 'Grenze Gotisch', fontSize: '42px', color: '#fcd34d', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setAlpha(0).setDepth(20); this.root.add(this.comboText);
+    this.generatePathFromTexture(); this.handleResize(this.scale.gameSize); this.scale.on('resize', this.handleResize, this);
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (this.isFinished || this.isTransitioning) return;
-      
       for (let i = 0; i < this.interactables.length; i++) {
-        const obj = this.interactables[i];
-        const nodePos = this.getPathPosition(obj.p);
-        const d = Phaser.Math.Distance.Between(p.x, p.y, nodePos.x, nodePos.y);
-        const diff = Math.abs(this.cursorProgress - obj.p);
-
+        const obj = this.interactables[i]; const nodePos = this.getPathPosition(obj.p);
+        const d = Phaser.Math.Distance.Between(p.x, p.y, nodePos.x, nodePos.y); const diff = Math.abs(this.cursorProgress - obj.p);
         if (obj.type === 'TAP' && !obj.hit && !obj.missed) {
-          let tapHitRadius = 42; 
-          if (obj.ringType === 'NARROW') tapHitRadius = 26;
-          else if (obj.ringType === 'MEDIUM') tapHitRadius = 42;
-          else if (obj.ringType === 'WIDE') tapHitRadius = 62;
-
-          if (d < tapHitRadius * this.uiScale) {
-            this.handleTapHit(i, nodePos.x, nodePos.y);
-            break;
-          }
+          let tapHitRadius = obj.ringType === 'NARROW' ? 26 : obj.ringType === 'WIDE' ? 62 : 42;
+          if (d < tapHitRadius * this.uiScale) { this.handleTapHit(i, nodePos.x, nodePos.y); break; }
         }
-
         if (obj.type === 'DRAG' && !obj.hit && !obj.missed && !obj.startHit) {
-            let hitRadius = 42;
-            if (obj.ringType === 'NARROW') hitRadius = 26;
-            else if (obj.ringType === 'MEDIUM') hitRadius = 42;
-            else if (obj.ringType === 'WIDE') hitRadius = 62;
-
+            let hitRadius = obj.ringType === 'NARROW' ? 26 : obj.ringType === 'WIDE' ? 62 : 42;
             if (d < hitRadius * this.uiScale && diff < 0.08) {
-                obj.startHit = true;
-                obj.missedStart = false;
-                const perfectThreshold = obj.ringType === 'NARROW' ? 0.025 : 0.035;
-                obj.startHitPerfect = diff < perfectThreshold; 
-                obj.tracedSegments = [{ start: obj.p, end: this.cursorProgress }];
-                const label = obj.startHitPerfect ? 'PERFECT!' : 'GOOD';
-                const color = obj.startHitPerfect ? 0xfbbf24 : this.getRingColor(obj.ringType);
-                this.showFeedback(label, color, nodePos.x, nodePos.y);
-                this.createSparks(nodePos.x, nodePos.y, color, obj.startHitPerfect ? 10 : 5);
+                obj.startHit = true; obj.missedStart = false; const perfectThreshold = obj.ringType === 'NARROW' ? 0.025 : 0.035;
+                obj.startHitPerfect = diff < perfectThreshold; obj.tracedSegments = [{ start: obj.p, end: this.cursorProgress }];
+                const label = obj.startHitPerfect ? 'PERFECT!' : 'GOOD'; const color = obj.startHitPerfect ? 0xfbbf24 : this.getRingColor(obj.ringType);
+                this.showFeedback(label, color, nodePos.x, nodePos.y); this.createSparks(nodePos.x, nodePos.y, color, obj.startHitPerfect ? 10 : 5);
+                if (obj.startHitPerfect) { this.combo++; if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(nodePos.x, nodePos.y); } else { this.combo = 0; }
                 break;
             }
         }
       }
     });
-
     this.startPhase(1);
   }
 
   private startPhase(phase: number) {
-    this.currentPhase = phase;
-    this.cursorProgress = 0;
-    this.isTransitioning = false;
-    this.updateCursorTool();
-    this.spawnInteractablesForPhase();
-    
-    // 커서를 경로의 시작점으로 즉시 이동
-    const pos = this.getPathPosition(0);
-    this.cursor.setPosition(pos.x, pos.y);
+    this.currentPhase = phase; this.cursorProgress = 0; this.isTransitioning = false; this.updateCursorTool(); this.spawnInteractablesForPhase();
+    const pos = this.getPathPosition(0); this.cursor.setPosition(pos.x, pos.y);
   }
 
   private updateCursorTool() {
-    if (!this.cursor) return;
-
-    // 망치는 타격 시에만 보이게 관리하므로 기본적으로 숨김
-    this.hammerSprite.setAlpha(0);
-
-    if (this.isLeatherWork) {
-        // 가죽 작업일 경우 항상 바늘 이미지 사용
-        this.cursorSprite.setVisible(true).setTexture('niddle').setOrigin(0.5, 0.98).setScale(0.4);
-        this.cursorBar.setVisible(false);
-    } else {
-        // 가죽이 아닐 경우 페이즈에 따라 도구 전환
-        if (this.currentPhase === 1 || this.currentPhase === 3) {
-            // 타격 페이즈: 못 대신 직사각형 막대 사용
-            this.cursorSprite.setVisible(false);
-            this.cursorBar.setVisible(true).setFillStyle(0xfbbf24).setAlpha(1);
-        } else {
-            // 가공 페이즈: 톱 이미지 사용
-            this.cursorSprite.setVisible(true).setTexture('saw').setOrigin(0.05, 0.5).setScale(0.45);
-            this.cursorBar.setVisible(false);
-        }
+    if (!this.cursor) return; this.hammerSprite.setAlpha(0);
+    if (this.isLeatherWork) { this.cursorSprite.setVisible(true).setTexture('niddle').setOrigin(0.5, 0.98).setScale(0.4); this.cursorBar.setVisible(false); }
+    else {
+        if (this.currentPhase === 1 || this.currentPhase === 3) { this.cursorSprite.setVisible(false); this.cursorBar.setVisible(true).setFillStyle(0xfbbf24).setAlpha(1); }
+        else { this.cursorSprite.setVisible(true).setTexture('saw').setOrigin(0.05, 0.5).setScale(0.45); this.cursorBar.setVisible(false); }
     }
   }
 
   private generatePathFromTexture() {
-    const key = 'item_source';
-    if (!this.textures.exists(key)) return;
+    const key = 'item_source'; if (!this.textures.exists(key)) return;
     const texture = this.textures.get(key).getSourceImage() as HTMLImageElement;
-    const canvas = document.createElement('canvas');
-    canvas.width = texture.width; canvas.height = texture.height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-    ctx.drawImage(texture, 0, 0);
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const canvas = document.createElement('canvas'); canvas.width = texture.width; canvas.height = texture.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true }); if (!ctx) return;
+    ctx.drawImage(texture, 0, 0); const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data; const w = canvas.width; const h = canvas.height;
-    const isOpaque = (x: number, y: number) => {
-        if (x < 0 || x >= w || y < 0 || y >= h) return false;
-        return data[(y * w + x) * 4 + 3] > 50;
-    };
+    const isOpaque = (x: number, y: number) => { if (x < 0 || x >= w || y < 0 || y >= h) return false; return data[(y * w + x) * 4 + 3] > 50; };
     let startPoint: Point | null = null;
-    outer: for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) { if (isOpaque(x, y)) { startPoint = { x, y }; break outer; } }
-    }
+    outer: for (let y = 0; y < h; y++) { for (let x = 0; x < w; x++) { if (isOpaque(x, y)) { startPoint = { x, y }; break outer; } } }
     if (!startPoint) return;
     const path: Point[] = []; let curr = { ...startPoint }; let prev = { x: startPoint.x, y: startPoint.y - 1 };
-    const neighbors = [{x:-1, y:-1}, {x:0, y:-1}, {x:1, y:-1}, {x:1, y:0}, {x:1, y:1}, {x:0, y:1}, {x:-1, y:1}, {x:-1, y:0}];
+    const neighbors = [{x:-1, y:-1}, {x:0, y:-1}, {x:1, y:-1}, {x:1, y:0}, {x:1, y:1}, {x:0, y:1}, {x:-1, y:1}, {x:-1, y:-0}];
     let iters = 0;
     while (iters < w * h) {
         const relX = prev.x - curr.x; const relY = prev.y - curr.y;
-        let startIdx = neighbors.findIndex(n => n.x === relX && n.y === relY);
-        if (startIdx === -1) startIdx = 0;
+        let startIdx = neighbors.findIndex(n => n.x === relX && n.y === relY); if (startIdx === -1) startIdx = 0;
         let found = false;
         for (let i = 1; i <= 8; i++) {
             const idx = (startIdx + i) % 8; const nx = curr.x + neighbors[idx].x; const ny = curr.y + neighbors[idx].y;
@@ -328,49 +207,29 @@ export default class WorkbenchScene extends Phaser.Scene {
         iters++;
     }
     const simplified = rdp(path, 1.5);
-    let minX = w, maxX = 0, minY = h, maxY = 0;
-    simplified.forEach(p => {
-        if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
-        if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
-    });
-    const itemW = maxX - minX || 1; const itemH = maxY - minY || 1;
-    const itemCX = (minX + maxX) / 2; const itemCY = (minY + maxY) / 2;
+    let minX = w, maxX = 0, minY = h, maxY = 0; simplified.forEach(p => { if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x; if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y; });
+    const itemW = maxX - minX || 1; const itemH = maxY - minY || 1; const itemCX = (minX + maxX) / 2; const itemCY = (minY + maxY) / 2;
     this.itemInternalData = { points: simplified.map(p => ({ x: p.x - itemCX, y: p.y - itemCY })), width: itemW, height: itemH, centerX: itemCX, centerY: itemCY, texW: w, texH: h };
   }
 
   private handleResize(gameSize?: Phaser.Structs.Size) {
-    const w = gameSize?.width ?? this.scale.width;
-    const h = gameSize?.height ?? this.scale.height;
-    if (w <= 0 || h <= 0) return;
-    this.viewW = w; this.viewH = h; this.centerX = w / 2; this.centerY = h / 2;
-    const isPortrait = h > w;
+    const w = gameSize?.width ?? this.scale.width; const h = gameSize?.height ?? this.scale.height; if (w <= 0 || h <= 0) return;
+    this.viewW = w; this.viewH = h; this.centerX = w / 2; this.centerY = h / 2; const isPortrait = h > w;
     this.uiScale = isPortrait ? Phaser.Math.Clamp(w / 400, 0.7, 1) : Phaser.Math.Clamp(h / 600, 0.8, 1.2);
     this.bgImage.setPosition(this.centerX, this.centerY).setDisplaySize(Math.max(w, h * 1.5), Math.max(h, w / 1.5));
-    const pbY = isPortrait ? 80 : 40;
-    this.progBg.setPosition(this.centerX, pbY * this.uiScale).setSize(Math.min(w * 0.7, 400), 18 * this.uiScale);
-    this.progressBar.setPosition(this.progBg.x - this.progBg.width / 2, this.progBg.y);
-    this.qualityText.setPosition(this.centerX, (pbY + 35) * this.uiScale);
-    this.recalculateWorldPath();
-    this.drawGuidePath();
-    this.updateInteractablesVisuals();
-    this.updateProgressBar();
+    const pbY = isPortrait ? 80 : 40; this.progBg.setPosition(this.centerX, pbY * this.uiScale).setSize(Math.min(w * 0.7, 400), 18 * this.uiScale);
+    this.progressBar.setPosition(this.progBg.x - this.progBg.width / 2, this.progBg.y); this.qualityText.setPosition(this.centerX, (pbY + 35) * this.uiScale);
+    this.recalculateWorldPath(); this.drawGuidePath(); this.updateInteractablesVisuals(); this.updateProgressBar();
   }
 
   private recalculateWorldPath() {
     if (this.itemInternalData.points.length === 0) return;
-    const isPortrait = this.viewH > this.viewW;
-    const maxAreaW = this.viewW * (isPortrait ? 0.85 : 0.65);
-    const maxAreaH = this.viewH * (isPortrait ? 0.45 : 0.6);
+    const isPortrait = this.viewH > this.viewW; const maxAreaW = this.viewW * (isPortrait ? 0.85 : 0.65); const maxAreaH = this.viewH * (isPortrait ? 0.45 : 0.6);
     const scale = Math.min(maxAreaW / this.itemInternalData.width, maxAreaH / this.itemInternalData.height);
     this.worldPoints = this.itemInternalData.points.map(p => new Phaser.Math.Vector2(this.centerX + (p.x * scale), this.centerY + (p.y * scale)));
-    if (this.itemSprite) {
-        this.itemSprite.setPosition(this.centerX, this.centerY).setScale(scale).setOrigin(this.itemInternalData.centerX / this.itemInternalData.texW, this.itemInternalData.centerY / this.itemInternalData.texH);
-    }
+    if (this.itemSprite) this.itemSprite.setPosition(this.centerX, this.centerY).setScale(scale).setOrigin(this.itemInternalData.centerX / this.itemInternalData.texW, this.itemInternalData.centerY / this.itemInternalData.texH);
     this.cumulativeLengths = [0]; let total = 0;
-    for (let i = 0; i < this.worldPoints.length - 1; i++) {
-      total += Phaser.Math.Distance.BetweenPoints(this.worldPoints[i], this.worldPoints[i+1]);
-      this.cumulativeLengths.push(total);
-    }
+    for (let i = 0; i < this.worldPoints.length - 1; i++) { total += Phaser.Math.Distance.BetweenPoints(this.worldPoints[i], this.worldPoints[i+1]); this.cumulativeLengths.push(total); }
     this.totalPathLength = total;
   }
 
@@ -379,12 +238,10 @@ export default class WorkbenchScene extends Phaser.Scene {
     if (this.worldPoints.length < 2) return;
     this.silhouetteGraphics.fillStyle(0x1a0b08, 1).beginPath().moveTo(this.worldPoints[0].x, this.worldPoints[0].y);
     for (let i = 1; i < this.worldPoints.length; i++) this.silhouetteGraphics.lineTo(this.worldPoints[i].x, this.worldPoints[i].y);
-    this.silhouetteGraphics.closePath().fillPath();
-    this.pathGraphics.lineStyle(3, 0xfde68a, 0.4);
+    this.silhouetteGraphics.closePath().fillPath(); this.pathGraphics.lineStyle(3, 0xfde68a, 0.4);
     const dashSize = 10, gapSize = 8;
     for (let i = 0; i < this.worldPoints.length - 1; i++) {
-      const start = this.worldPoints[i], end = this.worldPoints[i+1];
-      const dist = Phaser.Math.Distance.BetweenPoints(start, end), angle = Phaser.Math.Angle.BetweenPoints(start, end);
+      const start = this.worldPoints[i], end = this.worldPoints[i+1]; const dist = Phaser.Math.Distance.BetweenPoints(start, end), angle = Phaser.Math.Angle.BetweenPoints(start, end);
       let currentDist = 0, draw = true;
       while (currentDist < dist) {
         const step = draw ? dashSize : gapSize; const nextDist = Math.min(currentDist + step, dist);
@@ -395,125 +252,57 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.interactables.forEach(obj => {
         if (obj.type === 'DRAG' && obj.endP && !obj.missed) {
             this.drawPathSegment(obj.p, obj.endP, this.dragPathGraphics, 0x10b981, 0.4, 5);
-            if (obj.tracedSegments) {
-                obj.tracedSegments.forEach(seg => {
-                    this.drawPathSegment(seg.start, seg.end, this.dragPathGraphics, 0xfbbf24, 1.0, 8);
-                });
-            }
+            if (obj.tracedSegments) obj.tracedSegments.forEach(seg => this.drawPathSegment(seg.start, seg.end, this.dragPathGraphics, 0xfbbf24, 1.0, 8));
             if (!obj.startHit && !obj.hit) {
-                const startPos = this.getPathPosition(obj.p);
-                const ringColor = this.getRingColor(obj.ringType);
-                let ringRadius = 20; let strokeW = 4; let alpha = 1;
-                if (obj.ringType === 'NARROW') { ringRadius = 12; strokeW = 5; alpha = 1.0; }
-                else if (obj.ringType === 'MEDIUM') { ringRadius = 20; strokeW = 4; alpha = 0.8; }
-                else if (obj.ringType === 'WIDE') { ringRadius = 30; strokeW = 3; alpha = 0.6; }
-                this.dragPathGraphics.lineStyle(strokeW, ringColor, alpha).strokeCircle(startPos.x, startPos.y, ringRadius * this.uiScale);
-                this.dragPathGraphics.fillStyle(ringColor, alpha * 0.4).fillCircle(startPos.x, startPos.y, (ringRadius - 6) * this.uiScale);
+                const startPos = this.getPathPosition(obj.p); const ringColor = this.getRingColor(obj.ringType);
+                let ringRadius = obj.ringType === 'NARROW' ? 12 : obj.ringType === 'WIDE' ? 30 : 20;
+                this.dragPathGraphics.lineStyle(4, ringColor, 1.0).strokeCircle(startPos.x, startPos.y, ringRadius * this.uiScale);
+                this.dragPathGraphics.fillStyle(ringColor, 0.4).fillCircle(startPos.x, startPos.y, (ringRadius - 6) * this.uiScale);
             }
-            const endPos = this.getPathPosition(obj.endP);
-            this.dragPathGraphics.lineStyle(4, 0xfbbf24, 1).strokeCircle(endPos.x, endPos.y, 14 * this.uiScale);
-            this.dragPathGraphics.fillStyle(0xfbbf24, 0.5).fillCircle(endPos.x, endPos.y, 8 * this.uiScale);
+            const endPos = this.getPathPosition(obj.endP); this.dragPathGraphics.lineStyle(4, 0xfbbf24, 1).strokeCircle(endPos.x, endPos.y, 14 * this.uiScale); this.dragPathGraphics.fillStyle(0xfbbf24, 0.5).fillCircle(endPos.x, endPos.y, 8 * this.uiScale);
         }
     });
   }
 
   private drawPathSegment(startP: number, endP: number, graphics: Phaser.GameObjects.Graphics, color: number, alpha: number, width: number) {
-    graphics.lineStyle(width, color, alpha);
-    const stepDistancePx = 4;
-    const segmentLengthP = endP - startP;
-    const segmentLengthPx = segmentLengthP * this.totalPathLength;
-    const steps = Math.max(2, Math.ceil(segmentLengthPx / stepDistancePx));
-    const stepSizeP = segmentLengthP / steps;
-    const firstPos = this.getPathPosition(startP); 
-    graphics.beginPath().moveTo(firstPos.x, firstPos.y);
-    for (let i = 1; i <= steps; i++) { 
-        const currentP = startP + stepSizeP * i;
-        const pos = this.getPathPosition(currentP); 
-        graphics.lineTo(pos.x, pos.y); 
-    }
+    graphics.lineStyle(width, color, alpha); const stepDistancePx = 4; const segmentLengthP = endP - startP; const steps = Math.max(2, Math.ceil(segmentLengthP * this.totalPathLength / stepDistancePx));
+    const stepSizeP = segmentLengthP / steps; const firstPos = this.getPathPosition(startP); graphics.beginPath().moveTo(firstPos.x, firstPos.y);
+    for (let i = 1; i <= steps; i++) { const pos = this.getPathPosition(startP + stepSizeP * i); graphics.lineTo(pos.x, pos.y); }
     graphics.strokePath();
   }
 
   private getPathPosition(p: number): { x: number; y: number; angle: number } {
-    const normalizedP = p < 0 ? 1 + (p % 1) : p % 1;
-    const targetLen = normalizedP * this.totalPathLength;
+    const normalizedP = p < 0 ? 1 + (p % 1) : p % 1; const targetLen = normalizedP * this.totalPathLength;
     let seg = 0; while (seg < this.cumulativeLengths.length - 2 && this.cumulativeLengths[seg + 1] < targetLen) seg++;
-    const segStart = this.cumulativeLengths[seg], segEnd = this.cumulativeLengths[seg + 1];
-    const t = (targetLen - segStart) / (segEnd - segStart || 1);
-    const p1 = this.worldPoints[seg], p2 = this.worldPoints[seg + 1];
-    return { x: Phaser.Math.Linear(p1.x, p2.x, t), y: Phaser.Math.Linear(p1.y, p2.y, t), angle: Phaser.Math.Angle.BetweenPoints(p1, p2) };
+    const t = (targetLen - this.cumulativeLengths[seg]) / (this.cumulativeLengths[seg + 1] - this.cumulativeLengths[seg] || 1);
+    const p1 = this.worldPoints[seg], p2 = this.worldPoints[seg + 1]; return { x: Phaser.Math.Linear(p1.x, p2.x, t), y: Phaser.Math.Linear(p1.y, p2.y, t), angle: Phaser.Math.Angle.BetweenPoints(p1, p2) };
   }
 
   private spawnInteractablesForPhase() {
-    this.interactables.forEach(obj => {
-        obj.graphic?.destroy();
-        obj.nailHead?.destroy();
-    });
-    this.interactables = [];
+    this.interactables.forEach(obj => { obj.graphic?.destroy(); obj.nailHead?.destroy(); }); this.interactables = [];
     if (this.currentPhase === 1 || this.currentPhase === 3) {
         const count = this.currentPhase === 1 ? 4 : 8;
-        for (let i = 0; i < count; i++) {
-            const sectorWidth = 1.0 / count;
-            const randomP = (i * sectorWidth) + Phaser.Math.FloatBetween(sectorWidth * 0.2, sectorWidth * 0.8);
-            this.addTap(randomP % 1.0);
-        }
-    } else {
-        const start = Phaser.Math.FloatBetween(0.02, 0.15);
-        const length = Phaser.Math.FloatBetween(0.75, 0.85);
-        this.addDrag(start, start + length);
-    }
-    this.updateInteractablesVisuals();
-    this.drawGuidePath();
+        for (let i = 0; i < count; i++) { const sectorWidth = 1.0 / count; this.addTap(((i * sectorWidth) + Phaser.Math.FloatBetween(sectorWidth * 0.2, sectorWidth * 0.8)) % 1.0); }
+    } else { const start = Phaser.Math.FloatBetween(0.02, 0.15); this.addDrag(start, start + Phaser.Math.FloatBetween(0.75, 0.85)); }
+    this.updateInteractablesVisuals(); this.drawGuidePath();
   }
 
   private addTap(p: number) {
-    const types: RingType[] = ['NARROW', 'MEDIUM', 'WIDE'];
-    const ringType = types[Math.floor(Math.random() * types.length)];
-    const ringColor = this.getRingColor(ringType);
-    let ringRadius = 20;
-    if (ringType === 'NARROW') ringRadius = 12;
-    else if (ringType === 'MEDIUM') ringRadius = 20;
-    else if (ringType === 'WIDE') ringRadius = 30;
-
-    const pos = this.getPathPosition(p);
-    const node = this.add.circle(pos.x, pos.y, ringRadius * this.uiScale, ringColor, 0.3).setStrokeStyle(3, ringColor).setDepth(8);
-    
-    // 못 머리 이미지 추가 (비가죽 작업 타격 페이즈 전용)
-    let nailHead: Phaser.GameObjects.Image | undefined;
-    if (!this.isLeatherWork) {
-        // 못 머리 크기를 링의 지름(radius * 2)과 동일하게 설정
-        const targetSize = ringRadius * 2 * this.uiScale;
-        nailHead = this.add.image(pos.x, pos.y, 'nail_head').setDepth(7).setDisplaySize(targetSize, targetSize);
-        this.root.add(nailHead);
-    }
-
-    this.interactables.push({ type: 'TAP', p, hit: false, missed: false, dragSuccessTicks: 0, totalTicksInRange: 0, graphic: node, nailHead, ringType });
-    this.root.add(node);
+    const types: RingType[] = ['NARROW', 'MEDIUM', 'WIDE']; const ringType = types[Math.floor(Math.random() * types.length)];
+    const ringColor = this.getRingColor(ringType); let ringRadius = ringType === 'NARROW' ? 12 : ringType === 'WIDE' ? 30 : 20;
+    const pos = this.getPathPosition(p); const node = this.add.circle(pos.x, pos.y, ringRadius * this.uiScale, ringColor, 0.3).setStrokeStyle(3, ringColor).setDepth(8);
+    let nailHead: Phaser.GameObjects.Image | undefined; if (!this.isLeatherWork) { const targetSize = ringRadius * 2 * this.uiScale; nailHead = this.add.image(pos.x, pos.y, 'nail_head').setDepth(7).setDisplaySize(targetSize, targetSize); this.root.add(nailHead); }
+    this.interactables.push({ type: 'TAP', p, hit: false, missed: false, dragSuccessTicks: 0, totalTicksInRange: 0, graphic: node, nailHead, ringType }); this.root.add(node);
   }
 
-  private addDrag(start: number, end: number) {
-    const ringType: RingType = 'MEDIUM';
-    this.interactables.push({ type: 'DRAG', p: start, endP: end, hit: false, missed: false, dragSuccessTicks: 0, totalTicksInRange: 0, tracedSegments: [], startHit: false, startHitPerfect: false, missedStart: false, ringType });
-  }
+  private addDrag(start: number, end: number) { this.interactables.push({ type: 'DRAG', p: start, endP: end, hit: false, missed: false, dragSuccessTicks: 0, totalTicksInRange: 0, tracedSegments: [], startHit: false, startHitPerfect: false, missedStart: false, ringType: 'MEDIUM' }); }
 
   private updateInteractablesVisuals() {
     this.interactables.forEach((obj) => {
-      const pos = this.getPathPosition(obj.p);
-      if (obj.type === 'TAP' && !obj.missed) {
-        let ringRadius = 20;
-        if (obj.ringType === 'NARROW') ringRadius = 12;
-        else if (obj.ringType === 'MEDIUM') ringRadius = 20;
-        else if (obj.ringType === 'WIDE') ringRadius = 30;
-
-        if (obj.graphic) {
-            obj.graphic.setPosition(pos.x, pos.y).setRadius(ringRadius * this.uiScale);
-        }
-        if (obj.nailHead) {
-            const targetSize = ringRadius * 2 * this.uiScale;
-            // 지름에 맞춰서 크기 조정 (히트 시에는 0.8배 축소된 상태 유지)
-            const finalSize = targetSize * (obj.hit ? 0.8 : 1);
-            obj.nailHead.setPosition(pos.x, pos.y).setDisplaySize(finalSize, finalSize);
-        }
+      const pos = this.getPathPosition(obj.p); if (obj.type === 'TAP' && !obj.missed) {
+        let ringRadius = obj.ringType === 'NARROW' ? 12 : obj.ringType === 'WIDE' ? 30 : 20;
+        if (obj.graphic) obj.graphic.setPosition(pos.x, pos.y).setRadius(ringRadius * this.uiScale);
+        if (obj.nailHead) obj.nailHead.setPosition(pos.x, pos.y).setDisplaySize(ringRadius * 2 * this.uiScale * (obj.hit ? 0.8 : 1), ringRadius * 2 * this.uiScale * (obj.hit ? 0.8 : 1));
       }
     });
   }
@@ -521,32 +310,11 @@ export default class WorkbenchScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.isFinished || this.isTransitioning || this.worldPoints.length < 2) return;
     this.cursorProgress += this.cursorSpeed * delta;
-    this.interactables.forEach((obj) => {
-      if (!obj.hit && !obj.missed) {
-          if (this.cursorProgress > obj.p + 0.1) {
-              if (obj.type === 'TAP') {
-                  obj.missed = true;
-                  const pos = this.getPathPosition(obj.p);
-                  this.handleMiss(pos.x, pos.y, obj);
-              } else if (obj.type === 'DRAG' && !obj.startHit && !obj.missedStart) {
-                  obj.missedStart = true;
-              }
-          }
-      }
-    });
-    this.handleDragLogic(time, delta);
-    if (this.cursorProgress >= 1.0) this.finishPhase();
-    const pos = this.getPathPosition(this.cursorProgress);
-    this.cursor.setPosition(pos.x, pos.y);
-    
-    // 도구 회전 각도 보정
-    const isSaw = !this.isLeatherWork && (this.currentPhase === 2 || this.currentPhase === 4);
-    const rotationOffset = isSaw ? 0 : -Math.PI / 2;
-    const targetRotation = pos.angle + rotationOffset;
-    
-    const angleDelta = Phaser.Math.Angle.ShortestBetween(Phaser.Math.RadToDeg(this.cursor.rotation), Phaser.Math.RadToDeg(targetRotation));
-    this.cursor.angle += angleDelta * 0.15;
-
+    this.interactables.forEach((obj) => { if (!obj.hit && !obj.missed) { if (this.cursorProgress > obj.p + 0.1) { if (obj.type === 'TAP') { obj.missed = true; const pos = this.getPathPosition(obj.p); this.handleMiss(pos.x, pos.y, obj); } else if (obj.type === 'DRAG' && !obj.startHit && !obj.missedStart) obj.missedStart = true; } } });
+    this.handleDragLogic(time, delta); if (this.cursorProgress >= 1.0) this.finishPhase();
+    const pos = this.getPathPosition(this.cursorProgress); this.cursor.setPosition(pos.x, pos.y);
+    const rotationOffset = (!this.isLeatherWork && (this.currentPhase === 2 || this.currentPhase === 4)) ? 0 : -Math.PI / 2;
+    this.cursor.angle += Phaser.Math.Angle.ShortestBetween(Phaser.Math.RadToDeg(this.cursor.rotation), Phaser.Math.RadToDeg(pos.angle + rotationOffset)) * 0.15;
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
     if (this.itemSprite) this.itemSprite.setAlpha(0.15 + (this.confirmedProgress / 100) * 0.7);
     this.drawGuidePath(time);
@@ -556,190 +324,55 @@ export default class WorkbenchScene extends Phaser.Scene {
     const p = this.cursorProgress;
     this.interactables.forEach(obj => {
       if (obj.type === 'DRAG' && !obj.hit && !obj.missed) {
-        const inside = p >= obj.p && p <= obj.endP!;
-        if (inside) {
-            obj.totalTicksInRange += delta;
-            const pointer = this.input.activePointer;
-            const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, this.cursor.x, this.cursor.y);
-            
-            if (pointer.isDown && dist < 60 * this.uiScale) {
-                if (!obj.startHit) {
-                    obj.startHit = true;
-                    if (!obj.tracedSegments) obj.tracedSegments = [];
-                    obj.tracedSegments.push({ start: p, end: p });
-                }
-                obj.dragSuccessTicks += delta; 
-                this.dragPenaltyTimer = 0; 
-                if (this.cursorSprite.visible) this.cursorSprite.setTint(0xfbbf24);
-                if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfcd34d);
-
+        if (p >= obj.p && p <= obj.endP!) {
+            obj.totalTicksInRange += delta; const pointer = this.input.activePointer;
+            if (pointer.isDown && Phaser.Math.Distance.Between(pointer.x, pointer.y, this.cursor.x, this.cursor.y) < 60 * this.uiScale) {
+                if (!obj.startHit) { obj.startHit = true; if (!obj.tracedSegments) obj.tracedSegments = []; obj.tracedSegments.push({ start: p, end: p }); }
+                obj.dragSuccessTicks += delta; this.dragPenaltyTimer = 0; if (this.cursorSprite.visible) this.cursorSprite.setTint(0xfbbf24); if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfcd34d);
                 if (time % 100 < 20) this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 1);
-                if (!obj.tracedSegments) obj.tracedSegments = [];
-                const lastSeg = obj.tracedSegments[obj.tracedSegments.length - 1];
-                if (lastSeg && Math.abs(lastSeg.end - p) < 0.05) { lastSeg.end = p; } 
-                else { obj.tracedSegments.push({ start: p, end: p }); }
+                const lastSeg = obj.tracedSegments![obj.tracedSegments!.length - 1]; if (lastSeg && Math.abs(lastSeg.end - p) < 0.05) lastSeg.end = p; else obj.tracedSegments!.push({ start: p, end: p });
             } else if (obj.startHit) {
-                this.dragPenaltyTimer += delta; 
-                this.cursorSprite.clearTint();
-                if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfbbf24);
-
-                if (this.dragPenaltyTimer > 150) {
-                    this.dragPenaltyTimer = 0; this.currentQuality = Math.max(0, this.currentQuality - 1.2);
-                    this.combo = 0; this.createSparks(this.cursor.x, this.cursor.y, 0xef4444, 2); this.cameras.main.shake(40, 0.001);
-                }
-            } else { 
-                this.cursorSprite.clearTint(); 
-                if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfbbf24);
+                this.dragPenaltyTimer += delta; if (this.dragPenaltyTimer > 150) { this.dragPenaltyTimer = 0; this.currentQuality = Math.max(0, this.currentQuality - 1.2); this.combo = 0; this.createSparks(this.cursor.x, this.cursor.y, 0xef4444, 2); this.cameras.main.shake(40, 0.001); }
             }
         }
         if (p > obj.endP! + 0.02 && obj.totalTicksInRange > 50) {
             const ratio = obj.dragSuccessTicks / obj.totalTicksInRange;
-            if (ratio > 0.92 && obj.startHitPerfect && !obj.missedStart) {
-                obj.hit = true; this.currentQuality = Math.min(120, this.currentQuality + 3.0);
-                this.showFeedback('PERFECT!', 0xfbbf24, this.cursor.x, this.cursor.y); this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 15);
-            } else if (ratio > 0.60) {
-                obj.hit = true; this.currentQuality = Math.min(120, this.currentQuality + 1.0);
-                this.showFeedback('GOOD', 0xe5e5e5, this.cursor.x, this.cursor.y);
-            } else { obj.missed = true; this.handleMiss(this.cursor.x, this.cursor.y); }
+            if (ratio > 0.92 && obj.startHitPerfect && !obj.missedStart) { obj.hit = true; this.currentQuality = Math.min(120, this.currentQuality + 3.0); this.showFeedback('PERFECT!', 0xfbbf24, this.cursor.x, this.cursor.y); this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 15); }
+            else if (ratio > 0.60) { obj.hit = true; this.currentQuality = Math.min(120, this.currentQuality + 1.0); this.showFeedback('GOOD', 0xe5e5e5, this.cursor.x, this.cursor.y); }
+            else { obj.missed = true; this.handleMiss(this.cursor.x, this.cursor.y); }
         }
       }
     });
-    if (!this.interactables.some(obj => obj.type === 'DRAG' && p >= obj.p && p <= obj.endP!)) {
-        this.cursorSprite.clearTint();
-        if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfbbf24);
-    }
+    if (!this.interactables.some(obj => obj.type === 'DRAG' && p >= obj.p && p <= obj.endP!)) { this.cursorSprite.clearTint(); if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfbbf24); }
   }
 
   private handleTapHit(idx: number, targetX: number, targetY: number) {
-    const obj = this.interactables[idx];
-    const diff = Math.abs(this.cursorProgress - obj.p);
-    const pos = this.getPathPosition(obj.p);
-    
+    const obj = this.interactables[idx]; const diff = Math.abs(this.cursorProgress - obj.p); const pos = this.getPathPosition(obj.p);
     if (diff < 0.07) {
-      obj.hit = true;
-      const isPerfect = diff < 0.03;
-      const ringColor = this.getRingColor(obj.ringType);
-      
-      // 망치 타격 애니메이션 (날아와서 때리는 모션, 5도 -> -30도)
-      if (!this.isLeatherWork) {
-          // 시작 위치: 타겟 위치에서 상단으로 120px 오프셋 (Y축을 더 올림)
-          this.hammerSprite
-              .setAlpha(1)
-              .setPosition(targetX + 40, targetY - 120)
-              .setAngle(5);
-
-          this.tweens.add({
-              targets: this.hammerSprite,
-              x: targetX,
-              y: targetY + 20, // 망치 헤드가 못 머리 상단에 닿도록 보정 (앵커인 손잡이 부분을 타겟 중심 아래로 배치하여 헤드가 닿게 함)
-              angle: -30,
-              duration: 100,
-              ease: 'Cubic.in',
-              onComplete: () => {
-                  // 타격 후 살짝 반동하며 사라짐
-                  this.tweens.add({
-                      targets: this.hammerSprite,
-                      angle: -10,
-                      y: targetY + 10,
-                      alpha: 0,
-                      duration: 250,
-                      ease: 'Cubic.out'
-                  });
-              }
-          });
-      }
-
-      // 못 머리 타격 애니메이션 (지름 기준 0.8배 축소)
-      if (obj.nailHead) {
-          this.tweens.add({
-              targets: obj.nailHead,
-              displayWidth: obj.nailHead.displayWidth * 0.8,
-              displayHeight: obj.nailHead.displayHeight * 0.8,
-              duration: 100,
-              ease: 'Back.easeOut'
-          });
-      }
-
-      if (isPerfect) {
-        this.combo++; this.currentQuality = Math.min(120, this.currentQuality + 2);
-        this.showFeedback('PERFECT!', 0xfbbf24, pos.x, pos.y);
-        this.createSparks(pos.x, pos.y, 0xfbbf24, 15);
-      } else {
-        this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 1.5);
-        this.showFeedback('GOOD', ringColor, pos.x, pos.y);
-        this.createSparks(pos.x, pos.y, ringColor, 8);
-      }
-
-      if (obj.graphic) {
-          const target = obj.graphic;
-          this.tweens.add({ targets: target, scale: this.uiScale * 2, alpha: 0, duration: 300, ease: 'Cubic.out', onComplete: () => target.destroy() });
-      }
+      obj.hit = true; const isPerfect = diff < 0.03; const ringColor = this.getRingColor(obj.ringType);
+      if (!this.isLeatherWork) { this.hammerSprite.setAlpha(1).setPosition(targetX + 40, targetY - 120).setAngle(5); this.tweens.add({ targets: this.hammerSprite, x: targetX, y: targetY + 20, angle: -30, duration: 100, ease: 'Cubic.in', onComplete: () => { this.tweens.add({ targets: this.hammerSprite, angle: -10, y: targetY + 10, alpha: 0, duration: 250, ease: 'Cubic.out' }); } }); }
+      if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, displayWidth: obj.nailHead.displayWidth * 0.8, displayHeight: obj.nailHead.displayHeight * 0.8, duration: 100, ease: 'Back.easeOut' });
+      if (isPerfect) { this.combo++; this.currentQuality = Math.min(120, this.currentQuality + 2); this.showFeedback('PERFECT!', 0xfbbf24, pos.x, pos.y); this.createSparks(pos.x, pos.y, 0xfbbf24, 15); if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(pos.x, pos.y); }
+      else { this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 1.5); this.showFeedback('GOOD', ringColor, pos.x, pos.y); this.createSparks(pos.x, pos.y, ringColor, 8); }
+      if (obj.graphic) { const target = obj.graphic; this.tweens.add({ targets: target, scale: this.uiScale * 2, alpha: 0, duration: 300, ease: 'Cubic.out', onComplete: () => target.destroy() }); }
     }
   }
 
-  private handleMiss(x: number, y: number, obj?: Interactable) {
-    this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 6);
-    this.showFeedback('MISS', 0xef4444, x, y);
-    this.createSparks(x, y, 0xef4444, 8); this.cameras.main.shake(120, 0.005);
-    
-    if (obj?.graphic) { this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 200, onComplete: () => obj.graphic?.destroy() }); }
-    if (obj?.nailHead) { this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 200, onComplete: () => obj.nailHead?.destroy() }); }
-  }
+  private handleEnhancement(x: number, y: number) { this.enhancementCount++; const pinnedText = this.add.text(x, y, '+1', { fontFamily: 'Grenze Gotisch', fontSize: '48px', color: '#fbbf24', fontStyle: 'bold', stroke: '#000', strokeThickness: 6, shadow: { color: '#000', fill: true, blur: 10 } }).setOrigin(0.5).setDepth(15).setAlpha(0).setScale(0.5); this.root.add(pinnedText); this.tweens.add({ targets: pinnedText, alpha: 1, scale: 1, y: y - 20, duration: 400, ease: 'Back.out' }); }
+
+  private handleMiss(x: number, y: number, obj?: Interactable) { this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 6); this.showFeedback('MISS', 0xef4444, x, y); this.createSparks(x, y, 0xef4444, 8); this.cameras.main.shake(120, 0.005); if (obj?.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 200, onComplete: () => obj.graphic?.destroy() }); if (obj?.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 200, onComplete: () => obj.nailHead?.destroy() }); }
 
   private finishPhase() {
-    this.isTransitioning = true; // 전환 상태 시작
-    this.confirmedProgress = Math.min(100, this.confirmedProgress + 25); 
-    this.updateProgressBar();
-
-    // 현재 인터랙션 그래픽들 페이드 아웃
-    this.interactables.forEach(obj => {
-        if (obj.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 400 });
-        if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 400 });
-    });
-
-    const isLastPhase = this.currentPhase >= 4;
-    const splashText = isLastPhase ? 'WORK COMPLETE!' : `PHASE ${this.currentPhase} COMPLETE!`;
-    const splashColor = isLastPhase ? '#fbbf24' : '#10b981';
-
-    // 슬래시 텍스트 표시
-    const splash = this.add.text(this.centerX, this.centerY, splashText, {
-        fontFamily: 'Grenze Gotisch',
-        fontSize: '48px',
-        color: splashColor,
-        stroke: '#000',
-        strokeThickness: 8
-    }).setOrigin(0.5).setAlpha(0).setScale(0.5).setDepth(100);
-
-    this.root.add(splash);
-
-    this.tweens.chain({
-        targets: splash,
-        tweens: [
-            { alpha: 1, scale: 1.2, duration: 400, ease: 'Back.out' },
-            { scale: 1, duration: 800 },
-            { alpha: 0, scale: 1.5, duration: 300, ease: 'Cubic.in' }
-        ],
-        onComplete: () => {
-            splash.destroy();
-            if (isLastPhase) {
-                this.win();
-            } else {
-                // 대기 후 다음 페이즈 시작
-                this.time.delayedCall(500, () => {
-                    this.startPhase(this.currentPhase + 1);
-                });
-            }
-        }
-    });
+    this.isTransitioning = true; this.confirmedProgress = Math.min(100, this.confirmedProgress + 25); this.updateProgressBar();
+    this.interactables.forEach(obj => { if (obj.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 400 }); if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 400 }); });
+    const isLastPhase = this.currentPhase >= 4; const splashText = isLastPhase ? 'WORK COMPLETE!' : `PHASE ${this.currentPhase} COMPLETE!`;
+    const splash = this.add.text(this.centerX, this.centerY, splashText, { fontFamily: 'Grenze Gotisch', fontSize: '48px', color: isLastPhase ? '#fbbf24' : '#10b981', stroke: '#000', strokeThickness: 8 }).setOrigin(0.5).setAlpha(0).setScale(0.5).setDepth(100);
+    this.root.add(splash); this.tweens.chain({ targets: splash, tweens: [ { alpha: 1, scale: 1.2, duration: 400, ease: 'Back.out' }, { scale: 1, duration: 800 }, { alpha: 0, scale: 1.5, duration: 300, ease: 'Cubic.in' } ], onComplete: () => { splash.destroy(); if (isLastPhase) this.win(); else this.time.delayedCall(500, () => this.startPhase(this.currentPhase + 1)); } });
   }
 
-  private updateProgressBar() { const w = (this.confirmedProgress / 100) * this.progBg.width; this.progressBar.width = Math.max(0.1, w); }
+  private updateProgressBar() { this.progressBar.width = Math.max(0.1, (this.confirmedProgress / 100) * this.progBg.width); }
 
-  private createSparks(x: number, y: number, color: number, count: number = 12) {
-    const emitter = this.add.particles(x, y, 'spark', { lifespan: 500, speed: { min: 100, max: 250 }, scale: { start: 0.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', tint: color, gravityY: 400 });
-    this.root.add(emitter); emitter.explode(count);
-    this.time.delayedCall(600, () => emitter.destroy());
-  }
+  private createSparks(x: number, y: number, color: number, count: number = 12) { const emitter = this.add.particles(x, y, 'spark', { lifespan: 500, speed: { min: 100, max: 250 }, scale: { start: 0.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', tint: color, gravityY: 400 }); this.root.add(emitter); emitter.explode(count); this.time.delayedCall(600, () => emitter.destroy()); }
 
   private showFeedback(text: string, color: number, x: number, y: number) {
     const fb = this.add.text(x, y, text, { fontFamily: 'Grenze Gotisch', fontSize: `${Math.round(24 * this.uiScale)}px`, color: '#' + color.toString(16).padStart(6, '0'), stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setDepth(30);
@@ -747,13 +380,8 @@ export default class WorkbenchScene extends Phaser.Scene {
     if (this.combo > 1) { this.comboText.setPosition(x, y - 70).setText(`${this.combo} COMBO!`).setAlpha(1); this.tweens.add({ targets: this.comboText, alpha: 0, scale: 1.2, duration: 800 }); }
   }
 
-  public getQualityLabel(q: number): string {
-    if (q >= 110) return 'MASTERWORK'; if (q >= 100) return 'PRISTINE'; if (q >= 90) return 'SUPERIOR'; if (q >= 80) return 'FINE'; if (q >= 70) return 'STANDARD'; if (q >= 60) return 'RUSTIC'; return 'CRUDE';
-  }
-
-  private getLabelColor(q: number): string {
-    if (q >= 110) return '#f59e0b'; if (q >= 100) return '#fbbf24'; if (q >= 90) return '#10b981'; if (q >= 80) return '#3b82f6'; if (q >= 70) return '#a8a29e'; if (q >= 60) return '#d97706'; return '#ef4444';
-  }
+  public getQualityLabel(q: number): string { if (q >= 110) return 'MASTERWORK'; if (q >= 100) return 'PRISTINE'; if (q >= 90) return 'SUPERIOR'; if (q >= 80) return 'FINE'; if (q >= 70) return 'STANDARD'; if (q >= 60) return 'RUSTIC'; return 'CRUDE'; }
+  private getLabelColor(q: number): string { if (q >= 110) return '#f59e0b'; if (q >= 100) return '#fbbf24'; if (q >= 90) return '#10b981'; if (q >= 80) return '#3b82f6'; if (q >= 70) return '#a8a29e'; if (q >= 60) return '#d97706'; return '#ef4444'; }
 
   private win() {
     this.isFinished = true; this.cursor.setVisible(false);
@@ -761,8 +389,6 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.root.add(mask); this.tweens.add({ targets: mask, alpha: 0.7, duration: 400 });
     const label = this.getQualityLabel(this.currentQuality);
     const txt = this.add.text(this.centerX, this.centerY, `${label}\nCRAFT!`, { fontFamily: 'Grenze Gotisch', fontSize: '48px', color: this.getLabelColor(this.currentQuality), stroke: '#000', strokeThickness: 6, align: 'center' }).setOrigin(0.5).setAlpha(0).setDepth(101).setScale(0.5);
-    this.root.add(txt); this.tweens.add({ targets: txt, alpha: 1, scale: 1, duration: 600, ease: 'Back.out', onComplete: () => {
-        this.time.delayedCall(1200, () => { if (this.onComplete) this.onComplete(this.currentQuality); });
-    }});
+    this.root.add(txt); this.tweens.add({ targets: txt, alpha: 1, scale: 1, duration: 600, ease: 'Back.out', onComplete: () => { this.time.delayedCall(1200, () => { if (this.onComplete) this.onComplete(this.currentQuality, this.enhancementCount); }); } });
   }
 }

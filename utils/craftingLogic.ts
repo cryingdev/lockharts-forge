@@ -1,4 +1,3 @@
-
 import { EquipmentItem } from '../types/inventory';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { MASTERY_THRESHOLDS } from '../config/mastery-config';
@@ -15,7 +14,7 @@ export const getEnergyCost = (item: EquipmentItem, masteryCount: number): number
     return Math.max(5, cost);
 };
 
-export const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number, bonus: number = 0): Equipment => {
+export const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number, enhancementCount: number = 0): Equipment => {
     let statMultiplier = 1.0;
     let priceMultiplier = 1.0;
     let namePrefix = '';
@@ -30,18 +29,6 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         namePrefix = MASTERY_THRESHOLDS.ADEPT_BONUS.prefix;
     }
 
-    // --- NEW RARITY LOGIC ---
-    // Rarity is now determined by a combination of Quality and Bonus Stats.
-    // Quality (up to 120) + (Bonus * 2). 
-    // To get Legendary (125+), you usually need both high quality and a solid bonus.
-    const rarityScore = quality + (bonus * 2);
-    
-    let rarity = EquipmentRarity.COMMON;
-    if (rarityScore >= 125) rarity = EquipmentRarity.LEGENDARY; 
-    else if (rarityScore >= 110) rarity = EquipmentRarity.EPIC;  
-    else if (rarityScore >= 95) rarity = EquipmentRarity.RARE;
-    else if (rarityScore >= 75) rarity = EquipmentRarity.UNCOMMON;
-
     const qualityMultiplier = Math.max(0.2, quality / 100); 
     const finalMultiplier = qualityMultiplier * statMultiplier;
 
@@ -54,23 +41,24 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         magicalDefense: Math.round(base.magicalDefense * finalMultiplier),
     };
 
-    let appliedBonus: Equipment['appliedBonus'] = undefined;
-
-    if (bonus > 0) {
-        let targetStat: keyof EquipmentStats = 'physicalAttack';
-        if (stats.magicalAttack > stats.physicalAttack) {
-            targetStat = 'magicalAttack';
-        } else if (stats.physicalDefense > stats.physicalAttack && stats.physicalDefense > stats.magicalAttack) {
-            targetStat = 'physicalDefense';
-        } else if (stats.magicalDefense > stats.physicalAttack && stats.magicalDefense > stats.magicalAttack) {
-            targetStat = 'magicalDefense';
-        }
-        
-        stats[targetStat] += bonus;
-        appliedBonus = { stat: targetStat, value: bonus };
+    // --- ENHANCEMENT LOGIC ---
+    // Every +1 grants a 2% boost to a random relevant stat
+    const statKeys: (keyof EquipmentStats)[] = ['physicalAttack', 'physicalDefense', 'magicalAttack', 'magicalDefense'];
+    for (let i = 0; i < enhancementCount; i++) {
+        const randomKey = statKeys[Math.floor(Math.random() * statKeys.length)];
+        stats[randomKey] = Math.round(stats[randomKey] * 1.02);
     }
 
-    const price = Math.round(recipe.baseValue * finalMultiplier * priceMultiplier);
+    // Rarity determination based on Quality + Enhancement intensity
+    const rarityScore = quality + (enhancementCount * 2);
+    
+    let rarity = EquipmentRarity.COMMON;
+    if (rarityScore >= 125) rarity = EquipmentRarity.LEGENDARY; 
+    else if (rarityScore >= 110) rarity = EquipmentRarity.EPIC;  
+    else if (rarityScore >= 95) rarity = EquipmentRarity.RARE;
+    else if (rarityScore >= 75) rarity = EquipmentRarity.UNCOMMON;
+
+    const price = Math.round(recipe.baseValue * finalMultiplier * priceMultiplier * (1 + enhancementCount * 0.05));
 
     return {
         id: `${recipe.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -84,13 +72,14 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         image: recipe.image,
         description: recipe.description,
         stats: stats,
-        appliedBonus,
+        enhancementCount,
         specialAbilities: [], 
         durability: recipe.maxDurability, 
         maxDurability: recipe.maxDurability,
         isRepairable: recipe.isRepairable,
         equipRequirements: recipe.equipRequirements,
         craftedDate: Date.now(),
+        crafterName: 'Lockhart',
         previousOwners: [], 
         slotType: recipe.slotType,
         isTwoHanded: recipe.isTwoHanded
