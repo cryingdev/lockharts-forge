@@ -1,18 +1,46 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import WorkbenchMinigame from './WorkbenchMinigame';
-import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain, AlertCircle, TrendingUp, Sparkles, FastForward } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, ChevronUp, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain, AlertCircle, TrendingUp, Sparkles, FastForward, Activity } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
 import { MATERIALS } from '../../../data/materials';
 import { getAssetUrl } from '../../../utils';
+import { getSmithingLevel, getUnlockedTier, LEVEL_EXP_TABLE } from '../../../utils/craftingLogic';
 
 interface ForgeTabProps {
     onNavigate: (tab: any) => void;
 }
+
+const SkillHeader = ({ exp, label, icon: Icon }: { exp: number, label: string, icon: any }) => {
+    const level = getSmithingLevel(exp);
+    const tier = getUnlockedTier(level);
+    const currentExpInLevel = exp - (LEVEL_EXP_TABLE[level - 1] || 0);
+    const nextLevelExpThreshold = (LEVEL_EXP_TABLE[level] || LEVEL_EXP_TABLE[level-1]) - (LEVEL_EXP_TABLE[level-1] || 0);
+    const progress = Math.min(100, (currentExpInLevel / (nextLevelExpThreshold || 1)) * 100);
+
+    return (
+        <div className="bg-stone-900/60 border border-stone-800 rounded-xl p-2 md:p-3 flex items-center gap-3 md:gap-4 shadow-inner min-w-[150px] md:min-w-[220px]">
+            <div className="p-1.5 md:p-2 bg-stone-950 rounded-lg border border-stone-800 shadow-md flex flex-col items-center gap-1">
+                <Icon className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-50" />
+                <span className="text-[6px] md:text-[8px] font-black text-amber-500 uppercase">Tier {tier}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-end mb-1">
+                    <span className="text-[8px] md:text-[10px] font-black uppercase text-stone-500 tracking-widest">{label}</span>
+                    <span className="text-[10px] md:text-xs font-mono font-black text-amber-400">LV.{level}</span>
+                </div>
+                <div className="w-full h-1 md:h-1.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
+                    <div className="h-full bg-amber-600 transition-all duration-700" style={{ width: `${progress}%` }}></div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
@@ -24,12 +52,18 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [failedFuelHighlight, setFailedFuelHighlight] = useState(false);
+  const [isSkillsExpanded, setIsSkillsExpanded] = useState(false);
   
   const [expandedSubCat, setExpandedSubCat] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const [hoveredItem, setHoveredItem] = useState<EquipmentItem | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  const smithingLevel = getSmithingLevel(stats.smithingExp);
+  const workbenchLevel = getSmithingLevel(stats.workbenchExp);
+  const unlockedSmithingTier = getUnlockedTier(smithingLevel);
+  const unlockedWorkbenchTier = getUnlockedTier(workbenchLevel);
   
   const getInventoryCount = useCallback((id: string) => {
       return inventory.find(i => i.id === id)?.quantity || 0;
@@ -54,13 +88,12 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const charcoalCount = getInventoryCount('charcoal');
   const hasFuel = charcoalCount > 0;
   
-  // Tutorial Exception: Allow entry during the tutorial forging step even without fuel
   const isTutorialForging = tutorialStep === 'START_FORGING_GUIDE';
 
   const canEnterForge = useMemo(() => {
       if (!selectedItem) return false;
       if (selectedItem.craftingType === 'WORKBENCH') return true;
-      if (isTutorialForging) return true; // Tutorial bypass
+      if (isTutorialForging) return true; 
       return hasFuel || hasHeat;
   }, [selectedItem, hasFuel, hasHeat, isTutorialForging]);
   
@@ -83,11 +116,14 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       return EQUIPMENT_ITEMS.filter(item => {
           const isUnlocked = item.unlockedByDefault !== false || unlockedRecipes?.includes(item.id);
           if (!isUnlocked) return false;
-          if (item.tier > stats.tierLevel) return false;
+          
+          const myTier = item.craftingType === 'FORGE' ? unlockedSmithingTier : unlockedWorkbenchTier;
+          if (item.tier > myTier) return false;
+
           const subCatDef = EQUIPMENT_SUBCATEGORIES.find(sc => sc.id === item.subCategoryId);
           return subCatDef?.categoryId === activeCategory;
       });
-  }, [activeCategory, stats.tierLevel, unlockedRecipes]);
+  }, [activeCategory, unlockedSmithingTier, unlockedWorkbenchTier, unlockedRecipes]);
 
   const groupedItems = useMemo(() => {
       const groups: Record<string, EquipmentItem[]> = {};
@@ -171,11 +207,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
-        // If this was the tutorial sword being crafted while the tutorial was active
         const wasTutorialStep = tutorialStep === 'START_FORGING_GUIDE' && selectedItem.id === 'sword_bronze_t1';
-        
         actions.finishCrafting(selectedItem, score, bonus);
-        
         if (wasTutorialStep) {
             actions.setTutorialStep('CRAFT_RESULT_PROMPT');
         }
@@ -197,10 +230,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       const viewportH = window.innerHeight;
       let finalX = x + 20;
       let finalY = x + 20;
-      
-      // Calculate dynamic tooltip width for boundary check
-      const tooltipW = viewportW < 768 ? Math.max(160, viewportW * 0.4) : 256; // 0.4vw or md:w-64
-
+      const tooltipW = viewportW < 768 ? Math.max(160, viewportW * 0.4) : 256; 
       if (finalX + tooltipW > viewportW) finalX = x - tooltipW - 20;
       if (finalY + 160 > viewportH) finalY = y - 180;
       setTooltipPos({ x: finalX, y: finalY });
@@ -361,12 +391,47 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     const isMissingFuelOnly = selectedItem && selectedItem.craftingType === 'FORGE' && canAffordResources(selectedItem) && !canEnterForge && hasEnergy && isRequirementMet;
     const hasAlreadyCraftedOnce = selectedItem ? (craftingMastery[selectedItem.id] || 0) > 0 : false;
     
-    // Check if this is the active tutorial craft (Bronze Shortsword while in START_FORGING_GUIDE)
     const isCurrentTutorialCraft = selectedItem?.id === 'sword_bronze_t1' && tutorialStep === 'START_FORGING_GUIDE';
 
     return (
         <div className="relative h-full w-full bg-stone-950 overflow-hidden" style={{ backgroundImage: `url(${getAssetUrl('tile_forge.png')})`, backgroundRepeat: 'repeat', backgroundBlendMode: 'multiply' }}>
         
+        {/* Skill Header Widget */}
+        <div className="absolute top-2 left-2 md:top-4 md:left-4 z-20 pointer-events-auto">
+            {!isSkillsExpanded ? (
+                <button 
+                    onClick={() => setIsSkillsExpanded(true)}
+                    className="bg-stone-900/90 backdrop-blur-md border border-stone-700 rounded-full px-4 py-2 flex items-center gap-3 shadow-xl hover:bg-stone-800 transition-all group"
+                >
+                    <div className="flex items-center gap-1.5">
+                        <Hammer className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="text-[10px] md:text-xs font-mono font-black text-amber-400">Lv.{smithingLevel}</span>
+                        <span className="text-[7px] md:text-[8px] font-black text-amber-600 bg-amber-950/40 px-1 rounded border border-amber-900/20">T{unlockedSmithingTier}</span>
+                    </div>
+                    <div className="w-px h-3 bg-stone-700" />
+                    <div className="flex items-center gap-1.5">
+                        <Wrench className="w-3.5 h-3.5 text-stone-400" />
+                        <span className="text-[10px] md:text-xs font-mono font-black text-stone-300">Lv.{workbenchLevel}</span>
+                        <span className="text-[7px] md:text-[8px] font-black text-stone-500 bg-stone-950/40 px-1 rounded border border-stone-800/40">T{unlockedWorkbenchTier}</span>
+                    </div>
+                    <ChevronDown className="w-3 h-3 text-stone-500 group-hover:text-amber-500 transition-colors" />
+                </button>
+            ) : (
+                <div className="flex flex-col gap-2">
+                    <button 
+                        onClick={() => setIsSkillsExpanded(false)}
+                        className="self-start mb-1 bg-stone-900/80 backdrop-blur-sm border border-stone-700 px-3 py-1 rounded-full text-[8px] font-black text-stone-400 hover:text-white uppercase tracking-widest flex items-center gap-1 transition-all shadow-lg"
+                    >
+                        <ChevronUp className="w-3 h-3" /> Hide Progress
+                    </button>
+                    <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 duration-300">
+                        <SkillHeader exp={stats.smithingExp} label="Smithing" icon={Hammer} />
+                        <SkillHeader exp={stats.workbenchExp} label="Workbench" icon={Wrench} />
+                    </div>
+                </div>
+            )}
+        </div>
+
         {selectedItem && !isRequirementMet && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-stone-950/90 backdrop-blur-md animate-in fade-in duration-700"></div>
@@ -416,7 +481,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             <div className="w-full max-w-xs mb-6 md:mb-8 flex flex-col items-center">
                                 <div className="flex items-center gap-1.5 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-stone-500 mb-1">
                                     <Award className="w-3 h-3 md:w-4 md:h-4 text-amber-600" />
-                                    <span>Experience: {Math.round(masteryInfo?.progress || 0)}%</span>
+                                    <span>Mastery: {Math.round(masteryInfo?.progress || 0)}%</span>
                                 </div>
                             </div>
 
@@ -522,7 +587,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
         )}
         </div>
     );
-  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo, handleQuickCraft, quickCraftFuelCost, actions, state.tutorialStep, isTutorialForging, tutorialStep]);
+  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, stats.smithingExp, stats.workbenchExp, unlockedSmithingTier, unlockedWorkbenchTier, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo, handleQuickCraft, quickCraftFuelCost, actions, state.tutorialStep, isTutorialForging, tutorialStep, isSkillsExpanded, smithingLevel, workbenchLevel]);
   return content;
 };
 

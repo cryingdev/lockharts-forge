@@ -1,3 +1,4 @@
+
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
@@ -35,7 +36,9 @@ export interface PlayerStats {
   energy: number;
   maxEnergy: number;
   day: number;
-  tierLevel: number; // Current crafting/market tier access
+  tierLevel: number; // Current market tier access
+  smithingExp: number; // Experience for Forge tasks
+  workbenchExp: number; // Experience for Workbench tasks
   dailyFinancials: DailyFinancials; // Track detailed financial history for the current day
 }
 
@@ -104,6 +107,7 @@ export interface GameState {
   craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count
   unlockedRecipes: string[]; // List of IDs for recipes discovered via gameplay
   unlockedTabs: string[]; // List of unlocked Tab IDs (e.g. 'FORGE', 'MARKET', 'SHOP')
+  unlockedTierPopup: { type: 'FORGE' | 'WORKBENCH'; tier: number } | null; // Trigger for Tier Unlock Modal
   
   // Tutorial System
   tutorialStep: 'MARKET_GUIDE' | 'BROWSE_GOODS_GUIDE' | 'FURNACE_GUIDE' | 'OPEN_SHOPPING_CART' | 'CLOSE_SHOPPING_CART' | 'PAY_NOW' | 'TALK_TO_GARRICK_AFTER_PURCHASE' | 'LEAVE_MARKET_GUIDE' | 'CRAFT_PROMPT' | 'FORGE_TAB_GUIDE' | 'SELECT_SWORD_GUIDE' | 'START_FORGING_GUIDE' | 'CRAFT_RESULT_PROMPT' | 'FINALIZE_FORGE_GUIDE' | 'SHOP_INTRO_PROMPT' | 'OPEN_SHOP_TAB_GUIDE' | 'OPEN_SHOP_SIGN_GUIDE' | 'SELL_ITEM_GUIDE' | 'PIP_PRAISE' | 'DRAGON_TALK' | 'TUTORIAL_END_MONOLOGUE' | null;

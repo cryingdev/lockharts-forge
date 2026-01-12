@@ -1,3 +1,4 @@
+
 import { GameState, GameSettings } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -24,6 +25,7 @@ export interface GameContextType {
     finishCrafting: (item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number) => void;
     craftItem: (item: EquipmentItem; quality: number) => void; 
     dismissCraftingResult: () => void;
+    dismissTierUnlock: () => void;
     
     buyItems: (items: { id: string; count: number }[], totalCost: number) => void;
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) => void;

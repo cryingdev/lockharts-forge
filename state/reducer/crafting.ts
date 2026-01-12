@@ -1,6 +1,7 @@
+
 import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
-import { getEnergyCost, generateEquipment } from '../../utils/craftingLogic';
+import { getEnergyCost, generateEquipment, calcCraftExp, getSmithingLevel, getUnlockedTier } from '../../utils/craftingLogic';
 import { MATERIALS } from '../../data/materials';
 
 const getQualityLabel = (q: number): string => {
@@ -74,8 +75,26 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
 export const handleFinishCrafting = (state: GameState, payload: { item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number }): GameState => {
     const { item, quality, bonus = 0, masteryGain = 1 } = payload;
     const masteryCount = state.craftingMastery[item.id] || 0;
+    const isFirstCraft = masteryCount === 0;
 
-    // 'bonus' parameter is used as enhancementCount from minigames
+    // Calculate EXP - 퀄리티 수치를 직접 전달
+    const expGain = calcCraftExp({
+        tier: item.tier,
+        quality01: quality / 100,
+        isQuickCraft: masteryGain < 1.0,
+        isFirstCraft,
+        quality: quality
+    });
+
+    const isForge = item.craftingType === 'FORGE';
+    const oldExp = isForge ? state.stats.smithingExp : state.stats.workbenchExp;
+    const newExp = oldExp + expGain;
+    
+    const oldLevel = getSmithingLevel(oldExp);
+    const newLevel = getSmithingLevel(newExp);
+    const oldTier = getUnlockedTier(oldLevel);
+    const newTier = getUnlockedTier(newLevel);
+
     const equipment = generateEquipment(item, quality, masteryCount, bonus);
     
     const newItem: InventoryItem = {
@@ -95,8 +114,9 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     newMastery[item.id] = (masteryCount || 0) + masteryGain;
 
     const label = getQualityLabel(quality);
-    let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}!`;
+    let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}! (+${expGain} XP)`;
     if (bonus > 0) logMsg += ` Pinned technique applied +${bonus} enhancements.`;
+    if (newLevel > oldLevel) logMsg += ` Level Up! (Lv.${newLevel})`;
 
     let newUnlockedTabs = [...state.unlockedTabs];
     if (!newUnlockedTabs.includes('INVENTORY')) {
@@ -111,6 +131,12 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         unlockedTabs: newUnlockedTabs,
         craftingMastery: newMastery,
         lastCraftedItem: newItem, 
+        stats: {
+            ...state.stats,
+            smithingExp: isForge ? newExp : state.stats.smithingExp,
+            workbenchExp: !isForge ? newExp : state.stats.workbenchExp
+        },
+        unlockedTierPopup: newTier > oldTier ? { type: item.craftingType, tier: newTier } : state.unlockedTierPopup,
         logs: [logMsg, ...state.logs]
     };
 };

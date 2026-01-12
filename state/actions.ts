@@ -1,3 +1,4 @@
+
 import { GameEvent } from '../types/events';
 import { EquipmentItem, InventoryItem } from '../types/inventory';
 import { EquipmentSlotType } from '../models/Equipment';
@@ -21,6 +22,7 @@ export type GameAction =
   | { type: 'CANCEL_CRAFTING'; payload: { item: EquipmentItem } }
   | { type: 'FINISH_CRAFTING'; payload: { item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number } }
   | { type: 'DISMISS_CRAFTING_RESULT' }
+  | { type: 'DISMISS_TIER_UNLOCK' }
   | { type: 'SELL_ITEM'; payload: { itemId: string; count: number; price: number; equipmentInstanceId?: string; customer?: Mercenary } }
   | { type: 'TOGGLE_SHOP' }
   | { type: 'ADD_KNOWN_MERCENARY'; payload: Mercenary }

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -22,7 +23,12 @@ import {
   Unlock,
   Sword,
   Shield,
-  Star
+  Star,
+  Wrench,
+  Zap,
+  Layers,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { MATERIALS } from '../../../data/materials';
 import { MARKET_CATALOG } from '../../../data/market/index';
@@ -318,7 +324,6 @@ const GarrickSprite = ({ floatingHearts }: { floatingHearts: FloatingHeart[] }) 
     <div className="relative w-full h-full flex items-end justify-center pointer-events-none">
       <div className="absolute bottom-[25%] left-1/2 -translate-x-1/2 w-80 h-80 bg-amber-500/10 blur-[100px] rounded-full -z-10 animate-pulse"></div>
       
-      {/* Floating Hearts Behind Sprite */}
       {floatingHearts.map(heart => (
            <Heart 
                 key={heart.id}
@@ -367,6 +372,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
   const [showGiftModal, setShowGiftModal] = useState(false);
+  
+  // Toggle sections state
+  const [collapsedSections, setCollapsedSections] = useState<string[]>([]);
 
   const { hasFurnace, hasWorkbench } = state.forge;
   const currentTier = state.stats.tierLevel;
@@ -393,7 +401,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     setTimeout(() => setFloatingHearts([]), 3500);
   }, []);
 
-  // Track affinity for logic (trigger hearts when affinity increases)
   const prevAffinityRef = useRef<number>(state.garrickAffinity);
   useEffect(() => {
       if (state.garrickAffinity > prevAffinityRef.current) {
@@ -445,6 +452,19 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   };
 
   const addToCart = (itemId: string, amount: number = 1) => {
+    if (itemId === 'scroll_t2' && state.garrickAffinity < 20) {
+        setViewMode('INTERACTION');
+        setDialogue("Hah! You think you can handle that specialized technique with your current reputation? Come back when you've actually proven your worth to this village.");
+        actions.showToast("Requires 20 Affinity with Garrick.");
+        return false;
+    }
+    if (itemId === 'scroll_t3' && state.garrickAffinity < 40) {
+        setViewMode('INTERACTION');
+        setDialogue("Expert techniques aren't sold to just anyone, Lockhart. Build some real trust with me first.");
+        actions.showToast("Requires 40 Affinity with Garrick.");
+        return false;
+    }
+
     const isOneTimeItem = itemId === 'furnace' || itemId === 'workbench' || itemId.startsWith('scroll_');
     const availableStock = state.marketStock[itemId] || 0;
     const currentInCart = cart[itemId] || 0;
@@ -552,17 +572,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     onNavigate('FORGE');
   };
 
-  const getQualityLabel = (q: number): string => {
-      if (q >= 110) return 'MASTERWORK';
-      if (q >= 100) return 'PRISTINE';
-      if (q >= 90) return 'SUPERIOR';
-      if (q >= 80) return 'FINE';
-      if (q >= 70) return 'STANDARD';
-      if (q >= 60) return 'RUSTIC';
-      return 'CRUDE';
-  };
-
-  // Garrick이 판매 중인 아이템 ID 목록
   const marketItemIds = useMemo(() => MARKET_CATALOG.map(item => item.id), []);
 
   const giftableItems = state.inventory.filter(i => 
@@ -570,17 +579,179 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     i.type === 'CONSUMABLE' || 
     i.type === 'EQUIPMENT' ||
     i.type === 'SCROLL') &&
-    !marketItemIds.includes(i.id) // Garrick이 판매하는 품목 제외
+    !marketItemIds.includes(i.id) 
   );
 
-  const getItemImageUrl = (item: InventoryItem) => {
-    if (item.type === 'SCROLL') return getAssetUrl('scroll.png');
-    if (item.id.startsWith('scroll_') || item.id.startsWith('recipe_scroll_')) return getAssetUrl('scroll.png');
-    if (item.type === 'EQUIPMENT' && item.equipmentData) {
-        if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
-        return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
-    }
-    return getAssetUrl(`${item.id}.png`);
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => 
+      prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
+    );
+  };
+
+  // --- CATALOG CATEGORIZATION LOGIC ---
+  const categorizedMarketItems = useMemo(() => {
+    const facilities: any[] = [];
+    const supplies: any[] = [];
+    const materials: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] };
+
+    MARKET_CATALOG.forEach(marketItem => {
+        const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
+        const isScroll = marketItem.id.startsWith('scroll_');
+        const isOwned = (marketItem.id === 'furnace' && state.forge.hasFurnace) || (marketItem.id === 'workbench' && state.forge.hasWorkbench);
+
+        if (isKeyItem && isOwned) return;
+
+        let itemTier = 1;
+        if (marketItem.id === 'furnace') itemTier = 0;
+        else if (marketItem.id === 'workbench') itemTier = 1;
+        else if (marketItem.id === 'scroll_t2') { itemTier = 1; if (currentTier >= 2) return; }
+        else if (marketItem.id === 'scroll_t3') { itemTier = 2; if (currentTier >= 3) return; }
+        else {
+            const itemDef = Object.values(MATERIALS).find(i => i.id === marketItem.id);
+            if (!itemDef) return;
+            itemTier = (itemDef as any).tier || 1;
+        }
+
+        if (itemTier > currentTier) return;
+
+        const isSupply = ['energy_potion', 'stamina_potion', 'affinity_debug_gift'].includes(marketItem.id);
+
+        if (isKeyItem || isScroll) facilities.push(marketItem);
+        else if (isSupply) supplies.push(marketItem);
+        else {
+            if (materials[itemTier]) materials[itemTier].push(marketItem);
+        }
+    });
+
+    const groups: { id: string, name: string, icon: any, items: any[] }[] = [];
+    
+    // 1. Resources (Tier sorted)
+    [1, 2, 3, 4].forEach(t => {
+        if (materials[t].length > 0) {
+            groups.push({ id: `tier${t}`, name: `Tier ${t} Resources`, icon: <Layers className="w-3 h-3"/>, items: materials[t] });
+        }
+    });
+
+    // 2. Supplies (Consumables)
+    if (supplies.length > 0) groups.push({ id: 'sup', name: 'Potions & Supplies', icon: <Zap className="w-3 h-3"/>, items: supplies });
+
+    // 3. Facilities & Techniques
+    if (facilities.length > 0) groups.push({ id: 'fac', name: 'Facilities & Techniques', icon: <Wrench className="w-3 h-3"/>, items: facilities });
+
+    return groups;
+  }, [MARKET_CATALOG, state.forge, currentTier]);
+
+  const renderMarketItem = (marketItem: any) => {
+    const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
+    const itemName = marketItem.id === 'furnace' ? 'Furnace' : 
+                     marketItem.id === 'workbench' ? 'Workbench' : 
+                     marketItem.id === 'scroll_t2' ? 'Scroll T2' : 
+                     marketItem.id === 'scroll_t3' ? 'Scroll T3' : 
+                     (Object.values(MATERIALS).find(i => i.id === marketItem.id) as any)?.name || marketItem.id;
+
+    const stockLeft = (state.marketStock[marketItem.id] || 0) - (cart[marketItem.id] || 0);
+    const isSoldOut = stockLeft <= 0;
+    const invCount = state.inventory.find(i => i.id === marketItem.id)?.quantity || 0;
+    const currentMultiplier = itemMultipliers[marketItem.id] || 1;
+    const isAffinityLocked = (marketItem.id === 'scroll_t2' && state.garrickAffinity < 20) || (marketItem.id === 'scroll_t3' && state.garrickAffinity < 40);
+
+    return (
+      <div
+        key={marketItem.id}
+        data-tutorial-id={marketItem.id === 'furnace' ? 'FURNACE_ITEM' : undefined}
+        className={`group relative flex flex-col items-center p-1 md:p-2 rounded-2xl border transition-all h-[150px] md:h-[220px] justify-between overflow-hidden shadow-md select-none ${
+          isSoldOut
+            ? 'bg-stone-900 border-stone-800 opacity-40 grayscale'
+            : 'bg-stone-850 border-stone-800 hover:border-stone-600'
+        }`}
+      >
+        {isAffinityLocked && (
+          <div className="absolute top-1 left-1 p-1 bg-red-900/80 rounded-md border border-red-500 z-20">
+            <Lock className="w-2 h-2 md:w-3 md:h-3 text-white" />
+          </div>
+        )}
+
+        {invCount > 0 && (
+          <div className="absolute top-1 left-1 px-1 py-0.5 rounded text-[6px] md:text-[9px] font-black uppercase tracking-tighter border z-10 bg-slate-900/80 border-slate-600 text-slate-300 flex items-center gap-0.5 md:gap-1">
+            <Package className="w-1.5 h-1.5 md:w-3 md:h-3" />
+            <span>{invCount}</span>
+          </div>
+        )}
+
+        <div className={`absolute top-1 right-1 px-1 py-0.5 rounded text-[6px] md:text-[9px] font-black tracking-tighter border z-10 ${stockLeft > 0 ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' : 'bg-red-950/60 border-red-500/40 text-red-500'}`}>
+          {isSoldOut ? 'X' : stockLeft}
+        </div>
+
+        <div
+          className={`flex-1 w-full flex items-center justify-center transition-all relative mt-1 overflow-hidden rounded-lg
+            ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-stone-800/50 group-hover:scale-105 active:scale-95'}
+          `}
+          onClick={() => { if (!isSoldOut) addToCart(marketItem.id, currentMultiplier); }}
+        >
+          <img
+            src={getAssetUrl(`${marketItem.id}.png`)}
+            className="w-10 h-10 md:w-24 md:h-24 object-contain drop-shadow-md pointer-events-none"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+          <div className="hidden text-base md:text-3xl pointer-events-none">📦</div>
+        </div>
+
+        {!isSoldOut && !isKeyItem && !marketItem.id.startsWith('scroll_') && (
+            <div className="flex items-center gap-1 mb-1 scale-75 md:scale-100">
+                {[1, 5, 10].map(val => {
+                    const isDisabled = stockLeft < val;
+                    return (
+                        <button 
+                            key={val}
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => setItemMultiplier(marketItem.id, val)}
+                            className={`w-5 h-5 md:w-8 md:h-8 rounded-full border text-[7px] md:text-[10px] font-black transition-all flex items-center justify-center ${
+                                isDisabled 
+                                ? 'bg-stone-900 border-stone-800 text-stone-700 opacity-20 grayscale cursor-not-allowed'
+                                : currentMultiplier === val 
+                                    ? 'bg-amber-600 border-amber-400 text-white shadow-[0_0_8px_rgba(217,119,6,0.3)]' 
+                                    : 'bg-stone-900 border-stone-700 text-stone-500 hover:text-stone-300'
+                            }`}
+                        >
+                            {val}
+                        </button>
+                    );
+                })}
+            </div>
+        )}
+
+        <div className="w-full text-center mb-0.5">
+          <h4 className={`text-[7px] md:text-[11px] font-black leading-none truncate px-1 ${marketItem.id === 'furnace' || marketItem.id === 'workbench' || marketItem.id.startsWith('scroll_') ? 'text-amber-400' : 'text-stone-400'}`}>
+            {itemName}
+          </h4>
+        </div>
+
+        <div
+          className={`w-full py-0.5 md:py-2 rounded-b-xl border-t flex flex-col items-center justify-center gap-0.5 font-mono font-black transition-all
+            ${isSoldOut ? 'bg-stone-900 border-stone-800 text-stone-700' : 'bg-stone-950 border-stone-800 text-amber-500 cursor-pointer hover:bg-amber-900/20 active:scale-95'}
+          `}
+          onClick={() => { if (!isSoldOut) addToCart(marketItem.id, currentMultiplier); }}
+        >
+          <div className="flex items-center gap-1 text-[7px] md:text-sm">
+            <span>{marketItem.price * currentMultiplier}</span>
+            <Coins className="w-2 h-2 md:w-4 md:h-4 text-amber-500" />
+          </div>
+          {currentMultiplier > 1 && (
+              <span className="text-[5px] md:text-[8px] opacity-50 font-sans uppercase">({currentMultiplier} EA)</span>
+          )}
+        </div>
+
+        {isSoldOut && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-[0.5px]">
+            <span className="bg-red-600 text-white text-[6px] md:text-[10px] font-black px-1.5 py-0.5 rounded rotate-12 shadow-md uppercase tracking-widest">Sold Out</span>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -603,7 +774,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
           <LocalSpotlight step={currentTutorialStep!} />
       )}
 
-      {/* Background - Base for both modes */}
       <div className="absolute inset-0 z-0">
         <img 
           src={getAssetUrl('garricks_store_bg.png')} 
@@ -617,7 +787,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30"></div>
       </div>
 
-      {/* 퇴장 버튼 */}
       {(!isLocalTutorialStep || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
         <button 
             onClick={handleBackToForge}
@@ -630,11 +799,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         </button>
       )}
 
-      {/* Garrick Character - Always visible behind UI */}
       <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
         <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-1000 ease-out">
           
-          {/* Garrick Affinity HUD - Positioned next to him */}
           <div className="absolute top-[12dvh] md:top-32 left-[calc(50%+85px)] md:left-[calc(50%+180px)] z-[1050] scale-90 md:scale-100 animate-in slide-in-from-right-4 duration-500 pointer-events-auto">
             <div className="bg-stone-900/85 border-2 border-stone-700 px-3 py-1.5 rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2 ring-1 ring-white/5">
                 <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
@@ -649,7 +816,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* MODE 1: INTERACTION (Standard Dialogue) */}
       {viewMode === 'INTERACTION' && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-end pointer-events-none pb-[6dvh] md:pb-[12dvh]">
           <div className="w-[92vw] md:w-[85vw] max-w-5xl flex flex-col items-center gap-4">
@@ -695,13 +861,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* MODE 2: CATALOG (Overlay with 10vh margin) */}
       {viewMode === 'CATALOG' && (
         <div className="absolute inset-x-[4vw] md:inset-x-[10vw] top-[10vh] bottom-[10vh] z-[100] animate-in zoom-in-95 fade-in duration-300 flex flex-col">
-          {/* Main Overlay Container */}
           <div className="w-full h-full bg-stone-900/95 backdrop-blur-xl border-2 border-stone-700/50 rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col relative">
             
-            {/* Overlay Header */}
             <div className="bg-stone-850 p-3 md:p-5 border-b border-stone-800 flex items-center justify-between shrink-0 shadow-lg">
               <div className="flex items-center gap-2 md:gap-4">
                 {!isLocalTutorialStep && (
@@ -714,12 +877,18 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     </button>
                 )}
                 <div className={isLocalTutorialStep ? 'ml-2' : ''}>
-                  <h2 className="text-sm md:text-2xl font-black text-stone-100 font-serif tracking-tight uppercase leading-none">
+                  <h2 className="text-xs md:text-2xl font-black text-stone-100 font-serif tracking-tight uppercase leading-none">
                     Garrick's Wares
                   </h2>
-                  <span className="text-[7px] md:text-[10px] font-mono font-bold text-amber-600 block mt-1 uppercase tracking-wider">
-                    Tier {currentTier} Supplies
-                  </span>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-[6px] md:text-[10px] font-mono font-bold text-amber-600 uppercase tracking-wider">
+                        Tier {currentTier} Supplies
+                    </span>
+                    <div className="flex items-center gap-1 bg-stone-950 px-2 py-0.5 rounded border border-white/5">
+                        <Coins className="w-2 h-2 md:w-3 md:h-3 text-amber-500" />
+                        <span className="text-[8px] md:text-sm font-mono font-black text-stone-300">{state.stats.gold.toLocaleString()} G</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -728,7 +897,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                   <button
                     onClick={handleBuy}
                     data-tutorial-id="PAY_NOW_BUTTON"
-                    className={`relative flex items-center gap-2 md:gap-3 px-3 md:px-6 py-1.5 md:py-3 rounded-xl border transition-all shadow-lg active:scale-95 group ${
+                    className={`relative flex items-center gap-2 md:gap-3 px-2 md:px-6 py-1.5 md:py-3 rounded-xl border transition-all shadow-lg active:scale-95 group ${
                       cartItemCount === 0
                         ? 'bg-stone-800/40 border-stone-700 text-stone-600 grayscale'
                         : totalCost > state.stats.gold
@@ -737,18 +906,18 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     }`}
                   >
                     <div className="relative">
-                      <ShoppingCart className={`w-3.5 h-3.5 md:w-5 md:h-5 ${cartItemCount > 0 ? 'animate-bounce' : ''}`} />
+                      <ShoppingCart className={`w-3 h-3 md:w-5 md:h-5 ${cartItemCount > 0 ? 'animate-bounce' : ''}`} />
                       {cartItemCount > 0 && (
-                        <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[7px] md:text-[9px] font-black px-1 rounded-full border border-stone-900 ring-1 ring-white/20">
+                        <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[6px] md:text-[9px] font-black px-1 rounded-full border border-stone-900 ring-1 ring-white/20">
                           {cartItemCount}
                         </div>
                       )}
                     </div>
                     <div className="flex flex-col items-start leading-none">
-                      <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Checkout</span>
+                      <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest">Checkout</span>
                       <div className="flex items-center gap-0.5 mt-0.5">
-                        <span className="text-[9px] md:text-sm font-mono font-black">{totalCost}</span>
-                        <Coins className="w-2.5 h-2.5 md:w-4 md:h-4 text-amber-200" />
+                        <span className="text-[8px] md:text-sm font-mono font-black">{totalCost}</span>
+                        <Coins className="w-2 md:w-4 md:h-4 text-amber-200" />
                       </div>
                     </div>
                   </button>
@@ -756,148 +925,37 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            {/* Catalog Main Content */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Grid of Items */}
               <div className="flex-1 overflow-y-auto p-2 md:p-6 custom-scrollbar pb-24">
-                <div className="grid gap-2.5 md:gap-6 content-start grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                  {MARKET_CATALOG.map(marketItem => {
-                    const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
-                    const isOwned =
-                      (marketItem.id === 'furnace' && state.forge.hasFurnace) ||
-                      (marketItem.id === 'workbench' && state.forge.hasWorkbench);
-
-                    if (isKeyItem && isOwned) return null;
-
-                    let itemName = '';
-                    let itemTier = 1;
-                    if (marketItem.id === 'furnace') {
-                      itemName = 'Furnace';
-                      itemTier = 0;
-                    } else if (marketItem.id === 'workbench') {
-                      itemName = 'Workbench';
-                      itemTier = 1;
-                    } else if (marketItem.id === 'scroll_t2') {
-                      itemName = 'Scroll T2';
-                      itemTier = 1;
-                      if (currentTier >= 2) return null;
-                    } else if (marketItem.id === 'scroll_t3') {
-                      itemName = 'Scroll T3';
-                      itemTier = 2;
-                      if (currentTier >= 3) return null;
-                    } else {
-                      const itemDef = Object.values(MATERIALS).find(i => i.id === marketItem.id);
-                      if (!itemDef) return null;
-                      itemName = (itemDef as any).name;
-                      itemTier = (itemDef as any).tier || 1;
-                    }
-
-                    if (itemTier > currentTier) return null;
-
-                    const stockLeft = (state.marketStock[marketItem.id] || 0) - (cart[marketItem.id] || 0);
-                    const isSoldOut = stockLeft <= 0;
-                    const invCount = state.inventory.find(i => i.id === marketItem.id)?.quantity || 0;
-                    const currentMultiplier = itemMultipliers[marketItem.id] || 1;
-
-                    return (
-                      <div
-                        key={marketItem.id}
-                        data-tutorial-id={marketItem.id === 'furnace' ? 'FURNACE_ITEM' : undefined}
-                        className={`group relative flex flex-col items-center p-2 rounded-2xl border transition-all h-[170px] md:h-[220px] justify-between overflow-hidden shadow-md select-none ${
-                          isSoldOut
-                            ? 'bg-stone-900 border-stone-800 opacity-40 grayscale'
-                            : 'bg-stone-850 border-stone-800 hover:border-stone-600'
-                        }`}
-                      >
-                        {invCount > 0 && (
-                          <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[7px] md:text-[9px] font-black uppercase tracking-tighter border z-10 bg-slate-900/80 border-slate-600 text-slate-300 flex items-center gap-1">
-                            <Package className="w-2 h-2 md:w-3 md:h-3" />
-                            <span>{invCount}</span>
-                          </div>
-                        )}
-
-                        <div className={`absolute top-1 right-1 px-1.5 py-0.5 rounded text-[7px] md:text-[9px] font-black tracking-tighter border z-10 ${stockLeft > 0 ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' : 'bg-red-950/60 border-red-500/40 text-red-500'}`}>
-                          {isSoldOut ? 'X' : stockLeft}
-                        </div>
-
-                        {/* 아이콘 클릭 영역: 클릭 시 현재 배율만큼 담기 */}
-                        <div
-                          className={`flex-1 w-full flex items-center justify-center transition-all relative mt-1 overflow-hidden rounded-lg
-                            ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-stone-800/50 group-hover:scale-105 active:scale-95'}
-                          `}
-                          onClick={() => { if (!isSoldOut) addToCart(marketItem.id, currentMultiplier); }}
-                        >
-                          <img
-                            src={getAssetUrl(`${marketItem.id}.png`)}
-                            className="w-12 h-12 md:w-24 md:h-24 object-contain drop-shadow-md pointer-events-none"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
-                          />
-                          <div className="hidden text-xl md:text-3xl pointer-events-none">📦</div>
-                        </div>
-
-                        {/* 수량 선택 버튼: 1, 5, 10 (재고량에 따라 활성화/비활성화) */}
-                        {!isSoldOut && !isKeyItem && !marketItem.id.startsWith('scroll_') && (
-                            <div className="flex items-center gap-1.5 mb-1.5 scale-90 md:scale-100">
-                                {[1, 5, 10].map(val => {
-                                    const isDisabled = stockLeft < val;
-                                    return (
-                                        <button 
-                                            key={val}
-                                            type="button"
-                                            disabled={isDisabled}
-                                            onClick={() => setItemMultiplier(marketItem.id, val)}
-                                            className={`w-6 h-6 md:w-8 md:h-8 rounded-full border text-[8px] md:text-[10px] font-black transition-all flex items-center justify-center ${
-                                                isDisabled 
-                                                ? 'bg-stone-900 border-stone-800 text-stone-700 opacity-20 grayscale cursor-not-allowed'
-                                                : currentMultiplier === val 
-                                                    ? 'bg-amber-600 border-amber-400 text-white shadow-[0_0_8px_rgba(217,119,6,0.3)]' 
-                                                    : 'bg-stone-900 border-stone-700 text-stone-500 hover:text-stone-300'
-                                            }`}
-                                        >
-                                            {val}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        <div className="w-full text-center mb-1">
-                          <h4 className={`text-[8px] md:text-[11px] font-black leading-none truncate px-1 ${marketItem.id === 'furnace' || marketItem.id === 'workbench' || marketItem.id.startsWith('scroll_') ? 'text-amber-400' : 'text-stone-400'}`}>
-                            {itemName}
-                          </h4>
-                        </div>
-
-                        {/* 가격 클릭 영역: 클릭 시 현재 배율만큼 담기 */}
-                        <div
-                          className={`w-full py-1 md:py-2 rounded-b-xl border-t flex flex-col items-center justify-center gap-0.5 font-mono font-black transition-all
-                            ${isSoldOut ? 'bg-stone-900 border-stone-800 text-stone-700' : 'bg-stone-950 border-stone-800 text-amber-500 cursor-pointer hover:bg-amber-900/20 active:scale-95'}
-                          `}
-                          onClick={() => { if (!isSoldOut) addToCart(marketItem.id, currentMultiplier); }}
-                        >
-                          <div className="flex items-center gap-1 text-[8px] md:text-sm">
-                            <span>{marketItem.price * currentMultiplier}</span>
-                            <Coins className="w-2.5 h-2.5 md:w-4 md:h-4 text-amber-500" />
-                          </div>
-                          {currentMultiplier > 1 && (
-                              <span className="text-[6px] md:text-[8px] opacity-50 font-sans uppercase">({currentMultiplier} units)</span>
-                          )}
-                        </div>
-
-                        {isSoldOut && (
-                          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-[0.5px]">
-                            <span className="bg-red-600 text-white text-[7px] md:text-[10px] font-black px-2 py-0.5 rounded rotate-12 shadow-md uppercase tracking-widest">Sold Out</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="grid gap-1.5 md:gap-6 content-start grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {categorizedMarketItems.map(group => {
+                        const isCollapsed = collapsedSections.includes(group.id);
+                        return (
+                            <React.Fragment key={group.id}>
+                                {/* Section Header (Interactive) */}
+                                <button 
+                                    onClick={() => toggleSection(group.id)}
+                                    className="col-span-full mt-4 first:mt-0 mb-2 border-b border-stone-800/60 pb-1 flex items-center gap-3 animate-in fade-in slide-in-from-left-2 hover:bg-stone-800/30 transition-colors w-full text-left group"
+                                >
+                                    <div className="p-1.5 bg-stone-950 rounded-lg border border-white/5 shadow-inner text-stone-500 group-hover:text-amber-500 transition-colors">
+                                        {group.icon}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[8px] md:text-[11px] font-black text-stone-400 uppercase tracking-[0.2em] group-hover:text-stone-200 transition-colors">{group.name}</span>
+                                        <span className="text-[6px] md:text-[9px] text-stone-600 font-mono">({group.items.length})</span>
+                                    </div>
+                                    <div className="flex-1 h-px bg-gradient-to-r from-stone-800/60 to-transparent"></div>
+                                    {isCollapsed ? <ChevronDown className="w-3 h-3 text-stone-600" /> : <ChevronUp className="w-3 h-3 text-stone-600" />}
+                                </button>
+                                
+                                {/* Group Items (Visible only if not collapsed) */}
+                                {!isCollapsed && group.items.map(mItem => renderMarketItem(mItem))}
+                            </React.Fragment>
+                        );
+                    })}
                 </div>
               </div>
 
-              {/* Side Cart Sidebar (Within Overlay) */}
               <div
                 className={`h-full bg-stone-950/80 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out ${
                   isCartOpen ? 'w-48 md:w-72 translate-x-0' : 'w-0 translate-x-full border-none'
@@ -935,7 +993,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                 </button>
                             </div>
                             
-                            {/* Quantity Controls */}
                             <div className="flex items-center justify-between bg-black/40 rounded-lg p-1 md:p-1.5 border border-white/5">
                                 <div className="flex items-center gap-1 ml-1">
                                     <span className="text-[10px] md:text-sm font-mono font-black text-stone-200">{count}</span>
@@ -987,7 +1044,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            {/* Cart Toggle Button (Float on the left of cart area) */}
             <button
               onClick={toggleCart}
               data-tutorial-id="CART_TOGGLE"
@@ -1006,7 +1062,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Gift Selection Modal */}
       {showGiftModal && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
             <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[85vh]">
@@ -1033,7 +1088,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Conceptual Counter Shadow (Bottom) */}
       <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 pointer-events-none bg-gradient-to-t from-black/90 to-transparent"></div>
     </div>
   );

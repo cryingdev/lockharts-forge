@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -103,6 +104,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     finishCrafting: (item: EquipmentItem, quality: number, bonus?: number, masteryGain?: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality, bonus, masteryGain } }),
     craftItem: (item: EquipmentItem, quality: number) => dispatch({ type: 'FINISH_CRAFTING', payload: { item, quality } }),
     dismissCraftingResult: () => dispatch({ type: 'DISMISS_CRAFTING_RESULT' }),
+    dismissTierUnlock: () => dispatch({ type: 'DISMISS_TIER_UNLOCK' }),
 
     buyItems: (items: { id: string; count: number }[], totalCost: number) => dispatch({ type: 'BUY_MARKET_ITEMS', payload: { items, totalCost } }),
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) =>

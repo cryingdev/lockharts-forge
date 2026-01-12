@@ -22,6 +22,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         index: null
     });
 
+    const APP_VERSION = "0.1.38";
+
     if (!isOpen) return null;
 
     const handleSlotAction = (slotIndex: number) => {
@@ -30,6 +32,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         } else {
             const data = loadFromSlot(slotIndex);
             if (data) {
+                // 버전 검증 로직 추가
+                if (data.version !== APP_VERSION) {
+                    actions.showToast(`Load Failed: Version mismatch. (Save: v${data.version || '0.1.36'}, App: v${APP_VERSION})`);
+                    return;
+                }
                 setLoadConfirm({ isOpen: true, data, index: slotIndex });
             }
         }
@@ -115,7 +122,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
 
                     {/* Footer */}
                     <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0">
-                        <span className="text-[10px] text-stone-600 font-mono uppercase tracking-[0.2em]">Build v0.1.38</span>
+                        <span className="text-[10px] text-stone-600 font-mono uppercase tracking-[0.2em]">Build v{APP_VERSION}</span>
                     </div>
                 </div>
             </div>

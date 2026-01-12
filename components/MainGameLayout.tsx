@@ -23,6 +23,7 @@ import SleepModal from './modals/SleepModal';
 import JournalModal from './modals/JournalModal';
 import DungeonResultModal from './modals/DungeonResultModal';
 import CraftingResultModal from './modals/CraftingResultModal';
+import TierUnlockModal from './modals/TierUnlockModal';
 import SettingsModal from './modals/SettingsModal';
 import TutorialScene from './tabs/Forge/TutorialScene';
 import DialogueBox from './DialogueBox';
@@ -376,8 +377,8 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
   const allTabs = [
     { id: 'FORGE' as const, icon: Anvil, label: 'Forge' },
+    { id: 'INVENTORY' as const, icon: Package, label: 'Storage' },
     { id: 'MARKET' as const, icon: ShoppingBag, label: 'Market' },
-    { id: 'INVENTORY' as const, icon: Package, label: 'Items' },
     { id: 'SHOP' as const, icon: Coins, label: 'Shop', badge: activeTab !== 'SHOP' ? totalShopVisitors : 0 },
     { id: 'TAVERN' as const, icon: Beer, label: 'Tavern' },
     { id: 'DUNGEON' as const, icon: MapIcon, label: 'Dungeon', badge: completedExpeditionsCount },
@@ -454,12 +455,12 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ease-in-out ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : '-translate-y-0 h-auto opacity-100'}`}>
         <Header activeTab={activeTab} onTabChange={setActiveTab} onSettingsClick={() => setIsSettingsOpen(true)} />
         <div className="bg-stone-900 border-b border-stone-800 flex items-center relative z-10 overflow-hidden isolate h-11 md:h-14">
-          <div className={`absolute left-0 top-0 bottom-0 z-30 w-12 flex items-center transition-all duration-300 transform-gpu ${showLeftArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-events-none'}`}>
-              <div className="absolute inset-0 bg-gradient-to-r from-stone-900 via-stone-900/90 to-transparent" /><button onClick={() => scrollTabs('LEFT')} className="relative h-full w-full flex items-center pl-2 group/arrow"><ChevronLeft className="w-5 h-5 text-amber-5 group-hover:scale-125 transition-transform drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" /></button>
+          <div className={`absolute left-0 top-0 bottom-0 z-30 w-12 flex items-center transition-all duration-300 transform-gpu ${showLeftArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-none'}`}>
+              <div className="absolute inset-0 bg-gradient-to-r from-stone-900 via-stone-900/90 to-transparent" /><button onClick={() => scrollTabs('LEFT')} className="relative h-full w-full flex items-center pl-2 group/arrow"><ChevronLeft className="w-5 h-5 text-amber-5 group-hover:scale-125 transition-transform drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" /></button>
           </div>
           <div ref={scrollRef} onScroll={updateArrows} className="flex overflow-x-auto no-scrollbar flex-1 min-w-0 touch-pan-x scroll-smooth snap-x snap-mandatory overscroll-behavior-x-contain" style={{ WebkitOverflowScrolling: 'touch' }}>{allTabs.map(tab => renderTabButton(tab))}</div>
-          <div className={`absolute right-0 top-0 bottom-0 z-30 w-12 flex items-center justify-end transition-all duration-300 transform-gpu ${showRightArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-events-none'}`}>
-              <div className="absolute inset-0 bg-gradient-to-l from-stone-900 via-stone-900/90 to-transparent" /><button onClick={() => scrollTabs('RIGHT')} className="relative h-full w-full flex items-center justify-end pr-2 group/arrow"><ChevronRight className="w-5 h-5 text-amber-5 group-hover:scale-125 transition-transform drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" /></button>
+          <div className={`absolute right-0 top-0 bottom-0 z-30 w-12 flex items-center justify-end transition-all duration-300 transform-gpu ${showRightArrow ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-0 invisible pointer-none'}`}>
+              <div className="absolute inset-0 bg-gradient-to-l from-stone-900 via-stone-900/90 to-transparent" /><button onClick={() => scrollTabs('RIGHT')} className="relative h-full w-full flex items-center justify-end pr-2 group/arrow"><ChevronRight className="w-5 h-5 text-amber-5 group-hover:scale-125 transition-transform drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" /></button>
           </div>
         </div>
       </div>
@@ -476,6 +477,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
       <div className="h-[env(safe-area-inset-bottom)] bg-stone-900 shrink-0"></div>
       <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} />
+      <TierUnlockModal />
       <TutorialCompleteModal />
       <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Skipping will unlock all systems immediately. Grant full access?" confirmLabel="Yes, Skip It" cancelLabel="Continue Guide" onConfirm={() => { actions.completeTutorial(); setShowSkipConfirm(false); }} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
     </div>

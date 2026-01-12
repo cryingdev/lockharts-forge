@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle, Brain, Lock, Unlock, Star, Sparkles } from 'lucide-react';
@@ -107,7 +108,7 @@ export const InventoryDisplay = () => {
                 <div className="bg-slate-800/50 p-2 md:p-3 border-b border-slate-700 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
                         <Package className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
-                        <h3 className="text-slate-200 text-xs md:text-sm uppercase tracking-wider font-bold">Inventory</h3>
+                        <h3 className="text-slate-200 text-xs md:text-sm uppercase tracking-wider font-bold">Storage</h3>
                     </div>
                     <span className="text-[10px] text-slate-500 font-mono">{state.inventory.length}</span>
                 </div>
