@@ -4,6 +4,7 @@ import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
 import { Mercenary } from '../models/Mercenary';
 import { Expedition } from '../models/Dungeon';
+import { Monster } from '../models/Monster';
 
 export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP';
 
@@ -13,12 +14,17 @@ export interface ManualDungeonSession {
     grid: RoomType[][];
     visited: boolean[][]; // Fog of war
     playerPos: { x: number, y: number };
+    pathHistory: { x: number, y: number }[]; // 이동 경로 기록
     hasKey: boolean;
     isBossLocked: boolean;
-    isBossDefeated?: boolean; // New: Tracks if boss was beaten but player is still inside
-    npcFound?: boolean; // Track if the NPC in this session was interacted with
-    rescuedNpcId?: string; // ID of the NPC rescued during this session
-    goldCollected: number; // Cumulative gold found during this session
+    isBossDefeated?: boolean; 
+    bossEntity?: Monster; 
+    npcFound?: boolean; 
+    rescuedNpcId?: string; 
+    goldCollected: number; 
+    // 전투 관련 상태
+    encounterStatus: 'NONE' | 'ENCOUNTERED' | 'BATTLE' | 'VICTORY' | 'DEFEAT';
+    currentEnemyHp?: number;
 }
 
 export interface DailyFinancials {
@@ -36,10 +42,10 @@ export interface PlayerStats {
   energy: number;
   maxEnergy: number;
   day: number;
-  tierLevel: number; // Current market tier access
-  smithingExp: number; // Experience for Forge tasks
-  workbenchExp: number; // Experience for Workbench tasks
-  dailyFinancials: DailyFinancials; // Track detailed financial history for the current day
+  tierLevel: number; 
+  smithingExp: number; 
+  workbenchExp: number; 
+  dailyFinancials: DailyFinancials; 
 }
 
 export interface ForgeStatus {
@@ -62,8 +68,10 @@ export interface DungeonResult {
         xpGained: number;
         currentXp: number;
         xpToNext: number;
+        statusChange?: 'NONE' | 'INJURED' | 'DEAD';
     }[];
-    rescuedMercenary?: Mercenary; // Rescued NPC to be displayed in the result
+    rescuedMercenary?: Mercenary; 
+    isDefeat?: boolean;
 }
 
 export interface GameToast {
@@ -83,58 +91,48 @@ export interface GameState {
   inventory: InventoryItem[];
   forge: ForgeStatus;
   activeEvent: GameEvent | null;
-  logs: string[]; // For showing history of actions
-  knownMercenaries: Mercenary[]; // Tracked regulars and named NPCs
+  logs: string[]; 
+  knownMercenaries: Mercenary[]; 
   
-  // Shop System State
-  activeCustomer: null | ShopCustomer; // The person currently at the counter
-  shopQueue: ShopCustomer[]; // People waiting in line
-  visitorsToday: string[]; // List of Mercenary IDs who have visited today
-  talkedToToday: string[]; // List of Mercenary IDs who have been talked to today for affinity bonus
+  activeCustomer: null | ShopCustomer; 
+  shopQueue: ShopCustomer[]; 
+  visitorsToday: string[]; 
+  talkedToToday: string[]; 
 
-  // Market State
-  marketStock: Record<string, number>; // Remaining quantity per item ID
+  marketStock: Record<string, number>; 
   garrickAffinity: number;
   talkedToGarrickToday: boolean;
 
-  // Game Logic Control
-  isCrafting: boolean; // Is the player currently in the minigame?
-  showSleepModal: boolean; // Should the End of Day modal be visible?
-  showJournal: boolean; // Toggle for the Log/Journal Modal
-  showTutorialCompleteModal: boolean; // Toggle for the Final Tutorial Result Modal
-  toast: GameToast | null; // Global toast notifications
-  toastQueue: string[]; // 대기 중인 토스트 메시지 대기열
+  isCrafting: boolean; 
+  showSleepModal: boolean; 
+  showJournal: boolean; 
+  showTutorialCompleteModal: boolean; 
+  toast: GameToast | null; 
+  toastQueue: string[]; 
   
-  // Progression
-  craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count
-  unlockedRecipes: string[]; // List of IDs for recipes discovered via gameplay
-  unlockedTabs: string[]; // List of unlocked Tab IDs (e.g. 'FORGE', 'MARKET', 'SHOP')
-  unlockedTierPopup: { type: 'FORGE' | 'WORKBENCH'; tier: number } | null; // Trigger for Tier Unlock Modal
+  craftingMastery: Record<string, number>; 
+  unlockedRecipes: string[]; 
+  unlockedTabs: string[]; 
+  unlockedTierPopup: { type: 'FORGE' | 'WORKBENCH'; tier: number } | null; 
   
-  // Tutorial System
   tutorialStep: 'MARKET_GUIDE' | 'BROWSE_GOODS_GUIDE' | 'FURNACE_GUIDE' | 'OPEN_SHOPPING_CART' | 'CLOSE_SHOPPING_CART' | 'PAY_NOW' | 'TALK_TO_GARRICK_AFTER_PURCHASE' | 'LEAVE_MARKET_GUIDE' | 'CRAFT_PROMPT' | 'FORGE_TAB_GUIDE' | 'SELECT_SWORD_GUIDE' | 'START_FORGING_GUIDE' | 'CRAFT_RESULT_PROMPT' | 'FINALIZE_FORGE_GUIDE' | 'SHOP_INTRO_PROMPT' | 'OPEN_SHOP_TAB_GUIDE' | 'OPEN_SHOP_SIGN_GUIDE' | 'SELL_ITEM_GUIDE' | 'PIP_PRAISE' | 'DRAGON_TALK' | 'TUTORIAL_END_MONOLOGUE' | null;
   activeTutorialScene: TutorialSceneMode | null;
   hasCompletedPrologue: boolean;
 
-  // Minigame Persistence
-  forgeTemperature: number; // Residual heat from last session
-  lastForgeTime: number; // Timestamp of last minigame interaction
+  forgeTemperature: number; 
+  lastForgeTime: number; 
 
-  // Dungeon System
   activeExpeditions: Expedition[];
-  dungeonClearCounts: Record<string, number>; // Key: Dungeon ID, Value: Count
-  dungeonResult: DungeonResult | null; // Populated when claim is clicked to show modal
-  activeManualDungeon: ManualDungeonSession | null; // Current manual play session
-  showManualDungeonOverlay: boolean; // Toggle for dungeon UI visibility
+  dungeonClearCounts: Record<string, number>; 
+  dungeonResult: DungeonResult | null; 
+  activeManualDungeon: ManualDungeonSession | null; 
+  showManualDungeonOverlay: boolean; 
 
-  // Result Tracking
   lastCraftedItem: null | InventoryItem;
 
-  // UI Effects State
   uiEffects: {
     energyHighlight: boolean;
   };
 
-  // User Preferences
   settings: GameSettings;
 }
