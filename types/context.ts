@@ -22,8 +22,8 @@ export interface GameContextType {
     
     startCrafting: (item: EquipmentItem) => void;
     cancelCrafting: (item: EquipmentItem) => void;
-    finishCrafting: (item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number) => void;
-    craftItem: (item: EquipmentItem; quality: number) => void; 
+    finishCrafting: (item: EquipmentItem, quality: number, bonus?: number, masteryGain?: number) => void;
+    craftItem: (item: EquipmentItem, quality: number) => void; 
     dismissCraftingResult: () => void;
     dismissTierUnlock: () => void;
     
@@ -53,7 +53,7 @@ export interface GameContextType {
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
     completeExpedition: (expeditionId: string) => void;
     abortExpedition: (expeditionId: string) => void;
-    claimExpedition: (expeditionId: string) => void;
+    claimExpedition: (expeditionId: string, rescuedNpcId?: string) => void;
     dismissDungeonResult: () => void;
 
     equipItem: (mercenaryId: string, inventoryItemId: string) => void;
