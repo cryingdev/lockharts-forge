@@ -1,3 +1,4 @@
+
 import { GameState } from '../../types/index';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -108,8 +109,9 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
     if (!inventoryItem || inventoryItem.quantity <= 0) return state;
 
     const mercenary = { ...state.knownMercenaries[mercIndex] };
-    let affinityGain = 3; // Default for resources/consumables
+    let affinityGain = 3; 
     let staminaGain = 0;
+    let qualityNote = "";
 
     // Special handling for consumables
     if (itemId === 'stamina_potion') {
@@ -125,6 +127,16 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
             case EquipmentRarity.RARE: affinityGain += 4; break;
             case EquipmentRarity.EPIC: affinityGain += 7; break;
             case EquipmentRarity.LEGENDARY: affinityGain += 12; break;
+        }
+
+        // Quality bonus/penalty
+        const q = inventoryItem.equipmentData.quality;
+        if (q > 100) {
+            affinityGain += 5;
+            qualityNote = " (Pristine Quality Bonus!)";
+        } else if (q < 80) {
+            affinityGain = Math.max(1, Math.floor(affinityGain * 0.4));
+            qualityNote = " (Low Quality Penalty)";
         }
     }
 
@@ -143,7 +155,7 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
     const newMercenaries = [...state.knownMercenaries];
     newMercenaries[mercIndex] = mercenary;
 
-    let logMsg = `Gifted ${inventoryItem.name} to ${mercenary.name}. Affinity +${affinityGain}.`;
+    let logMsg = `Gifted ${inventoryItem.name} to ${mercenary.name}. Affinity +${affinityGain}${qualityNote}.`;
     if (staminaGain > 0) logMsg += ` Stamina +${staminaGain}.`;
 
     return {

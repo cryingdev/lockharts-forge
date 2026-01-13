@@ -49,10 +49,11 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     checkSize();
   }, []);
 
+  // Phaser 게임 인스턴스 생성 (최소한의 의존성)
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || !containerRef.current || gameRef.current) return;
+    
     const el = containerRef.current;
-    if (!el) return;
 
     const ensureWrapperSize = () => {
       const { vh } = getViewport();
@@ -62,89 +63,67 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       el.style.touchAction = 'none';
     };
 
-    const resizePhaserToWrapper = () => {
-      const game = gameRef.current;
-      if (!game) return;
+    const initialTemp = Math.max(
+      0,
+      (state.forgeTemperature || 0) - ((Date.now() - (state.lastForgeTime || 0)) / 1000) * 5
+    );
 
-      const w = Math.floor(el.clientWidth);
-      const h = Math.floor(el.clientHeight);
-      if (w <= 0 || h <= 0) return;
+    ensureWrapperSize();
 
-      game.scale.resize(w, h);
-      requestAnimationFrame(() => game.scale.refresh());
+    const config: Phaser.Types.Core.GameConfig = {
+      type: Phaser.AUTO,
+      parent: el,
+      width: Math.floor(el.clientWidth) || 1,
+      height: Math.floor(el.clientHeight) || 1,
+      backgroundColor: '#0c0a09',
+      scene: [SmithingScene],
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+      },
+      render: {
+          pixelArt: true,
+          antialias: false
+      },
+      callbacks: {
+          postBoot: (game) => {
+              game.events.on('blur', () => {});
+              game.events.on('focus', () => {});
+          }
+      }
     };
+
+    const game = new Phaser.Game(config);
+    gameRef.current = game;
+
+    const handleHeatUp = () => {
+      if (!isTutorial) {
+          actionsRef.current.consumeItem(MATERIALS.CHARCOAL.id, 1);
+      }
+      const scene = game.scene.getScene('SmithingScene') as SmithingScene;
+      if (scene) scene.heatUp();
+    };
+
+    game.scene.start('SmithingScene', {
+      onComplete: (score: number, bonus?: number) => onCompleteRef.current(score, bonus),
+      difficulty,
+      initialTemp,
+      charcoalCount: isTutorial ? '∞' : charcoalCount,
+      onStatusUpdate: (t: number) => actionsRef.current.updateForgeStatus(t),
+      onHeatUpRequest: handleHeatUp,
+    });
 
     const sync = () => {
       ensureWrapperSize();
-      resizePhaserToWrapper();
+      if (gameRef.current) {
+        gameRef.current.scale.resize(Math.floor(el.clientWidth), Math.floor(el.clientHeight));
+        gameRef.current.scale.refresh();
+      }
     };
-
-    if (!gameRef.current) {
-      const initialTemp = Math.max(
-        0,
-        (state.forgeTemperature || 0) - ((Date.now() - (state.lastForgeTime || 0)) / 1000) * 5
-      );
-
-      ensureWrapperSize();
-
-      const config: Phaser.Types.Core.GameConfig = {
-        type: Phaser.AUTO,
-        parent: el,
-        width: Math.floor(el.clientWidth) || 1,
-        height: Math.floor(el.clientHeight) || 1,
-        backgroundColor: '#0c0a09',
-        scene: [SmithingScene],
-        // Fix: Removed 'pauseOnBlur' as it is not a recognized property in some GameConfig type definitions
-        scale: {
-          mode: Phaser.Scale.RESIZE,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
-        },
-        render: {
-            pixelArt: true,
-            antialias: false
-        },
-        callbacks: {
-            postBoot: (game) => {
-                game.events.on('blur', () => {});
-                game.events.on('focus', () => {});
-            }
-        }
-      };
-
-      const game = new Phaser.Game(config);
-      gameRef.current = game;
-
-      const handleHeatUp = () => {
-        if (!isTutorial) {
-            actionsRef.current.consumeItem(MATERIALS.CHARCOAL.id, 1);
-        }
-        const scene = game.scene.getScene('SmithingScene') as SmithingScene;
-        if (scene) scene.heatUp();
-      };
-
-      game.scene.start('SmithingScene', {
-        onComplete: (score: number, bonus?: number) => onCompleteRef.current(score, bonus),
-        difficulty,
-        initialTemp,
-        charcoalCount: isTutorial ? '∞' : charcoalCount,
-        onStatusUpdate: (t: number) => actionsRef.current.updateForgeStatus(t),
-        onHeatUpRequest: handleHeatUp,
-      });
-
-      sync();
-    }
 
     const vv = window.visualViewport;
-    const onOrientationChange = () => {
-      sync();
-      setTimeout(sync, 80);
-      setTimeout(sync, 180);
-    };
-
     vv?.addEventListener('resize', sync);
     window.addEventListener('resize', sync);
-    window.addEventListener('orientationchange', onOrientationChange);
-
     const ro = new ResizeObserver(() => requestAnimationFrame(sync));
     ro.observe(el);
 
@@ -152,25 +131,20 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       ro.disconnect();
       vv?.removeEventListener('resize', sync);
       window.removeEventListener('resize', sync);
-      window.removeEventListener('orientationchange', onOrientationChange);
+      if (gameRef.current) {
+          gameRef.current.destroy(true);
+          gameRef.current = null;
+      }
     };
-  }, [isReady, difficulty, isTutorial, state.forgeTemperature, state.lastForgeTime, charcoalCount, actionsRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady]); // difficulty나 charcoalCount 등 자주 변하는 값은 별도 Effect로 처리
 
+  // 데이터 갱신을 위한 별도 Effect
   useEffect(() => {
     if (!gameRef.current) return;
     const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
     if (scene) scene.updateCharcoalCount(isTutorial ? '∞' : charcoalCount);
   }, [charcoalCount, isTutorial]);
-
-  useEffect(() => {
-    return () => {
-      if (gameRef.current) {
-        const game = gameRef.current;
-        gameRef.current = null;
-        game.destroy(true, false);
-      }
-    };
-  }, []);
 
   return (
     <div className="absolute inset-0 z-50 bg-stone-950 animate-in fade-in duration-300 overflow-hidden">

@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -55,6 +56,7 @@ export default class SmithingScene extends Phaser.Scene {
   private hammerBtn!: Phaser.GameObjects.Container;
   private tongsBtn!: Phaser.GameObjects.Container;
   private currentTool: SmithingTool = 'HAMMER';
+  private hammerSprite!: Phaser.GameObjects.Image;
 
   private isRotatingManual = false;
   private isMovingManualX = false;
@@ -206,6 +208,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.load.spritesheet('bellows', getAssetUrl('bellows_sprite.png'), { frameWidth: 298, frameHeight: 188 });
     this.load.image('icon_hammer', getAssetUrl('hammer.png'));
     this.load.image('icon_tongs', getAssetUrl('tongs.png'));
+    this.load.image('hammer_strike', getAssetUrl('hammer.png'));
   }
 
   create() {
@@ -246,6 +249,9 @@ export default class SmithingScene extends Phaser.Scene {
     this.root.add(this.ambientGlow);
     this.flashOverlay = this.add.rectangle(0, 0, 1280, 720, 0xffaa00, 0).setOrigin(0).setDepth(100);
     this.root.add(this.flashOverlay);
+
+    this.hammerSprite = this.add.image(0, 0, 'hammer_strike').setOrigin(0.5, 0.9).setScale(0.5).setAlpha(0).setDepth(30);
+    this.root.add(this.hammerSprite);
     
     this.setupUI();
     this.setupManualControls();
@@ -318,6 +324,28 @@ export default class SmithingScene extends Phaser.Scene {
     this.switchTool('HAMMER');
   }
 
+  private triggerHammerAnimation(x: number, y: number) {
+    this.hammerSprite.setAlpha(1).setPosition(x + 50, y - 150).setAngle(15).setScale(0.5 * this.uiScale);
+    this.tweens.add({
+      targets: this.hammerSprite,
+      x: x,
+      y: y + 20,
+      angle: -25,
+      duration: 100,
+      ease: 'Cubic.in',
+      onComplete: () => {
+        this.tweens.add({
+          targets: this.hammerSprite,
+          angle: -10,
+          y: y + 10,
+          alpha: 0,
+          duration: 200,
+          ease: 'Cubic.out'
+        });
+      }
+    });
+  }
+
   private setupToolSwitcher() {
     this.toolSwitcherContainer = this.add.container(0, 0).setDepth(30);
     this.root.add(this.toolSwitcherContainer);
@@ -372,8 +400,8 @@ export default class SmithingScene extends Phaser.Scene {
         const size = 52;
         const isRot = mode === 'ROT';
         const bg = this.add.circle(0, 0, size/2, 0x1c1917, 0.8).setStrokeStyle(2, isRot ? 0x3b82f6 : 0xfbbf24, 0.8).setInteractive({ useHandCursor: true });
-        const txt = this.add.text(0, 0, label, { fontSize: '24px', color: isRot ? '#60a5fa' : '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
-        const btn = this.add.container(x, y, [bg, txt]);
+        const icon = this.add.text(0, 0, label, { fontSize: '24px', color: isRot ? '#60a5fa' : '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
+        const btn = this.add.container(x, y, [bg, icon]);
         bg.on('pointerdown', (p: Phaser.Input.Pointer, lx: any, ly: any, event: any) => {
             event.stopPropagation();
             if (this.isSnapped) this.isSnapped = false;
@@ -566,7 +594,7 @@ export default class SmithingScene extends Phaser.Scene {
       this.time.delayedCall(140, () => {
         const ww = this.scale.gameSize.width; const hh = this.scale.gameSize.height; cam.setViewport(0, 0, ww, hh);
         apply(ww, hh, this.isPortrait); cam.fadeIn(120, 0, 0, 0);
-        this.time.delayedCall(160, () => (this.isRelayouting = false));
+        this.time.delayedCall(160, () => { this.isRelayouting = false; });
       });
       return;
     }
@@ -603,18 +631,37 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   private rebuildHitPoly() {
-    const currentKey = this.billetImage?.texture?.key; if (!currentKey) return;
-    const localPoints = this.generateOutlinePoints(currentKey); const rad = Phaser.Math.DegToRad(this.billetContainer.angle);
-    const cos = Math.cos(rad); const sin = Math.sin(rad);
-    const visualScale = this.billetContainer.scaleX; const hitDetectionScale = visualScale * 1.1;
-    const cx = this.billetContainer.x; const cy = this.billetContainer.y;
-    this.hitPoly = new Phaser.Geom.Polygon(localPoints.map(p => ({ x: cx + (p.x * hitDetectionScale * cos - p.y * hitDetectionScale * sin), y: cy + (p.x * hitDetectionScale * sin + p.y * hitDetectionScale * cos) })));
-    this.spawnPoly = new Phaser.Geom.Polygon(localPoints.map(p => ({ x: cx + (p.x * visualScale * cos - p.y * visualScale * sin), y: cy + (p.x * visualScale * sin + p.y * visualScale * cos) })));
+    if (!this.billetImage) return;
+    const currentKey = this.billetImage.texture.key; 
+    const localPoints = this.generateOutlinePoints(currentKey); 
+    
+    // 월드 좌표 변환 로직 강화: 회전, 스케일, 위치를 정확히 반영
+    const rad = Phaser.Math.DegToRad(this.billetContainer.angle);
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const visualScale = this.billetContainer.scaleX;
+    const cx = this.billetContainer.x;
+    const cy = this.billetContainer.y;
+
+    // 히트 판정용 폴리곤 (살짝 넉넉하게)
+    const hitDetectionScale = visualScale * 1.15;
+    const transformedPoints = localPoints.map(p => ({
+        x: cx + (p.x * hitDetectionScale * cos - p.y * hitDetectionScale * sin),
+        y: cy + (p.x * hitDetectionScale * sin + p.y * hitDetectionScale * cos)
+    }));
+    this.hitPoly = new Phaser.Geom.Polygon(transformedPoints);
+    
+    // 타겟 링 생성용 폴리곤 (이미지 영역 내로 타이트하게)
+    const spawnPoints = localPoints.map(p => ({
+        x: cx + (p.x * visualScale * cos - p.y * visualScale * sin),
+        y: cy + (p.x * visualScale * sin + p.y * visualScale * cos)
+    }));
+    this.spawnPoly = new Phaser.Geom.Polygon(spawnPoints);
   }
 
   private isPointerInHitArea(px: number, py: number) { 
       if (this.hitPoly && Phaser.Geom.Polygon.Contains(this.hitPoly, px, py)) return true;
-      if (Phaser.Math.Distance.Between(px, py, this.hitX, this.hitY) < (this.targetRadius + 5) * this.uiScale) return true;
+      if (Phaser.Math.Distance.Between(px, py, this.hitX, this.hitY) < (this.targetRadius + 15) * this.uiScale) return true;
       return false;
   }
 
@@ -630,6 +677,9 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.isFinished) return; if (this.time.now - this.lastHitTime < this.hitCooldown) return;
     this.lastHitTime = this.time.now;
     if (this.currentTempStage === 'COLD' || this.currentTempStage === 'NORMAL') { this.showFeedback('TOO COLD!', 0x3b82f6, 1.0, x, y); return; }
+    
+    this.triggerHammerAnimation(x, y);
+
     const diff = Math.abs(this.currentRadius - this.targetRadius);
     const eff = this.currentTempStage === 'AURA' ? 1.5 : this.currentTempStage === 'HOT' ? 1.0 : 0.5;
     if (diff < this.targetRadius * 0.35) {
@@ -657,6 +707,7 @@ export default class SmithingScene extends Phaser.Scene {
   private handleMiss(x?: number, y?: number, customText?: string) {
     this.score = Math.max(0, this.score - 5); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 5);
     this.cameras.main.shake(100, 0.01); this.showFeedback(customText ?? 'MISS', 0xef4444, 1.0, x ?? this.hitX, y ?? this.hitY);
+    if (x !== undefined && y !== undefined) this.triggerHammerAnimation(x, y);
     this.applyKickback(1.5); this.updateProgressBar(); this.resetRing();
   }
 
@@ -709,25 +760,52 @@ export default class SmithingScene extends Phaser.Scene {
     const ringColor = Phaser.Display.Color.GetColor(Math.floor(255 + (targetRGB.red - 255) * colorT), Math.floor(255 + (targetRGB.green - 255) * colorT), Math.floor(255 + (targetRGB.blue - 255) * colorT));
     const ringAlpha = 0.6 + (colorT * 0.3);
     this.approachRing.clear().lineStyle(6, ringColor, ringAlpha).fillStyle(ringColor, ringAlpha * 0.15).fillCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius)).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
-    if (this.currentRadius < this.targetRadius - 25) { this.combo = 0; this.resetRing(); }
+    
+    if (this.currentRadius < this.targetRadius - 30) { 
+        this.handleMiss(this.hitX, this.hitY, 'TOO LATE'); 
+    }
   }
 
   private resetRing() {
     if (this.temperature <= 0 || !this.spawnPoly) return; 
     this.targetRing.clear(); this.approachRing.clear(); this.currentRadius = this.startRadius; this.ringTimer = 0;
+    
+    const redBias = Math.min(0.75, this.combo * 0.08); 
     const randType = Math.random();
-    if (randType < 0.2) { this.currentTargetColor = 0x10b981; this.currentSpeedMult = 0.75; } 
-    else if (randType < 0.75) { this.currentTargetColor = 0xfabf24; this.currentSpeedMult = 1.0; } 
-    else { this.currentTargetColor = 0xef4444; this.currentSpeedMult = 1.45; }
+    
+    if (randType < Math.max(0.02, 0.15 - (redBias * 0.2))) { 
+        this.currentTargetColor = 0x10b981; this.currentSpeedMult = 0.70; 
+    } 
+    else if (randType < (0.75 - redBias)) { 
+        this.currentTargetColor = 0xfabf24; this.currentSpeedMult = 1.0; 
+    } 
+    else { 
+        this.currentTargetColor = 0xef4444; this.currentSpeedMult = 1.6; 
+    }
+
     this.targetRadius = this.startRadius * Phaser.Math.FloatBetween(0.18, 0.32);
+    
+    // 무작위 좌표 추출 로직 개선: 폴리곤 내부 포인트를 더 적극적으로 샘플링
     const rect = Phaser.Geom.Polygon.GetAABB(this.spawnPoly);
     let found = false; let attempts = 0;
-    while (!found && attempts < 20) {
-        const tx = Phaser.Math.FloatBetween(rect.left, rect.right); const ty = Phaser.Math.FloatBetween(rect.top, rect.bottom);
-        if (Phaser.Geom.Polygon.Contains(this.spawnPoly, tx, ty)) { this.hitX = tx; this.hitY = ty; found = true; }
+    while (!found && attempts < 200) {
+        const tx = Phaser.Math.FloatBetween(rect.left, rect.right); 
+        const ty = Phaser.Math.FloatBetween(rect.top, rect.bottom);
+        if (Phaser.Geom.Polygon.Contains(this.spawnPoly, tx, ty)) { 
+            this.hitX = tx; this.hitY = ty; found = true; 
+        }
         attempts++;
     }
-    if (this.isPlaying && this.currentTool === 'HAMMER') { this.targetRing.clear().fillStyle(this.currentTargetColor, 0.25).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(4, this.currentTargetColor, 0.7) .strokeCircle(this.hitX, this.hitY, this.targetRadius); }
+    
+    // 폴리곤 내부를 찾지 못한 경우 정점 중 하나를 무작위로 선택
+    if (!found && this.spawnPoly.points.length > 0) {
+        const p = this.spawnPoly.points[Math.floor(Math.random() * this.spawnPoly.points.length)];
+        this.hitX = p.x; this.hitY = p.y;
+    }
+
+    if (this.isPlaying && this.currentTool === 'HAMMER') { 
+        this.targetRing.clear().fillStyle(this.currentTargetColor, 0.25).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(5, this.currentTargetColor, 0.8) .strokeCircle(this.hitX, this.hitY, this.targetRadius); 
+    }
   }
 
   private updateProgressBar() {
@@ -775,6 +853,7 @@ export default class SmithingScene extends Phaser.Scene {
   }
   public updateCharcoalCount(count: number | string) { this.charcoalCount = count; this.refreshHeatUpButton(); }
   private refreshHeatUpButton() { 
+    if (!this.heatUpBtnContainer) return;
     const bg = this.heatUpBtnContainer.getByName('btnBg') as Phaser.GameObjects.Arc; 
     const countTxt = this.heatUpBtnContainer.getByName('countTxt') as Phaser.GameObjects.Text; if (countTxt) countTxt.setText(`x${this.charcoalCount}`); 
     const hasCharcoal = this.charcoalCount === '∞' || (typeof this.charcoalCount === 'number' && this.charcoalCount > 0);

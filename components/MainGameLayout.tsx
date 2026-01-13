@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
-import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, Info, ChevronLeft, ChevronRight, Pointer, Lock as LockIcon, FastForward, MessageSquare } from 'lucide-react';
+import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, Info, ChevronLeft, ChevronRight, Pointer, Lock as LockIcon, FastForward, MessageSquare, AlertCircle } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 
 // Import Background Services
@@ -476,6 +476,20 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       </main>
 
       <div className="h-[env(safe-area-inset-bottom)] bg-stone-900 shrink-0"></div>
+
+      {/* GLOBAL TOAST SYSTEM - Enhanced Layout */}
+      {state.toast?.visible && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-bottom-4 duration-300 pointer-events-none w-max max-w-[70vw]">
+              <div 
+                onClick={actions.hideToast}
+                className="bg-stone-900/95 backdrop-blur-xl border-2 border-amber-600/50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 ring-1 ring-white/10 pointer-events-auto cursor-pointer active:scale-95 transition-transform"
+              >
+                  <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+                  <span className="text-stone-100 font-bold text-xs md:text-sm uppercase tracking-wide whitespace-pre-wrap break-words leading-tight">{state.toast.message}</span>
+              </div>
+          </div>
+      )}
+
       <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} />
       <TierUnlockModal />
       <TutorialCompleteModal />

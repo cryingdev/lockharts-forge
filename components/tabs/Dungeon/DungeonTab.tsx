@@ -468,7 +468,7 @@ const DungeonTab = () => {
                                                         ) : (
                                                             <div className="flex items-center gap-1 sm:gap-1.5">
                                                                 <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-2 sm:h-2.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800 p-[1px] shadow-inner">
-                                                                    <div className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${hasEnoughEnergy ? 'from-blue-700 to-blue-500' : 'from-red-800 to-red-600 animate-pulse'}`} style={{ width: `${energy}%` }}></div>
+                                                                    <div className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${hasEnoughEnergy ? 'from-blue-700 to-blue-500' : 'from-red-800 to-red-600 animate-pulse'}`} style={{ width: `${energy}%` }}></div>
                                                                 </div>
                                                                 <Zap className={`w-3 h-3 sm:w-4 lg:w-5 ${hasEnoughEnergy ? 'text-blue-500' : 'text-red-600 animate-pulse'}`} />
                                                                 {hasError && <AlertCircle className="w-3.5 h-3.5 sm:w-5 text-red-500 animate-pulse" />}
@@ -540,7 +540,7 @@ const DungeonTab = () => {
                 cancelLabel="Stay Deployed"
                 isDanger={true}
                 onConfirm={handleConfirmRecall}
-                onAction={() => setShowRecallConfirm(null)}
+                onCancel={() => setShowRecallConfirm(null)}
             />
         </div>
     );

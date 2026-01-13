@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../../types/index';
 import { MATERIALS } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -137,16 +138,25 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     let logMessage = '';
     let newTutorialStep = state.tutorialStep;
     let newActiveCustomer = state.activeCustomer;
+    let qualityBonus = 0;
 
     const isShopSale = !!customer;
 
     if (equipmentInstanceId) {
         const itemIndex = newInventory.findIndex(i => i.id === equipmentInstanceId);
         if (itemIndex > -1) {
-            // Locked check for safety
             if (newInventory[itemIndex].isLocked) return state;
 
-            itemName = newInventory[itemIndex].name;
+            const targetItem = newInventory[itemIndex];
+            itemName = targetItem.name;
+            
+            // 품질 보너스 계산
+            if (targetItem.equipmentData) {
+                const q = targetItem.equipmentData.quality;
+                if (q > 100) qualityBonus = 2; // 명품 보너스
+                else if (q < 80) qualityBonus = -1; // 하급품 패널티
+            }
+
             newInventory.splice(itemIndex, 1);
         }
     } else {
@@ -167,19 +177,24 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     if (customer) {
         const existingMercIdx = newKnownMercenaries.findIndex(m => m.id === customer.id);
         const isPipTutorial = newTutorialStep === 'SELL_ITEM_GUIDE' && customer.id === 'pip_green';
-        const affinityGain = isPipTutorial ? 10 : 2;
+        
+        // 최종 호감도 상승량 결정 (기본 2 + 품질 보너스)
+        const baseAffinityGain = isPipTutorial ? 10 : 2;
+        const finalAffinityGain = Math.max(1, baseAffinityGain + qualityBonus);
         
         if (existingMercIdx > -1) {
             const merc = { ...newKnownMercenaries[existingMercIdx] };
-            merc.affinity = Math.min(100, (merc.affinity || 0) + affinityGain); 
+            merc.affinity = Math.min(100, (merc.affinity || 0) + finalAffinityGain); 
             merc.visitCount = (merc.visitCount || 0) + 1;
             merc.lastVisitDay = state.stats.day;
             newKnownMercenaries[existingMercIdx] = merc;
-            logMessage = `Sold ${itemName} to ${customer.name}. Affinity rose by ${affinityGain}.`;
+            
+            const qualityNote = qualityBonus > 0 ? " (Masterwork Bonus!)" : qualityBonus < 0 ? " (Poor Quality Penalty)" : "";
+            logMessage = `Sold ${itemName} to ${customer.name}. Affinity rose by ${finalAffinityGain}${qualityNote}.`;
         } else {
             const newMerc: Mercenary = {
                 ...customer,
-                affinity: affinityGain,
+                affinity: finalAffinityGain,
                 visitCount: 1,
                 lastVisitDay: state.stats.day,
                 expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
@@ -188,17 +203,15 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
                 status: 'VISITOR'
             };
             newKnownMercenaries.push(newMerc);
-            logMessage = `Sold ${itemName} to ${customer.name}. (New Contact, Affinity +${affinityGain})`;
+            logMessage = `Sold ${itemName} to ${customer.name}. (New Contact, Affinity +${finalAffinityGain})`;
         }
 
-        // --- IMMEDIATE UI UPDATE ---
-        // Sync the affinity gain to the active customer object so the Shop HUD reflects it immediately
         if (newActiveCustomer && newActiveCustomer.mercenary.id === customer.id) {
             newActiveCustomer = {
                 ...newActiveCustomer,
                 mercenary: {
                     ...newActiveCustomer.mercenary,
-                    affinity: Math.min(100, (newActiveCustomer.mercenary.affinity || 0) + affinityGain)
+                    affinity: Math.min(100, (newActiveCustomer.mercenary.affinity || 0) + finalAffinityGain)
                 }
             };
         }

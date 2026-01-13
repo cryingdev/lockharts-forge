@@ -126,12 +126,27 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             settings: { ...state.settings, ...action.payload }
         };
 
-    // Toast Notifications
+    // Toast Notifications with Queue Management
     case 'SHOW_TOAST':
+        // 현재 화면에 노출 중인 토스트가 있고 메시지가 동일한 경우에만 중복으로 간주하여 무시
+        if (state.toast?.visible && state.toast.message === action.payload) {
+            return state;
+        }
+        // 화면에 없거나 다른 메시지라면 큐에 추가 (큐 내의 중복은 허용하여 연속 노출 보장)
         return {
             ...state,
-            toast: { message: action.payload, visible: true }
+            toastQueue: [...state.toastQueue, action.payload]
         };
+
+    case 'POP_NEXT_TOAST':
+        if (state.toastQueue.length === 0) return state;
+        const [nextMessage, ...remainingQueue] = state.toastQueue;
+        return {
+            ...state,
+            toast: { message: nextMessage, visible: true },
+            toastQueue: remainingQueue
+        };
+
     case 'HIDE_TOAST':
         return {
             ...state,

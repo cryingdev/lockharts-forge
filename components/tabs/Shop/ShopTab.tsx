@@ -57,14 +57,37 @@ const ShopSign = ({ isOpen, onToggle, disabled }: { isOpen: boolean, onToggle: (
 const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   const { isShopOpen } = state.forge;
-  const { activeCustomer, shopQueue, tutorialStep, inventory } = state;
+  const { activeCustomer, shopQueue, tutorialStep, inventory, unlockedRecipes } = state;
   const [counterImgError, setCounterImgError] = useState(false);
   const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
   const [saleCompleted, setSaleCompleted] = useState(false);
+  const [lastSoldQuality, setLastSoldQuality] = useState<number>(100);
   const [refusalReaction, setRefusalReaction] = useState<'POLITE' | 'ANGRY' | null>(null);
   
   const [showInstanceSelector, setShowInstanceSelector] = useState(false);
   const [selectedInstance, setSelectedInstance] = useState<InventoryItem | null>(null);
+
+  // FIX: Added getQualityLabel helper to resolve find name error
+  const getQualityLabel = (q: number): string => {
+    if (q >= 110) return 'MASTERWORK';
+    if (q >= 100) return 'PRISTINE';
+    if (q >= 90) return 'SUPERIOR';
+    if (q >= 80) return 'FINE';
+    if (q >= 70) return 'STANDARD';
+    if (q >= 60) return 'RUSTIC';
+    return 'CRUDE';
+  };
+
+  // FIX: Added getRarityColor helper to resolve find name error
+  const getRarityColor = (rarity?: string) => {
+    switch (rarity) {
+        case 'Legendary': return 'text-amber-100 border-amber-400 bg-amber-600 shadow-[0_0_10px_rgba(245,158,11,0.4)]';
+        case 'Epic': return 'text-purple-100 border-purple-400 bg-purple-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]';
+        case 'Rare': return 'text-blue-100 border-blue-400 bg-blue-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]';
+        case 'Uncommon': return 'text-emerald-100 border-emerald-400 bg-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.4)]';
+        default: return 'text-stone-300 border-stone-600 bg-stone-700';
+    }
+  };
 
   const spawnHearts = useCallback((count: number) => {
     const newHearts = Array.from({ length: count }).map((_, i) => ({
@@ -93,40 +116,19 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
     return res ? res.name : id;
   };
 
-  const getQualityLabel = (q: number): string => {
-      if (q >= 110) return 'MASTERWORK';
-      if (q >= 100) return 'PRISTINE';
-      if (q >= 90) return 'SUPERIOR';
-      if (q >= 80) return 'FINE';
-      if (q >= 70) return 'STANDARD';
-      if (q >= 60) return 'RUSTIC';
-      return 'CRUDE';
-  };
-
-  const getRarityClasses = (rarity?: string) => {
-    switch (rarity) {
-        case 'Legendary': return 'text-amber-400 border-amber-500/50 bg-amber-950/40';
-        case 'Epic': return 'text-purple-400 border-purple-500/50 bg-purple-950/40';
-        case 'Rare': return 'text-blue-400 border-blue-500/50 bg-blue-950/40';
-        case 'Uncommon': return 'text-emerald-400 border-emerald-500/50 bg-emerald-950/40';
-        default: return 'text-stone-400 border-stone-700/50 bg-stone-900/40';
-    }
-  };
-
-  const getItemImageUrl = (id: string) => {
-      const eq = EQUIPMENT_ITEMS.find(e => e.id === id);
-      if (eq && eq.image) return getAssetUrl(eq.image);
-      const res = Object.values(MATERIALS).find(i => i.id === id);
-      if (res) return getAssetUrl(`${res.id}.png`);
-      return getAssetUrl(`${id}.png`);
-  };
-
   const getInventoryItemImageUrl = (item: InventoryItem) => {
     if (item.type === 'EQUIPMENT' && item.equipmentData) {
         if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
         return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
     }
     return getAssetUrl(`${item.id}.png`);
+  };
+
+  // FIX: Added getItemImageUrl helper to resolve find name error
+  const getItemImageUrl = (id: string) => {
+    const eq = EQUIPMENT_ITEMS.find(e => e.id === id);
+    if (eq && eq.image) return getAssetUrl(eq.image);
+    return getAssetUrl(`${id}.png`);
   };
 
   const getItemIcon = (id: string) => {
@@ -151,10 +153,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
           setShowInstanceSelector(true);
       } else if (matchingItems.length === 1) {
           const item = matchingItems[0];
-          if (item.isLocked) {
-              actions.showToast("Cannot sell locked items.");
-              return;
-          }
           executeSell(item);
       }
   };
@@ -167,7 +165,13 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
       }
       const { mercenary, request } = activeCustomer;
       const isPipTutorial = tutorialStep === 'SELL_ITEM_GUIDE' && mercenary.id === 'pip_green';
-      const affinityGain = isPipTutorial ? 10 : 2;
+      
+      const itemQuality = item.equipmentData?.quality || 100;
+      setLastSoldQuality(itemQuality);
+
+      let affinityGain = isPipTutorial ? 10 : 2;
+      if (itemQuality > 100) affinityGain += 2;
+      else if (itemQuality < 80) affinityGain = Math.max(1, affinityGain - 1);
       
       const markup = request.markup || 1.25;
       const finalPrice = Math.ceil(item.baseValue * markup);
@@ -239,13 +243,33 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
     : null;
 
   const getThanksDialogue = () => {
-      const lines = [
-          `"Fantastic craftsmanship! This ${getItemName(activeCustomer?.request.requestedId || "")} is exactly what I needed. Thank you, Lockhart!"`,
+      const itemName = getItemName(activeCustomer?.request.requestedId || "");
+      
+      if (lastSoldQuality > 100) {
+          const masterworkLines = [
+              `"Unbelievable! This ${itemName} is a true masterpiece. The edge is unlike anything I've seen. You really have the Lockhart touch!"`,
+              `"Absolute perfection. I can feel the strength in this steel. I'll tell everyone in the tavern about your forge!"`,
+              `"This quality is beyond what I expected. A fair price for legendary work. Thank you, Lockhart!"`
+          ];
+          return masterworkLines[Math.floor(Math.random() * masterworkLines.length)];
+      } 
+      
+      if (lastSoldQuality < 80) {
+          const crudeLines = [
+              `"It'll do for now, I suppose. Though the finish on this ${itemName} is a bit rough... I hope your next work is a bit more refined."`,
+              `"Hmm, not your best work, smith. I'll take it, but I was expecting that famous Lockhart quality. Try harder next time."`,
+              `"A bit crude, but I need a blade today. Next time, I hope the anvil's rhythm is more precise."`
+          ];
+          return crudeLines[Math.floor(Math.random() * crudeLines.length)];
+      }
+
+      const standardLines = [
+          `"Fantastic craftsmanship! This ${itemName} is exactly what I needed. Thank you, Lockhart!"`,
           `"Superb work. I feel much safer with this by my side. I'll be back!"`,
           `"A fair price for quality steel. May your bellows never tire, smith."`,
           `"You truly have the Lockhart touch. This will serve me well in the ruins."`
       ];
-      return lines[(activeCustomer?.id.length || 0) % lines.length];
+      return standardLines[Math.floor(Math.random() * standardLines.length)];
   };
 
   const getRefusalDialogue = () => {
@@ -265,6 +289,21 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
           ][(activeCustomer?.id.length || 0) % 4];
       }
   };
+
+  const itemDetails = useMemo(() => {
+    if (!activeCustomer) return undefined;
+    const requestedId = activeCustomer.request.requestedId;
+    const eq = EQUIPMENT_ITEMS.find(e => e.id === requestedId);
+    const isUnlocked = eq ? (eq.unlockedByDefault !== false || unlockedRecipes.includes(requestedId)) : true;
+    
+    return {
+        icon: getItemIcon(requestedId),
+        imageUrl: getItemImageUrl(requestedId),
+        price: activeCustomer.request.price,
+        requirements: eq?.requirements,
+        isUnlocked
+    };
+  }, [activeCustomer, unlockedRecipes]);
 
   return (
     <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
@@ -394,11 +433,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                         speaker={activeCustomer.mercenary.name}
                         text={activeCustomer.request.dialogue}
                         highlightTerm={getItemName(activeCustomer.request.requestedId)}
-                        itemDetail={{
-                            icon: getItemIcon(activeCustomer.request.requestedId),
-                            imageUrl: getItemImageUrl(activeCustomer.request.requestedId),
-                            price: activeCustomer.request.price
-                        }}
+                        itemDetail={itemDetails}
                         options={[
                             { label: `Sell`, action: handleSellClick, variant: 'primary', disabled: !hasItem },
                             { label: "Refuse", action: handleRefuse, variant: 'danger', disabled: isTutorialActive }
@@ -427,7 +462,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                             customerMarkup={activeCustomer.request.markup || 1.25}
                         />
                         
-                        {/* Selector Footer for Buttons */}
                         <div className="p-4 border-t border-stone-800 bg-stone-900/80 flex justify-end gap-3 shrink-0">
                             <button 
                                 onClick={() => setShowInstanceSelector(false)}
@@ -445,7 +479,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                         </div>
                     </div>
                     
-                    {/* Inspection side (Desktop only) */}
                     <div className="hidden md:flex w-72 lg:w-96 flex-col bg-stone-900 overflow-hidden">
                         <div className="p-6 border-b border-stone-800 flex items-center gap-3 shrink-0">
                             <Info className="w-5 h-5 text-stone-500" />
@@ -455,7 +488,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                             {selectedInstance ? (
                                 <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-500">
                                     <div className="flex flex-col items-center text-center">
-                                        <div className={`w-24 h-24 bg-stone-950 rounded-full border-2 flex items-center justify-center mb-3 shadow-2xl relative ${getRarityClasses(selectedInstance.equipmentData?.rarity)}`}>
+                                        <div className={`w-24 h-24 bg-stone-950 rounded-full border-2 flex items-center justify-center mb-3 shadow-2xl relative ${getRarityColor(selectedInstance.equipmentData?.rarity)}`}>
                                             <img src={getInventoryItemImageUrl(selectedInstance)} className={`w-16 h-16 object-contain ${selectedInstance.isLocked ? 'opacity-50 grayscale' : ''}`} />
                                             {selectedInstance.isLocked && (
                                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-600 p-2 rounded-full border-2 border-stone-900 shadow-xl">
@@ -465,7 +498,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                                         </div>
                                         <h4 className="text-xl font-bold text-amber-500 font-serif leading-none">{selectedInstance.name}</h4>
                                         <div className="flex flex-col items-center gap-1.5 mt-2.5">
-                                            <div className={`px-3 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm ${getRarityClasses(selectedInstance.equipmentData?.rarity)}`}>
+                                            <div className={`px-3 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm ${getRarityColor(selectedInstance.equipmentData?.rarity)}`}>
                                                 {selectedInstance.equipmentData?.rarity}
                                             </div>
                                             <div className={`px-2 py-0.5 rounded border border-stone-800 bg-stone-950 text-[8px] font-bold uppercase flex items-center gap-1 ${selectedInstance.equipmentData?.quality && selectedInstance.equipmentData.quality >= 100 ? 'text-amber-400' : 'text-stone-500'}`}>

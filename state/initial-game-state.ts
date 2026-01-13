@@ -69,6 +69,7 @@ export const createInitialGameState = (): GameState => ({
     showJournal: false,
     showTutorialCompleteModal: false,
     toast: null,
+    toastQueue: [],
     
     // Progression
     craftingMastery: {},

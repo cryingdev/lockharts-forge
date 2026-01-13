@@ -54,6 +54,7 @@ export type GameAction =
   | { type: 'UPDATE_MERCENARY_STATS'; payload: { mercenaryId: string; stats: PrimaryStats } }
   | { type: 'SET_UI_EFFECT'; payload: { effect: keyof GameState['uiEffects']; value: boolean } }
   | { type: 'SHOW_TOAST'; payload: string }
+  | { type: 'POP_NEXT_TOAST' }
   | { type: 'HIDE_TOAST' }
   | { type: 'LOAD_GAME'; payload: GameState }
   | { type: 'SET_TUTORIAL_STEP'; payload: GameState['tutorialStep'] }

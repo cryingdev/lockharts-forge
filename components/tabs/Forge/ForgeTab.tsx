@@ -4,7 +4,7 @@ import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipmen
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import WorkbenchMinigame from './WorkbenchMinigame';
-import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, ChevronUp, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain, AlertCircle, TrendingUp, Sparkles, FastForward, Activity } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X as XIcon, Box, Flame, ChevronDown, ChevronUp, Heart, Star, Zap, Award, Wrench, X, ShoppingCart, Brain, AlertCircle, TrendingUp, Sparkles, FastForward, Activity, Loader2 } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
@@ -27,7 +27,7 @@ const SkillHeader = ({ exp, label, icon: Icon }: { exp: number, label: string, i
         <div className="bg-stone-900/60 border border-stone-800 rounded-xl p-2 md:p-3 flex items-center gap-3 md:gap-4 shadow-inner min-w-[150px] md:min-w-[220px]">
             <div className="p-1.5 md:p-2 bg-stone-950 rounded-lg border border-stone-800 shadow-md flex flex-col items-center gap-1">
                 <Icon className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-50" />
-                <span className="text-[6px] md:text-[8px] font-black text-amber-500 uppercase">Tier {tier}</span>
+                <span className="text-[6px] md:text-[8px] font-black text-amber-50 uppercase">Tier {tier}</span>
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-end mb-1">
@@ -45,13 +45,12 @@ const SkillHeader = ({ exp, label, icon: Icon }: { exp: number, label: string, i
 const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   
-  const { inventory, stats, isCrafting, craftingMastery, activeEvent, unlockedRecipes, tutorialStep, hasCompletedPrologue } = state;
+  const { inventory, stats, isCrafting, craftingMastery, activeEvent, unlockedRecipes, tutorialStep } = state;
   const { hasFurnace, hasWorkbench } = state.forge;
 
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const [failedFuelHighlight, setFailedFuelHighlight] = useState(false);
   const [isSkillsExpanded, setIsSkillsExpanded] = useState(false);
   
   const [expandedSubCat, setExpandedSubCat] = useState<string | null>(null);
@@ -59,6 +58,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
   const [hoveredItem, setHoveredItem] = useState<EquipmentItem | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  // Quick Craft Animation State
+  const [quickCraftProgress, setQuickCraftProgress] = useState<number | null>(null);
 
   const smithingLevel = getSmithingLevel(stats.smithingExp);
   const workbenchLevel = getSmithingLevel(stats.workbenchExp);
@@ -68,11 +70,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const getInventoryCount = useCallback((id: string) => {
       return inventory.find(i => i.id === id)?.quantity || 0;
   }, [inventory]);
-
-  const getResourceName = (id: string) => {
-      const itemDef = Object.values(MATERIALS).find(i => i.id === id);
-      return itemDef ? itemDef.name : id;
-  };
 
   const getItemImageUrl = (item: EquipmentItem) => {
     if (item.image) return getAssetUrl(item.image);
@@ -172,6 +169,15 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     return true;
   }, [selectedItem, hasFurnace, hasWorkbench]);
 
+  const quickCraftFuelCost = useMemo(() => {
+      if (!selectedItem || selectedItem.craftingType !== 'FORGE') return 0;
+      const d = selectedItem.maxDurability;
+      if (d < 80) return 2;
+      if (d < 150) return 3;
+      if (d < 300) return 4;
+      return 5;
+  }, [selectedItem]);
+
   const startCrafting = useCallback(() => {
       if (!selectedItem) return;
 
@@ -179,25 +185,31 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
           return;
       }
-      if (!canAffordResources(selectedItem)) {
-          actions.showToast(`Insufficient materials for ${selectedItem.name}.`);
+      
+      const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
+      if (missing.length > 0) {
+          const names = missing.map(m => {
+              const def = Object.values(MATERIALS).find(mat => mat.id === m.id);
+              const needed = m.count - getInventoryCount(m.id);
+              return `${def ? def.name : m.id} x${needed}`;
+          }).join(', ');
+          actions.showToast(`Insufficient: ${names}`);
           return;
       }
+
       if (!hasEnergy) {
           actions.triggerEnergyHighlight();
           actions.showToast("Not enough energy.");
           return;
       }
       if (selectedItem.craftingType === 'FORGE' && !canEnterForge) {
-          setFailedFuelHighlight(true);
-          setTimeout(() => setFailedFuelHighlight(false), 2000);
           actions.showToast("Forge is cold! Add fuel first.");
           return;
       }
 
       actions.startCrafting(selectedItem);
       setIsPanelOpen(false); 
-  }, [actions, selectedItem, isRequirementMet, canAffordResources, hasEnergy, canEnterForge]);
+  }, [actions, selectedItem, isRequirementMet, getInventoryCount, hasEnergy, canEnterForge]);
 
   const cancelCrafting = useCallback(() => {
       if (selectedItem) actions.cancelCrafting(selectedItem);
@@ -229,7 +241,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       const viewportW = window.innerWidth;
       const viewportH = window.innerHeight;
       let finalX = x + 20;
-      let finalY = x + 20;
+      let finalY = y + 20;
       const tooltipW = viewportW < 768 ? Math.max(160, viewportW * 0.4) : 256; 
       if (finalX + tooltipW > viewportW) finalX = x - tooltipW - 20;
       if (finalY + 160 > viewportH) finalY = y - 180;
@@ -249,7 +261,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     if (!item.baseStats) return null;
     const s = item.baseStats;
     return (
-        <div className="grid grid-cols-2 gap-1.5 md:gap-3 w-full max-w-xs mb-4 md:mb-6 animate-in slide-in-from-bottom-2 duration-500">
+        <div className="grid grid-cols-2 gap-1.5 md:gap-3 w-full max-w-xs mb-4 md:mb-6 animate-in slide-in-from-bottom-2 duration-500 mx-auto">
             {s.physicalAttack > 0 && (
                 <div className="bg-stone-900/60 border border-stone-800 p-1.5 md:p-2 rounded-lg flex justify-between items-center shadow-inner">
                     <span className="text-[7px] md:text-[10px] text-stone-500 font-black uppercase flex items-center gap-1"><Sword className="w-2.5 h-2.5" /> P.Atk</span>
@@ -307,43 +319,30 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
     let colorClass = "stroke-stone-500";
     let glowClass = "shadow-[0_0_20px_rgba(120,113,108,0.2)]";
     let progress = 0;
-    let nextMax = MASTERY_THRESHOLDS.ADEPT;
 
     if (count >= MASTERY_THRESHOLDS.ARTISAN) {
       label = "Artisan";
       colorClass = "stroke-amber-500";
       glowClass = "shadow-[0_0_40px_rgba(245,158,11,0.3)]";
       progress = Math.min(100, ((count - MASTERY_THRESHOLDS.ARTISAN) / 20) * 100);
-      nextMax = 50; 
     } else if (count >= MASTERY_THRESHOLDS.ADEPT) {
       label = "Adept";
       colorClass = "stroke-emerald-500";
       glowClass = "shadow-[0_0_30px_rgba(16,185,129,0.2)]";
       progress = ((count - MASTERY_THRESHOLDS.ADEPT) / (MASTERY_THRESHOLDS.ARTISAN - MASTERY_THRESHOLDS.ADEPT)) * 100;
-      nextMax = MASTERY_THRESHOLDS.ARTISAN;
     } else {
       label = "Novice";
       colorClass = "stroke-stone-400";
       glowClass = "shadow-[0_0_20px_rgba(168,162,158,0.15)]";
       progress = (count / MASTERY_THRESHOLDS.ADEPT) * 100;
-      nextMax = MASTERY_THRESHOLDS.ADEPT;
     }
 
     const radius = 46;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (progress / 100) * circumference;
 
-    return { label, colorClass, glowClass, progress, circumference, offset, count, nextMax };
+    return { label, colorClass, glowClass, progress, circumference, offset, count };
   }, [selectedItem, craftingMastery]);
-
-  const quickCraftFuelCost = useMemo(() => {
-      if (!selectedItem || selectedItem.craftingType !== 'FORGE') return 0;
-      const d = selectedItem.maxDurability;
-      if (d <= 80) return 2;
-      if (d <= 150) return 3;
-      if (d <= 300) return 4;
-      return 5;
-  }, [selectedItem]);
 
   const handleQuickCraft = useCallback(() => {
       if (!selectedItem || !masteryInfo) return;
@@ -352,10 +351,18 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
           return;
       }
-      if (!canAffordResources(selectedItem)) {
-          actions.showToast(`Insufficient materials for ${selectedItem.name}.`);
+      
+      const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
+      if (missing.length > 0) {
+          const names = missing.map(m => {
+              const def = Object.values(MATERIALS).find(mat => mat.id === m.id);
+              const needed = m.count - getInventoryCount(m.id);
+              return `${def ? def.name : m.id} x${needed}`;
+          }).join(', ');
+          actions.showToast(`Insufficient: ${names}`);
           return;
       }
+
       if (!hasEnergy) {
           actions.triggerEnergyHighlight();
           actions.showToast("Not enough energy.");
@@ -367,36 +374,99 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
               actions.showToast(`Insufficient charcoal! Need ${quickCraftFuelCost} fuel.`);
               return;
           }
-          actions.consumeItem('charcoal', quickCraftFuelCost);
       }
 
-      let quality = 50;
-      let masteryGain = 0.5;
+      // Start Animation
+      setQuickCraftProgress(0);
+      const duration = 1500;
+      const interval = 30;
+      const step = (interval / duration) * 100;
 
-      if (masteryInfo.count >= MASTERY_THRESHOLDS.ARTISAN) {
-          quality = 95;
-          masteryGain = 1.0;
-      } else if (masteryInfo.count >= MASTERY_THRESHOLDS.ADEPT) {
-          quality = 75;
-          masteryGain = 0.7;
-      }
+      const timer = setInterval(() => {
+          setQuickCraftProgress(prev => {
+              if (prev === null || prev >= 100) {
+                  clearInterval(timer);
+                  
+                  // Perform Actual Crafting after animation
+                  if (selectedItem.craftingType === 'FORGE') {
+                      actions.consumeItem('charcoal', quickCraftFuelCost);
+                  }
+                  
+                  let quality = 50;
+                  let masteryGain = 0.5;
 
-      actions.startCrafting(selectedItem);
-      actions.finishCrafting(selectedItem, quality, 0, masteryGain);
-  }, [selectedItem, masteryInfo, isRequirementMet, canAffordResources, hasEnergy, actions, charcoalCount, quickCraftFuelCost]);
+                  if (masteryInfo.count >= MASTERY_THRESHOLDS.ARTISAN) {
+                      quality = 95;
+                      masteryGain = 1.0;
+                  } else if (masteryInfo.count >= MASTERY_THRESHOLDS.ADEPT) {
+                      quality = 75;
+                      masteryGain = 0.7;
+                  }
 
-  const content = useMemo(() => {
-    const canCraft = selectedItem && canAffordResources(selectedItem) && (selectedItem.craftingType === 'WORKBENCH' || canEnterForge) && hasEnergy && isRequirementMet;
-    const canQuickCraft = selectedItem && canAffordResources(selectedItem) && hasEnergy && isRequirementMet && (selectedItem.craftingType !== 'FORGE' || charcoalCount >= quickCraftFuelCost);
-    const isMissingFuelOnly = selectedItem && selectedItem.craftingType === 'FORGE' && canAffordResources(selectedItem) && !canEnterForge && hasEnergy && isRequirementMet;
-    const hasAlreadyCraftedOnce = selectedItem ? (craftingMastery[selectedItem.id] || 0) > 0 : false;
-    
-    const isCurrentTutorialCraft = selectedItem?.id === 'sword_bronze_t1' && tutorialStep === 'START_FORGING_GUIDE';
+                  actions.startCrafting(selectedItem);
+                  actions.finishCrafting(selectedItem, quality, 0, masteryGain);
+                  return null;
+              }
+              return Math.min(100, prev + step);
+          });
+      }, interval);
 
-    return (
-        <div className="relative h-full w-full bg-stone-950 overflow-hidden" style={{ backgroundImage: `url(${getAssetUrl('tile_forge.png')})`, backgroundRepeat: 'repeat', backgroundBlendMode: 'multiply' }}>
+  }, [selectedItem, masteryInfo, isRequirementMet, getInventoryCount, hasEnergy, actions, charcoalCount, quickCraftFuelCost]);
+
+  const isQuickCraftAvailable = useMemo(() => {
+    if (!selectedItem) return false;
+    return (craftingMastery[selectedItem.id] || 0) > 0;
+  }, [selectedItem, craftingMastery]);
+
+  return (
+    <div className="relative h-full w-full bg-stone-950 overflow-hidden" style={{ backgroundImage: `url(${getAssetUrl('tile_forge.png')})`, backgroundRepeat: 'repeat', backgroundBlendMode: 'multiply' }}>
         
-        {/* Skill Header Widget */}
+        {isCrafting && selectedItem && (
+            <div className="absolute inset-0 z-[100] bg-stone-950">
+                {selectedItem.craftingType === 'FORGE' ? (
+                    <SmithingMinigame 
+                        onComplete={handleMinigameComplete}
+                        onClose={cancelCrafting}
+                        difficulty={selectedItem.tier}
+                        isTutorial={tutorialStep === 'START_FORGING_GUIDE'}
+                    />
+                ) : (
+                    <WorkbenchMinigame 
+                        onComplete={handleMinigameComplete}
+                        onClose={cancelCrafting}
+                        difficulty={selectedItem.tier}
+                        subCategoryId={selectedItem.subCategoryId}
+                        itemImage={selectedItem.image}
+                    />
+                )}
+            </div>
+        )}
+
+        {/* Quick Craft Progress Popup */}
+        {quickCraftProgress !== null && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="w-72 md:w-96 bg-stone-900 border-2 border-amber-600/50 rounded-2xl p-6 md:p-10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95">
+                    <div className="relative">
+                        <Hammer className="w-12 h-12 text-amber-500 animate-bounce" />
+                        <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-amber-300 animate-pulse" />
+                    </div>
+                    <div className="w-full">
+                        <div className="flex justify-between text-[10px] md:text-xs font-black text-amber-500 uppercase tracking-widest mb-2">
+                            <span>Processing Craft...</span>
+                            <span>{Math.round(quickCraftProgress)}%</span>
+                        </div>
+                        <div className="h-3 w-full bg-stone-950 rounded-full overflow-hidden border border-stone-800 shadow-inner">
+                            <div 
+                                className="h-full bg-gradient-to-r from-amber-700 via-amber-500 to-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all duration-100 ease-linear"
+                                style={{ width: `${quickCraftProgress}%` }}
+                            />
+                        </div>
+                    </div>
+                    <p className="text-stone-500 text-[9px] md:text-[11px] font-bold uppercase tracking-widest animate-pulse italic">Applying Master Techniques...</p>
+                </div>
+            </div>
+        )}
+
         <div className="absolute top-2 left-2 md:top-4 md:left-4 z-20 pointer-events-auto">
             {!isSkillsExpanded ? (
                 <button 
@@ -404,7 +474,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                     className="bg-stone-900/90 backdrop-blur-md border border-stone-700 rounded-full px-4 py-2 flex items-center gap-3 shadow-xl hover:bg-stone-800 transition-all group"
                 >
                     <div className="flex items-center gap-1.5">
-                        <Hammer className="w-3.5 h-3.5 text-amber-500" />
+                        <Hammer className="w-3.5 h-3.5 text-amber-50" />
                         <span className="text-[10px] md:text-xs font-mono font-black text-amber-400">Lv.{smithingLevel}</span>
                         <span className="text-[7px] md:text-[8px] font-black text-amber-600 bg-amber-950/40 px-1 rounded border border-amber-900/20">T{unlockedSmithingTier}</span>
                     </div>
@@ -432,26 +502,14 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             )}
         </div>
 
-        {selectedItem && !isRequirementMet && (
-            <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-stone-950/90 backdrop-blur-md animate-in fade-in duration-700"></div>
-                <div className="relative z-10 p-6 md:p-8 max-w-md w-full bg-stone-900 border-2 border-stone-800 rounded-2xl shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-500 max-h-[90vh] overflow-y-auto">
-                    <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 p-2 text-stone-500 hover:text-stone-300 transition-colors"><X className="w-5 h-5" /></button>
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4 md:mb-6 border border-stone-700 shrink-0">{selectedItem.craftingType === 'FORGE' ? <Flame className="w-8 h-8 md:w-10 md:h-10 text-stone-600" /> : <Wrench className="w-8 h-8 md:w-10 md:h-10 text-stone-600" />}</div>
-                    <h2 className="text-xl md:text-2xl font-bold text-stone-300 font-serif mb-2">{selectedItem.craftingType === 'FORGE' ? 'Furnace Required' : 'Workbench Required'}</h2>
-                    <p className="text-sm md:text-base text-stone-500 mb-6 md:mb-8 leading-relaxed">Crafting <span className="text-amber-500 font-bold">{selectedItem.name}</span> requires a functional {selectedItem.craftingType === 'FORGE' ? 'furnace' : 'workbench'}. Visit the market to purchase one.</p>
-                    <button onClick={() => onNavigate('MARKET')} className="w-full py-3 md:py-4 bg-amber-700 hover:bg-amber-600 text-amber-50 font-bold rounded-xl shadow-lg hover:shadow-amber-900/40 transition-all flex items-center justify-center gap-2 group shrink-0">Go to Market <ChevronRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" /></button>
-                </div>
-            </div>
-        )}
         <div className={`absolute inset-0 z-0 flex w-full h-full ${((selectedItem && !isRequirementMet) || !hasFurnace) ? 'blur-sm pointer-events-none' : ''}`}>
             <div className={`h-full relative flex flex-col transition-all duration-500 ease-in-out ${isPanelOpen ? 'w-[55%] md:w-[60%]' : 'w-full'}`}>
-                <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-8 bg-stone-925/40 relative overflow-hidden">
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-8 bg-stone-925/40 relative overflow-hidden text-center">
                     <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">{selectedItem?.craftingType === 'FORGE' ? <Hammer className="w-64 h-64 md:w-96 md:h-96 text-stone-500" /> : <Wrench className="w-64 h-64 md:w-96 md:h-96 text-stone-500" />}</div>
                     {selectedItem ? (
-                        <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg">
+                        <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg mx-auto">
                             
-                            <div className="relative mb-3 md:mb-6 group">
+                            <div className="relative mb-3 md:mb-6 group mx-auto">
                                 <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-full flex items-center justify-center relative z-10 p-2 md:p-4 border border-stone-800/50 ${masteryInfo?.glowClass} transition-all duration-700`}>
                                     <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
                                         <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-stone-950/40" />
@@ -473,63 +531,42 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                                 </div>
                             </div>
 
-                            <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1 md:mb-1.5 font-serif tracking-wide">{selectedItem.name}</h2>
-                            <p className="text-stone-500 text-center max-w-md mb-4 md:mb-6 italic text-[9px] md:text-sm leading-tight px-6">"{selectedItem.description}"</p>
+                            <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1 md:mb-1.5 font-serif tracking-wide text-center">{selectedItem.name}</h2>
+                            <p className="text-stone-500 text-center max-w-md mb-4 md:mb-6 italic text-[9px] md:text-sm leading-tight px-6 mx-auto">"{selectedItem.description}"</p>
                             
                             {renderStats(selectedItem)}
 
-                            <div className="w-full max-w-xs mb-6 md:mb-8 flex flex-col items-center">
-                                <div className="flex items-center gap-1.5 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-stone-500 mb-1">
-                                    <Award className="w-3 h-3 md:w-4 md:h-4 text-amber-600" />
-                                    <span>Mastery: {Math.round(masteryInfo?.progress || 0)}%</span>
-                                </div>
-                            </div>
-
-                            <div className="relative group flex flex-col items-center w-full gap-2 md:gap-4 px-4">
-                                {isMissingFuelOnly && (
-                                    <div className="mb-2 flex items-center gap-1.5 text-orange-500 font-bold text-[9px] md:text-xs animate-pulse bg-orange-950/30 px-3 py-1 rounded-full border border-orange-900/40">
-                                        <Flame className="w-3 h-3 md:w-4 md:h-4" />
-                                        <span>Fuel Required to Heat the Forge</span>
-                                    </div>
-                                )}
-
-                                <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
-                                    <button 
-                                        onClick={startCrafting} 
-                                        data-tutorial-id="START_FORGING_BUTTON"
-                                        className={`flex-1 max-w-[280px] px-6 md:px-10 py-3 md:py-4 rounded-lg font-black text-sm md:text-lg shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 md:gap-3 border ${failedFuelHighlight ? 'bg-red-900 border-red-500 animate-shake-hard shadow-[0_0_20px_rgba(239,68,68,0.4)]' : canCraft ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500') : (isMissingFuelOnly ? 'bg-stone-800 text-stone-300 border-amber-600/50 grayscale opacity-70' : 'bg-stone-800 text-stone-500 border-stone-700 opacity-70 grayscale')}`}
-                                    >
-                                        {selectedItem.craftingType === 'FORGE' ? <Hammer className="w-4 h-4 md:w-6 md:h-6" /> : <Wrench className="w-4 h-4 md:w-6 md:h-6" />}
-                                        <span>{selectedItem.craftingType === 'FORGE' ? 'Start Forging' : 'Start Crafting'}</span>
-                                    </button>
-
-                                    {hasAlreadyCraftedOnce && (
-                                        <button 
-                                            onClick={handleQuickCraft}
-                                            className={`flex-1 max-w-[280px] px-6 md:px-10 py-3 md:py-4 rounded-lg font-black text-sm md:text-lg shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 md:gap-3 border bg-stone-900 border-stone-700 hover:bg-stone-800 hover:border-amber-600 group ${!canQuickCraft ? 'opacity-50 grayscale' : ''}`}
-                                            title={`Quick Craft (Lower Quality & Mastery XP)${selectedItem.craftingType === 'FORGE' ? ` - Costs ${quickCraftFuelCost} Charcoal` : ''}`}
-                                        >
-                                            <div className="flex flex-col items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <Zap className="w-4 h-4 md:w-6 md:h-6 text-amber-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="text-stone-300 group-hover:text-amber-200">Quick Craft</span>
-                                                </div>
-                                                {selectedItem.craftingType === 'FORGE' && (
-                                                    <div className="flex items-center gap-1 mt-0.5 opacity-60 text-[8px] md:text-xs font-mono font-bold">
-                                                        <Flame className="w-2.5 h-2.5 text-orange-500" />
-                                                        <span>-{quickCraftFuelCost}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </button>
-                                    )}
-                                </div>
+                            <div className="flex flex-col sm:flex-row gap-3 w-full items-center justify-center px-4 max-w-lg mx-auto">
+                                <button 
+                                    onClick={startCrafting} 
+                                    data-tutorial-id="START_FORGING_BUTTON"
+                                    className={`w-full max-w-[200px] h-14 md:h-20 rounded-lg font-black text-sm md:text-base shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 md:gap-3 border ${canEnterForge ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500') : 'bg-stone-800 text-stone-500 border-stone-700 grayscale opacity-70'}`}
+                                >
+                                    {selectedItem.craftingType === 'FORGE' ? <Hammer className="w-4 h-4 md:w-6 md:h-6" /> : <Wrench className="w-4 h-4 md:w-6 md:h-6" />}
+                                    <span>{selectedItem.craftingType === 'FORGE' ? 'Start Forging' : 'Start Crafting'}</span>
+                                </button>
                                 
-                                {failedFuelHighlight && <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] md:text-xs font-black px-3 py-1.5 rounded-lg shadow-2xl animate-in fade-in zoom-in slide-in-from-bottom-2 whitespace-nowrap z-50 ring-2 ring-red-400"><AlertCircle className="w-3 h-3 md:w-4 md:h-4 inline mr-1" /> LACK OF FUEL</div>}
+                                {isQuickCraftAvailable && (
+                                    <button 
+                                        onClick={handleQuickCraft}
+                                        className={`w-full max-w-[200px] h-14 md:h-20 rounded-lg font-black shadow-lg transition-all transform hover:-translate-y-1 flex flex-col items-center justify-center gap-0.5 border bg-stone-800 hover:bg-stone-700 border-stone-600 text-amber-500`}
+                                    >
+                                        <div className="flex items-center gap-1.5 md:gap-2">
+                                            <FastForward className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                            <span className="text-sm md:text-base">Quick Craft</span>
+                                        </div>
+                                        {selectedItem.craftingType === 'FORGE' && (
+                                            <div className="flex items-center gap-1 opacity-80 scale-90">
+                                                <img src={getAssetUrl('charcoal.png')} className="w-3 h-3 object-contain" />
+                                                <span className={`font-mono text-[10px] ${charcoalCount < quickCraftFuelCost ? 'text-red-500 animate-pulse' : 'text-stone-400'}`}>x{quickCraftFuelCost}</span>
+                                            </div>
+                                        )}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ) : (
-                        <div className="z-10 flex flex-col items-center text-stone-600"><div className="w-16 h-16 md:w-24 md:h-24 rounded-full border-4 border-dashed border-stone-700 flex items-center justify-center mb-4"><Hammer className="w-6 h-6 md:w-10 md:h-10" /></div><h3 className="text-base md:text-xl font-bold text-stone-500 drop-shadow-md">The Anvil is Cold</h3><p className="text-[10px] md:text-sm mt-1 md:mt-2 font-medium">Select a recipe from the right to begin.</p></div>
+                        <div className="z-10 flex flex-col items-center text-stone-600 text-center"><div className="w-16 h-16 md:w-24 md:h-24 rounded-full border-4 border-dashed border-stone-700 flex items-center justify-center mb-4 mx-auto"><Hammer className="w-6 h-6 md:w-10 md:h-10" /></div><h3 className="text-base md:text-xl font-bold text-stone-500 drop-shadow-md">The Anvil is Cold</h3><p className="text-[10px] md:text-sm mt-1 md:mt-2 font-medium">Select a recipe from the right to begin.</p></div>
                     )}
                 </div>
             </div>
@@ -537,58 +574,55 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             <div className={`h-full bg-stone-900/95 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ease-in-out relative backdrop-blur-sm ${isPanelOpen ? 'w-[45%] md:w-[40%] translate-x-0' : 'w-0 translate-x-full border-none'}`}>
                 <button onClick={() => setIsPanelOpen(!isPanelOpen)} disabled={isCrafting} className={`absolute top-1/2 -left-6 w-6 h-20 md:h-24 -translate-y-1/2 bg-stone-800 border-y border-l border-stone-600 rounded-l-lg flex items-center justify-center hover:bg-stone-700 hover:text-amber-400 transition-colors z-20 ${isCrafting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>{isCrafting ? <Lock className="w-3.5 h-3.5 text-stone-500" /> : isPanelOpen ? <ChevronRight className="w-4 h-4 text-stone-400" /> : <ChevronLeft className="w-4 h-4 text-amber-500 animate-pulse" />}</button>
                 <div className="w-full h-full flex flex-col">
-                    <div className="flex border-b border-stone-800 shrink-0"><button onClick={() => handleCategoryChange('WEAPON')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'WEAPON' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Sword className="w-3 h-3 md:w-4 md:h-4" /> WEAPONS</button><button onClick={() => handleCategoryChange('ARMOR')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'ARMOR' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Shield className="w-3 h-3 md:w-4 md:h-4" /> ARMOR</button></div>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-3 space-y-2">
-                        {visibleSubCats.map(subCat => {
-                            const isExpanded = expandedSubCat === subCat.id;
-                            const items = groupedItems[subCat.id] || [];
+                    <div className="flex border-b border-stone-800 shrink-0">
+                        <button onClick={() => handleCategoryChange('WEAPON')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'WEAPON' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Sword className="w-3 h-3 md:w-4 md:h-4" /> WEAPONS</button>
+                        <button onClick={() => handleCategoryChange('ARMOR')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'ARMOR' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Shield className="w-3 h-3 md:w-4 md:h-4" /> ARMORS</button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 space-y-4">
+                        {visibleSubCats.map(subCat => (
+                            <div key={subCat.id} className="space-y-2">
+                                <button onClick={() => toggleSubCategory(subCat.id)} className="w-full flex items-center justify-between px-3 py-2 bg-stone-800/40 rounded-lg hover:bg-stone-800/60 transition-colors">
+                                    <span className="text-[10px] md:text-xs font-black uppercase text-stone-400 tracking-widest">{subCat.name}</span>
+                                    {expandedSubCat === subCat.id ? <ChevronDown className="w-4 h-4 text-stone-600" /> : <ChevronRight className="w-4 h-4 text-stone-600" />}
+                                </button>
+                                {expandedSubCat === subCat.id && (
+                                    <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-300">
+                                        {groupedItems[subCat.id].map(item => renderItemCard(item))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {hoveredItem && (
+            <div 
+                className="fixed z-[3000] pointer-events-none p-3 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl w-40 md:w-64 animate-in fade-in zoom-in-95 duration-200"
+                style={{ left: tooltipPos.x, top: tooltipPos.y }}
+            >
+                <h4 className="text-[10px] md:text-sm font-black text-amber-500 uppercase font-serif mb-2">{hoveredItem.name}</h4>
+                <div className="space-y-2">
+                    <h5 className="text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest border-b border-white/5 pb-1">Required Materials</h5>
+                    <div className="grid gap-1">
+                        {hoveredItem.requirements.map(req => {
+                            const hasCount = getInventoryCount(req.id);
+                            const isEnough = hasCount >= req.count;
+                            const mat = Object.values(MATERIALS).find(m => m.id === req.id);
                             return (
-                                <div key={subCat.id} className="border border-stone-800 rounded-lg overflow-hidden">
-                                    <button onClick={() => toggleSubCategory(subCat.id)} className="w-full bg-stone-800 p-2.5 md:p-3 flex items-center justify-between hover:bg-stone-750 transition-colors"><div className="flex items-center gap-1.5 md:gap-2">{isExpanded ? <ChevronDown className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-100" /> : <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-stone-500" />}<span className={`font-bold text-xs md:text-sm truncate ${isExpanded ? 'text-amber-100' : 'text-stone-400'}`}>{subCat.name}</span></div><span className="text-[10px] bg-stone-900 px-1.5 py-0.5 rounded text-stone-500 font-mono">{items.length}</span></button>
-                                    {isExpanded && <div className="bg-stone-900/50 p-1.5 md:p-2 grid grid-cols-2 gap-1.5 md:gap-2 animate-in slide-in-from-top-2 duration-200">{items.map(item => renderItemCard(item))}</div>}
+                                <div key={req.id} className="flex justify-between items-center text-[7px] md:text-[10px]">
+                                    <span className={`truncate mr-2 ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>{mat?.name || req.id}</span>
+                                    <span className={`font-mono font-bold ${isEnough ? 'text-stone-400' : 'text-red-500'}`}>{hasCount}/{req.count}</span>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
             </div>
-        </div>
-        {isCrafting && selectedItem && (
-            <div className="absolute inset-0 z-50 animate-in fade-in zoom-in-95 duration-300 bg-stone-950">
-              {selectedItem.craftingType === 'FORGE' ? (
-                <SmithingMinigame 
-                  difficulty={selectedItem.tier} 
-                  onComplete={handleMinigameComplete} 
-                  onClose={cancelCrafting} 
-                  isTutorial={isCurrentTutorialCraft}
-                />
-              ) : (
-                <WorkbenchMinigame 
-                  difficulty={selectedItem.tier} 
-                  onComplete={handleMinigameComplete} 
-                  onClose={cancelCrafting} 
-                  subCategoryId={selectedItem.subCategoryId} 
-                  itemImage={selectedItem.image || `${selectedItem.id}.png`} 
-                />
-              )}
-            </div>
         )}
-        {hoveredItem && (
-            <div className="fixed z-[60] pointer-events-none w-[40vw] min-w-[160px] md:w-64 bg-stone-950/95 border border-stone-700 rounded-lg shadow-2xl backdrop-blur-sm p-3 md:p-4 animate-in fade-in duration-150" style={{ top: tooltipPos.y, left: tooltipPos.x }}>
-                <h4 className="font-bold text-stone-200 border-b border-stone-800 pb-2 mb-2 flex justify-between items-center"><span className="text-[10px] md:text-xs">Requirements</span><span className="text-[9px] md:text-[10px] font-normal text-stone-500 uppercase">Tier {hoveredItem.tier}</span></h4>
-                <div className="space-y-1.5">{hoveredItem.requirements.map((req, idx) => {
-                    const currentCount = getInventoryCount(req.id);
-                    const hasEnough = currentCount >= req.count;
-                    return (
-                        <div key={idx} className="flex justify-between items-center text-[10px] md:text-xs"><span className="text-stone-400 truncate mr-2">{getResourceName(req.id)}</span><div className={`flex items-center gap-1 font-mono ${hasEnough ? 'text-emerald-400' : 'text-red-400'}`}><span>{currentCount}/{req.count}</span>{hasEnough ? <Check className="w-2.5 h-2.5" /> : <XIcon className="w-2.5 h-2.5" />}</div></div>
-                    );
-                })}</div>
-            </div>
-        )}
-        </div>
-    );
-  }, [activeCategory, selectedItem, isPanelOpen, isCrafting, hoveredItem, tooltipPos, inventory, hasFurnace, hasWorkbench, canEnterForge, hasHeat, charcoalCount, hasEnergy, requiredEnergy, stats.tierLevel, stats.smithingExp, stats.workbenchExp, unlockedSmithingTier, unlockedWorkbenchTier, expandedSubCat, favorites, craftingMastery, isRequirementMet, handleCategoryChange, startCrafting, cancelCrafting, handleMinigameComplete, toggleSubCategory, toggleFavorite, handleMouseEnter, handleMouseMove, handleMouseLeave, canAffordResources, getInventoryCount, onNavigate, groupedItems, visibleSubCats, activeEvent, unlockedRecipes, failedFuelHighlight, masteryInfo, handleQuickCraft, quickCraftFuelCost, actions, state.tutorialStep, isTutorialForging, tutorialStep, isSkillsExpanded, smithingLevel, workbenchLevel]);
-  return content;
+    </div>
+  );
 };
 
 export default ForgeTab;
