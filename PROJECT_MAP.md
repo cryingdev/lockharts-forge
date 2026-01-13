@@ -1,4 +1,3 @@
-
 # Project Map – Lockhart’s Forge (v0.1.39)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
@@ -13,6 +12,14 @@ This document provides a comprehensive structural map of the project, detailing 
 - `App.tsx`: Central View Controller. Manages the high-level state transitions (`INTRO -> TITLE -> GAME`) and handles save data hydration.
 - `utils.ts`: Global utilities. Contains logic for Asset URI generation and duration formatting.
 - `metadata.json`: App metadata and permission configurations.
+
+### Configuration (`config/`)
+- `config/game-config.ts`: General rules and energy consumption values.
+- `config/ui-config.ts`: Global UI layout constants, standardized modal dimensions, and Z-index management.
+- `config/mastery-config.ts`: Crafting mastery thresholds and bonuses.
+- `config/dungeon-config.ts`: Expedition energy and recovery rules.
+- `config/contract-config.ts`: Mercenary hiring costs and wage calculations.
+- `config/derived-stats-config.ts`: Combat formulas and attribute scaling.
 
 ---
 
@@ -55,10 +62,12 @@ This document provides a comprehensive structural map of the project, detailing 
 - `modals/CraftingResultModal.tsx`: Post-forge summary with animated Mastery progress.
 - `modals/SettingsModal.tsx`: System settings and save/load management. Includes UI customization toggles.
 - `modals/SaveLoadModal.tsx`: Browser for save slots with metadata previews and version validation.
+- `modals/TierUnlockModal.tsx`: Celebration UI for crafting progression.
+- `modals/TutorialCompleteModal.tsx`: Summary of unlocked systems post-guide.
 
 ---
 
-## 🎮 4. Phaser Game Engine (`game/`)
+## 4. Phaser Game Engine (`game/`)
 
 - `game/SmithingScene.ts`: Rhythm-based forging with billet morphing.
 - `game/WorkbenchScene.ts`: Precision stitching with path-tracking and hammer strike animations.
@@ -68,8 +77,8 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ## 🔄 Recent Updates (v0.1.39)
 
+*   **UI Consolidation**: Created `config/ui-config.ts` to centralize modal layout and Z-index management.
 *   **Market Optimization**: Catalog reordered (Resources > Supplies > Facilities) and initial Furnace cost set to 0G for tutorial flow.
 *   **UI Persistence**: Inventory view mode (Grid/List) now saves to user settings.
 *   **Safety UX**: Added explicit Select/Cancel buttons to the Shop's item instance selection popup.
-*   **Tutorial Refinement**: Updated script where Garrick supports the first forge restoration.
 *   **System**: version incremented to `v0.1.39`.
