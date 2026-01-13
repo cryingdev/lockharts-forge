@@ -35,9 +35,9 @@ const DungeonTab = () => {
 
     const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
     
-    const isMercBusy = (mercId: string) => {
+    const isMercBusy = (mercId: string): boolean => {
         return activeExpeditions.some(e => e.partyIds.includes(mercId)) || 
-               (activeManualDungeon && activeManualDungeon.partyIds.includes(mercId));
+               (!!activeManualDungeon && activeManualDungeon.partyIds.includes(mercId));
     };
 
     const handlePrev = () => {
@@ -442,7 +442,7 @@ const DungeonTab = () => {
                                     ) : (
                                         hiredMercs.map(merc => {
                                             const isSelected = party.includes(merc.id);
-                                            const isBusy = isMercBusy(merc.id);
+                                            const isBusyFlag = isMercBusy(merc.id);
                                             const power = calculateMercenaryPower(merc);
                                             const energy = merc.expeditionEnergy || 0;
                                             const hasEnoughEnergy = energy >= selectedDungeon.energyCost;
@@ -451,9 +451,9 @@ const DungeonTab = () => {
                                             return (
                                                 <button 
                                                     key={merc.id} 
-                                                    onClick={() => !isBusy && toggleMercenary(merc.id)} 
-                                                    disabled={isBusy} 
-                                                    className={`w-full flex items-center justify-between p-1.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${isSelected ? 'bg-amber-900/30 border-amber-600 shadow-[0_0_20px_rgba(217,119,6,0.1)]' : 'bg-stone-900 border-stone-800 hover:border-stone-600'} ${isBusy ? 'opacity-40 grayscale cursor-not-allowed border-dashed' : ''} ${hasError ? 'border-red-600 animate-shake-hard' : ''}`}
+                                                    onClick={() => !isBusyFlag && toggleMercenary(merc.id)} 
+                                                    disabled={isBusyFlag} 
+                                                    className={`w-full flex items-center justify-between p-1.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${isSelected ? 'bg-amber-900/30 border-amber-600 shadow-[0_0_20px_rgba(217,119,6,0.1)]' : 'bg-stone-900 border-stone-800 hover:border-stone-600'} ${isBusyFlag ? 'opacity-40 grayscale cursor-not-allowed border-dashed' : ''} ${hasError ? 'border-red-600 animate-shake-hard' : ''}`}
                                                 >
                                                     <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0">
                                                         <div className="text-base sm:text-2xl lg:text-4xl">{merc.icon}</div>
@@ -463,7 +463,7 @@ const DungeonTab = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-end gap-1 shrink-0">
-                                                        {isBusy ? (
+                                                        {isBusyFlag ? (
                                                             <span className="text-[6px] sm:text-[8px] lg:text-[9px] font-black uppercase text-stone-500 bg-stone-950 px-1.5 py-0.5 rounded border border-stone-800">Busy</span>
                                                         ) : (
                                                             <div className="flex items-center gap-1 sm:gap-1.5">
