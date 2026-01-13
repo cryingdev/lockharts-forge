@@ -1,13 +1,15 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { LayoutGrid, List, Lock, Unlock, Star, Sword, Shield, Coins, Package, Sparkles } from 'lucide-react';
 import { InventoryItem } from '../types/inventory';
 import { getAssetUrl } from '../utils';
+import { useGame } from '../context/GameContext';
 
 interface ItemSelectorListProps {
     items: InventoryItem[];
     onSelect: (item: InventoryItem) => void;
     onToggleLock: (itemId: string) => void;
+    selectedItemId?: string | null;
     customerMarkup?: number;
     emptyMessage?: string;
 }
@@ -16,10 +18,16 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
     items, 
     onSelect, 
     onToggleLock, 
+    selectedItemId,
     customerMarkup = 1.0,
     emptyMessage = "No items available."
 }) => {
-    const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('LIST');
+    const { state, actions } = useGame();
+    const viewMode = state.settings.inventoryViewMode || 'LIST';
+
+    const setViewMode = (mode: 'GRID' | 'LIST') => {
+        actions.updateSettings({ inventoryViewMode: mode });
+    };
 
     const getQualityLabel = (q: number): string => {
         if (q >= 110) return 'Masterwork';
@@ -83,6 +91,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
             <div className={`flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 bg-stone-950 shadow-[inset_0_4px_20px_rgba(0,0,0,0.8)] min-h-0 ${viewMode === 'GRID' ? 'grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3' : 'flex flex-col gap-2'}`}>
                 {items.map(item => {
                     const isLocked = item.isLocked;
+                    const isSelected = selectedItemId === item.id;
                     const isEquip = item.type === 'EQUIPMENT' && item.equipmentData;
                     const finalPrice = Math.ceil(item.baseValue * customerMarkup);
                     
@@ -98,7 +107,10 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                 <button
                                     onClick={() => !isLocked && onSelect(item)}
                                     disabled={isLocked}
-                                    className={`w-full h-full rounded-xl border-2 transition-all flex flex-col items-center justify-center p-1 relative overflow-hidden shadow-2xl ${isLocked ? 'bg-stone-950 border-stone-900 opacity-40 grayscale' : 'bg-stone-800 border-stone-700 hover:border-amber-500 active:scale-95'}`}
+                                    className={`w-full h-full rounded-xl border-2 transition-all flex flex-col items-center justify-center p-1 relative overflow-hidden shadow-2xl ${
+                                        isSelected ? 'border-amber-400 bg-amber-900/20 ring-2 ring-amber-500/50' : 
+                                        isLocked ? 'bg-stone-950 border-stone-900 opacity-40 grayscale' : 'bg-stone-800 border-stone-700 hover:border-amber-500 active:scale-95'
+                                    }`}
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
                                     
@@ -171,7 +183,10 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                             <button
                                 onClick={() => !isLocked && onSelect(item)}
                                 disabled={isLocked}
-                                className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl border-2 transition-all text-left shadow-lg relative overflow-hidden ${isLocked ? 'bg-stone-950 border-stone-900 opacity-50 grayscale cursor-not-allowed' : 'bg-stone-800 border-stone-700 hover:border-amber-500'}`}
+                                className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl border-2 transition-all text-left shadow-lg relative overflow-hidden ${
+                                    isSelected ? 'border-amber-400 bg-amber-900/20 ring-2 ring-amber-500/20' : 
+                                    isLocked ? 'bg-stone-950 border-stone-900 opacity-50 grayscale cursor-not-allowed' : 'bg-stone-800 border-stone-700 hover:border-amber-500'
+                                }`}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent pointer-events-none"></div>
 

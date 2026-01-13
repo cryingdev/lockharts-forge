@@ -1,5 +1,5 @@
 
-# Project Map – Lockhart’s Forge (v0.1.38)
+# Project Map – Lockhart’s Forge (v0.1.39)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -21,7 +21,7 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Core Reducer
 - `state/gameReducer.ts`: Primary state engine. Orchestrates sub-handlers for all game actions.
 - `state/actions.ts`: TypeScript definitions for dispatchable actions.
-- `state/initial-game-state.ts`: Default values for new game sessions. Includes `settings` for user preferences.
+- `state/initial-game-state.ts`: Default values for new game sessions. Includes `settings` for user preferences (UI view modes, log ticker).
 
 ### Action Handlers (`state/reducer/`)
 - `inventory.ts`: Item acquisition, market purchases, and tier upgrades.
@@ -40,11 +40,12 @@ This document provides a comprehensive structural map of the project, detailing 
 - `components/MainGameLayout.tsx`: Primary dashboard. Handles tab navigation and the **Tutorial Overlay System**.
 - `components/Header.tsx`: Top HUD optimized for **Mobile Portrait** with adaptive font scaling and conditional log ticker rendering.
 - `components/DialogueBox.tsx`: Narrative interface with typewriter effects and contextual choices.
+- `components/ItemSelectorList.tsx`: Reusable inventory browser with grid/list toggles synced to global settings.
 
 ### Tabs (Functional Pages)
 - `tabs/Forge/ForgeTab.tsx`: Crafting hub with Mastery Radial gauges.
 - `tabs/Forge/TutorialScene.tsx`: Narrative-driven introduction focusing on the furnace restoration.
-- `tabs/Shop/ShopTab.tsx`: Store management with character-depth-aware heart animations.
+- `tabs/Shop/ShopTab.tsx`: Store management with instance-selection confirmation UI.
 - `tabs/Tavern/TavernTab.tsx`: Roster management and visitor interactions.
 - `tabs/Dungeon/DungeonTab.tsx`: Expedition selection for Auto/Manual modes.
 - `tabs/Dungeon/AssaultNavigator.tsx`: Tactical D-Pad UI with **3-Tier Camera Control**.
@@ -52,8 +53,8 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Modals (Popup System)
 - `modals/ConfirmationModal.tsx`: Safety prompts with **Mobile-Stacking** button layouts.
 - `modals/CraftingResultModal.tsx`: Post-forge summary with animated Mastery progress.
-- `modals/SettingsModal.tsx`: System settings and save/load management. Now includes UI customization toggles.
-- `modals/SaveLoadModal.tsx`: Browser for save slots with metadata previews.
+- `modals/SettingsModal.tsx`: System settings and save/load management. Includes UI customization toggles.
+- `modals/SaveLoadModal.tsx`: Browser for save slots with metadata previews and version validation.
 
 ---
 
@@ -65,10 +66,10 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 🔄 Recent Updates (v0.1.38)
+## 🔄 Recent Updates (v0.1.39)
 
-*   **UI Customization**: Added setting to toggle Header Log Ticker row.
-*   **Mobile Optimization**: Header and Modals refined for 320px+ screens.
-*   **Tutorial Polish**: Integrated the prologue sequence and furnace ignition steps.
-*   **UX Refinement**: Tab order adjusted to Forge / Storage / Market for better logical flow.
-*   **System**: version incremented to `v0.1.38`.
+*   **Market Optimization**: Catalog reordered (Resources > Supplies > Facilities) and initial Furnace cost set to 0G for tutorial flow.
+*   **UI Persistence**: Inventory view mode (Grid/List) now saves to user settings.
+*   **Safety UX**: Added explicit Select/Cancel buttons to the Shop's item instance selection popup.
+*   **Tutorial Refinement**: Updated script where Garrick supports the first forge restoration.
+*   **System**: version incremented to `v0.1.39`.

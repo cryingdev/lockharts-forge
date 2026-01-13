@@ -372,6 +372,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
   const [showGiftModal, setShowGiftModal] = useState(false);
+  const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
   
   // Toggle sections state
   const [collapsedSections, setCollapsedSections] = useState<string[]>([]);
@@ -425,6 +426,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const totalCost = calculateTotal();
 
   const handleTalk = () => {
+    if (pendingGiftItem) return;
     if (!state.talkedToGarrickToday) {
         actions.talkGarrick();
     }
@@ -440,15 +442,26 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     setDialogue(lines[Math.floor(Math.random() * lines.length)]);
   };
 
-  const handleGift = (itemId: string) => {
-    const item = state.inventory.find(i => i.id === itemId);
+  const handleGiftInit = (item: InventoryItem) => {
     if (item?.isLocked) {
         actions.showToast("Cannot gift locked items.");
         return;
     }
-    actions.giftGarrick({ itemId });
+    setPendingGiftItem(item);
     setShowGiftModal(false);
+    setDialogue(`(You hold out the ${item.name}.) "Would you like this, Garrick?"`);
+  };
+
+  const handleConfirmGift = () => {
+    if (!pendingGiftItem) return;
+    actions.giftGarrick({ itemId: pendingGiftItem.id });
+    setPendingGiftItem(null);
     setDialogue("For me? Hah, you're a thoughtful one, Lockhart. I'll make sure to remember this kindness.");
+  };
+
+  const handleCancelGift = () => {
+    setPendingGiftItem(null);
+    setDialogue("Hah! Keeping the good stuff for yourself? Don't blame you.");
   };
 
   const addToCart = (itemId: string, amount: number = 1) => {
@@ -817,36 +830,37 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
       </div>
 
       {viewMode === 'INTERACTION' && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-end pointer-events-none pb-[6dvh] md:pb-[12dvh]">
-          <div className="w-[92vw] md:w-[85vw] max-w-5xl flex flex-col items-center gap-4">
+        <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center pointer-events-none">
             
             {!isLocalTutorialStep && (
-              <div className="flex justify-end w-full gap-3 pointer-events-auto pr-0 md:pr-4">
-                <button 
-                    onClick={handleTalk}
-                    data-tutorial-id="GARRICK_TALK_BUTTON"
-                    className={`flex items-center gap-1.5 md:gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95 ${state.talkedToGarrickToday ? 'opacity-70' : ''}`}
-                  >
-                    <MessageSquare className="w-4 h-4 text-amber-500" />
-                    <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
-                  </button>
-                  
-                  <button 
-                    onClick={() => setShowGiftModal(true)}
-                    className="flex items-center gap-1.5 md:gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
-                  >
-                    <Gift className="w-4 h-4 text-pink-500" />
-                    <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
-                  </button>
+              <div className={`flex flex-col items-end gap-2 w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${pendingGiftItem ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
+                <div className="flex flex-wrap items-center justify-end gap-1.5 md:gap-3 w-full">
+                    <button 
+                        onClick={handleTalk}
+                        data-tutorial-id="GARRICK_TALK_BUTTON"
+                        className={`flex items-center gap-1.5 md:gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95 ${state.talkedToGarrickToday ? 'opacity-70' : ''}`}
+                    >
+                        <MessageSquare className="w-4 h-4 text-amber-500" />
+                        <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
+                    </button>
+                    
+                    <button 
+                        onClick={() => setShowGiftModal(true)}
+                        className="flex items-center gap-1.5 md:gap-2 px-6 py-2.5 md:py-3.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
+                    >
+                        <Gift className="w-4 h-4 text-pink-500" />
+                        <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
+                    </button>
 
-                  <button 
-                    onClick={() => setViewMode('CATALOG')}
-                    data-tutorial-id="BROWSE_GOODS_BUTTON"
-                    className="flex items-center gap-1.5 md:gap-2 px-8 py-2.5 md:py-3.5 bg-amber-700/90 hover:bg-amber-600 border border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
-                  >
-                    <ShoppingBag className="w-4 h-4 text-white" />
-                    <span className="font-black text-[9px] md:text-xs text-white uppercase tracking-widest">Browse Goods</span>
-                  </button>
+                    <button 
+                        onClick={() => setViewMode('CATALOG')}
+                        data-tutorial-id="BROWSE_GOODS_BUTTON"
+                        className="flex items-center gap-1.5 md:gap-2 px-8 py-2.5 md:py-3.5 bg-amber-700/90 hover:bg-amber-600 border border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-2xl group active:scale-95"
+                    >
+                        <ShoppingBag className="w-4 h-4 text-white" />
+                        <span className="font-black text-[9px] md:text-xs text-white uppercase tracking-widest">Browse Goods</span>
+                    </button>
+                </div>
               </div>
             )}
 
@@ -854,10 +868,13 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
               <DialogueBox 
                 speaker="Garrick"
                 text={dialogue}
+                options={pendingGiftItem ? [
+                  { label: `Give ${pendingGiftItem.name}`, action: handleConfirmGift, variant: 'primary' },
+                  { label: "Cancel", action: handleCancelGift, variant: 'neutral' }
+                ] : []}
                 className="w-full relative pointer-events-auto"
               />
             )}
-          </div>
         </div>
       )}
 
@@ -1050,7 +1067,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
               className={`absolute top-1/2 right-0 w-6 md:w-8 h-16 md:h-24 -translate-y-1/2 border-y border-l transition-all z-[2100] cursor-pointer shadow-xl rounded-l-xl flex flex-col items-center justify-center 
                 ${isCartOpen ? 'translate-x-[-192px] md:translate-x-[-288px]' : ''}
                 ${
-                  cartItemCount > 0 || state.tutorialStep === 'OPEN_SHOPPING_CART' || state.tutorialStep === 'CLOSE_SHOPPING_CART'
+                  cartItemCount > 0 || state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' || state.tutorialStep === 'OPEN_SHOPPING_CART' || state.tutorialStep === 'CLOSE_SHOPPING_CART'
                     ? 'bg-amber-600 border-amber-400 text-white shadow-[0_0_20px_rgba(217,119,6,0.3)] ring-4 ring-amber-400/50 animate-pulse'
                     : 'bg-stone-800 border-stone-600 text-stone-400 hover:text-amber-400'
                 }`}
@@ -1079,7 +1096,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                 
                 <ItemSelectorList 
                     items={giftableItems}
-                    onSelect={(item) => handleGift(item.id)}
+                    onSelect={(item) => handleGiftInit(item)}
                     onToggleLock={(id) => actions.toggleLockItem(id)}
                     customerMarkup={1.0}
                     emptyMessage="No giftable items in inventory."

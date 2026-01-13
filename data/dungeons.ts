@@ -1,3 +1,4 @@
+
 import { DungeonDefinition } from '../models/Dungeon';
 
 export const DUNGEONS: DungeonDefinition[] = [
@@ -8,7 +9,7 @@ export const DUNGEONS: DungeonDefinition[] = [
         tier: 1,
         description: 'The damp basement of an abandoned inn. Overrun by giant rats.',
         durationMinutes: 1,
-        requiredPower: 55,
+        requiredPower: 35,
         energyCost: 20,
         baseXp: 50,
         gridWidth: 3,
@@ -17,6 +18,7 @@ export const DUNGEONS: DungeonDefinition[] = [
         bossEnergy: 5,
         isBossLocked: false,
         goldReward: 100,
+        maxPartySize: 1,
         rewards: [
              { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 3, chance: 1.0 },
              { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 2, chance: 0.4 },

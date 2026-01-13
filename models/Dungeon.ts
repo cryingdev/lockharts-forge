@@ -1,3 +1,4 @@
+
 export interface DungeonReward {
   itemId: string;
   minQuantity: number;
@@ -26,6 +27,7 @@ export interface DungeonDefinition {
   bossUnlockReq?: number; // Number of clears to unlock boss variant
   bossVariantId?: string;
   baseXp: number; // XP gained per mercenary
+  maxPartySize?: number; // New: Maximum allowed party size for this dungeon
 }
 
 export type ExpeditionStatus = 'ACTIVE' | 'COMPLETED';

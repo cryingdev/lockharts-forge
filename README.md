@@ -1,27 +1,23 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.38
+> **Version**: 0.1.39
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
 
-## 🔄 Recent Updates (v0.1.38)
+## 🔄 Recent Updates (v0.1.39)
 
-*   **Customization Settings**:
-    *   **Header Log Ticker Toggle**: Added an option in the System Menu to show or hide the secondary header row (Log Ticker). This allows for a more compact UI if desired.
-*   **Mobile UI Optimization**:
-    *   **Header Refinement**: Reduced font sizes for Energy and Gold counters on narrow screens to prevent horizontal clipping.
-    *   **Dynamic Spacing**: Optimized layout gaps and button paddings for mobile portrait mode.
-    *   **Confirmation Modals**: Fixed text overflow issues in action buttons on small mobile devices.
-*   **Visual Polish**:
-    *   **Depth Management (Shop)**: Adjusted Z-index layers so that affinity heart animations appear behind characters rather than overlapping them.
-    *   **Reaction Feedback**: Enhanced visual cues for customer refusals (Angry vs. Polite reactions).
-*   **Tutorial System**:
-    *   Polished the **Prologue** and **Furnace Restoration** sequences with new dialogue and interactive spotlight guides.
-    *   Added a global "Skip Tutorial" option for returning players.
+*   **Market Catalog Optimization**:
+    *   Reorganized sections to prioritize Tier Resources, followed by Potions & Supplies, and Facilities at the bottom.
+*   **Tutorial Revamp (Furnace Restoration)**:
+    *   The furnace acquisition step is now free! Garrick will support your first equipment purchase as an investment in the village's future.
+*   **UX Improvements (Shop & Inventory)**:
+    *   **Persistent View Mode**: Grid/List view settings are now saved globally and persist across game tabs.
+    *   **Explicit Confirmation**: Added "Select & Confirm" and "Cancel" buttons to the item selection popup in the Shop to improve clarity and prevent accidental sales.
 *   **System & Maintenance**:
-    *   Version incremented to `v0.1.38` across all internal systems.
+    *   Version incremented to `v0.1.39`.
+    *   Enhanced save data version validation for cross-session compatibility.
 
 ## 🌟 Key Features
 
