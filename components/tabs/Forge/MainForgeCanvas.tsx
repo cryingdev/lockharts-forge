@@ -55,8 +55,10 @@ const MainForgeCanvas = () => {
             }
         } catch (e) {
             console.warn("Phaser context invalid during refresh, destroying instance.");
-            gameRef.current.destroy(true);
-            gameRef.current = null;
+            if (gameRef.current) {
+                gameRef.current.destroy(true);
+                gameRef.current = null;
+            }
         }
     }
 
@@ -103,7 +105,7 @@ const MainForgeCanvas = () => {
     return () => {
         if (resizeObserver) resizeObserver.disconnect();
     }
-  }, [isReady, state.forge.hasFurnace]); 
+  }, [isReady, state.forge.hasFurnace, actions]); 
   
   useEffect(() => {
       return () => {

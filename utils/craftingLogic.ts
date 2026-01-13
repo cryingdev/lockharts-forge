@@ -97,10 +97,13 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         magicalDefense: Math.round(base.magicalDefense * finalMultiplier),
     };
 
-    const statKeys: (keyof EquipmentStats)[] = ['physicalAttack', 'physicalDefense', 'magicalAttack', 'magicalDefense'];
+    const statKeys = ['physicalAttack', 'physicalDefense', 'magicalAttack', 'magicalDefense'] as const;
     for (let i = 0; i < enhancementCount; i++) {
         const randomKey = statKeys[Math.floor(Math.random() * statKeys.length)];
-        stats[randomKey] = Math.round(stats[randomKey] * 1.02);
+        const currentVal = stats[randomKey];
+        if (currentVal !== undefined) {
+            stats[randomKey] = Math.round(currentVal * 1.02);
+        }
     }
 
     const rarityScore = quality + (enhancementCount * 2);

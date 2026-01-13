@@ -19,17 +19,17 @@ interface Point {
 type SmithingTool = 'HAMMER' | 'TONGS';
 
 export default class SmithingScene extends Phaser.Scene {
-  public add!: Phaser.GameObjects.GameObjectFactory;
-  public tweens!: Phaser.Tweens.TweenManager;
-  public scale!: Phaser.Scale.ScaleManager;
-  public cameras!: Phaser.Cameras.Scene2D.CameraManager;
-  public input!: Phaser.Input.InputPlugin;
-  public time!: Phaser.Time.Clock;
-  public events!: Phaser.Events.EventEmitter;
-  public load!: Phaser.Loader.LoaderPlugin;
-  public textures!: Phaser.Textures.TextureManager;
-  public anims!: Phaser.Animations.AnimationManager;
-  public make!: Phaser.GameObjects.GameObjectCreator;
+  declare public add: Phaser.GameObjects.GameObjectFactory;
+  declare public tweens: Phaser.Tweens.TweenManager;
+  declare public scale: Phaser.Scale.ScaleManager;
+  declare public cameras: Phaser.Cameras.Scene2D.CameraManager;
+  declare public input: Phaser.Input.InputPlugin;
+  declare public time: Phaser.Time.Clock;
+  declare public events: Phaser.Events.EventEmitter;
+  declare public load: Phaser.Loader.LoaderPlugin;
+  declare public textures: Phaser.Textures.TextureManager;
+  declare public anims: Phaser.Animations.AnimationManager;
+  declare public make: Phaser.GameObjects.GameObjectCreator;
 
   private backgroundTile!: Phaser.GameObjects.TileSprite;
   private bgOverlay!: Phaser.GameObjects.Rectangle;
@@ -535,11 +535,11 @@ export default class SmithingScene extends Phaser.Scene {
         const p1 = transformed[i]; const p2 = transformed[(i + 1) % transformed.length];
         const dist = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
         const angle = Phaser.Math.Angle.Between(p1.x, p1.y, p2.x, p2.y);
-        let curDist = 0; let draw = true;
-        while (curDist < dist) {
-            const stepSize = draw ? dashLen : gapLen; const nextDist = Math.min(curDist + stepSize, dist);
-            if (draw) this.targetOutlineGraphics.lineBetween(p1.x + Math.cos(angle) * curDist, p1.y + Math.sin(angle) * curDist, p1.x + Math.cos(angle) * nextDist, p1.y + Math.sin(angle) * nextDist);
-            curDist = nextDist; draw = !draw;
+        let currentDist = 0; let draw = true;
+        while (currentDist < dist) {
+            const stepSize = draw ? dashLen : gapLen; const nextDist = Math.min(currentDist + stepSize, dist);
+            if (draw) this.targetOutlineGraphics.lineBetween(p1.x + Math.cos(angle) * currentDist, p1.y + Math.sin(angle) * currentDist, p1.x + Math.cos(angle) * nextDist, p1.y + Math.sin(angle) * nextDist);
+            currentDist = nextDist; draw = !draw;
         }
     }
   }
