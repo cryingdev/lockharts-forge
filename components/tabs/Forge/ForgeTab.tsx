@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
@@ -32,7 +31,7 @@ const SkillHeader = ({ exp, label, icon: Icon }: { exp: number, label: string, i
             <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-end mb-1">
                     <span className="text-[8px] md:text-[10px] font-black uppercase text-stone-500 tracking-widest">{label}</span>
-                    <span className="text-[10px] md:text-xs font-mono font-black text-amber-400">LV.{level}</span>
+                    <span className="text-stone-400 font-mono text-[10px] md:text-xs">LV.{level}</span>
                 </div>
                 <div className="w-full h-1 md:h-1.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
                     <div className="h-full bg-amber-600 transition-all duration-700" style={{ width: `${progress}%` }}></div>
@@ -87,12 +86,20 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   
   const isTutorialForging = tutorialStep === 'START_FORGING_GUIDE';
 
+  const isRequirementMet = useMemo(() => {
+    if (!selectedItem) return true;
+    if (selectedItem.craftingType === 'FORGE') return hasFurnace;
+    if (selectedItem.craftingType === 'WORKBENCH') return hasWorkbench;
+    return true;
+  }, [selectedItem, hasFurnace, hasWorkbench]);
+
   const canEnterForge = useMemo(() => {
       if (!selectedItem) return false;
+      if (!isRequirementMet) return false;
       if (selectedItem.craftingType === 'WORKBENCH') return true;
       if (isTutorialForging) return true; 
       return hasFuel || hasHeat;
-  }, [selectedItem, hasFuel, hasHeat, isTutorialForging]);
+  }, [selectedItem, isRequirementMet, hasFuel, hasHeat, isTutorialForging]);
   
   const requiredEnergy = useMemo(() => {
       if (!selectedItem) return GAME_CONFIG.ENERGY_COST.CRAFT;
@@ -162,13 +169,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       setFavorites(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
   }, []);
 
-  const isRequirementMet = useMemo(() => {
-    if (!selectedItem) return true;
-    if (selectedItem.craftingType === 'FORGE') return hasFurnace;
-    if (selectedItem.craftingType === 'WORKBENCH') return hasWorkbench;
-    return true;
-  }, [selectedItem, hasFurnace, hasWorkbench]);
-
   const quickCraftFuelCost = useMemo(() => {
       if (!selectedItem || selectedItem.craftingType !== 'FORGE') return 0;
       const d = selectedItem.maxDurability;
@@ -182,7 +182,16 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       if (!selectedItem) return;
 
       if (!isRequirementMet) {
-          actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
+          const facility = selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench';
+          actions.triggerEvent({
+              id: 'NONE',
+              title: 'Installation Required',
+              description: `You are attempting to craft equipment that requires a ${facility}. This essential unit is currently missing from your forge. Visit the Market to acquire the necessary infrastructure.`,
+              options: [
+                  { label: 'Visit Market', action: () => onNavigate('MARKET') },
+                  { label: 'Stay here', action: () => {} }
+              ]
+          });
           return;
       }
       
@@ -209,7 +218,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
 
       actions.startCrafting(selectedItem);
       setIsPanelOpen(false); 
-  }, [actions, selectedItem, isRequirementMet, getInventoryCount, hasEnergy, canEnterForge]);
+  }, [actions, selectedItem, isRequirementMet, getInventoryCount, hasEnergy, canEnterForge, onNavigate]);
 
   const cancelCrafting = useCallback(() => {
       if (selectedItem) actions.cancelCrafting(selectedItem);
@@ -348,7 +357,16 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       if (!selectedItem || !masteryInfo) return;
 
       if (!isRequirementMet) {
-          actions.showToast(`You need a ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'} to craft this.`);
+          const facility = selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench';
+          actions.triggerEvent({
+              id: 'NONE',
+              title: 'Installation Required',
+              description: `High-speed production requires the specific ${facility} unit. Please install the facility via Market before attempting advanced crafting techniques.`,
+              options: [
+                  { label: 'Visit Market', action: () => onNavigate('MARKET') },
+                  { label: 'Return', action: () => {} }
+              ]
+          });
           return;
       }
       
@@ -411,7 +429,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
           });
       }, interval);
 
-  }, [selectedItem, masteryInfo, isRequirementMet, getInventoryCount, hasEnergy, actions, charcoalCount, quickCraftFuelCost]);
+  }, [selectedItem, masteryInfo, isRequirementMet, getInventoryCount, hasEnergy, actions, charcoalCount, quickCraftFuelCost, onNavigate]);
 
   const isQuickCraftAvailable = useMemo(() => {
     if (!selectedItem) return false;
@@ -502,7 +520,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             )}
         </div>
 
-        <div className={`absolute inset-0 z-0 flex w-full h-full ${((selectedItem && !isRequirementMet) || !hasFurnace) ? 'blur-sm pointer-events-none' : ''}`}>
+        <div className={`absolute inset-0 z-0 flex w-full h-full`}>
             <div className={`h-full relative flex flex-col transition-all duration-500 ease-in-out ${isPanelOpen ? 'w-[55%] md:w-[60%]' : 'w-full'}`}>
                 <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-8 bg-stone-925/40 relative overflow-hidden text-center">
                     <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">{selectedItem?.craftingType === 'FORGE' ? <Hammer className="w-64 h-64 md:w-96 md:h-96 text-stone-500" /> : <Wrench className="w-64 h-64 md:w-96 md:h-96 text-stone-500" />}</div>
@@ -540,13 +558,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                                 <button 
                                     onClick={startCrafting} 
                                     data-tutorial-id="START_FORGING_BUTTON"
-                                    className={`w-full max-w-[200px] h-14 md:h-20 rounded-lg font-black text-sm md:text-base shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 md:gap-3 border ${canEnterForge ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500') : 'bg-stone-800 text-stone-500 border-stone-700 grayscale opacity-70'}`}
+                                    className={`w-full max-w-[200px] h-14 md:h-20 rounded-lg font-black text-sm md:text-base shadow-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 md:gap-3 border ${!isRequirementMet ? 'bg-red-900/60 border-red-500 text-red-100' : canEnterForge ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500') : 'bg-stone-800 text-stone-500 border-stone-700 grayscale opacity-70'}`}
                                 >
-                                    {selectedItem.craftingType === 'FORGE' ? <Hammer className="w-4 h-4 md:w-6 md:h-6" /> : <Wrench className="w-4 h-4 md:w-6 md:h-6" />}
-                                    <span>{selectedItem.craftingType === 'FORGE' ? 'Start Forging' : 'Start Crafting'}</span>
+                                    {isRequirementMet ? (selectedItem.craftingType === 'FORGE' ? <Hammer className="w-4 h-4 md:w-6 md:h-6" /> : <Wrench className="w-4 h-4 md:w-6 md:h-6" />) : <AlertCircle className="w-4 h-4 md:w-6 md:h-6" />}
+                                    <span>{!isRequirementMet ? `Install ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'}` : selectedItem.craftingType === 'FORGE' ? 'Start Forging' : 'Start Crafting'}</span>
                                 </button>
                                 
-                                {isQuickCraftAvailable && (
+                                {isQuickCraftAvailable && isRequirementMet && (
                                     <button 
                                         onClick={handleQuickCraft}
                                         className={`w-full max-w-[200px] h-14 md:h-20 rounded-lg font-black shadow-lg transition-all transform hover:-translate-y-1 flex flex-col items-center justify-center gap-0.5 border bg-stone-800 hover:bg-stone-700 border-stone-600 text-amber-500`}

@@ -108,7 +108,7 @@ const MercenaryPaperDoll = ({
             <div className="p-3 md:p-6 flex flex-col gap-0.5 md:gap-1 shrink-0 bg-stone-950/40 border-b border-white/5 backdrop-blur-md z-30">
                 <h2 className="text-xs md:text-2xl font-black text-stone-100 font-serif truncate leading-none">{mercenary.name}</h2>
                 <div className="flex justify-between items-end">
-                    <div className="flex flex-wrap items-center gap-1">
+                    <div className="flex wrap items-center gap-1">
                         <span className="text-[6px] md:text-xs font-black text-amber-500 uppercase tracking-widest bg-amber-950/40 px-1 py-0.5 rounded border border-amber-900/20">{mercenary.job}</span>
                         <div className={`flex items-center gap-0.5 text-[8px] md:text-sm ${showAffinityGain ? 'text-pink-400 animate-pulse' : 'text-stone-500 font-bold'}`}>
                             <Heart className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 ${showAffinityGain ? 'fill-pink-500' : ''}`} />
@@ -305,7 +305,19 @@ const EquipmentInventoryList = ({
     mercenary: Mercenary;
     isReadOnly?: boolean;
 }) => {
-    const totalMercStats = useMemo(() => mergePrimaryStats(mercenary.stats, mercenary.allocatedStats), [mercenary]);
+    // Current primary stats INCLUDING equipment bonuses for guide verification
+    const totalMercStats = useMemo(() => {
+        // Fix: Explicitly typed the reduction for primary stats to fix 'unknown' type error.
+        const eqPrimaryStats = (Object.values(mercenary.equipment).filter(Boolean) as Equipment[]).reduce((acc: PrimaryStats, eq: Equipment) => ({
+            str: acc.str + (eq.stats.str || 0),
+            vit: acc.vit + (eq.stats.vit || 0),
+            dex: acc.dex + (eq.stats.dex || 0),
+            int: acc.int + (eq.stats.int || 0),
+            luk: acc.luk + (eq.stats.luk || 0),
+        }), { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
+        return mergePrimaryStats(mercenary.stats, mercenary.allocatedStats, eqPrimaryStats);
+    }, [mercenary]);
+
     const displayInventory = useMemo(() => {
         return selectedSlotFilter 
             ? inventory.filter(item => item.equipmentData?.slotType === selectedSlotFilter)
@@ -414,13 +426,26 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
 
     if (!mercenary) return null;
 
-    const mergedPrimary = mergePrimaryStats(mercenary.stats, localAllocated);
+    // --- Core Stat Logic Sync ---
+    const currentEqPrimaryStats = useMemo(() => {
+        // Fix: Explicitly typed the reduction for primary stats to fix 'unknown' type error.
+        return (Object.values(mercenary.equipment).filter(Boolean) as Equipment[]).reduce((acc: PrimaryStats, eq: Equipment) => ({
+            str: acc.str + (eq.stats.str || 0),
+            vit: acc.vit + (eq.stats.vit || 0),
+            dex: acc.dex + (eq.stats.dex || 0),
+            int: acc.int + (eq.stats.int || 0),
+            luk: acc.luk + (eq.stats.luk || 0),
+        }), { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
+    }, [mercenary.equipment]);
+
+    const mergedPrimary = mergePrimaryStats(mercenary.stats, localAllocated, currentEqPrimaryStats);
     const baseDerived = calculateDerivedStats(mergedPrimary, mercenary.level);
     const currentEquipmentStats = (Object.values(mercenary.equipment) as (Equipment | null)[]).map(eq => eq?.stats).filter(Boolean);
     const currentStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
     const currentAttackType = mergedPrimary.int > mergedPrimary.str ? 'MAGICAL' : 'PHYSICAL';
     const currentCombatPower = calculateCombatPower(currentStats, mercenary.job, currentAttackType);
 
+    // --- Preview Logic Sync ---
     let previewStats: DerivedStats | null = null;
     let previewCombatPower: number | null = null;
     if (selectedInventoryItemId) {
@@ -430,8 +455,20 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
             if (item.slotType === 'MAIN_HAND' && item.isTwoHanded) previewEq.OFF_HAND = null;
             else if (item.slotType === 'OFF_HAND' && previewEq.MAIN_HAND?.isTwoHanded) previewEq.MAIN_HAND = null;
             previewEq[item.slotType] = item;
-            previewStats = applyEquipmentBonuses(baseDerived, (Object.values(previewEq) as (Equipment | null)[]).map(e => e?.stats).filter(Boolean) as any);
-            previewCombatPower = calculateCombatPower(previewStats, mercenary.job, currentAttackType);
+
+            // Fix: Explicitly typed the reduction for preview to fix 'unknown' type error.
+            const previewEqPrimary = (Object.values(previewEq).filter(Boolean) as Equipment[]).reduce((acc: PrimaryStats, eq: Equipment) => ({
+                str: acc.str + (eq.stats.str || 0),
+                vit: acc.vit + (eq.stats.vit || 0),
+                dex: acc.dex + (eq.stats.dex || 0),
+                int: acc.int + (eq.stats.int || 0),
+                luk: acc.luk + (eq.stats.luk || 0),
+            }), { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
+
+            const previewMerged = mergePrimaryStats(mercenary.stats, localAllocated, previewEqPrimary);
+            const previewBase = calculateDerivedStats(previewMerged, mercenary.level);
+            previewStats = applyEquipmentBonuses(previewBase, (Object.values(previewEq) as (Equipment | null)[]).map(e => e?.stats).filter(Boolean) as any);
+            previewCombatPower = calculateCombatPower(previewStats, mercenary.job, previewMerged.int > previewMerged.str ? 'MAGICAL' : 'PHYSICAL');
         }
     }
 

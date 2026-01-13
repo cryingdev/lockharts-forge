@@ -38,7 +38,6 @@ export type GameAction =
   | { type: 'FIRE_MERCENARY'; payload: { mercenaryId: string } }
   | { type: 'GIVE_GIFT'; payload: { mercenaryId: string; itemId: string } }
   | { type: 'TALK_MERCENARY'; payload: { mercenaryId: string } }
-  // Added missing expedition and equipment actions
   | { type: 'START_EXPEDITION'; payload: { dungeonId: string; partyIds: string[] } }
   | { type: 'COMPLETE_EXPEDITION'; payload: { expeditionId: string } }
   | { type: 'ABORT_EXPEDITION'; payload: { expeditionId: string } }
@@ -63,10 +62,11 @@ export type GameAction =
   | { type: 'COMPLETE_TUTORIAL' }
   | { type: 'DISMISS_TUTORIAL_COMPLETE' }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<GameSettings> }
-  // Manual Dungeon Actions
   | { type: 'START_MANUAL_DUNGEON'; payload: { dungeonId: string; partyIds: string[] } }
   | { type: 'MOVE_MANUAL_DUNGEON'; payload: { x: number; y: number } }
   | { type: 'FINISH_MANUAL_DUNGEON' }
   | { type: 'RETREAT_MANUAL_DUNGEON' }
   | { type: 'TOGGLE_MANUAL_DUNGEON_OVERLAY'; payload: boolean }
-  | { type: 'RESCUE_NPC'; payload: { npcId: string } };
+  | { type: 'RESCUE_NPC'; payload: { npcId: string } }
+  | { type: 'START_COMBAT_MANUAL' }
+  | { type: 'RESOLVE_COMBAT_MANUAL'; payload: { win: boolean; flee: boolean; finalParty: any[] } };

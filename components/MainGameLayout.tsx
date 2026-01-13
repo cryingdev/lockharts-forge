@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
@@ -477,9 +476,9 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
       <div className="h-[env(safe-area-inset-bottom)] bg-stone-900 shrink-0"></div>
 
-      {/* GLOBAL TOAST SYSTEM - Enhanced Layout */}
+      {/* GLOBAL TOAST SYSTEM - Centered Bottom Position */}
       {state.toast?.visible && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-bottom-4 duration-300 pointer-events-none w-max max-w-[70vw]">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-bottom-4 duration-300 pointer-events-none w-max max-w-[70vw]">
               <div 
                 onClick={actions.hideToast}
                 className="bg-stone-900/95 backdrop-blur-xl border-2 border-amber-600/50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 ring-1 ring-white/10 pointer-events-auto cursor-pointer active:scale-95 transition-transform"

@@ -1,6 +1,7 @@
 import { DerivedStats, mergePrimaryStats, calculateDerivedStats, applyEquipmentBonuses } from '../models/Stats';
 import { JobClass, JOB_EFFICIENCY } from '../models/JobClass';
 import { Mercenary } from '../models/Mercenary';
+import { Equipment } from '../models/Equipment';
 
 export interface CombatResult {
   isHit: boolean;
@@ -116,7 +117,8 @@ export const calculateCombatPower = (stats: DerivedStats, job: JobClass, attackT
     const effectiveHp = stats.maxHp / Math.max(0.1, (1 - avgReduction));
     
     const evasionBonus = 1 + (stats.evasion * 0.005);
-    const defensiveScore = (effectiveHp * evasionBonus) * 0.25;
+    // defensiveScore weight increased from 0.55 to 0.85 to further boost the value of Shields and Vitality
+    const defensiveScore = (effectiveHp * evasionBonus) * 0.85;
 
     return Math.round((offensiveScore + defensiveScore) * 0.1);
 };
@@ -126,15 +128,25 @@ export const calculateCombatPower = (stats: DerivedStats, job: JobClass, attackT
  * incorporating their base stats, allocated points, and equipped gear.
  */
 export const calculateMercenaryPower = (merc: Mercenary): number => {
-    // 1. Merge stats (Base + Level up points)
-    const primary = mergePrimaryStats(merc.stats, merc.allocatedStats);
+    const eqStatsList = Object.values(merc.equipment).map(e => e?.stats).filter(Boolean) as any[];
+    
+    // Sum up primary stat bonuses from equipment (like DEX +1 from gloves)
+    const eqPrimaryBonuses = eqStatsList.reduce((acc, s) => ({
+        str: acc.str + (s.str || 0),
+        vit: acc.vit + (s.vit || 0),
+        dex: acc.dex + (s.dex || 0),
+        int: acc.int + (s.int || 0),
+        luk: acc.luk + (s.luk || 0),
+    }), { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
+
+    // 1. Merge stats (Base + Level up points + Equipment primary bonuses)
+    const primary = mergePrimaryStats(merc.stats, merc.allocatedStats, eqPrimaryBonuses);
     
     // 2. Calculate Base Derived Stats (HP, MP, Attack etc.)
     const base = calculateDerivedStats(primary, merc.level);
     
-    // 3. Apply Equipment Bonuses
-    const eqStatsList = Object.values(merc.equipment).map(e => e?.stats).filter(Boolean);
-    const finalDerived = applyEquipmentBonuses(base, eqStatsList as any);
+    // 3. Apply Equipment Combat Bonuses (Atk, Def etc.)
+    const finalDerived = applyEquipmentBonuses(base, eqStatsList);
     
     // 4. Determine attack type based on the dominant primary stat
     const attackType = primary.int > primary.str ? 'MAGICAL' : 'PHYSICAL';

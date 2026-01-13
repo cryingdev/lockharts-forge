@@ -12,7 +12,7 @@ import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDism
 import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
-import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon } from './reducer/manualDungeon';
+import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -90,6 +90,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'RETREAT_MANUAL_DUNGEON': return handleRetreatManualDungeon(state);
     case 'TOGGLE_MANUAL_DUNGEON_OVERLAY': return { ...state, showManualDungeonOverlay: action.payload };
     case 'RESCUE_NPC': return handleRescueNPC(state, action.payload);
+    case 'START_COMBAT_MANUAL': return handleStartCombatManual(state);
+    case 'RESOLVE_COMBAT_MANUAL': return handleResolveCombatManual(state, action.payload);
 
     // Tutorial & Prologue
     case 'SET_TUTORIAL_STEP': return { ...state, tutorialStep: action.payload };
@@ -99,7 +101,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             ...state, 
             hasCompletedPrologue: true,
             activeTutorialScene: null,
-            tutorialStep: 'MARKET_GUIDE' // Prologue finished, show spotlight
+            tutorialStep: 'MARKET_GUIDE' 
         };
     case 'COMPLETE_TUTORIAL':
         const finalTabs = ['FORGE', 'MARKET', 'INVENTORY', 'SHOP', 'TAVERN', 'DUNGEON', 'SIMULATION'];
@@ -110,9 +112,9 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             unlockedTabs: finalTabs,
             stats: {
                 ...state.stats,
-                tierLevel: Math.max(state.stats.tierLevel, 1) // Advance to Tier 1 immediately on skip
+                tierLevel: Math.max(state.stats.tierLevel, 1) 
             },
-            forge: { ...state.forge, hasFurnace: true }, // Ensure furnace is restored if skipped
+            forge: { ...state.forge, hasFurnace: true }, 
             showTutorialCompleteModal: true,
             logs: ["Tutorial completed. Lockhart's Forge is fully operational.", ...state.logs]
         };
@@ -126,13 +128,11 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             settings: { ...state.settings, ...action.payload }
         };
 
-    // Toast Notifications with Queue Management
+    // Toast Notifications
     case 'SHOW_TOAST':
-        // 현재 화면에 노출 중인 토스트가 있고 메시지가 동일한 경우에만 중복으로 간주하여 무시
         if (state.toast?.visible && state.toast.message === action.payload) {
             return state;
         }
-        // 화면에 없거나 다른 메시지라면 큐에 추가 (큐 내의 중복은 허용하여 연속 노출 보장)
         return {
             ...state,
             toastQueue: [...state.toastQueue, action.payload]

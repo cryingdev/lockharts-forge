@@ -28,6 +28,12 @@ export interface EquipmentStats {
   physicalDefense: number;
   magicalAttack: number;
   magicalDefense: number;
+  // Primary Stat Bonuses
+  str?: number;
+  vit?: number;
+  dex?: number;
+  int?: number;
+  luk?: number;
 }
 
 export interface SpecialAbility {

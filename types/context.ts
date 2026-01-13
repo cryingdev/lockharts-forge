@@ -37,7 +37,6 @@ export interface GameContextType {
     enqueueCustomer: (customer: ShopCustomer) => void;
     nextCustomer: () => void;
     dismissCustomer: () => void;
-    // Added missing refuseCustomer method definition
     refuseCustomer: (mercenaryId: string, affinityLoss: number) => void;
 
     setCrafting: (isCrafting: boolean) => void;
@@ -48,13 +47,11 @@ export interface GameContextType {
     fireMercenary: (mercenaryId: string) => void;
     giveGift: (mercenaryId: string, itemId: string) => void;
     talkMercenary: (mercenaryId: string) => void;
-    // Added missing Garrick interaction actions
     talkGarrick: () => void;
     giftGarrick: (payload: { itemId: string }) => void;
 
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
     completeExpedition: (expeditionId: string) => void;
-    // Added missing abortExpedition method definition
     abortExpedition: (expeditionId: string) => void;
     claimExpedition: (expeditionId: string) => void;
     dismissDungeonResult: () => void;
@@ -63,7 +60,6 @@ export interface GameContextType {
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => void;
 
     useItem: (itemId: string) => void;
-    // Added missing toggleLockItem to satisfy interface requirements
     toggleLockItem: (itemId: string) => void;
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => void;
     updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;
@@ -73,11 +69,8 @@ export interface GameContextType {
     hideToast: () => void;
 
     setTutorialStep: (step: GameState['tutorialStep']) => void;
-    // Added missing setTutorialScene action to fix property does not exist error
     setTutorialScene: (mode: GameState['activeTutorialScene']) => void;
-    // Added missing completePrologue action
     completePrologue: () => void;
-    // Added missing completeTutorial action
     completeTutorial: () => void;
     dismissTutorialComplete: () => void;
 
@@ -90,5 +83,7 @@ export interface GameContextType {
     retreatFromManualDungeon: () => void;
     toggleManualDungeonOverlay: (show: boolean) => void;
     rescueMercenary: (npcId: string) => void;
+    startCombatManual: () => void;
+    resolveCombatManual: (win: boolean, flee: boolean, finalParty: any[]) => void;
   };
 }

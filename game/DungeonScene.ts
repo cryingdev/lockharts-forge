@@ -32,23 +32,24 @@ export default class DungeonScene extends Phaser.Scene {
     private mapLayer!: Phaser.GameObjects.Container;
     private contentLayer!: Phaser.GameObjects.Container;
     private playerLayer!: Phaser.GameObjects.Container;
+    private fxLayer!: Phaser.GameObjects.Container;
     
     private playerMarker!: Phaser.GameObjects.Container;
     private revealedTiles: Set<string> = new Set();
     private contentByCoord: Map<string, Phaser.GameObjects.Text> = new Map();
     
     private sprayEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+    private vignette!: Phaser.GameObjects.Graphics;
+    private redFocusOverlay!: Phaser.GameObjects.Graphics;
     
     private tileWidth = 84;
     private tileGap = 8;
     private isMoving = false;
 
-    // 드래그 관련 변수
     private isDragging = false;
     private dragStartX = 0;
     private dragStartY = 0;
 
-    // 카메라 지연 추적용 타이머
     private cameraTrackTimer: Phaser.Time.TimerEvent | null = null;
     private cameraTrackTween: Phaser.Tweens.Tween | null = null;
 
@@ -64,6 +65,7 @@ export default class DungeonScene extends Phaser.Scene {
 
     preload() {
         this.load.image('sparkle', getAssetUrl('particle_spark1.png'));
+        this.load.image('red_mist', getAssetUrl('particle_spark2.png'));
     }
 
     create() {
@@ -74,10 +76,13 @@ export default class DungeonScene extends Phaser.Scene {
         this.mapLayer = this.add.container(0, 0);
         this.contentLayer = this.add.container(0, 0);
         this.playerLayer = this.add.container(0, 0);
+        this.fxLayer = this.add.container(0, 0).setDepth(100);
         
         this.root.add([this.mapLayer, this.contentLayer, this.playerLayer]);
 
-        // 스프레이 입자 설정
+        this.vignette = this.add.graphics().setDepth(200).setScrollFactor(0);
+        this.redFocusOverlay = this.add.graphics().setDepth(210).setScrollFactor(0);
+        
         this.sprayEmitter = this.add.particles(0, 0, 'sparkle', {
             speed: { min: 60, max: 140 },
             scale: { start: 0.6, end: 0 },
@@ -91,33 +96,71 @@ export default class DungeonScene extends Phaser.Scene {
 
         this.initialRender();
         this.createPlayer();
-        this.alignViewToPlayer(); // 초기 위치 설정
+        this.alignViewToPlayer(); 
         
-        this.scale.on('resize', () => this.alignViewToPlayer(), this);
+        this.scale.on('resize', () => {
+            this.alignViewToPlayer();
+            this.drawRedFocus();
+        }, this);
         this.setupDragControls();
+
+        this.drawRedFocus();
     }
 
     public setCameraMode(mode: CameraMode) {
         this.cameraMode = mode;
         if (mode === 'LOCKED' && !this.isMoving) {
-            this.alignViewToPlayer(); // 즉시 이동
+            this.alignViewToPlayer(); 
+        }
+    }
+
+    private drawRedFocus() {
+        const { width, height } = this.scale;
+        this.redFocusOverlay.clear();
+        
+        const isFocusNeeded = this.session.encounterStatus === 'ENCOUNTERED' || this.session.encounterStatus === 'BATTLE';
+        if (!isFocusNeeded) return;
+
+        // 붉은계열 스프레이/비네트 효과
+        const thickness = 60;
+        this.redFocusOverlay.fillStyle(0x7f1d1d, 0.4);
+        
+        // 상단
+        this.redFocusOverlay.fillRect(0, 0, width, thickness);
+        // 하단
+        this.redFocusOverlay.fillRect(0, height - thickness, width, thickness);
+        // 좌측
+        this.redFocusOverlay.fillRect(0, thickness, thickness, height - thickness * 2);
+        // 우측
+        this.redFocusOverlay.fillRect(width - thickness, thickness, thickness, height - thickness * 2);
+
+        // 연무 입자 효과 (랜덤)
+        if (Math.random() > 0.7) {
+            const rx = Math.random() * width;
+            const ry = Math.random() * height;
+            if (rx < thickness || rx > width - thickness || ry < thickness || ry > height - thickness) {
+                this.add.particles(rx, ry, 'red_mist', {
+                    speed: { min: 10, max: 30 },
+                    scale: { start: 0.8, end: 0 },
+                    alpha: { start: 0.4, end: 0 },
+                    lifespan: 2000,
+                    tint: 0xef4444,
+                    blendMode: 'ADD'
+                }).explode(3);
+            }
         }
     }
 
     private setupDragControls() {
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            if (this.session.encounterStatus === 'BATTLE') return;
             this.isDragging = true;
             this.dragStartX = pointer.x - this.root.x;
             this.dragStartY = pointer.y - this.root.y;
             
-            // 드래그 시작 시 진행 중인 자동 카메라 이동 중단
             if (this.cameraTrackTween) {
                 this.cameraTrackTween.stop();
                 this.cameraTrackTween = null;
-            }
-            if (this.cameraTrackTimer) {
-                this.cameraTrackTimer.remove();
-                this.cameraTrackTimer = null;
             }
         });
 
@@ -126,13 +169,7 @@ export default class DungeonScene extends Phaser.Scene {
             this.root.setPosition(pointer.x - this.dragStartX, pointer.y - this.dragStartY);
         });
 
-        this.input.on('pointerup', () => {
-            this.isDragging = false;
-        });
-
-        this.input.on('pointerout', () => {
-            this.isDragging = false;
-        });
+        this.input.on('pointerup', () => { this.isDragging = false; });
     }
 
     private initialRender() {
@@ -160,30 +197,16 @@ export default class DungeonScene extends Phaser.Scene {
         const ty = y * (this.tileWidth + this.tileGap);
 
         if (!this.revealedTiles.has(key)) {
-            // 바닥 타일
             const tile = this.add.rectangle(tx, ty, this.tileWidth, this.tileWidth, 0x1c1917)
                 .setStrokeStyle(2, 0x44403c)
                 .setOrigin(0.5);
             this.mapLayer.add(tile);
-
             if (animate) {
                 this.sprayEmitter.emitParticleAt(tx, ty, 15);
                 tile.setAlpha(0).setScale(0.7);
-                this.tweens.add({
-                    targets: tile,
-                    alpha: 1,
-                    scale: 1,
-                    duration: 600,
-                    ease: 'Back.easeOut'
-                });
+                this.tweens.add({ targets: tile, alpha: 1, scale: 1, duration: 600, ease: 'Back.easeOut' });
             }
             this.revealedTiles.add(key);
-        }
-
-        // 콘텐츠 갱신
-        if (this.contentByCoord.has(key)) {
-            this.contentByCoord.get(key)!.destroy();
-            this.contentByCoord.delete(key);
         }
         
         const content = this.createRoomContents(type, tx, ty);
@@ -191,14 +214,7 @@ export default class DungeonScene extends Phaser.Scene {
             this.contentByCoord.set(key, content);
             if (animate) {
                 content.setAlpha(0).setScale(0.5);
-                this.tweens.add({
-                    targets: content,
-                    alpha: 1,
-                    scale: 1,
-                    duration: 500,
-                    delay: 200,
-                    ease: 'Cubic.easeOut'
-                });
+                this.tweens.add({ targets: content, alpha: 1, scale: 1, duration: 500, delay: 200, ease: 'Cubic.easeOut' });
             }
         }
     }
@@ -210,50 +226,16 @@ export default class DungeonScene extends Phaser.Scene {
                 content = this.add.text(x, y, '💀', { fontSize: '32px' }).setOrigin(0.5);
                 if (this.session.isBossLocked && !this.session.hasKey) content.setAlpha(0.3);
                 break;
-            case 'KEY':
-                content = this.add.text(x, y, '🔑', { fontSize: '28px' }).setOrigin(0.5);
-                break;
-            case 'ENTRANCE':
-                content = this.add.text(x, y, '🚪', { fontSize: '28px' }).setOrigin(0.5);
-                break;
-            case 'GOLD':
-                content = this.add.text(x, y, '💰', { fontSize: '28px' }).setOrigin(0.5);
-                this.tweens.add({
-                    targets: content,
-                    y: y - 5,
-                    duration: 1200,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut'
-                });
-                break;
-            case 'TRAP':
-                content = this.add.text(x, y, '🕸️', { fontSize: '28px' }).setOrigin(0.5);
-                this.tweens.add({
-                    targets: content,
-                    angle: 15,
-                    duration: 500,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut'
-                });
-                break;
+            case 'KEY': content = this.add.text(x, y, '🔑', { fontSize: '28px' }).setOrigin(0.5); break;
+            case 'ENTRANCE': content = this.add.text(x, y, '🚪', { fontSize: '28px' }).setOrigin(0.5); break;
+            case 'GOLD': content = this.add.text(x, y, '💰', { fontSize: '28px' }).setOrigin(0.5); break;
+            case 'TRAP': content = this.add.text(x, y, '🕸️', { fontSize: '28px' }).setOrigin(0.5); break;
             case 'NPC':
-                // npcFound가 true라면 아이콘을 렌더링하지 않음 (구출 완료 처리)
                 if (this.session.npcFound) return null;
                 content = this.add.text(x, y, '👤', { fontSize: '30px' }).setOrigin(0.5);
-                this.tweens.add({
-                    targets: content,
-                    alpha: 0.5,
-                    duration: 1000,
-                    yoyo: true,
-                    repeat: -1
-                });
                 break;
         }
-        if (content) {
-            this.contentLayer.add(content);
-        }
+        if (content) this.contentLayer.add(content);
         return content;
     }
 
@@ -261,100 +243,42 @@ export default class DungeonScene extends Phaser.Scene {
         const { x, y } = this.session.playerPos;
         const px = x * (this.tileWidth + this.tileGap);
         const py = y * (this.tileWidth + this.tileGap);
-
         const visual = this.add.container(0, 0);
         const circle = this.add.circle(0, 0, 26, 0x6366f1, 0.9).setStrokeStyle(3, 0xffffff);
         const icon = this.add.text(0, 0, '👤', { fontSize: '24px' }).setOrigin(0.5);
         visual.add([circle, icon]);
-        
         this.playerMarker = this.add.container(px, py, [visual]);
         this.playerLayer.add(this.playerMarker);
-
-        this.tweens.add({
-            targets: visual,
-            y: -8,
-            duration: 800,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
+        this.tweens.add({ targets: visual, y: -8, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
 
     private alignViewToPlayer() {
         const { width, height } = this.scale;
         const { x, y } = this.session.playerPos;
-        
-        const yOffset = height * 0.05;
         const currentScale = 1.0;
-        this.root.setScale(currentScale);
-
         const targetX = x * (this.tileWidth + this.tileGap);
         const targetY = y * (this.tileWidth + this.tileGap);
-
-        this.root.setPosition((width / 2) - (targetX * currentScale), (height / 2 + yOffset) - (targetY * currentScale));
+        this.root.setPosition((width / 2) - (targetX * currentScale), (height / 2) - (targetY * currentScale));
     }
 
     public updateSession(newSession: ManualDungeonSession) {
+        const oldStatus = this.session.encounterStatus;
         this.session = newSession;
+        if (oldStatus !== newSession.encounterStatus) this.drawRedFocus();
         const { width, height } = this.scale;
         const { x, y } = newSession.playerPos;
-        const yOffset = height * 0.05;
-        
         const targetLocalX = x * (this.tileWidth + this.tileGap);
         const targetLocalY = y * (this.tileWidth + this.tileGap);
-
         this.isMoving = true;
-        
-        // 캐릭터 이동 애니메이션
         this.tweens.add({
-            targets: this.playerMarker,
-            x: targetLocalX,
-            y: targetLocalY,
-            duration: 300,
-            ease: 'Cubic.out',
-            onComplete: () => {
-                this.isMoving = false;
-                this.initialRender();
-            }
+            targets: this.playerMarker, x: targetLocalX, y: targetLocalY, duration: 300, ease: 'Cubic.out',
+            onComplete: () => { this.isMoving = false; this.initialRender(); }
         });
-
-        // 자동 추적 로직 (LOCKED 또는 ADAPTIVE)
         if (this.cameraMode !== 'FREE') {
-            let shouldTrack = this.cameraMode === 'LOCKED';
-
-            if (this.cameraMode === 'ADAPTIVE') {
-                // Adaptive 로직: 현재 화면 중심에서 임계값(화면 너비/높이의 45%) 이상 벗어났는지 체크 (화면 끝에 가까워질 때)
-                const currentViewX = (width / 2) - this.root.x;
-                const currentViewY = (height / 2 + yOffset) - this.root.y;
-                
-                const distH = Math.abs(targetLocalX - currentViewX);
-                const distV = Math.abs(targetLocalY - currentViewY);
-
-                if (distH > width * 0.45 || distV > height * 0.45) {
-                    shouldTrack = true;
-                }
-            }
-
-            if (shouldTrack) {
-                // 이전 추적 예약 취소
-                if (this.cameraTrackTimer) this.cameraTrackTimer.remove();
-                
-                // 1초 뒤에 카메라 이동 시작
-                this.cameraTrackTimer = this.time.delayedCall(1000, () => {
-                    const targetRootX = (width / 2) - targetLocalX;
-                    const targetRootY = (height / 2 + yOffset) - targetLocalY;
-
-                    if (this.cameraTrackTween) this.cameraTrackTween.stop();
-                    
-                    this.cameraTrackTween = this.tweens.add({
-                        targets: this.root,
-                        x: targetRootX,
-                        y: targetRootY,
-                        duration: 600, // 부드러운 추적을 위해 조금 더 길게 설정
-                        ease: 'Cubic.out'
-                    });
-                });
-            }
+            const targetRootX = (width / 2) - targetLocalX;
+            const targetRootY = (height / 2) - targetLocalY;
+            if (this.cameraTrackTween) this.cameraTrackTween.stop();
+            this.cameraTrackTween = this.tweens.add({ targets: this.root, x: targetRootX, y: targetRootY, duration: 600, ease: 'Cubic.out' });
         }
     }
 
