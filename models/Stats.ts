@@ -125,7 +125,21 @@ export const applyEquipmentBonuses = (
 ): DerivedStats => {
   const c = DERIVED_CONFIG;
   
-  const bonus = equipmentStatsList.reduce((acc, s) => {
+  interface BonusTotals {
+    physicalAttack: number;
+    physicalDefense: number;
+    magicalAttack: number;
+    magicalDefense: number;
+  }
+
+  const initialBonus: BonusTotals = { 
+    physicalAttack: 0, 
+    physicalDefense: 0, 
+    magicalAttack: 0, 
+    magicalDefense: 0 
+  };
+
+  const bonus = equipmentStatsList.reduce<BonusTotals>((acc, s) => {
     if (!s) return acc;
     return {
       physicalAttack: acc.physicalAttack + (s.physicalAttack ?? 0),
@@ -133,7 +147,7 @@ export const applyEquipmentBonuses = (
       magicalAttack: acc.magicalAttack + (s.magicalAttack ?? 0),
       magicalDefense: acc.magicalDefense + (s.magicalDefense ?? 0),
     };
-  }, { physicalAttack: 0, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0 });
+  }, initialBonus);
 
   const finalPhysDef = base.physicalDefense + bonus.physicalDefense;
   const finalMagDef = base.magicalDefense + bonus.magicalDefense;
