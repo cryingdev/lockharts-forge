@@ -1,4 +1,3 @@
-
 import { EquipmentItem } from '../types/inventory';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { MASTERY_THRESHOLDS } from '../config/mastery-config';
@@ -95,12 +94,21 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         physicalDefense: Math.round(base.physicalDefense * finalMultiplier),
         magicalAttack: Math.round(base.magicalAttack * finalMultiplier),
         magicalDefense: Math.round(base.magicalDefense * finalMultiplier),
+        // 주능력치 보너스 매핑 (템플릿 수치 고정 적용)
+        ...(base.str !== undefined && { str: base.str }),
+        ...(base.vit !== undefined && { vit: base.vit }),
+        ...(base.dex !== undefined && { dex: base.dex }),
+        ...(base.int !== undefined && { int: base.int }),
+        ...(base.luk !== undefined && { luk: base.luk }),
     };
 
-    const statKeys: (keyof EquipmentStats)[] = ['physicalAttack', 'physicalDefense', 'magicalAttack', 'magicalDefense'];
+    const statKeys = ['physicalAttack', 'physicalDefense', 'magicalAttack', 'magicalDefense'] as const;
     for (let i = 0; i < enhancementCount; i++) {
         const randomKey = statKeys[Math.floor(Math.random() * statKeys.length)];
-        stats[randomKey] = Math.round(stats[randomKey] * 1.02);
+        const currentVal = stats[randomKey];
+        if (currentVal !== undefined) {
+            stats[randomKey] = Math.round(currentVal * 1.02);
+        }
     }
 
     const rarityScore = quality + (enhancementCount * 2);

@@ -148,7 +148,8 @@ const MercenaryStatsPanel = ({
     mercenary, 
     baseStats,
     finalStats, 
-    localAllocated, 
+    localAllocated,
+    equipmentStats,
     onSetLocalAllocated,
     isReadOnly
 }: { 
@@ -156,6 +157,7 @@ const MercenaryStatsPanel = ({
     baseStats: DerivedStats;
     finalStats: DerivedStats; 
     localAllocated: PrimaryStats;
+    equipmentStats: PrimaryStats;
     onSetLocalAllocated: (stats: PrimaryStats) => void;
     isReadOnly?: boolean;
 }) => {
@@ -230,13 +232,19 @@ const MercenaryStatsPanel = ({
                         { label: 'VIT', key: 'vit' as const, color: 'text-red-400' },
                         { label: 'LUK', key: 'luk' as const, color: 'text-pink-400' }
                     ].map((stat) => {
-                        const currentValue = mercenary.stats[stat.key] + localAllocated[stat.key];
-                        const isModified = localAllocated[stat.key] > mercenary.allocatedStats[stat.key];
+                        const equipBonus = equipmentStats[stat.key] || 0;
+                        const basePlusAlloc = mercenary.stats[stat.key] + localAllocated[stat.key];
+                        const totalValue = basePlusAlloc + equipBonus;
+                        const isAllocatedModified = localAllocated[stat.key] > mercenary.allocatedStats[stat.key];
+
                         return (
                             <div key={stat.key} className="flex flex-col gap-1 md:gap-1.5">
-                                <div className={`bg-stone-900/80 border ${isModified ? 'border-amber-500 shadow-glow-sm' : 'border-stone-800'} p-1 md:p-2 rounded-lg flex flex-col items-center justify-center h-12 md:h-20 transition-all`}>
+                                <div className={`bg-stone-900/80 border ${isAllocatedModified ? 'border-amber-500 shadow-glow-sm' : 'border-stone-800'} p-1 md:p-2 rounded-lg flex flex-col items-center justify-center h-14 md:h-24 transition-all relative`}>
                                     <span className={`text-[6px] md:text-[10px] font-black ${stat.color} mb-0.5`}>{stat.label}</span>
-                                    <span className={`text-[10px] md:text-xl font-mono font-black ${isModified ? 'text-amber-400' : 'text-stone-400'}`}>{currentValue}</span>
+                                    <span className={`text-[10px] md:text-xl font-mono font-black ${isAllocatedModified ? 'text-amber-400' : 'text-stone-400'}`}>{totalValue}</span>
+                                    {equipBonus > 0 && (
+                                        <span className="text-[6px] md:text-[9px] font-bold text-emerald-400 leading-none mt-0.5">+{equipBonus}</span>
+                                    )}
                                 </div>
                                 {!isReadOnly && (
                                     <div className="flex flex-col gap-0.5 md:gap-1">
@@ -305,18 +313,11 @@ const EquipmentInventoryList = ({
     mercenary: Mercenary;
     isReadOnly?: boolean;
 }) => {
-    // Current primary stats INCLUDING equipment bonuses for guide verification
-    const totalMercStats = useMemo(() => {
-        // Fix: Explicitly typed the reduction for primary stats to fix 'unknown' type error.
-        const eqPrimaryStats = (Object.values(mercenary.equipment).filter(Boolean) as Equipment[]).reduce((acc: PrimaryStats, eq: Equipment) => ({
-            str: acc.str + (eq.stats.str || 0),
-            vit: acc.vit + (eq.stats.vit || 0),
-            dex: acc.dex + (eq.stats.dex || 0),
-            int: acc.int + (eq.stats.int || 0),
-            luk: acc.luk + (eq.stats.luk || 0),
-        }), { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
-        return mergePrimaryStats(mercenary.stats, mercenary.allocatedStats, eqPrimaryStats);
-    }, [mercenary]);
+    // CURRENT CHANGE: Exclude equipment bonuses from requirement checks.
+    // Standard CP calculation uses merged stats, but we want pure attributes here.
+    const pureMercStats = useMemo(() => {
+        return mergePrimaryStats(mercenary.stats, mercenary.allocatedStats);
+    }, [mercenary.stats, mercenary.allocatedStats]);
 
     const displayInventory = useMemo(() => {
         return selectedSlotFilter 
@@ -355,7 +356,12 @@ const EquipmentInventoryList = ({
                         if (!item.equipmentData) return null;
                         const isSelected = selectedItemId === item.id;
                         const reqs = item.equipmentData.equipRequirements || {};
-                        const failedStats = Object.entries(reqs).filter(([stat, val]) => totalMercStats[stat as keyof PrimaryStats] < (val as number));
+                        
+                        // Use pureMercStats instead of totalMercStats to ignore bonuses from current gear
+                        const failedStats = Object.entries(reqs).filter(([stat, val]) => 
+                            pureMercStats[stat as keyof PrimaryStats] < (val as number)
+                        );
+                        
                         const canEquip = failedStats.length === 0;
                         const rarityClasses = getRarityClasses(item.equipmentData.rarity);
                         let imageUrl = item.equipmentData.image ? getAssetUrl(item.equipmentData.image) : (item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`));
@@ -388,6 +394,12 @@ const EquipmentInventoryList = ({
                                         </button>
                                     )}
                                 </div>
+                                {!canEquip && isSelected && (
+                                    <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-2 flex items-center gap-2 text-[8px] md:text-[10px] text-red-400 font-bold uppercase tracking-tight">
+                                        <AlertCircle className="w-3 h-3 shrink-0" />
+                                        Requirements not met: {failedStats.map(([s,v]) => `${s.toUpperCase()} ${v}`).join(', ')}
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center border-t border-white/5 pt-2">
                                     <div className="flex items-center gap-2 text-[8px] md:text-xs text-stone-600 font-bold">
                                         <ShieldAlert className="w-3 h-3" />
@@ -408,7 +420,7 @@ const EquipmentInventoryList = ({
     );
 };
 
-const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, onClose, onUnequip, isReadOnly = false }) => {
+export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, onClose, onUnequip, isReadOnly = false }) => {
     const { state, actions } = useGame();
     const [selectedSlot, setSelectedSlot] = useState<EquipmentSlotType | null>(null);
     const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string | null>(null);
@@ -428,7 +440,6 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
 
     // --- Core Stat Logic Sync ---
     const currentEqPrimaryStats = useMemo(() => {
-        // Fix: Explicitly typed the reduction for primary stats to fix 'unknown' type error.
         return (Object.values(mercenary.equipment).filter(Boolean) as Equipment[]).reduce((acc: PrimaryStats, eq: Equipment) => ({
             str: acc.str + (eq.stats.str || 0),
             vit: acc.vit + (eq.stats.vit || 0),
@@ -456,7 +467,6 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
             else if (item.slotType === 'OFF_HAND' && previewEq.MAIN_HAND?.isTwoHanded) previewEq.MAIN_HAND = null;
             previewEq[item.slotType] = item;
 
-            // Fix: Explicitly typed the reduction for preview to fix 'unknown' type error.
             const previewEqPrimary = (Object.values(previewEq).filter(Boolean) as Equipment[]).reduce((acc: PrimaryStats, eq: Equipment) => ({
                 str: acc.str + (eq.stats.str || 0),
                 vit: acc.vit + (eq.stats.vit || 0),
@@ -519,6 +529,7 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
                                 baseStats={currentStats}
                                 finalStats={effectiveFinalStats} 
                                 localAllocated={localAllocated}
+                                equipmentStats={currentEqPrimaryStats}
                                 onSetLocalAllocated={setLocalAllocated}
                                 isReadOnly={isReadOnly}
                             />
@@ -539,5 +550,3 @@ const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ mercenary, 
         </div>
     );
 };
-
-export default MercenaryDetailModal;

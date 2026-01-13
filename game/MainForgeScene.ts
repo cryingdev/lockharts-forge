@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 
 export interface MainForgeData {
@@ -6,9 +7,9 @@ export interface MainForgeData {
 }
 
 export default class MainForgeScene extends Phaser.Scene {
-  public add!: Phaser.GameObjects.GameObjectFactory;
-  public tweens!: Phaser.Tweens.TweenManager;
-  public scale!: Phaser.Scale.ScaleManager;
+  declare public add: Phaser.GameObjects.GameObjectFactory;
+  declare public tweens: Phaser.Tweens.TweenManager;
+  declare public scale: Phaser.Scale.ScaleManager;
 
   private onInteract?: (type: 'ANVIL' | 'FURNACE' | 'EMPTY_SLOT') => void;
   private hasFurnace: boolean = false;

@@ -27,11 +27,11 @@ const DungeonTab = () => {
     const maxPartySize = selectedDungeon.maxPartySize || 4;
 
     // Check if this specific dungeon is the one being manually assaulted
-    const isOngoingManual = activeManualDungeon && activeManualDungeon.dungeonId === selectedDungeon.id;
+    const isOngoingManual = !!activeManualDungeon && activeManualDungeon.dungeonId === selectedDungeon.id;
     const currentExpedition = activeExpeditions.find(e => e.dungeonId === selectedDungeon.id);
     
     // Any active mission (Auto or Manual) for this dungeon
-    const hasActiveMission = !!currentExpedition || !!isOngoingManual;
+    const hasActiveMission = !!currentExpedition || isOngoingManual;
 
     const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
     
@@ -182,7 +182,7 @@ const DungeonTab = () => {
     return (
         <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans relative">
             
-            {(activeManualDungeon && showManualDungeonOverlay) && <AssaultNavigator />}
+            {(!!activeManualDungeon && showManualDungeonOverlay) && <AssaultNavigator />}
 
             {/* Left/Upper Panel: Dungeon Selection */}
             <div className="w-full sm:w-[40%] h-[42%] sm:h-full flex flex-col border-b sm:border-b-0 sm:border-r border-stone-800 bg-stone-900/50 relative overflow-hidden shrink-0 min-h-0">
@@ -258,7 +258,7 @@ const DungeonTab = () => {
                                     <Box className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-stone-600" />
                                     <h4 className="text-[7px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">Expected Loot</h4>
                                 </div>
-                                <div className="flex flex-wrap justify-center gap-1 sm:gap-3">
+                                <div className="flex wrap justify-center gap-1 sm:gap-3">
                                     {displayRewards.map((reward, ridx) => {
                                         const mat = Object.values(MATERIALS).find(m => m.id === reward.itemId);
                                         return (
@@ -268,7 +268,7 @@ const DungeonTab = () => {
                                                     className="w-4 h-4 sm:w-8 sm:h-8 object-contain opacity-70 group-hover:opacity-100 transition-opacity"
                                                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                                 />
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-950 border border-stone-700 rounded text-[7px] sm:text-[9px] font-bold text-stone-300 opacity-0 group-hover:opacity-10 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-2xl">
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-950 border border-stone-700 rounded text-[7px] sm:text-[9px] font-bold text-stone-300 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-2xl">
                                                     {mat?.name || reward.itemId}
                                                 </div>
                                             </div>
@@ -311,7 +311,7 @@ const DungeonTab = () => {
                         
                         <div className="flex flex-col items-center gap-4 w-full max-w-sm">
                             {/* Case 1: Completed Auto Expedition */}
-                            {currentExpedition && isComplete && (
+                            {!!currentExpedition && isComplete && (
                                 <button onClick={() => handleClaim(currentExpedition.id)} className="w-full py-4 sm:py-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl md:rounded-2xl shadow-2xl flex items-center justify-center gap-3 border-b-4 border-emerald-800 active:scale-95 transition-all">
                                     <CheckCircle className="w-5 h-5 sm:w-8" /> 
                                     <span className="text-xs sm:text-xl uppercase tracking-widest">Secure Loot & Return</span>
@@ -319,7 +319,7 @@ const DungeonTab = () => {
                             )}
 
                             {/* Case 2: Active Auto Expedition */}
-                            {currentExpedition && !isComplete && (
+                            {!!currentExpedition && !isComplete && (
                                 <>
                                     <div className="bg-stone-900/80 border-2 border-stone-800 px-6 py-3 sm:px-10 sm:py-5 rounded-2xl font-mono text-base sm:text-2xl lg:text-3xl font-black text-amber-50 shadow-2xl backdrop-blur-md flex items-center gap-2">
                                         <Timer className="w-5 h-5 sm:w-8 lg:w-10 animate-pulse text-amber-600 shrink-0" />
@@ -406,11 +406,11 @@ const DungeonTab = () => {
 
                                         return (
                                             <div key={idx} className={`aspect-square bg-stone-900 border-2 rounded-xl sm:rounded-2xl flex items-center justify-center relative overflow-hidden group hover:bg-stone-850 transition-all ${hasError ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
-                                                {merc ? (
+                                                {!!merc ? (
                                                     <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 sm:p-2 relative animate-in zoom-in-95 duration-200">
-                                                        <div className="text-xl sm:text-5xl lg:text-6xl group-hover:scale-110 transition-transform mb-0.5">{merc.icon}</div>
+                                                        <div className="text-base sm:text-5xl lg:text-6xl group-hover:scale-110 transition-transform mb-0.5">{merc.icon}</div>
                                                         <div className="text-[7px] sm:text-[10px] lg:text-sm font-black text-stone-200 truncate w-full text-center">{merc.name.split(' ')[0]}</div>
-                                                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-10 transition-opacity">
+                                                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 shadow-2xl" />
                                                         </div>
                                                         {hasError && (
@@ -489,7 +489,7 @@ const DungeonTab = () => {
                                 {/* Strategic Deploy (Existing Auto) */}
                                 <button 
                                     onClick={handleStartAutoExpedition} 
-                                    disabled={!isUnlocked || party.length === 0 || !!isOngoingManual} 
+                                    disabled={!isUnlocked || party.length === 0 || isOngoingManual} 
                                     className={`group flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all transform active:scale-95 shadow-xl ${isUnlocked && party.length > 0 && !isOngoingManual ? 'bg-indigo-700 hover:bg-indigo-600 border-indigo-900 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale'}`}
                                 >
                                     <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Phaser from 'phaser';
 import { useGame } from '../../../context/GameContext';
@@ -144,7 +145,7 @@ const AssaultNavigator = () => {
             };
             const game = new Phaser.Game(config);
             gameRef.current = game;
-            game.scene.start('DungeonScene', { session, moveEnergy: dungeon.moveEnergy, bossEnergy: dungeon.bossEnergy, onMove: (dx, dy) => actions.moveInManualDungeon(dx, dy), cameraMode: cameraMode });
+            game.scene.start('DungeonScene', { session, moveEnergy: dungeon.moveEnergy, bossEnergy: dungeon.bossEnergy, onMove: (dx: number, dy: number) => actions.moveInManualDungeon(dx, dy), cameraMode: cameraMode });
         } else {
             const scene = gameRef.current.scene.getScene('DungeonScene') as DungeonScene;
             if (scene) { scene.updateSession(session); scene.setCameraMode(cameraMode); }

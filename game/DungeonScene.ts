@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { ManualDungeonSession, RoomType } from '../types/game-state';
@@ -13,16 +14,16 @@ export interface DungeonSceneData {
 }
 
 export default class DungeonScene extends Phaser.Scene {
-    public add!: Phaser.GameObjects.GameObjectFactory;
-    public tweens!: Phaser.Tweens.TweenManager;
-    public scale!: Phaser.Scale.ScaleManager;
-    public cameras!: Phaser.Cameras.Scene2D.CameraManager;
-    public input!: Phaser.Input.InputPlugin;
-    public time!: Phaser.Time.Clock;
-    public events!: Phaser.Events.EventEmitter;
-    public load!: Phaser.Loader.LoaderPlugin;
-    public textures!: Phaser.Textures.TextureManager;
-    public anims!: Phaser.Animations.AnimationManager;
+    declare public add: Phaser.GameObjects.GameObjectFactory;
+    declare public tweens: Phaser.Tweens.TweenManager;
+    declare public scale: Phaser.Scale.ScaleManager;
+    declare public cameras: Phaser.Cameras.Scene2D.CameraManager;
+    declare public input: Phaser.Input.InputPlugin;
+    declare public time: Phaser.Time.Clock;
+    declare public events: Phaser.Events.EventEmitter;
+    declare public load: Phaser.Loader.LoaderPlugin;
+    declare public textures: Phaser.Textures.TextureManager;
+    declare public anims: Phaser.Animations.AnimationManager;
 
     private session!: ManualDungeonSession;
     private onMoveCallback!: (dx: number, dy: number) => void;

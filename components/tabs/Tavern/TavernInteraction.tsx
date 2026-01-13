@@ -7,7 +7,8 @@ import { getAssetUrl } from '../../../utils';
 import { Mercenary } from '../../../models/Mercenary';
 import { CONTRACT_CONFIG, calculateHiringCost } from '../../../config/contract-config';
 import { InventoryItem } from '../../../types/inventory';
-import MercenaryDetailModal from '../../modals/MercenaryDetailModal';
+// Fix: Changed default import to named import as MercenaryDetailModal has no default export
+import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { ItemSelectorList } from '../../ItemSelectorList';
 
 interface TavernInteractionProps {
@@ -299,7 +300,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                     <div className="flex wrap items-center justify-end gap-1.5 md:gap-3 w-full">
                         <button 
                             onClick={handleTalk}
-                            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
+                            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
                         >
                             <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-amber-500" />
                             <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
