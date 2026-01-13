@@ -22,7 +22,8 @@ export const calculateCombatResult = (
   attacker: DerivedStats,
   defender: DerivedStats,
   attackerJob: JobClass,
-  type: 'PHYSICAL' | 'MAGICAL' = 'PHYSICAL'
+  type: 'PHYSICAL' | 'MAGICAL' = 'PHYSICAL',
+  multiplier: number = 1.0
 ): CombatResult => {
   const acc = attacker.accuracy;
   const eva = defender.evasion;
@@ -41,9 +42,9 @@ export const calculateCombatResult = (
   // Efficiency is a random value between [baseEff, 100]
   const transformedEfficiency = (Math.random() * (100 - baseEff) + baseEff) / 100;
 
-  // Step 2: Multiply attack by efficiency
+  // Step 2: Multiply attack by efficiency and skill multiplier
   const rawBaseAtk = type === 'PHYSICAL' ? attacker.physicalAttack : attacker.magicalAttack;
-  const effectiveAtk = rawBaseAtk * transformedEfficiency;
+  const effectiveAtk = rawBaseAtk * transformedEfficiency * multiplier;
 
   // Step 3: Defense reduction and Critical Hit
   const reduction = type === 'PHYSICAL' ? defender.physicalReduction : defender.magicalReduction;

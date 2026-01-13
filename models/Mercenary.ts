@@ -36,6 +36,7 @@ export interface Mercenary {
   lastVisitDay?: number;
   status: MercenaryStatus;
   assignedExpeditionId?: string;
+  recoveryUntilDay?: number; // The day when the mercenary will recover from injury
   
   // Dungeon System
   expeditionEnergy: number;
@@ -43,6 +44,9 @@ export interface Mercenary {
   // Progression
   currentXp: number;
   xpToNextLevel: number;
+
+  // Skills
+  skillIds?: string[];
 
   // Equipment
   equipment: MercenaryEquipment;

@@ -1,11 +1,10 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
 import { MATERIALS } from '../../../data/materials';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { calculatePartyPower, calculateMercenaryPower } from '../../../utils/combatLogic';
-import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play, Ban, RefreshCw, LogOut, AlertTriangle } from 'lucide-react';
+import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play, Ban, RefreshCw, LogOut, AlertTriangle, HeartOff } from 'lucide-react';
 import { getAssetUrl, formatDuration } from '../../../utils';
 import AssaultNavigator from './AssaultNavigator';
 import ConfirmationModal from '../../modals/ConfirmationModal';
@@ -18,6 +17,7 @@ const DungeonTab = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [party, setParty] = useState<string[]>([]);
     const [failedMercs, setFailedMercs] = useState<string[]>([]);
+    const [lowHpMercs, setLowHpMercs] = useState<string[]>([]);
     const [failedPowerHighlight, setFailedPowerHighlight] = useState(false);
     
     // Modal states
@@ -33,7 +33,18 @@ const DungeonTab = () => {
     // Any active mission (Auto or Manual) for this dungeon
     const hasActiveMission = !!currentExpedition || isOngoingManual;
 
-    const hiredMercs = useMemo(() => knownMercenaries.filter(m => m.status === 'HIRED'), [knownMercenaries]);
+    // Filtering hired but available (not dead, not injured) mercs
+    const hiredMercs = useMemo(() => 
+        knownMercenaries.filter(m => m.status === 'HIRED' || m.status === 'ON_EXPEDITION'), 
+    [knownMercenaries]);
+
+    // Cleanup local party selection if a mercenary becomes unavailable (dead or injured)
+    useEffect(() => {
+        setParty(prev => prev.filter(id => {
+            const m = knownMercenaries.find(km => km.id === id);
+            return m && (m.status === 'HIRED' || m.status === 'ON_EXPEDITION');
+        }));
+    }, [knownMercenaries]);
     
     const isMercBusy = (mercId: string): boolean => {
         return activeExpeditions.some(e => e.partyIds.includes(mercId)) || 
@@ -44,6 +55,7 @@ const DungeonTab = () => {
         setSelectedIndex(prev => (prev > 0 ? prev - 1 : DUNGEONS.length - 1));
         setParty([]);
         setFailedMercs([]);
+        setLowHpMercs([]);
         setFailedPowerHighlight(false);
     };
 
@@ -51,6 +63,7 @@ const DungeonTab = () => {
         setSelectedIndex(prev => (prev < DUNGEONS.length - 1 ? prev + 1 : 0));
         setParty([]);
         setFailedMercs([]);
+        setLowHpMercs([]);
         setFailedPowerHighlight(false);
     };
 
@@ -68,12 +81,29 @@ const DungeonTab = () => {
         if (failedMercs.includes(mercId)) {
             setFailedMercs(prev => prev.filter(id => id !== mercId));
         }
+        if (lowHpMercs.includes(mercId)) {
+            setLowHpMercs(prev => prev.filter(id => id !== mercId));
+        }
     };
 
     const validateEntry = () => {
         if (party.length === 0 || !selectedDungeon) return false;
 
         const selectedMercs = knownMercenaries.filter(m => party.includes(m.id));
+        
+        // 1. HP Check: Cannot enter if HP < 1
+        const lowHpIds = selectedMercs
+            .filter(m => (m.currentHp || 0) < 1)
+            .map(m => m.id);
+
+        if (lowHpIds.length > 0) {
+            setLowHpMercs(lowHpIds);
+            setTimeout(() => setLowHpMercs([]), 2000);
+            actions.showToast("Wounded members cannot be deployed.");
+            return false;
+        }
+
+        // 2. Energy Check
         const lowEnergyIds = selectedMercs
             .filter(m => (m.expeditionEnergy || 0) < selectedDungeon.energyCost)
             .map(m => m.id);
@@ -85,6 +115,7 @@ const DungeonTab = () => {
             return false;
         }
 
+        // 3. Power Check
         if (currentPartyPower < selectedDungeon.requiredPower) {
             setFailedPowerHighlight(true);
             setTimeout(() => setFailedPowerHighlight(false), 2000);
@@ -392,7 +423,9 @@ const DungeonTab = () => {
                                         const isAvailable = idx < maxPartySize;
                                         const mercId = party[idx];
                                         const merc = knownMercenaries.find(m => m.id === mercId);
-                                        const hasError = mercId ? failedMercs.includes(mercId) : false;
+                                        const energyError = mercId ? failedMercs.includes(mercId) : false;
+                                        const hpError = mercId ? lowHpMercs.includes(mercId) : false;
+                                        const hasError = energyError || hpError;
 
                                         if (!isAvailable) {
                                             return (
@@ -405,7 +438,7 @@ const DungeonTab = () => {
                                         }
 
                                         return (
-                                            <div key={idx} className={`aspect-square bg-stone-900 border-2 rounded-xl sm:rounded-2xl flex items-center justify-center relative overflow-hidden group hover:bg-stone-850 transition-all ${hasError ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
+                                            <div key={idx} className={`aspect-square bg-stone-900 border-2 rounded-xl sm:rounded-2xl flex items-center justify-center relative shadow-2xl overflow-hidden group hover:bg-stone-850 transition-all ${hasError ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
                                                 {!!merc ? (
                                                     <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 sm:p-2 relative animate-in zoom-in-95 duration-200">
                                                         <div className="text-base sm:text-5xl lg:text-6xl group-hover:scale-110 transition-transform mb-0.5">{merc.icon}</div>
@@ -415,7 +448,7 @@ const DungeonTab = () => {
                                                         </div>
                                                         {hasError && (
                                                             <div className="absolute inset-0 flex items-center justify-center bg-red-900/40 backdrop-blur-[1px] animate-in fade-in">
-                                                                <AlertCircle className="w-6 h-6 sm:w-10 text-white drop-shadow-[0_0_8px_rgba(0,0,0,1)]" />
+                                                                {hpError ? <HeartOff className="w-6 h-6 sm:w-10 text-white drop-shadow-[0_0_8px_rgba(0,0,0,1)]" /> : <AlertCircle className="w-6 h-6 sm:w-10 text-white drop-shadow-[0_0_8px_rgba(0,0,0,1)]" />}
                                                             </div>
                                                         )}
                                                     </button>
@@ -432,7 +465,7 @@ const DungeonTab = () => {
                             <div className="flex-1 flex flex-col gap-2 sm:gap-3 bg-stone-950/40 rounded-xl sm:rounded-2xl border border-stone-800 shadow-inner min-h-0 min-w-0 overflow-hidden">
                                 <div className="p-2 sm:p-3 lg:p-4 border-b border-stone-800 bg-stone-900/40 flex justify-between items-center shrink-0">
                                     <span className="text-[8px] sm:text-10px] lg:text-xs font-black text-stone-400 uppercase tracking-widest">Available Units</span>
-                                    <span className="text-[7px] sm:text-[9px] lg:text-[10px] font-mono text-stone-600 bg-stone-950 px-2 py-0.5 rounded-full">{hiredMercs.length} Hired</span>
+                                    <span className="text-[7px] sm:text-[9px] lg:text-[10px] font-mono text-stone-600 bg-stone-950 px-2 py-0.5 rounded-full">{hiredMercs.length} Available</span>
                                 </div>
                                 <div className="flex-1 overflow-y-auto custom-scrollbar p-1.5 sm:p-3 space-y-1.5 sm:space-y-2">
                                     {hiredMercs.length === 0 ? (
@@ -446,7 +479,10 @@ const DungeonTab = () => {
                                             const power = calculateMercenaryPower(merc);
                                             const energy = merc.expeditionEnergy || 0;
                                             const hasEnoughEnergy = energy >= selectedDungeon.energyCost;
-                                            const hasError = failedMercs.includes(merc.id);
+                                            const hasHealth = merc.currentHp >= 1;
+                                            const energyError = failedMercs.includes(merc.id);
+                                            const hpError = lowHpMercs.includes(merc.id);
+                                            const hasError = energyError || hpError;
 
                                             return (
                                                 <button 
@@ -471,7 +507,8 @@ const DungeonTab = () => {
                                                                     <div className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${hasEnoughEnergy ? 'from-blue-700 to-blue-500' : 'from-red-800 to-red-600 animate-pulse'}`} style={{ width: `${energy}%` }}></div>
                                                                 </div>
                                                                 <Zap className={`w-3 h-3 sm:w-4 lg:w-5 ${hasEnoughEnergy ? 'text-blue-500' : 'text-red-600 animate-pulse'}`} />
-                                                                {hasError && <AlertCircle className="w-3.5 h-3.5 sm:w-5 text-red-500 animate-pulse" />}
+                                                                {!hasHealth && <HeartOff className="w-3.5 h-3.5 sm:w-5 text-red-500 animate-pulse" />}
+                                                                {hasEnoughEnergy && hasHealth && isSelected && <CheckCircle className="w-3.5 h-3.5 sm:w-5 text-emerald-500 animate-in zoom-in" />}
                                                             </div>
                                                         )}
                                                     </div>

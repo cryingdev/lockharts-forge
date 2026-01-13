@@ -20,15 +20,49 @@ export const handleConfirmSleep = (state: GameState): GameState => {
     const nextDay = state.stats.day + 1;
     const newGold = state.stats.gold - totalWages;
 
-    // --- Mercenary Energy Recovery ---
+    // --- Mercenary Recovery & Energy Recovery ---
+    let recoveryLogs: string[] = [];
     const updatedMercenaries = state.knownMercenaries.map(merc => {
-        if (['HIRED', 'INJURED', 'VISITOR'].includes(merc.status)) { // Only recover if not on expedition
+        let status = merc.status;
+        let recoveryUntilDay = merc.recoveryUntilDay;
+        
+        // Base Vitals Recovery: All mercenaries not on expedition recover 50% of Max HP/MP
+        let nextHp = merc.currentHp;
+        let nextMp = merc.currentMp;
+        
+        if (['HIRED', 'INJURED', 'VISITOR'].includes(status)) {
+            nextHp = Math.min(merc.maxHp, nextHp + Math.floor(merc.maxHp * 0.5));
+            nextMp = Math.min(merc.maxMp, nextMp + Math.floor(merc.maxMp * 0.5));
+        }
+
+        // Progress recovery for injured mercenaries
+        // They return to HIRED status only if the recovery day has passed AND they have health
+        if (status === 'INJURED' && recoveryUntilDay && nextDay >= recoveryUntilDay) {
+            if (nextHp > 0) {
+                status = 'HIRED';
+                recoveryUntilDay = undefined;
+                recoveryLogs.push(`${merc.name} has fully recovered from their injuries.`);
+            } else {
+                // If they still have 0 HP for some reason, they stay injured but recovery time is cleared
+                // or we extend it. For now, we assume 50% recovery ensures > 0 HP.
+                status = 'HIRED';
+                recoveryUntilDay = undefined;
+            }
+        }
+
+        // Recover energy for mercenaries not on expedition
+        if (['HIRED', 'INJURED', 'VISITOR'].includes(status)) {
             return {
                 ...merc,
+                status,
+                currentHp: nextHp,
+                currentMp: nextMp,
+                recoveryUntilDay,
                 expeditionEnergy: Math.min(DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, (merc.expeditionEnergy || 0) + DUNGEON_CONFIG.DAILY_ENERGY_RECOVERY)
             };
         }
-        return merc;
+        
+        return { ...merc, status, currentHp: nextHp, currentMp: nextMp, recoveryUntilDay };
     });
 
     // --- Market Restock Logic ---
@@ -37,7 +71,6 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         const isOneTime = item.id === 'furnace' || item.id === 'workbench' || item.id.startsWith('scroll_');
         
         if (isOneTime) {
-            // 일회성 아이템은 이미 소유했거나 해당 티어보다 높은 경우 리스톡하지 않음 (0 유지)
             const isOwnedOrUnlocked = 
                 (item.id === 'furnace' && state.forge.hasFurnace) || 
                 (item.id === 'workbench' && state.forge.hasWorkbench) ||
@@ -50,7 +83,6 @@ export const handleConfirmSleep = (state: GameState): GameState => {
                 newMarketStock[item.id] = item.maxStock;
             }
         } else {
-            // 일반 자원 및 소모품은 매일 다시 채움
             newMarketStock[item.id] = item.maxStock;
         }
     });
@@ -79,7 +111,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
                 incomeDungeon: 0,
                 incomeRepair: 0,
                 expenseMarket: 0,
-                expenseWages: totalWages, // Track wages spent at end of current day (processed during rest transition)
+                expenseWages: totalWages,
                 expenseScout: 0
             },
         },
@@ -93,8 +125,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         activeCustomer: null,
         shopQueue: [],
         isCrafting: false,
-        // showSleepModal: false, // UI 연출을 위해 true 유지
-        logs: [logMsg, ...state.logs],
+        logs: [logMsg, ...recoveryLogs, ...state.logs],
         forgeTemperature: 0,
         lastForgeTime: Date.now(),
     };

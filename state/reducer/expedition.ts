@@ -4,6 +4,8 @@ import { Expedition } from '../../models/Dungeon';
 import { MATERIALS } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
 import { TILLY_FOOTLOOSE } from '../../data/mercenaries';
+// Add import for MercenaryStatus
+import { MercenaryStatus } from '../../models/Mercenary';
 
 export const handleStartExpedition = (state: GameState, payload: { dungeonId: string; partyIds: string[] }): GameState => {
     const { dungeonId, partyIds } = payload;
@@ -119,10 +121,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
             }
     });
 
-    // Gold Reward
     const goldGained = dungeon.goldReward || 0;
 
-    // Special Reward: Recipe Scroll for First Clear of Rats Dungeon
     const isFirstClear = (state.dungeonClearCounts[dungeon.id] || 0) === 0;
     if (isFirstClear && dungeon.id === 'dungeon_t1_rats') {
         const scrollDef = MATERIALS.RECIPE_SCROLL_BRONZE_LONGSWORD;
@@ -138,7 +138,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     const mercenaryResults: DungeonResult['mercenaryResults'] = [];
     let newKnownMercenaries = [...state.knownMercenaries];
 
-    // Process XP for party
+    // Process XP for party and handle health-based status changes
     newKnownMercenaries = newKnownMercenaries.map(merc => {
         if (expedition.partyIds.includes(merc.id)) {
             let xpToAdd = dungeon.baseXp || 50;
@@ -166,6 +166,16 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
                 currentHp = maxHp;
             }
 
+            // Fix: Explicitly type nextStatus as MercenaryStatus to allow assignment of 'INJURED'
+            let nextStatus: MercenaryStatus = 'HIRED';
+            let recoveryUntilDay: number | undefined = undefined;
+
+            // If HP < 1, they return INJURED
+            if (currentHp < 1) {
+                nextStatus = 'INJURED' as const;
+                recoveryUntilDay = state.stats.day + Math.floor(Math.random() * 2) + 1;
+            }
+
             mercenaryResults.push({
                 id: merc.id,
                 name: merc.name,
@@ -174,7 +184,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
                 levelAfter: level,
                 xpGained: xpToAdd,
                 currentXp: currentXp,
-                xpToNext: xpToNext
+                xpToNext: xpToNext,
+                statusChange: currentHp < 1 ? 'INJURED' : 'NONE'
             });
 
             return {
@@ -185,7 +196,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
                 maxHp,
                 maxMp,
                 currentHp,
-                status: 'HIRED' as const,
+                status: nextStatus,
+                recoveryUntilDay,
                 assignedExpeditionId: undefined
             };
         }

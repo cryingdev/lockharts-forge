@@ -8,21 +8,22 @@ export const MONSTERS: Record<string, Monster> = {
     icon: '🐀',
     sprite: 'rat_man.png',
     description: 'A mutated, semi-intelligent scavenger hiding in the depths.',
-    currentHp: 200,
+    currentHp: 150,
+    rewardXp: 100, // 요구사항: 100 XP
     stats: {
-      maxHp: 200,
+      maxHp: 150,
       maxMp: 0,
       physicalAttack: 30,
       physicalDefense: 20,
-      physicalReduction: 0.10, // 물리 방어율 10%
+      physicalReduction: 0.10,
       magicalAttack: 0,
       magicalDefense: 20,
-      magicalReduction: 0.10, // 마법 방어율 10%
-      critChance: 5, // 크리티컬 5%
+      magicalReduction: 0.10,
+      critChance: 5,
       critDamage: 150,
       accuracy: 90,
-      evasion: 5, // 회피 5%
-      speed: 115 // 스피드 115
+      evasion: 5,
+      speed: 115
     }
   },
   plague_rat_king: {
@@ -33,6 +34,7 @@ export const MONSTERS: Record<string, Monster> = {
     sprite: 'rat_king.png',
     description: 'A bloated, intelligent rodent ruling over the filth of the cellar.',
     currentHp: 450,
+    rewardXp: 250,
     stats: {
       maxHp: 450,
       maxMp: 0,

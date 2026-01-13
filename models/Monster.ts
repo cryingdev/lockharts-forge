@@ -7,7 +7,7 @@ export interface Monster {
   icon: string;
   sprite?: string;
   description: string;
-  // 파생 수치를 직접 정의하여 밸런싱 정밀도 향상
   stats: DerivedStats;
   currentHp: number;
+  rewardXp: number; // 처치 시 지급될 총 경험치
 }

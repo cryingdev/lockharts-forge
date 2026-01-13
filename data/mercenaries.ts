@@ -81,6 +81,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     currentXp: 0,
     xpToNextLevel: 100,
     status: 'VISITOR',
+    skillIds: ['hard_attack'],
     equipment: { ...defaultEquipment }
   },
   {
