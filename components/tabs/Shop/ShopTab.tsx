@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -43,7 +44,7 @@ const ShopSign = ({ isOpen, onToggle, disabled }: { isOpen: boolean, onToggle: (
                     </div>
                     <div className="absolute inset-0 backface-hidden rotate-y-180 bg-[#3e2723] border md:border-2 border-[#1b0000] rounded shadow-lg flex flex-col items-center justify-center p-0.5 md:p-1">
                         <div className="w-full h-full border border-[#5d4037]/30 rounded flex flex-col items-center justify-center">
-                             <span className="text-[8px] md:text-[10px] text-[#5d4037] font-bold uppercase tracking-widest leading-none">The Shop is</span>
+                             <span className="text-[8px] md:text-[10px] text-[#5d4037] font-bold uppercase tracking-widest font-none">The Shop is</span>
                              <span className="text-sm md:text-xl font-black text-stone-500 font-serif tracking-tighter drop-shadow-sm">CLOSED</span>
                         </div>
                     </div>
@@ -410,7 +411,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
         {showInstanceSelector && activeCustomer && (
             <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300 pointer-events-auto">
-                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-row shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-row shadow-2xl animate-in zoom-in-95 duration-300 relative">
                     <div className="flex-1 flex flex-col border-r border-stone-800 bg-stone-925/50 overflow-hidden">
                         <div className="p-4 md:p-6 border-b border-stone-800 flex justify-between items-center bg-stone-900 shrink-0">
                             <div>
@@ -425,7 +426,26 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                             onToggleLock={(id) => actions.toggleLockItem(id)}
                             customerMarkup={activeCustomer.request.markup || 1.25}
                         />
+                        
+                        {/* Selector Footer for Buttons */}
+                        <div className="p-4 border-t border-stone-800 bg-stone-900/80 flex justify-end gap-3 shrink-0">
+                            <button 
+                                onClick={() => setShowInstanceSelector(false)}
+                                className="px-6 py-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-400 font-black uppercase text-xs transition-all flex items-center gap-2"
+                            >
+                                <X className="w-4 h-4" /> Cancel
+                            </button>
+                            <button 
+                                onClick={() => selectedInstance && executeSell(selectedInstance)}
+                                disabled={!selectedInstance || selectedInstance.isLocked}
+                                className={`px-10 py-3 rounded-xl font-black uppercase text-xs transition-all flex items-center gap-2 border-b-4 ${(!selectedInstance || selectedInstance.isLocked) ? 'bg-stone-800 text-stone-600 border-stone-950 grayscale cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800 shadow-xl active:scale-95'}`}
+                            >
+                                <Check className="w-4 h-4" /> Select & Sell
+                            </button>
+                        </div>
                     </div>
+                    
+                    {/* Inspection side (Desktop only) */}
                     <div className="hidden md:flex w-72 lg:w-96 flex-col bg-stone-900 overflow-hidden">
                         <div className="p-6 border-b border-stone-800 flex items-center gap-3 shrink-0">
                             <Info className="w-5 h-5 text-stone-500" />
@@ -473,19 +493,11 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                                         </div>
                                     )}
 
-                                    <div className="mt-auto pt-6 space-y-3">
-                                        <div className="flex justify-between items-center px-1">
+                                    <div className="mt-auto pt-6">
+                                        <div className="flex justify-between items-center px-1 mb-2">
                                             <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Offered Price</span>
                                             <span className={`text-2xl font-mono font-black ${selectedInstance.isLocked ? 'text-stone-600' : 'text-emerald-400'}`}>{Math.ceil(selectedInstance.baseValue * (activeCustomer.request.markup || 1.25))} G</span>
                                         </div>
-                                        <button 
-                                            onClick={() => executeSell(selectedInstance)}
-                                            disabled={selectedInstance.isLocked}
-                                            className={`w-full py-4 font-black rounded-xl shadow-xl transition-all active:scale-95 border-b-4 flex items-center justify-center gap-2 uppercase tracking-[0.2em] ${selectedInstance.isLocked ? 'bg-stone-800 border-stone-900 text-stone-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800'}`}
-                                        >
-                                            {selectedInstance.isLocked ? <Lock className="w-5 h-5" /> : <Check className="w-5 h-5" />}
-                                            {selectedInstance.isLocked ? "Locked" : "Confirm Sale"}
-                                        </button>
                                     </div>
                                 </div>
                             ) : (

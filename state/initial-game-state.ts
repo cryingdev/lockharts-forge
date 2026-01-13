@@ -100,6 +100,7 @@ export const createInitialGameState = (): GameState => ({
 
     // User Preferences
     settings: {
-        showLogTicker: true
+        showLogTicker: true,
+        inventoryViewMode: 'LIST'
     }
 });

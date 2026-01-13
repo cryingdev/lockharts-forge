@@ -22,7 +22,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         index: null
     });
 
-    const APP_VERSION = "0.1.38";
+    const APP_VERSION = "0.1.39";
 
     if (!isOpen) return null;
 

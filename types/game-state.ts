@@ -75,6 +75,7 @@ export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED';
 
 export interface GameSettings {
     showLogTicker: boolean;
+    inventoryViewMode: 'GRID' | 'LIST';
 }
 
 export interface GameState {

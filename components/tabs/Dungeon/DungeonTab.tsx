@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
@@ -23,6 +24,7 @@ const DungeonTab = () => {
     const [showRecallConfirm, setShowRecallConfirm] = useState<'AUTO' | 'MANUAL' | null>(null);
     
     const selectedDungeon = DUNGEONS[selectedIndex];
+    const maxPartySize = selectedDungeon.maxPartySize || 4;
 
     // Check if this specific dungeon is the one being manually assaulted
     const isOngoingManual = activeManualDungeon && activeManualDungeon.dungeonId === selectedDungeon.id;
@@ -56,8 +58,11 @@ const DungeonTab = () => {
         if (party.includes(mercId)) {
             setParty(prev => prev.filter(id => id !== mercId));
         } else {
-            if (party.length < 4) {
+            if (party.length < maxPartySize) {
                 setParty(prev => [...prev, mercId]);
+            } else if (maxPartySize === 1 && party.length === 1) {
+                // If 1-person dungeon, swap the current member
+                setParty([mercId]);
             }
         }
         if (failedMercs.includes(mercId)) {
@@ -380,15 +385,27 @@ const DungeonTab = () => {
                             <div className="w-full sm:w-[45%] flex flex-col gap-2 shrink-0">
                                 <h3 className="text-[8px] sm:text-xs font-black text-stone-500 uppercase tracking-widest px-1 flex justify-between">
                                     <span>Deployment Slots</span>
-                                    <span>{party.length} / 4</span>
+                                    <span>{party.length} / {maxPartySize}</span>
                                 </h3>
-                                <div className="grid grid-cols-4 sm:grid-cols-2 gap-1.5 sm:gap-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
-                                    {[0, 1, 2, 3].map(idx => {
+                                <div className="grid grid-cols-4 sm:grid-cols-2 gap-1.5 sm:gap-4 shrink-0 px-1">
+                                    {Array.from({ length: 4 }).map((_, idx) => {
+                                        const isAvailable = idx < maxPartySize;
                                         const mercId = party[idx];
                                         const merc = knownMercenaries.find(m => m.id === mercId);
                                         const hasError = mercId ? failedMercs.includes(mercId) : false;
+
+                                        if (!isAvailable) {
+                                            return (
+                                                <div key={idx} className="aspect-square bg-stone-950/60 border-2 border-stone-900 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group grayscale">
+                                                    <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,rgba(0,0,0,0.2)_8px,rgba(0,0,0,0.2)_16px)] opacity-40"></div>
+                                                    <Ban className="w-5 h-5 sm:w-8 lg:w-10 text-stone-800 mb-1" />
+                                                    <span className="text-[6px] sm:text-[8px] font-black text-stone-800 uppercase tracking-widest">Locked</span>
+                                                </div>
+                                            );
+                                        }
+
                                         return (
-                                            <div key={idx} className={`h-16 xs:h-20 sm:h-auto sm:aspect-square bg-stone-900 border-2 rounded-xl sm:rounded-2xl flex items-center justify-center relative overflow-hidden group hover:bg-stone-850 transition-all ${hasError ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
+                                            <div key={idx} className={`aspect-square bg-stone-900 border-2 rounded-xl sm:rounded-2xl flex items-center justify-center relative overflow-hidden group hover:bg-stone-850 transition-all ${hasError ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
                                                 {merc ? (
                                                     <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 sm:p-2 relative animate-in zoom-in-95 duration-200">
                                                         <div className="text-xl sm:text-5xl lg:text-6xl group-hover:scale-110 transition-transform mb-0.5">{merc.icon}</div>
@@ -403,7 +420,7 @@ const DungeonTab = () => {
                                                         )}
                                                     </button>
                                                 ) : (
-                                                    <User className="w-4 h-4 sm:w-10 lg:w-12 text-stone-800/40" />
+                                                    <User className="text-stone-800/40 w-4 h-4 sm:w-10 lg:w-12" />
                                                 )}
                                             </div>
                                         );
@@ -523,7 +540,7 @@ const DungeonTab = () => {
                 cancelLabel="Stay Deployed"
                 isDanger={true}
                 onConfirm={handleConfirmRecall}
-                onCancel={() => setShowRecallConfirm(null)}
+                onAction={() => setShowRecallConfirm(null)}
             />
         </div>
     );
