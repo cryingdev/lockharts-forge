@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -167,9 +168,61 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.startPhase(1);
   }
 
+  private runCountdown(callback: () => void) {
+    this.isTransitioning = true;
+    const labels = ['3', '2', '1', 'START!'];
+    let idx = 0;
+    const txt = this.add.text(this.centerX, this.centerY, '', {
+        fontFamily: 'Grenze Gotisch',
+        fontSize: '120px',
+        color: '#fbbf24',
+        stroke: '#000',
+        strokeThickness: 12,
+        shadow: { color: '#000', fill: true, blur: 20 }
+    }).setOrigin(0.5).setDepth(1000).setAlpha(0);
+
+    const showNext = () => {
+        if (idx >= labels.length) {
+            txt.destroy();
+            this.isTransitioning = false;
+            callback();
+            return;
+        }
+        txt.setText(labels[idx]).setScale(2.5).setAlpha(0);
+        if (labels[idx] === 'START!') txt.setColor('#10b981');
+
+        this.tweens.add({
+            targets: txt,
+            scale: 1,
+            alpha: 1,
+            duration: 350,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                this.time.delayedCall(400, () => {
+                    this.tweens.add({
+                        targets: txt,
+                        alpha: 0,
+                        scale: 0.8,
+                        duration: 200,
+                        onComplete: () => {
+                            idx++;
+                            showNext();
+                        }
+                    });
+                });
+            }
+        });
+    };
+    showNext();
+  }
+
   private startPhase(phase: number) {
-    this.currentPhase = phase; this.cursorProgress = 0; this.isTransitioning = false; this.updateCursorTool(); this.spawnInteractablesForPhase();
+    this.currentPhase = phase; this.cursorProgress = 0; this.updateCursorTool(); this.spawnInteractablesForPhase();
     const pos = this.getPathPosition(0); this.cursor.setPosition(pos.x, pos.y);
+    // 즉시 시작 대신 카운트다운 실행
+    this.runCountdown(() => {
+        // 카운트다운 종료 시 실제 게임 로직 시작
+    });
   }
 
   private updateCursorTool() {
@@ -309,7 +362,11 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     if (this.isFinished || this.isTransitioning || this.worldPoints.length < 2) return;
-    this.cursorProgress += this.cursorSpeed * delta;
+    
+    // 진행도가 커질수록 가속도 적용 (최대 1.5배 가속)
+    const acceleration = 1 + (this.cursorProgress * 0.5);
+    this.cursorProgress += (this.cursorSpeed * acceleration) * delta;
+
     this.interactables.forEach((obj) => { if (!obj.hit && !obj.missed) { if (this.cursorProgress > obj.p + 0.1) { if (obj.type === 'TAP') { obj.missed = true; const pos = this.getPathPosition(obj.p); this.handleMiss(pos.x, pos.y, obj); } else if (obj.type === 'DRAG' && !obj.startHit && !obj.missedStart) obj.missedStart = true; } } });
     this.handleDragLogic(time, delta); if (this.cursorProgress >= 1.0) this.finishPhase();
     const pos = this.getPathPosition(this.cursorProgress); this.cursor.setPosition(pos.x, pos.y);
@@ -365,9 +422,16 @@ export default class WorkbenchScene extends Phaser.Scene {
   private finishPhase() {
     this.isTransitioning = true; this.confirmedProgress = Math.min(100, this.confirmedProgress + 25); this.updateProgressBar();
     this.interactables.forEach(obj => { if (obj.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 400 }); if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 400 }); });
-    const isLastPhase = this.currentPhase >= 4; const splashText = isLastPhase ? 'WORK COMPLETE!' : `PHASE ${this.currentPhase} COMPLETE!`;
-    const splash = this.add.text(this.centerX, this.centerY, splashText, { fontFamily: 'Grenze Gotisch', fontSize: '48px', color: isLastPhase ? '#fbbf24' : '#10b981', stroke: '#000', strokeThickness: 8 }).setOrigin(0.5).setAlpha(0).setScale(0.5).setDepth(100);
-    this.root.add(splash); this.tweens.chain({ targets: splash, tweens: [ { alpha: 1, scale: 1.2, duration: 400, ease: 'Back.out' }, { scale: 1, duration: 800 }, { alpha: 0, scale: 1.5, duration: 300, ease: 'Cubic.in' } ], onComplete: () => { splash.destroy(); if (isLastPhase) this.win(); else this.time.delayedCall(500, () => this.startPhase(this.currentPhase + 1)); } });
+    const isLastPhase = this.currentPhase >= 4;
+    
+    // 안내 문구 대신 즉시 트랜지션 처리 (마지막 페이즈는 승리 연출)
+    if (isLastPhase) {
+        this.win();
+    } else {
+        this.time.delayedCall(400, () => {
+            this.startPhase(this.currentPhase + 1);
+        });
+    }
   }
 
   private updateProgressBar() { this.progressBar.width = Math.max(0.1, (this.confirmedProgress / 100) * this.progBg.width); }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { UI_MODAL_LAYOUT } from '../../config/ui-config';
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -25,9 +26,12 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-200 px-[10%] py-[15%]" onClick={onCancel}>
+        <div 
+            className={`${UI_MODAL_LAYOUT.OVERLAY} ${UI_MODAL_LAYOUT.Z_INDEX.CONFIRM} animate-in fade-in duration-200`} 
+            onClick={onCancel}
+        >
             <div 
-                className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-[88vw] max-w-[400px] h-fit max-h-full min-h-[180px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto"
+                className={`${UI_MODAL_LAYOUT.CONTAINER} border-stone-700 animate-in zoom-in-95 duration-200`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}

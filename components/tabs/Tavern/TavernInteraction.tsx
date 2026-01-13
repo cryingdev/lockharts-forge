@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -128,8 +129,16 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
         if (!pendingGiftItem) return;
         const item = pendingGiftItem;
         actions.giveGift(mercenary.id, item.id);
-        if (item.type === 'EQUIPMENT') {
-            setDialogue(`(Surprised) "Is this for me? A ${item.name}? I will carry it with honor."`);
+        
+        if (item.type === 'EQUIPMENT' && item.equipmentData) {
+            const q = item.equipmentData.quality;
+            if (q > 100) {
+                setDialogue(`(Eyes widening) "Is this for me? A masterpiece like this? I... I am truly honored, Lockhart. I will carry it with my life."`);
+            } else if (q < 80) {
+                setDialogue(`"A gift? I appreciate the gesture, but... this ${item.name} looks a bit worse for wear. I hope your anvil finds its true rhythm soon."`);
+            } else {
+                setDialogue(`(Surprised) "Is this for me? A ${item.name}? I will carry it with honor."`);
+            }
         } else {
             setDialogue(`${mercenary.name} seems pleased with the gift. "For me? You're too kind."`);
         }
@@ -141,33 +150,12 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
         setDialogue(`(You pull your hand back.) "Actually, never mind."`);
     };
 
-    const getQualityLabel = (q: number): string => {
-        if (q >= 110) return 'MASTERWORK';
-        if (q >= 100) return 'PRISTINE';
-        if (q >= 90) return 'SUPERIOR';
-        if (q >= 80) return 'FINE';
-        if (q >= 70) return 'STANDARD';
-        if (q >= 60) return 'RUSTIC';
-        return 'CRUDE';
-    };
-
     const giftableItems = state.inventory.filter(i => 
         i.type === 'RESOURCE' || 
         i.type === 'CONSUMABLE' || 
         i.type === 'EQUIPMENT' ||
         i.type === 'SCROLL'
     );
-
-    const getRarityColor = (rarity?: string) => {
-        switch (rarity) {
-            case 'Common': return 'text-stone-400';
-            case 'Uncommon': return 'text-emerald-400';
-            case 'Rare': return 'text-blue-400';
-            case 'Epic': return 'text-purple-400';
-            case 'Legendary': return 'text-amber-400';
-            default: return 'text-stone-500';
-        }
-    };
 
     const getItemImageUrl = (item: InventoryItem) => {
         if (item.type === 'SCROLL') return getAssetUrl('scroll.png');
@@ -218,7 +206,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <span className="text-xs font-black uppercase tracking-widest">Back</span>
             </button>
 
-            {/* Mercenary Info HUD - Shifted down to accommodate the Exit button */}
+            {/* Mercenary Info HUD */}
             <div className="absolute top-20 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
@@ -308,7 +296,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <div className={`flex flex-col items-end gap-2 w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
                     
                     {/* Action Buttons (Right Aligned) */}
-                    <div className="flex flex-wrap items-center justify-end gap-1.5 md:gap-3 w-full">
+                    <div className="flex wrap items-center justify-end gap-1.5 md:gap-3 w-full">
                         <button 
                             onClick={handleTalk}
                             className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-amber-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"

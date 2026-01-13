@@ -1,6 +1,4 @@
 
-
-
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import MainForgeScene, { MainForgeData } from '../../../game/MainForgeScene';
@@ -43,38 +41,40 @@ const MainForgeCanvas = () => {
 
     let resizeObserver: ResizeObserver | null = null;
 
-    // 만약 이미 게임이 존재한다면, 장면만 재시작하되 컨텍스트가 닫혔는지 확인
+    // Phaser 인스턴스 생명주기 제어
     if (gameRef.current) {
         try {
             const scene = gameRef.current.scene.getScene('MainForgeScene');
-            // isRunning이 true이고 renderer 컨텍스트가 유효할 때만 진행
             if (scene && gameRef.current.isRunning) {
+                // 장면이 활성화 상태라면 재시작을 통해 데이터 갱신
                 scene.scene.restart(sceneData);
             } else {
-                throw new Error("Context closed or game not running");
+                // 상태가 불안정하다면 파괴 후 새로 생성 유도
+                gameRef.current.destroy(true);
+                gameRef.current = null;
             }
         } catch (e) {
-            console.warn("Phaser context invalid, recreating game instance.");
+            console.warn("Phaser context invalid during refresh, destroying instance.");
             gameRef.current.destroy(true);
             gameRef.current = null;
         }
     }
 
-    if (!gameRef.current) {
+    if (!gameRef.current && containerRef.current) {
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO,
             parent: containerRef.current,
             width: containerRef.current.clientWidth,
             height: containerRef.current.clientHeight,
             backgroundColor: '#0c0a09',
-            // Fix: Removed 'pauseOnBlur' as it is not a recognized property in some GameConfig type definitions
             scale: {
                 mode: Phaser.Scale.RESIZE,
                 autoCenter: Phaser.Scale.CENTER_BOTH
             },
             render: {
                 transparent: false,
-                antialias: true
+                antialias: true,
+                powerPreference: 'high-performance'
             },
             callbacks: {
                 postBoot: (game) => {
@@ -97,7 +97,7 @@ const MainForgeCanvas = () => {
                 }
             }
         });
-        if (containerRef.current) resizeObserver.observe(containerRef.current);
+        resizeObserver.observe(containerRef.current);
     }
     
     return () => {
@@ -110,7 +110,8 @@ const MainForgeCanvas = () => {
           if (gameRef.current) {
               const game = gameRef.current;
               gameRef.current = null;
-              game.destroy(true, false); // true: 캔버스 제거, false: 즉시 가비지 컬렉션 허용 시도
+              // 리액트 언마운트 시 즉시 캔버스를 제거하여 잔류 컨텍스트 방지
+              game.destroy(true); 
           }
       }
   }, []);

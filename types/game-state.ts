@@ -103,6 +103,7 @@ export interface GameState {
   showJournal: boolean; // Toggle for the Log/Journal Modal
   showTutorialCompleteModal: boolean; // Toggle for the Final Tutorial Result Modal
   toast: GameToast | null; // Global toast notifications
+  toastQueue: string[]; // 대기 중인 토스트 메시지 대기열
   
   // Progression
   craftingMastery: Record<string, number>; // Key: Item ID, Value: Craft Count

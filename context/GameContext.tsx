@@ -31,6 +31,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
   
   const currentSlotRef = useRef(initialSlotIndex);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const stateRef = useRef(state);
   useEffect(() => {
@@ -45,6 +46,26 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     prevDayRef.current = state.stats.day;
   }, [state.stats.day, state]);
 
+  // --- Toast Queue Processor ---
+  useEffect(() => {
+      // 현재 표시 중인 토스트가 없고 대기열에 메시지가 있다면 다음 토스트 노출
+      if (!state.toast?.visible && state.toastQueue.length > 0) {
+          // 약간의 딜레이를 주어 이전 토스트가 사라지는 애니메이션이 끝난 후 나타나게 함
+          const processTimer = setTimeout(() => {
+              dispatch({ type: 'POP_NEXT_TOAST' });
+          }, 150);
+          return () => clearTimeout(processTimer);
+      }
+
+      // 현재 토스트가 노출된 상태라면 3초 후 숨기기 예약
+      if (state.toast?.visible) {
+          const hideTimer = setTimeout(() => {
+              dispatch({ type: 'HIDE_TOAST' });
+          }, 3000);
+          return () => clearTimeout(hideTimer);
+      }
+  }, [state.toast?.visible, state.toastQueue.length]);
+
   const triggerEnergyHighlight = () => {
       dispatch({ type: 'SET_UI_EFFECT', payload: { effect: 'energyHighlight', value: true } });
       setTimeout(() => {
@@ -54,9 +75,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
 
   const showToast = (message: string) => {
       dispatch({ type: 'SHOW_TOAST', payload: message });
-      setTimeout(() => {
-          dispatch({ type: 'HIDE_TOAST' });
-      }, 3000);
   };
 
   const actions = useMemo(() => ({

@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { Sparkles, Check, Star, Hammer, Wrench } from 'lucide-react';
+import { UI_MODAL_LAYOUT } from '../../config/ui-config';
 
 const TierUnlockModal = () => {
     const { state, actions } = useGame();
@@ -11,7 +11,7 @@ const TierUnlockModal = () => {
     const { type, tier } = state.unlockedTierPopup;
 
     return (
-        <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/85 backdrop-blur-md px-[6%] py-[10%] overflow-hidden">
+        <div className={`${UI_MODAL_LAYOUT.OVERLAY} ${UI_MODAL_LAYOUT.Z_INDEX.UNLOCK}`}>
             <style>
                 {`
                 @keyframes tv-on {
@@ -26,7 +26,7 @@ const TierUnlockModal = () => {
                 `}
             </style>
 
-            <div className="relative w-[88vw] max-w-[420px] h-fit max-h-full bg-stone-900 border-2 border-amber-600 rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden mx-auto">
+            <div className={`${UI_MODAL_LAYOUT.CONTAINER} border-amber-600 shadow-[0_0_60px_rgba(0,0,0,0.8)]`}>
                 
                 {/* Header Section */}
                 <div className="bg-stone-850 p-4 md:p-6 border-b border-stone-800 text-center shrink-0 flex flex-col items-center">
