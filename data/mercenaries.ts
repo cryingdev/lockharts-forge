@@ -35,7 +35,7 @@ export const TILLY_FOOTLOOSE: Mercenary = {
     level: 2,
     stats: stats(3, 4, 8, 5, 8),
     allocatedStats: emptyAllocated(),
-    bonusStatPoints: 3, // Initial points for Level 2: (2-1)*3
+    bonusStatPoints: 0,
     currentHp: 0,
     maxHp: 0,
     currentMp: 0,
@@ -94,7 +94,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     level: 7,
     stats: stats(20, 25, 10, 5, 5),
     allocatedStats: emptyAllocated(),
-    bonusStatPoints: 18, // (7-1)*3
+    bonusStatPoints: 0,
     currentHp: 0,
     maxHp: 0,
     currentMp: 0,
@@ -118,7 +118,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     level: 5,
     stats: stats(5, 8, 12, 25, 10),
     allocatedStats: emptyAllocated(),
-    bonusStatPoints: 12, // (5-1)*3
+    bonusStatPoints: 0,
     currentHp: 0,
     maxHp: 0,
     currentMp: 0,
@@ -142,7 +142,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     level: 6,
     stats: stats(22, 22, 10, 4, 4),
     allocatedStats: emptyAllocated(),
-    bonusStatPoints: 15, // (6-1)*3
+    bonusStatPoints: 0,
     currentHp: 0,
     maxHp: 0,
     currentMp: 0,
@@ -166,7 +166,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     level: 4,
     stats: stats(4, 8, 12, 22, 12),
     allocatedStats: emptyAllocated(),
-    bonusStatPoints: 9, // (4-1)*3
+    bonusStatPoints: 0,
     currentHp: 0,
     maxHp: 0,
     currentMp: 0,
@@ -190,7 +190,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     level: 3,
     stats: stats(8, 10, 20, 5, 15),
     allocatedStats: emptyAllocated(),
-    bonusStatPoints: 6, // (3-1)*3
+    bonusStatPoints: 0,
     currentHp: 0,
     maxHp: 0,
     currentMp: 0,
@@ -214,7 +214,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     level: 4,
     stats: stats(6, 18, 8, 20, 10),
     allocatedStats: emptyAllocated(),
-    bonusStatPoints: 9, // (4-1)*3
+    bonusStatPoints: 0,
     currentHp: 0,
     maxHp: 0,
     currentMp: 0,

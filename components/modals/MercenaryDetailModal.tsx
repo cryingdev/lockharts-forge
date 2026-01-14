@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Mercenary } from '../../models/Mercenary';
@@ -22,7 +23,6 @@ import {
   Plus,
   Minus,
   AlertCircle,
-  ShieldAlert,
   ArrowUp,
   ArrowDown,
   Package,
@@ -32,6 +32,8 @@ import {
   ChevronUp,
   FlaskConical,
   Check,
+  RotateCcw,
+  Save,
 } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
 import {
@@ -41,7 +43,7 @@ import {
   PrimaryStats,
   mergePrimaryStats,
 } from '../../models/Stats';
-import { calculateCombatPower } from '../../utils/combatLogic';
+import { calculateCombatPower, calculateMercenaryPower } from '../../utils/combatLogic';
 import { InventoryItem } from '../../types/inventory';
 import { Equipment } from '../../models/Equipment';
 import { SKILLS } from '../../data/skills';
@@ -263,22 +265,27 @@ const MercenaryStatsPanel = ({
   mercenary,
   baseStats,
   finalStats,
-  localAllocated,
+  pendingAllocated,
+  pendingPoints,
   equipmentStats,
   previewEquipmentStats,
-  onSetLocalAllocated,
+  onModifyStat,
+  onSave,
+  onReset,
   isReadOnly,
 }: {
   mercenary: Mercenary;
   baseStats: DerivedStats;
   finalStats: DerivedStats;
-  localAllocated: PrimaryStats;
+  pendingAllocated: PrimaryStats;
+  pendingPoints: number;
   equipmentStats: PrimaryStats;
   previewEquipmentStats: PrimaryStats | null;
-  onSetLocalAllocated: (stats: PrimaryStats) => void;
+  onModifyStat: (key: keyof PrimaryStats, delta: number) => void;
+  onSave: () => void;
+  onReset: () => void;
   isReadOnly?: boolean;
 }) => {
-  const { actions } = useGame();
   const xpPercent =
     mercenary.xpToNextLevel > 0
       ? Math.min(100, Math.max(0, (mercenary.currentXp / mercenary.xpToNextLevel) * 100))
@@ -286,8 +293,11 @@ const MercenaryStatsPanel = ({
   const hpPercent = finalStats.maxHp > 0 ? (mercenary.currentHp / finalStats.maxHp) * 100 : 0;
   const mpPercent = finalStats.maxMp > 0 ? (mercenary.currentMp / finalStats.maxMp) * 100 : 0;
 
-  // Use dedicated bonusStatPoints field for easier access
-  const availablePoints = mercenary.bonusStatPoints || 0;
+  const isModified = useMemo(() => {
+    return (Object.keys(pendingAllocated) as Array<keyof PrimaryStats>).some(
+        key => pendingAllocated[key] !== mercenary.allocatedStats[key]
+    );
+  }, [pendingAllocated, mercenary.allocatedStats]);
 
   const renderStatRow = (icon: React.ReactNode, label: string, baseValue: number, nextValue: number, isPercent = false) => {
     return (
@@ -333,9 +343,9 @@ const MercenaryStatsPanel = ({
           <h4 className="text-[8px] md:text-xs font-black text-stone-500 uppercase tracking-widest flex items-center gap-1.5 md:gap-2">
             <Star className="w-3 h-3 text-amber-600" /> Attributes
           </h4>
-          {!isReadOnly && availablePoints > 0 && (
-            <span className="text-[8px] md:text-xs font-black text-amber-400 px-2 md:px-3 py-0.5 md:py-1 bg-amber-900/30 border border-amber-500/30 rounded-full animate-pulse">
-              {availablePoints} AP
+          {!isReadOnly && (
+            <span className={`text-[8px] md:text-xs font-black px-2 md:px-3 py-0.5 md:py-1 border rounded-full transition-all ${pendingPoints > 0 ? 'bg-amber-900/30 border-amber-500/30 text-amber-400 animate-pulse' : 'bg-stone-900 border-stone-700 text-stone-600'}`}>
+              {pendingPoints} AP AVAILABLE
             </span>
           )}
         </div>
@@ -349,16 +359,16 @@ const MercenaryStatsPanel = ({
             { label: 'LUK', key: 'luk' as const, color: 'text-pink-400' },
           ].map((stat) => {
             const currentEquipBonus = equipmentStats[stat.key] || 0;
-            const currentTotal = mercenary.stats[stat.key] + localAllocated[stat.key] + currentEquipBonus;
+            const currentTotal = mercenary.stats[stat.key] + mercenary.allocatedStats[stat.key] + currentEquipBonus;
             
             const previewEquipBonus = previewEquipmentStats ? (previewEquipmentStats[stat.key] || 0) : currentEquipBonus;
-            const previewTotal = mercenary.stats[stat.key] + localAllocated[stat.key] + previewEquipBonus;
+            const previewTotal = mercenary.stats[stat.key] + pendingAllocated[stat.key] + previewEquipBonus;
             
-            const isAllocatedModified = localAllocated[stat.key] > mercenary.allocatedStats[stat.key];
+            const isAllocatedModified = pendingAllocated[stat.key] > mercenary.allocatedStats[stat.key];
             const isPreviewing = previewEquipmentStats !== null;
 
             return (
-              <div key={stat.key} className="flex flex-col gap-1 md:gap-1.5">
+              <div key={stat.key} className="flex flex-col gap-1 md:gap-2">
                 <div
                   className={`bg-stone-900/80 border ${isAllocatedModified || (isPreviewing && previewTotal !== currentTotal) ? 'border-amber-500 shadow-glow-sm' : 'border-stone-800'} p-1 md:p-2 rounded-lg flex flex-col items-center justify-center h-14 md:h-20 transition-all relative`}
                 >
@@ -367,19 +377,25 @@ const MercenaryStatsPanel = ({
                     <span className={`text-[10px] md:text-lg font-mono font-black ${isPreviewing && previewTotal > currentTotal ? 'text-emerald-400' : isPreviewing && previewTotal < currentTotal ? 'text-red-400' : isAllocatedModified ? 'text-amber-400' : 'text-stone-400'}`}>
                       {previewTotal}
                     </span>
-                    {isPreviewing && <StatDiff current={currentTotal} next={previewTotal} />}
                   </div>
                   {previewEquipBonus > 0 && <span className="text-[6px] md:text-[8px] font-bold text-emerald-400 leading-none mt-0.5">+{previewEquipBonus}</span>}
                 </div>
 
                 {!isReadOnly && (
-                  <div className="flex flex-col gap-0.5 md:gap-1">
+                  <div className="flex flex-col gap-1">
                     <button
-                      onClick={() => actions.allocateStat(mercenary.id, stat.key)}
-                      disabled={availablePoints <= 0}
-                      className="w-full h-4 md:h-7 bg-stone-800 hover:bg-amber-600 text-stone-500 hover:text-white rounded transition-all disabled:opacity-0 flex items-center justify-center shadow-sm"
+                      onClick={() => onModifyStat(stat.key, 1)}
+                      disabled={pendingPoints <= 0}
+                      className="w-full h-4 md:h-7 bg-stone-800 hover:bg-amber-600 text-stone-500 hover:text-white rounded transition-all disabled:opacity-20 flex items-center justify-center shadow-sm"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onModifyStat(stat.key, -1)}
+                      disabled={pendingAllocated[stat.key] <= mercenary.allocatedStats[stat.key]}
+                      className="w-full h-4 md:h-7 bg-stone-800 hover:bg-red-900 text-stone-500 hover:text-white rounded transition-all disabled:opacity-20 flex items-center justify-center shadow-sm"
+                    >
+                      <Minus className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
                     </button>
                   </div>
                 )}
@@ -388,6 +404,23 @@ const MercenaryStatsPanel = ({
           })}
         </div>
       </div>
+
+      {isModified && !isReadOnly && (
+          <div className="flex gap-2 animate-in slide-in-from-bottom-2 duration-300">
+              <button 
+                onClick={onReset}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-stone-200 rounded-xl border border-stone-700 transition-all text-[10px] font-black uppercase tracking-widest"
+              >
+                  <RotateCcw className="w-3.5 h-3.5" /> Discard
+              </button>
+              <button 
+                onClick={onSave}
+                className="flex-[2] flex items-center justify-center gap-2 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl border-b-4 border-amber-800 shadow-xl transition-all active:translate-y-0.5 text-[10px] font-black uppercase tracking-widest"
+              >
+                  <Save className="w-3.5 h-3.5" /> Save Attributes
+              </button>
+          </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2 md:gap-6 shrink-0">
         <div className="bg-stone-950/40 p-2 md:p-5 rounded-xl border border-white/5 flex items-center gap-2 md:gap-4 shadow-sm">
@@ -398,7 +431,7 @@ const MercenaryStatsPanel = ({
             <div className="flex justify-between text-[7px] md:text-xs text-stone-500 font-black mb-0.5 md:mb-1">
               <span>HP</span>
               <span className="text-stone-300 font-mono">
-                {mercenary.currentHp}/{finalStats.maxHp}
+                {Math.floor(mercenary.currentHp)}/{finalStats.maxHp}
               </span>
             </div>
             <div className="w-full h-1 md:h-2 bg-stone-900 rounded-full overflow-hidden shadow-inner">
@@ -415,7 +448,7 @@ const MercenaryStatsPanel = ({
             <div className="flex justify-between text-[7px] md:text-xs text-stone-500 font-black mb-0.5 md:mb-1">
               <span>MP</span>
               <span className="text-stone-300 font-mono">
-                {mercenary.currentMp}/{finalStats.maxMp}
+                {Math.floor(mercenary.currentMp)}/{finalStats.maxMp}
               </span>
             </div>
             <div className="w-full h-1 md:h-2 bg-stone-900 rounded-full overflow-hidden shadow-inner">
@@ -733,20 +766,44 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
   const { state, actions } = useGame();
   const [selectedSlot, setSelectedSlot] = useState<EquipmentSlotType | null>(null);
   const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string | null>(null);
-  const [localAllocated, setLocalAllocated] = useState<PrimaryStats>({ str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
+  
+  // Pending Allocation State
+  const [pendingAllocated, setPendingAllocated] = useState<PrimaryStats>({ str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
+  const [pendingPoints, setPendingPoints] = useState(0);
+  
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
 
   useEffect(() => {
     if (mercenary) {
       setSelectedSlot(null);
       setSelectedInventoryItemId(null);
-      setLocalAllocated({ ...mercenary.allocatedStats });
+      setPendingAllocated({ ...mercenary.allocatedStats });
+      setPendingPoints(mercenary.bonusStatPoints || 0);
     }
-  }, [mercenary?.id]);
+  }, [mercenary?.id, mercenary?.allocatedStats, mercenary?.bonusStatPoints]);
 
   if (!mercenary) return null;
 
   const isHired = mercenary.status !== 'VISITOR' && mercenary.status !== 'DEAD';
+
+  const handleModifyStat = (key: keyof PrimaryStats, delta: number) => {
+    if (delta > 0 && pendingPoints <= 0) return;
+    if (delta < 0 && pendingAllocated[key] <= mercenary.allocatedStats[key]) return;
+
+    setPendingAllocated(prev => ({ ...prev, [key]: prev[key] + delta }));
+    setPendingPoints(prev => prev - delta);
+  };
+
+  const handleSaveAttributes = () => {
+    if (!mercenary) return;
+    actions.updateMercenaryStats(mercenary.id, pendingAllocated);
+    actions.showToast(`${mercenary.name}'s attributes have been finalized.`);
+  };
+
+  const handleResetAttributes = () => {
+    setPendingAllocated({ ...mercenary.allocatedStats });
+    setPendingPoints(mercenary.bonusStatPoints || 0);
+  };
 
   const currentEqPrimaryStats = useMemo(() => {
     return (Object.values(mercenary.equipment).filter(Boolean) as Equipment[]).reduce(
@@ -761,7 +818,8 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
     );
   }, [mercenary.equipment]);
 
-  const mergedPrimary = mergePrimaryStats(mercenary.stats, localAllocated, currentEqPrimaryStats);
+  // Use pendingAllocated for derived calculation to show real-time preview
+  const mergedPrimary = mergePrimaryStats(mercenary.stats, pendingAllocated, currentEqPrimaryStats);
   const baseDerived = calculateDerivedStats(mergedPrimary, mercenary.level);
   const currentEquipmentStatsList = (Object.values(mercenary.equipment) as (Equipment | null)[]).map((eq) => eq?.stats).filter(Boolean);
   const currentStats = applyEquipmentBonuses(baseDerived, currentEquipmentStatsList as any);
@@ -791,7 +849,7 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
         { str: 0, vit: 0, dex: 0, int: 0, luk: 0 }
       );
 
-      const previewMerged = mergePrimaryStats(mercenary.stats, localAllocated, previewEqPrimaryStats);
+      const previewMerged = mergePrimaryStats(mercenary.stats, pendingAllocated, previewEqPrimaryStats);
       const previewBase = calculateDerivedStats(previewMerged, mercenary.level);
       previewStats = applyEquipmentBonuses(
         previewBase,
@@ -820,7 +878,7 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
           <div className="flex-1 overflow-y-auto custom-scrollbar bg-stone-900/20">
             <MercenaryPaperDoll
               mercenary={mercenary}
-              currentCombatPower={currentCombatPower}
+              currentCombatPower={calculateMercenaryPower(mercenary)}
               nextCombatPower={effectiveCombatPower}
               showAffinityGain={false}
               onUnequip={(slot) => onUnequip(mercenary.id, slot)}
@@ -838,10 +896,13 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
               mercenary={mercenary}
               baseStats={currentStats}
               finalStats={effectiveFinalStats}
-              localAllocated={localAllocated}
+              pendingAllocated={pendingAllocated}
+              pendingPoints={pendingPoints}
               equipmentStats={currentEqPrimaryStats}
               previewEquipmentStats={previewEqPrimaryStats}
-              onSetLocalAllocated={setLocalAllocated}
+              onModifyStat={handleModifyStat}
+              onSave={handleSaveAttributes}
+              onReset={handleResetAttributes}
               isReadOnly={isReadOnly}
             />
           </div>

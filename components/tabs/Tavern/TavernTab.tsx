@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { createRandomMercenary, getUnmetNamedMercenary } from '../../../utils/mercenaryGenerator';
-import { Heart, PlusCircle, UserPlus, ShieldAlert, ChevronUp, Map, Beer, Users, UserRound, Skull } from 'lucide-react';
+import { PlusCircle, UserPlus, ShieldAlert, ChevronUp, Map, Beer, Users, UserRound, Skull, Activity, Heart, Zap } from 'lucide-react';
 import TavernInteraction from './TavernInteraction';
 import { getAssetUrl } from '../../../utils';
 import ConfirmationModal from '../../modals/ConfirmationModal';
@@ -15,19 +15,30 @@ const EnergyBattery = ({ value }: { value: number }) => {
     return (
         <div className="flex items-center gap-1">
             <span className={`text-[9px] font-bold ${value < 20 ? 'text-red-400' : 'text-stone-500'}`}>{value}%</span>
-            <div className="w-5 h-2.5 border border-stone-500 rounded-[2px] p-[1px] bg-stone-900"><div className={`h-full ${color} rounded-[1px] transition-all`} style={{ width: `${value}%` }}></div></div>
+            <div className="w-5 h-2.5 border border-stone-500 rounded-[2px] p-[1px] bg-stone-900">
+                <div className={`h-full ${color} rounded-[1px] transition-all`} style={{ width: `${value}%` }}></div>
+            </div>
         </div>
     );
 };
 
-// Fix: Added React.FC type to MercenaryCard to correctly handle React props like 'key'
+const MiniVitals = ({ current, max, colorClass }: { current: number, max: number, colorClass: string }) => {
+    const percent = Math.min(100, Math.max(0, (current / (max || 1)) * 100));
+    return (
+        <div className="w-full bg-stone-950 h-1 rounded-full overflow-hidden border border-white/5">
+            <div className={`h-full ${colorClass} transition-all duration-500`} style={{ width: `${percent}%` }} />
+        </div>
+    );
+};
+
 const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: boolean }> = ({ merc, onClick, isHired }) => {
     const hasUnallocated = isHired && (merc.bonusStatPoints || 0) > 0;
     const xpPer = (merc.currentXp / (merc.xpToNextLevel || 100)) * 100;
 
     return (
         <div onClick={onClick} className={`group relative bg-stone-900 border ${isHired ? 'border-amber-900/50 hover:border-amber-500 shadow-lg shadow-black/40' : 'border-stone-800 hover:border-stone-600'} p-3 rounded-2xl cursor-pointer transition-all ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}>
-            <div className="flex justify-between items-start mb-3">
+            {/* Top Row: Avatar & Metadata */}
+            <div className="flex justify-between items-start mb-2">
                 <div className="relative">
                     <div className={`w-12 h-12 bg-stone-800 rounded-full border-2 ${merc.status === 'ON_EXPEDITION' ? 'border-blue-500' : isHired ? 'border-amber-600' : 'border-stone-700'} flex items-center justify-center text-2xl shadow-inner`}>
                         {merc.status === 'DEAD' ? '💀' : merc.icon}
@@ -38,23 +49,59 @@ const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: b
                         </div>
                     )}
                 </div>
-                <div className="text-right">
-                    <div className="text-[10px] font-mono text-stone-500 font-bold">LV.{merc.level}</div>
+                <div className="text-right flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-1.5 bg-stone-950 px-1.5 py-0.5 rounded border border-stone-800">
+                        <span className="text-[8px] font-black text-stone-500 uppercase tracking-tighter">Affinity</span>
+                        <span className="text-[10px] font-mono text-pink-500 font-black">{merc.affinity}</span>
+                    </div>
+                    <div className="text-[9px] font-mono text-stone-500 font-bold">LV.{merc.level}</div>
                     {isHired && merc.status !== 'DEAD' && <EnergyBattery value={merc.expeditionEnergy} />}
                 </div>
             </div>
-            <h3 className="font-bold text-xs text-stone-100 truncate mb-1">{merc.name}</h3>
-            <div className="text-[9px] text-stone-500 uppercase font-black tracking-widest mb-2">{merc.job}</div>
-            {merc.status !== 'DEAD' && (
-                <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${xpPer}%` }} />
+
+            {/* Middle: Identification */}
+            <h3 className="font-bold text-xs text-stone-100 truncate leading-tight">{merc.name}</h3>
+            <div className="text-[8px] text-stone-500 uppercase font-black tracking-widest mb-2">{merc.job}</div>
+
+            {/* Vitals: HP & MP Bars */}
+            <div className="space-y-1 mb-2">
+                <div className="flex justify-between items-center text-[7px] font-black uppercase text-stone-600 px-0.5">
+                    <span>HP</span>
+                    <span>{Math.floor(merc.currentHp)}/{merc.maxHp}</span>
                 </div>
-            )}
-            <div className="flex justify-between items-center">
-                <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${merc.status === 'ON_EXPEDITION' ? 'bg-blue-900/30 text-blue-400' : merc.status === 'INJURED' ? 'bg-red-900/30 text-red-400' : isHired ? 'bg-amber-900/30 text-amber-500' : 'bg-stone-800 text-stone-500'}`}>
-                    {merc.status === 'ON_EXPEDITION' ? 'Exploring' : merc.status === 'INJURED' ? 'Injured' : merc.status === 'DEAD' ? 'Dead' : isHired ? 'Hired' : 'Visitor'}
-                </span>
-                <Heart className={`w-3 h-3 ${merc.affinity > 20 ? 'text-pink-500 fill-pink-500' : 'text-stone-700'}`} />
+                <MiniVitals current={merc.currentHp} max={merc.maxHp} colorClass="bg-red-600" />
+                
+                <div className="flex justify-between items-center text-[7px] font-black uppercase text-stone-600 px-0.5">
+                    <span>MP</span>
+                    <span>{Math.floor(merc.currentMp)}/{merc.maxMp}</span>
+                </div>
+                <MiniVitals current={merc.currentMp} max={merc.maxMp} colorClass="bg-blue-600" />
+            </div>
+
+            {/* Bottom: XP & Status */}
+            <div className="pt-1 border-t border-white/5">
+                <div className="flex justify-between items-center text-[7px] font-bold text-stone-500 uppercase mb-1 px-0.5">
+                    <span>EXP</span>
+                    <span>{Math.round(xpPer)}%</span>
+                </div>
+                <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-indigo-500 transition-all duration-1000" style={{ width: `${xpPer}%` }} />
+                </div>
+                
+                <div className="flex justify-center">
+                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                        merc.status === 'ON_EXPEDITION' ? 'bg-blue-900/20 border-blue-800 text-blue-400' : 
+                        merc.status === 'INJURED' ? 'bg-red-900/20 border-red-800 text-red-400' : 
+                        merc.status === 'DEAD' ? 'bg-black border-stone-800 text-stone-600' :
+                        isHired ? 'bg-amber-900/20 border-amber-800 text-amber-500' : 
+                        'bg-stone-800 border-stone-700 text-stone-500'
+                    }`}>
+                        {merc.status === 'ON_EXPEDITION' ? 'Exploring' : 
+                         merc.status === 'INJURED' ? 'Injured' : 
+                         merc.status === 'DEAD' ? 'Dead' : 
+                         isHired ? 'Contracted' : 'Visitor'}
+                    </span>
+                </div>
             </div>
         </div>
     );

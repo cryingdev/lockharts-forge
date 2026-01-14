@@ -1,3 +1,4 @@
+
 import { GameState } from '../../types/index';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -225,23 +226,28 @@ export const handleAllocateStat = (state: GameState, payload: { mercenaryId: str
 };
 
 export const handleUpdateMercenaryStats = (state: GameState, payload: { mercenaryId: string; stats: PrimaryStats }): GameState => {
-    const { mercenaryId, stats } = payload;
+    const { mercenaryId, stats: newAllocatedStats } = payload;
     const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
     if (mercIndex === -1) return state;
 
     const merc = state.knownMercenaries[mercIndex];
     
-    const merged = mergePrimaryStats(merc.stats, stats);
+    // Calculate total points spent
+    const oldTotal = Object.values(merc.allocatedStats).reduce((a, b) => a + b, 0);
+    const newTotal = Object.values(newAllocatedStats).reduce((a, b) => a + b, 0);
+    const spentPoints = newTotal - oldTotal;
+
+    const merged = mergePrimaryStats(merc.stats, newAllocatedStats);
     const newMaxHp = calculateMaxHp(merged, merc.level);
     const newMaxMp = calculateMaxMp(merged, merc.level);
 
-    // Maintain current health percentage if possible, or just add the flat difference
     const hpDiff = newMaxHp - merc.maxHp;
     const mpDiff = newMaxMp - merc.maxMp;
 
     const updatedMerc: Mercenary = {
         ...merc,
-        allocatedStats: stats,
+        allocatedStats: newAllocatedStats,
+        bonusStatPoints: Math.max(0, (merc.bonusStatPoints || 0) - spentPoints),
         maxHp: newMaxHp,
         maxMp: newMaxMp,
         currentHp: merc.currentHp + (hpDiff > 0 ? hpDiff : 0),
@@ -254,6 +260,6 @@ export const handleUpdateMercenaryStats = (state: GameState, payload: { mercenar
     return {
         ...state,
         knownMercenaries: newKnownMercenaries,
-        logs: [`Updated attributes for ${merc.name}.`, ...state.logs]
+        logs: [`Updated attributes for ${merc.name}. Used ${spentPoints} points.`, ...state.logs]
     };
 };

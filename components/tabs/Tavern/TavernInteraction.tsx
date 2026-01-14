@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { ArrowLeft, Heart, Gift, MessageSquare, UserPlus, Package, X, Star, Wrench, Search, UserMinus, Ban, Lock, Unlock, Sword, Shield } from 'lucide-react';
+import { ArrowLeft, Heart, Gift, MessageSquare, UserPlus, Package, X, Star, Wrench, Search, UserMinus, Ban, Lock, Unlock, Sword, Shield, ChevronUp } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { Mercenary } from '../../../models/Mercenary';
 import { CONTRACT_CONFIG, calculateHiringCost } from '../../../config/contract-config';
@@ -105,6 +106,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const hiringCost = calculateHiringCost(mercenary.level, mercenary.job);
     const canAfford = state.stats.gold >= hiringCost;
     const hasAffinity = mercenary.affinity >= CONTRACT_CONFIG.HIRE_AFFINITY_THRESHOLD;
+    const hasUnallocated = isHired && (mercenary.bonusStatPoints || 0) > 0;
 
     const handleTalk = () => {
         if (pendingGiftItem || step !== 'IDLE') return;
@@ -407,12 +409,17 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
 
                         <button 
                             onClick={() => setShowDetail(true)}
-                            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}
+                            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 relative ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}
                         >
                             {isHired ? <Wrench className="w-3 h-3 md:w-4 md:h-4 text-emerald-500" /> : <Search className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />}
                             <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">
                                 {isHired ? 'Manage' : 'Inspect'}
                             </span>
+                            {hasUnallocated && (
+                                <div className="absolute -top-2 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-bounce border border-stone-950 z-10">
+                                    <ChevronUp className="w-2.5 h-2.5 font-black" />
+                                </div>
+                            )}
                         </button>
                     </div>
                 </div>
