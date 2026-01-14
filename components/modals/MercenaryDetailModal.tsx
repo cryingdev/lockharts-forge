@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Mercenary } from '../../models/Mercenary';
@@ -25,6 +26,13 @@ import {
   ShieldAlert,
   ArrowUp,
   ArrowDown,
+  Package,
+  ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  FlaskConical,
+  Check,
 } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
 import {
@@ -87,22 +95,28 @@ const getRarityClasses = (rarity?: string) => {
 
 const MercenaryPaperDoll = ({
   mercenary,
-  baseCombatPower,
+  currentCombatPower,
   nextCombatPower,
   showAffinityGain,
   onUnequip,
   onSlotClick,
   selectedSlot,
   isReadOnly,
+  isInventoryOpen,
+  onToggleInventory,
+  isHired,
 }: {
   mercenary: Mercenary;
-  baseCombatPower: number;
+  currentCombatPower: number;
   nextCombatPower: number;
   showAffinityGain: boolean;
   onUnequip: (slot: EquipmentSlotType) => void;
   onSlotClick: (slot: EquipmentSlotType | null) => void;
   selectedSlot: EquipmentSlotType | null;
   isReadOnly?: boolean;
+  isInventoryOpen: boolean;
+  onToggleInventory: () => void;
+  isHired: boolean;
 }) => {
   const renderSlot = ({
     slot,
@@ -150,8 +164,8 @@ const MercenaryPaperDoll = ({
 
     return (
       <div
-        className={`absolute w-10 h-10 md:w-14 md:h-14 rounded-xl border-2 backdrop-blur-md ${borderColor} ${bgColor} flex items-center justify-center shadow-lg transition-all z-20 group ${style} ${isSelected ? 'ring-4 ring-amber-500/30 scale-110' : 'hover:scale-105'} cursor-pointer`}
-        onClick={() => onSlotClick(isSelected ? null : slot)}
+        className={`absolute w-10 h-10 md:w-14 md:h-14 rounded-xl border-2 backdrop-blur-md ${borderColor} ${bgColor} flex items-center justify-center shadow-lg transition-all z-20 group ${style} ${isSelected ? 'ring-4 ring-amber-500/30 scale-110' : 'hover:scale-105'} ${isHired ? 'cursor-pointer' : 'cursor-default'}`}
+        onClick={() => isHired && onSlotClick(isSelected ? null : slot)}
       >
         {equippedItem ? (
           <img src={imageUrl} className="w-7 h-7 md:w-10 md:h-10 object-contain drop-shadow-md" />
@@ -173,15 +187,30 @@ const MercenaryPaperDoll = ({
     );
   };
 
+  const hasPowerDiff = nextCombatPower !== currentCombatPower;
+
   return (
-    <div className="w-[42%] h-full relative bg-stone-900/40 flex flex-col overflow-hidden border-r border-white/5">
-      <div className="p-3 md:p-6 flex flex-col gap-0.5 md:gap-1 shrink-0 bg-stone-950/40 border-b border-white/5 backdrop-blur-md z-30">
-        <h2 className="text-xs md:text-2xl font-black text-stone-100 font-serif truncate leading-none">
-          {mercenary.name}
-        </h2>
+    <div className="w-full flex flex-col shrink-0">
+      <div className="p-4 md:p-6 flex flex-col gap-0.5 md:gap-1 shrink-0 bg-stone-950/40 border-b border-white/5 backdrop-blur-md z-30">
+        <div className="flex justify-between items-start mb-1">
+          <h2 className="text-sm md:text-2xl font-black text-stone-100 font-serif truncate leading-none">
+            {mercenary.name}
+          </h2>
+          {isHired && (
+            <button
+              onClick={onToggleInventory}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-[10px] font-black uppercase tracking-widest ${isInventoryOpen ? 'bg-amber-600 border-amber-400 text-white shadow-glow-sm' : 'bg-stone-800 border-stone-700 text-stone-400 hover:text-stone-200'}`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">{isInventoryOpen ? 'Close Gear' : 'Open Gear'}</span>
+              {isInventoryOpen ? <ChevronLeft className="w-3 h-3 md:hidden" /> : <ChevronDown className="w-3 h-3 md:hidden" />}
+            </button>
+          )}
+        </div>
+        
         <div className="flex justify-between items-end">
           <div className="flex wrap items-center gap-1">
-            <span className="text-[6px] md:text-xs font-black text-amber-500 uppercase tracking-widest bg-amber-950/40 px-1 py-0.5 rounded border border-amber-900/20">
+            <span className="text-[7px] md:text-xs font-black text-amber-500 uppercase tracking-widest bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/20">
               {mercenary.job}
             </span>
             <div
@@ -193,17 +222,22 @@ const MercenaryPaperDoll = ({
           </div>
           <div className="text-right">
             <span className="text-[6px] md:text-[9px] text-stone-600 uppercase font-black tracking-tighter block leading-none">
-              Power
+              Combat Power
             </span>
-            <div className="flex items-center gap-0.5 md:gap-1 text-[10px] md:text-xl font-mono font-black text-stone-300">
-              <Star className="w-2.5 h-2.5 md:w-4 md:h-4 text-amber-600 fill-amber-600" />
-              {nextCombatPower}
+            <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 md:gap-1 text-[12px] md:text-xl font-mono font-black text-stone-300">
+                <Star className="w-2.5 h-2.5 md:w-4 md:h-4 text-amber-600 fill-amber-600" />
+                <span className={hasPowerDiff ? (nextCombatPower > currentCombatPower ? 'text-emerald-400' : 'text-red-400') : ''}>
+                  {nextCombatPower}
+                </span>
+              </div>
+              <StatDiff current={currentCombatPower} next={nextCombatPower} />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 relative w-full flex items-center justify-center overflow-hidden min-h-0">
+      <div className="relative w-full aspect-[4/3] md:aspect-square flex items-center justify-center overflow-hidden min-h-[180px] md:min-h-[280px]">
         <div className="relative h-[90%] w-full flex items-center justify-center pointer-events-none opacity-80">
           <img
             src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')}
@@ -212,14 +246,14 @@ const MercenaryPaperDoll = ({
         </div>
         {renderSlot({ slot: 'HEAD', icon: <Crown className="w-5 h-5" />, style: 'top-[6%] left-1/2 -translate-x-1/2' })}
         {renderSlot({ slot: 'BODY', icon: <Shirt className="w-5 h-5" />, style: 'top-[26%] left-1/2 -translate-x-1/2' })}
-        {renderSlot({ slot: 'HANDS', icon: <Hand className="w-5 h-5" />, style: 'top-[26%] left-[8%]' })}
-        {renderSlot({ slot: 'ACCESSORY', icon: <Sparkles className="w-5 h-5" />, style: 'top-[26%] right-[8%]' })}
-        {renderSlot({ slot: 'MAIN_HAND', icon: <Sword className="w-5 h-5" />, style: 'top-[48%] left-[4%]' })}
-        {renderSlot({ slot: 'OFF_HAND', icon: <Shield className="w-5 h-5" />, style: 'top-[48%] right-[4%]' })}
+        {renderSlot({ slot: 'HANDS', icon: <Hand className="w-5 h-5" />, style: 'top-[26%] left-[10%]' })}
+        {renderSlot({ slot: 'ACCESSORY', icon: <Sparkles className="w-5 h-5" />, style: 'top-[26%] right-[10%]' })}
+        {renderSlot({ slot: 'MAIN_HAND', icon: <Sword className="w-5 h-5" />, style: 'top-[50%] left-[4%]' })}
+        {renderSlot({ slot: 'OFF_HAND', icon: <Shield className="w-5 h-5" />, style: 'top-[50%] right-[4%]' })}
         {renderSlot({
           slot: 'FEET',
           icon: <Footprints className="w-5 h-5" />,
-          style: 'bottom-[10%] left-1/2 -translate-x-1/2',
+          style: 'bottom-[8%] left-1/2 -translate-x-1/2',
         })}
       </div>
     </div>
@@ -232,6 +266,7 @@ const MercenaryStatsPanel = ({
   finalStats,
   localAllocated,
   equipmentStats,
+  previewEquipmentStats,
   onSetLocalAllocated,
   isReadOnly,
 }: {
@@ -240,6 +275,7 @@ const MercenaryStatsPanel = ({
   finalStats: DerivedStats;
   localAllocated: PrimaryStats;
   equipmentStats: PrimaryStats;
+  previewEquipmentStats: PrimaryStats | null;
   onSetLocalAllocated: (stats: PrimaryStats) => void;
   isReadOnly?: boolean;
 }) => {
@@ -257,31 +293,17 @@ const MercenaryStatsPanel = ({
   const hasChanges = JSON.stringify(localAllocated) !== JSON.stringify(mercenary.allocatedStats);
 
   const renderStatRow = (icon: React.ReactNode, label: string, baseValue: number, nextValue: number, isPercent = false) => {
-    const diff = nextValue - baseValue;
-    const colorClass = diff > 0 ? 'text-emerald-400' : diff < 0 ? 'text-red-400' : 'text-stone-300';
     return (
       <div className="bg-stone-950/40 p-1.5 md:p-3 rounded-lg border border-white/5 flex justify-between items-center h-8 md:h-12">
         <span className="text-[7px] md:text-xs text-stone-500 font-black uppercase flex items-center gap-1.5 md:gap-2">
           {icon}
           <span className="hidden md:inline">{label}</span>
-          <span className="md:hidden">
-            {label === 'Physical Atk'
-              ? 'P.Atk'
-              : label === 'Physical Def'
-                ? 'P.Def'
-                : label === 'Magical Atk'
-                  ? 'M.Atk'
-                  : label === 'Magical Def'
-                    ? 'M.Def'
-                    : label === 'Crit Rate'
-                      ? 'Crit'
-                      : label === 'Evasion'
-                        ? 'Eva'
-                        : label}
+          <span className="md:hidden truncate max-w-[40px]">
+            {label === 'Physical Atk' ? 'P.Atk' : label === 'Physical Def' ? 'P.Def' : label === 'Magical Atk' ? 'M.Atk' : label === 'Magical Def' ? 'M.Def' : label === 'Crit Rate' ? 'Crit' : label === 'Evasion' ? 'Eva' : label}
           </span>
         </span>
         <div className="flex items-center gap-1 md:gap-2">
-          <span className={`font-mono text-[9px] md:text-base font-black ${colorClass}`}>
+          <span className={`font-mono text-[9px] md:text-base font-black ${nextValue > baseValue ? 'text-emerald-400' : nextValue < baseValue ? 'text-red-400' : 'text-stone-300'}`}>
             {isPercent ? nextValue.toFixed(1) : Math.round(nextValue)}
             {isPercent ? '%' : ''}
           </span>
@@ -301,14 +323,14 @@ const MercenaryStatsPanel = ({
   const skillIds = (mercenary as any).skillIds as string[] | undefined;
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6 flex flex-col gap-4 md:gap-6 min-h-0 bg-stone-900/10">
-      <div className="bg-stone-950/40 p-2 md:p-5 rounded-xl border border-white/5 shadow-inner shrink-0">
+    <div className="p-3 md:p-6 flex flex-col gap-4 md:gap-6 bg-stone-900/10 border-t border-white/5">
+      <div className="bg-stone-950/40 p-3 md:p-5 rounded-xl border border-white/5 shadow-inner shrink-0">
         <div className="flex justify-between items-end mb-1 md:mb-2 leading-none">
           <span className="text-amber-500 font-black font-mono text-[10px] md:text-lg uppercase tracking-tight">
-            LV {mercenary.level}
+            XP PROGRESS
           </span>
           <span className="text-stone-500 text-[8px] md:text-sm font-mono font-bold">
-            {mercenary.currentXp} / {mercenary.xpToNextLevel} XP
+            {mercenary.currentXp} / {mercenary.xpToNextLevel}
           </span>
         </div>
         <div className="w-full h-1 md:h-2 bg-stone-900 rounded-full overflow-hidden border border-white/5">
@@ -323,7 +345,7 @@ const MercenaryStatsPanel = ({
           </h4>
           {!isReadOnly && availablePoints > 0 && (
             <span className="text-[8px] md:text-xs font-black text-amber-400 px-2 md:px-3 py-0.5 md:py-1 bg-amber-900/30 border border-amber-500/30 rounded-full animate-pulse">
-              POINTS: {availablePoints}
+              {availablePoints} AP
             </span>
           )}
         </div>
@@ -336,21 +358,28 @@ const MercenaryStatsPanel = ({
             { label: 'VIT', key: 'vit' as const, color: 'text-red-400' },
             { label: 'LUK', key: 'luk' as const, color: 'text-pink-400' },
           ].map((stat) => {
-            const equipBonus = equipmentStats[stat.key] || 0;
-            const basePlusAlloc = mercenary.stats[stat.key] + localAllocated[stat.key];
-            const totalValue = basePlusAlloc + equipBonus;
+            const currentEquipBonus = equipmentStats[stat.key] || 0;
+            const currentTotal = mercenary.stats[stat.key] + localAllocated[stat.key] + currentEquipBonus;
+            
+            const previewEquipBonus = previewEquipmentStats ? (previewEquipmentStats[stat.key] || 0) : currentEquipBonus;
+            const previewTotal = mercenary.stats[stat.key] + localAllocated[stat.key] + previewEquipBonus;
+            
             const isAllocatedModified = localAllocated[stat.key] > mercenary.allocatedStats[stat.key];
+            const isPreviewing = previewEquipmentStats !== null;
 
             return (
               <div key={stat.key} className="flex flex-col gap-1 md:gap-1.5">
                 <div
-                  className={`bg-stone-900/80 border ${isAllocatedModified ? 'border-amber-500 shadow-glow-sm' : 'border-stone-800'} p-1 md:p-2 rounded-lg flex flex-col items-center justify-center h-14 md:h-24 transition-all relative`}
+                  className={`bg-stone-900/80 border ${isAllocatedModified || (isPreviewing && previewTotal !== currentTotal) ? 'border-amber-500 shadow-glow-sm' : 'border-stone-800'} p-1 md:p-2 rounded-lg flex flex-col items-center justify-center h-14 md:h-20 transition-all relative`}
                 >
-                  <span className={`text-[6px] md:text-[10px] font-black ${stat.color} mb-0.5`}>{stat.label}</span>
-                  <span className={`text-[10px] md:text-xl font-mono font-black ${isAllocatedModified ? 'text-amber-400' : 'text-stone-400'}`}>
-                    {totalValue}
-                  </span>
-                  {equipBonus > 0 && <span className="text-[6px] md:text-[9px] font-bold text-emerald-400 leading-none mt-0.5">+{equipBonus}</span>}
+                  <span className={`text-[6px] md:text-[8px] font-black ${stat.color} mb-0.5`}>{stat.label}</span>
+                  <div className="flex items-center gap-0.5">
+                    <span className={`text-[10px] md:text-lg font-mono font-black ${isPreviewing && previewTotal > currentTotal ? 'text-emerald-400' : isPreviewing && previewTotal < currentTotal ? 'text-red-400' : isAllocatedModified ? 'text-amber-400' : 'text-stone-400'}`}>
+                      {previewTotal}
+                    </span>
+                    {isPreviewing && <StatDiff current={currentTotal} next={previewTotal} />}
+                  </div>
+                  {previewEquipBonus > 0 && <span className="text-[6px] md:text-[8px] font-bold text-emerald-400 leading-none mt-0.5">+{previewEquipBonus}</span>}
                 </div>
 
                 {!isReadOnly && (
@@ -358,14 +387,14 @@ const MercenaryStatsPanel = ({
                     <button
                       onClick={() => updateLocalStat(stat.key, 1)}
                       disabled={availablePoints <= 0}
-                      className="w-full h-4 md:h-8 bg-stone-800 hover:bg-amber-600 text-stone-500 hover:text-white rounded transition-all disabled:opacity-0 flex items-center justify-center shadow-sm"
+                      className="w-full h-4 md:h-7 bg-stone-800 hover:bg-amber-600 text-stone-500 hover:text-white rounded transition-all disabled:opacity-0 flex items-center justify-center shadow-sm"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => updateLocalStat(stat.key, -1)}
                       disabled={localAllocated[stat.key] <= mercenary.allocatedStats[stat.key]}
-                      className="w-full h-3 md:h-6 bg-stone-950 hover:bg-red-700 text-stone-700 hover:text-white rounded transition-all disabled:opacity-0 flex items-center justify-center"
+                      className="w-full h-3 md:h-5 bg-stone-950 hover:bg-red-700 text-stone-700 hover:text-white rounded transition-all disabled:opacity-0 flex items-center justify-center"
                     >
                       <Minus className="w-2.5 h-2.5" />
                     </button>
@@ -391,7 +420,7 @@ const MercenaryStatsPanel = ({
       <div className="grid grid-cols-2 gap-2 md:gap-6 shrink-0">
         <div className="bg-stone-950/40 p-2 md:p-5 rounded-xl border border-white/5 flex items-center gap-2 md:gap-4 shadow-sm">
           <div className="p-1.5 md:p-3 bg-red-950/40 rounded-lg text-red-500 border border-red-900/30">
-            <Heart className="w-4 h-4 md:w-7 md:h-7" />
+            <Heart className="w-4 h-4 md:w-6 md:h-6" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex justify-between text-[7px] md:text-xs text-stone-500 font-black mb-0.5 md:mb-1">
@@ -408,7 +437,7 @@ const MercenaryStatsPanel = ({
 
         <div className="bg-stone-950/40 p-2 md:p-5 rounded-xl border border-white/5 flex items-center gap-2 md:gap-4 shadow-sm">
           <div className="p-1.5 md:p-3 bg-blue-950/40 rounded-lg text-blue-500 border border-blue-900/30">
-            <Activity className="w-4 h-4 md:w-7 md:h-7" />
+            <Activity className="w-4 h-4 md:w-6 md:h-6" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex justify-between text-[7px] md:text-xs text-stone-500 font-black mb-0.5 md:mb-1">
@@ -438,7 +467,6 @@ const MercenaryStatsPanel = ({
         </div>
       </div>
 
-      {/* ✅ B의 Skills 섹션을 A(STATS 탭) 안으로 통합 */}
       <div className="space-y-2 md:space-y-3 pb-6 shrink-0">
         <h4 className="text-[8px] md:text-xs font-black text-stone-500 uppercase tracking-widest flex items-center gap-1.5 px-1">
           <Sparkles className="w-3 h-3 text-amber-600" /> Techniques & Skills
@@ -448,53 +476,35 @@ const MercenaryStatsPanel = ({
           <div className="space-y-1.5 md:space-y-3">
             {skillIds.map((id) => {
               const skill = (SKILLS as any)[id];
-              if (!skill) {
-                return (
-                  <div
-                    key={id}
-                    className="bg-stone-950/30 border border-stone-800 rounded-xl p-3 text-[9px] md:text-xs text-stone-500 font-mono"
-                  >
-                    Unknown skill: {id}
-                  </div>
-                );
-              }
-
+              if (!skill) return null;
               return (
                 <div
                   key={id}
-                  className="bg-stone-950/40 border border-stone-800 rounded-2xl p-3 md:p-5 flex justify-between items-center gap-3 md:gap-6 hover:border-amber-900/40 transition-all"
+                  className="bg-stone-950/40 border border-stone-800 rounded-xl p-3 md:p-4 flex justify-between items-center gap-3 hover:border-amber-900/40 transition-all"
                 >
-                  <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                    <div className="p-2 md:p-3 bg-amber-900/15 rounded-xl border border-amber-600/20 text-amber-500 shrink-0">
-                      <Sword className="w-4 h-4 md:w-5 md:h-5" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2 bg-amber-900/15 rounded-lg border border-amber-600/20 text-amber-500 shrink-0">
+                      <Sword className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </div>
                     <div className="min-w-0">
-                      <h5 className="text-[10px] md:text-sm font-black text-stone-200 uppercase truncate">{skill.name}</h5>
-                      <p className="text-[8px] md:text-[10px] text-stone-500 italic leading-snug md:leading-relaxed line-clamp-2">
-                        “{skill.description}”
+                      <h5 className="text-[10px] md:text-xs font-black text-stone-200 uppercase truncate">{skill.name}</h5>
+                      <p className="text-[8px] md:text-[9px] text-stone-500 italic leading-tight line-clamp-1">
+                        {skill.description}
                       </p>
                     </div>
                   </div>
-
-                  <div className="text-right flex flex-col gap-1 shrink-0">
-                    {typeof skill.mpCost === 'number' && (
-                      <span className="bg-blue-900/20 text-blue-400 px-2 py-0.5 rounded text-[8px] md:text-[9px] font-black uppercase border border-blue-900/20">
-                        {skill.mpCost} MP
+                  <div className="text-right shrink-0">
+                     <span className="text-[7px] md:text-[8px] font-black text-amber-500 uppercase tracking-tighter">
+                        {Math.round(skill.multiplier * 100)}% DMG
                       </span>
-                    )}
-                    {typeof skill.multiplier === 'number' && (
-                      <span className="text-[8px] md:text-[9px] font-black text-amber-500 uppercase tracking-tighter">
-                        {Math.round(skill.multiplier * 100)}% {skill.type} DMG
-                      </span>
-                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="py-6 md:py-10 text-center border-2 border-dashed border-stone-800 rounded-2xl text-stone-600 text-[9px] md:text-xs font-bold uppercase tracking-widest">
-            No active techniques learned
+          <div className="py-4 md:py-6 text-center border-2 border-dashed border-stone-800 rounded-xl text-stone-600 text-[8px] md:text-[10px] font-bold uppercase tracking-widest">
+            No learned skills
           </div>
         )}
       </div>
@@ -502,31 +512,61 @@ const MercenaryStatsPanel = ({
   );
 };
 
+type CategoryFilter = 'ALL' | 'WEAPON' | 'ARMOR' | 'ACCESSORY' | 'CONSUMABLE';
+
 const EquipmentInventoryList = ({
   inventory,
   selectedItemId,
   onSelect,
   onEquip,
+  onConsume,
   selectedSlotFilter,
   mercenary,
   isReadOnly,
+  onToggleInventory,
 }: {
   inventory: InventoryItem[];
   selectedItemId: string | null;
   onSelect: (itemId: string) => void;
   onEquip: (itemId: string) => void;
+  onConsume: (itemId: string) => void;
   selectedSlotFilter: EquipmentSlotType | null;
   mercenary: Mercenary;
   isReadOnly?: boolean;
+  onToggleInventory: () => void;
 }) => {
-  // Exclude equipment bonuses from requirement checks.
+  const [activeFilter, setActiveFilter] = useState<CategoryFilter>('ALL');
+
   const pureMercStats = useMemo(() => {
     return mergePrimaryStats(mercenary.stats, mercenary.allocatedStats);
   }, [mercenary.stats, mercenary.allocatedStats]);
 
   const displayInventory = useMemo(() => {
-    return selectedSlotFilter ? inventory.filter((item) => item.equipmentData?.slotType === selectedSlotFilter) : inventory;
-  }, [inventory, selectedSlotFilter]);
+    let filtered = inventory;
+
+    // 1. Slot Filter (Priority from PaperDoll)
+    if (selectedSlotFilter) {
+      return filtered.filter((item) => item.equipmentData?.slotType === selectedSlotFilter);
+    }
+
+    // 2. Category Filter (Manual Chips)
+    if (activeFilter === 'WEAPON') {
+      return filtered.filter((item) => item.equipmentData?.slotType === 'MAIN_HAND');
+    }
+    if (activeFilter === 'ARMOR') {
+      return filtered.filter((item) => 
+        ['HEAD', 'BODY', 'HANDS', 'FEET', 'OFF_HAND'].includes(item.equipmentData?.slotType || '')
+      );
+    }
+    if (activeFilter === 'ACCESSORY') {
+      return filtered.filter((item) => item.equipmentData?.slotType === 'ACCESSORY');
+    }
+    if (activeFilter === 'CONSUMABLE') {
+      return filtered.filter((item) => item.type === 'CONSUMABLE');
+    }
+
+    return filtered;
+  }, [inventory, selectedSlotFilter, activeFilter]);
 
   const getQualityLabel = (q: number): string => {
     if (q >= 110) return 'MASTERWORK';
@@ -538,38 +578,84 @@ const EquipmentInventoryList = ({
     return 'CRUDE';
   };
 
+  const filterChips: { id: CategoryFilter; label: string; icon: React.ReactNode }[] = [
+    { id: 'ALL', label: 'All', icon: <Box className="w-3 h-3" /> },
+    { id: 'WEAPON', label: 'Weapons', icon: <Sword className="w-3 h-3" /> },
+    { id: 'ARMOR', label: 'Armor', icon: <Shield className="w-3 h-3" /> },
+    { id: 'ACCESSORY', label: 'Accessory', icon: <Sparkles className="w-3 h-3" /> },
+    { id: 'CONSUMABLE', label: 'Items', icon: <FlaskConical className="w-3 h-3" /> },
+  ];
+
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-stone-950/40">
-      <div className="p-3 md:p-6 bg-stone-900/60 border-b border-white/5 flex justify-between items-center shrink-0 z-10 backdrop-blur-md">
-        <h3 className="text-[9px] md:text-xs font-black text-stone-400 uppercase tracking-widest flex items-center gap-2">
-          <Box className="w-4 h-4 text-amber-600" />
-          <span>{selectedSlotFilter ? `Filtering: ${selectedSlotFilter}` : 'Available Gear'}</span>
-        </h3>
-        <span className="text-[8px] md:text-xs text-stone-600 font-mono">{displayInventory.length} ITEMS</span>
+    <div className="flex-1 flex flex-col min-h-0">
+      <div 
+        onClick={onToggleInventory}
+        className="p-4 md:p-6 bg-stone-950 border-b border-white/5 flex justify-between items-center shrink-0 z-10 backdrop-blur-md cursor-pointer hover:bg-stone-900 transition-colors group"
+      >
+        <div className="flex flex-col">
+            <h3 className="text-[10px] md:text-sm font-black text-stone-100 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-500 transition-colors">
+            <Package className="w-4 h-4 text-amber-600" />
+            <span>{selectedSlotFilter ? `Filtering: ${selectedSlotFilter}` : 'Squad Inventory'}</span>
+            </h3>
+            <span className="text-[7px] md:text-[10px] text-stone-500 font-mono mt-0.5 uppercase">Click Header to Close</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[8px] md:text-xs text-stone-600 font-mono bg-stone-900 px-2 py-0.5 rounded border border-stone-800">{displayInventory.length} ITEMS</span>
+          <ChevronRight className="w-4 h-4 text-stone-700 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
+        </div>
       </div>
+
+      {/* Category Filter Chips */}
+      {!selectedSlotFilter && (
+        <div className="px-3 md:px-6 py-2 md:py-3 bg-stone-950/40 border-b border-white/5 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+          {filterChips.map((chip) => (
+            <button
+              key={chip.id}
+              onClick={() => setActiveFilter(chip.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[9px] md:text-[10px] font-black uppercase tracking-tighter transition-all whitespace-nowrap ${
+                activeFilter === chip.id
+                  ? 'bg-amber-600 border-amber-400 text-white shadow-glow-sm'
+                  : 'bg-stone-800 border-stone-700 text-stone-500 hover:text-stone-300'
+              }`}
+            >
+              {chip.icon}
+              {chip.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6 space-y-2 md:space-y-3">
         {displayInventory.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-stone-800 italic p-12 text-center">
             <Box className="w-12 h-12 opacity-10 mb-2" />
             <p className="text-xs">No suitable gear found.</p>
+            {selectedSlotFilter && (
+              <button 
+                onClick={onToggleInventory}
+                className="mt-4 px-4 py-2 bg-stone-800 text-stone-400 rounded-lg text-[10px] uppercase font-bold hover:text-stone-200"
+              >
+                Back to View All
+              </button>
+            )}
           </div>
         ) : (
           displayInventory.map((item) => {
-            if (!item.equipmentData) return null;
-
+            const isConsumable = item.type === 'CONSUMABLE';
             const isSelected = selectedItemId === item.id;
-            const reqs = item.equipmentData.equipRequirements || {};
-
+            
+            const reqs = item.equipmentData?.equipRequirements || {};
             const failedStats = Object.entries(reqs).filter(([stat, val]) => pureMercStats[stat as keyof PrimaryStats] < (val as number));
-            const canEquip = failedStats.length === 0;
+            const canEquip = !isConsumable && failedStats.length === 0;
 
-            const rarityClasses = getRarityClasses(item.equipmentData.rarity);
-            const imageUrl = item.equipmentData.image
-              ? getAssetUrl(item.equipmentData.image)
-              : item.equipmentData.recipeId
-                ? getAssetUrl(`${item.equipmentData.recipeId}.png`)
-                : getAssetUrl(`${item.id.split('_')[0]}.png`);
+            const rarityClasses = isConsumable ? 'text-stone-400 border-stone-700 bg-stone-900/40' : getRarityClasses(item.equipmentData?.rarity);
+            const imageUrl = item.type === 'EQUIPMENT' && item.equipmentData
+              ? (item.equipmentData.image
+                  ? getAssetUrl(item.equipmentData.image)
+                  : item.equipmentData.recipeId
+                    ? getAssetUrl(`${item.equipmentData.recipeId}.png`)
+                    : getAssetUrl(`${item.id.split('_')[0]}.png`))
+              : getAssetUrl(`${item.id}.png`);
 
             return (
               <div
@@ -577,7 +663,7 @@ const EquipmentInventoryList = ({
                 onClick={() => !isSelected && onSelect(item.id)}
                 className={`flex flex-col gap-2 p-3 md:p-5 rounded-xl border transition-all ${
                   isSelected ? 'border-amber-500 bg-stone-900/80 shadow-inner' : 'border-stone-800 bg-stone-900/30'
-                } cursor-pointer group ${!canEquip ? 'opacity-60' : ''}`}
+                } cursor-pointer group relative overflow-hidden ${!isConsumable && !canEquip ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-center gap-3 md:gap-4">
                   <div className={`w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-lg border-2 flex items-center justify-center shrink-0 ${rarityClasses}`}>
@@ -588,15 +674,17 @@ const EquipmentInventoryList = ({
                     <div className="text-[11px] md:text-lg font-black truncate text-stone-200">{item.name}</div>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <span className={`text-[7px] md:text-[9px] px-1.5 py-0.5 rounded font-black uppercase border leading-none ${rarityClasses}`}>
-                        {item.equipmentData.rarity}
+                        {isConsumable ? 'CONSUMABLE' : item.equipmentData?.rarity}
                       </span>
-                      <span className="text-[7px] md:text-[9px] text-stone-600 font-mono font-bold">
-                        LV.{item.equipmentData.quality >= 100 ? 'EX' : 'ST'}
-                      </span>
+                      {item.quantity > 1 && (
+                        <span className="text-[7px] md:text-[9px] text-stone-500 font-mono font-bold">
+                          QTY: {item.quantity}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {!isReadOnly && isSelected && canEquip && (
+                  {!isReadOnly && isSelected && !isConsumable && canEquip && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -607,25 +695,58 @@ const EquipmentInventoryList = ({
                       Equip
                     </button>
                   )}
+
+                  {/* Consumable Overlay Options */}
+                  {!isReadOnly && isSelected && isConsumable && (
+                    <div className="absolute top-0 right-0 h-full w-24 md:w-32 bg-stone-900/95 border-l border-amber-600/30 flex flex-col animate-in slide-in-from-right-full duration-200 z-30">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onConsume(item.id); }}
+                            className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-emerald-900/40 text-emerald-400 transition-colors"
+                        >
+                            <Check className="w-4 h-4 md:w-6 md:h-6" />
+                            <span className="text-[8px] md:text-[10px] font-black uppercase">Consume</span>
+                        </button>
+                        <div className="h-px w-full bg-amber-600/10" />
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onSelect(""); }}
+                            className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-red-900/40 text-stone-500 hover:text-red-400 transition-colors"
+                        >
+                            <X className="w-4 h-4 md:w-6 md:h-6" />
+                            <span className="text-[8px] md:text-[10px] font-black uppercase">Cancel</span>
+                        </button>
+                    </div>
+                  )}
                 </div>
 
-                {!canEquip && isSelected && (
+                {!isConsumable && !canEquip && isSelected && (
                   <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-2 flex items-center gap-2 text-[8px] md:text-[10px] text-red-400 font-bold uppercase tracking-tight">
                     <AlertCircle className="w-3 h-3 shrink-0" />
-                    Requirements not met: {failedStats.map(([s, v]) => `${s.toUpperCase()} ${v}`).join(', ')}
+                    Missing: {failedStats.map(([s, v]) => `${s.toUpperCase()} ${v}`).join(', ')}
                   </div>
                 )}
 
                 <div className="flex justify-between items-center border-t border-white/5 pt-2">
-                  <div className="flex items-center gap-2 text-[8px] md:text-xs text-stone-600 font-bold">
-                    <ShieldAlert className="w-3 h-3" />
-                    DUR: {item.equipmentData.durability}/{item.equipmentData.maxDurability}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[7px] md:text-[9px] text-amber-600 font-black uppercase tracking-tighter bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-900/20">
-                      {getQualityLabel(item.equipmentData.quality)}
-                    </span>
-                  </div>
+                   <div className="flex items-center gap-2">
+                        {isConsumable ? (
+                             <span className="text-[7px] md:text-[9px] text-stone-500 italic truncate max-w-[150px]">
+                                {item.description}
+                             </span>
+                        ) : (
+                            <span className="text-[7px] md:text-[9px] text-amber-600 font-black uppercase tracking-tighter bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-900/20">
+                            {getQualityLabel(item.equipmentData?.quality || 100)}
+                            </span>
+                        )}
+                    </div>
+                    {!isConsumable && item.equipmentData && (
+                        <div className="flex items-center gap-2 text-[8px] md:text-xs text-stone-600 font-mono">
+                            {(item.equipmentData.stats.physicalAttack > 0 || item.equipmentData.stats.magicalAttack > 0) && (
+                                <span className="flex items-center gap-1"><Sword className="w-2.5 h-2.5" /> {item.equipmentData.stats.physicalAttack || item.equipmentData.stats.magicalAttack}</span>
+                            )}
+                            {(item.equipmentData.stats.physicalDefense > 0 || item.equipmentData.stats.magicalDefense > 0) && (
+                                <span className="flex items-center gap-1"><Shield className="w-2.5 h-2.5" /> {item.equipmentData.stats.physicalDefense || item.equipmentData.stats.magicalDefense}</span>
+                            )}
+                        </div>
+                    )}
                 </div>
               </div>
             );
@@ -640,21 +761,21 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
   const { state, actions } = useGame();
   const [selectedSlot, setSelectedSlot] = useState<EquipmentSlotType | null>(null);
   const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'STATS' | 'STORAGE'>('STATS');
   const [localAllocated, setLocalAllocated] = useState<PrimaryStats>({ str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
 
   useEffect(() => {
     if (mercenary) {
       setSelectedSlot(null);
       setSelectedInventoryItemId(null);
       setLocalAllocated({ ...mercenary.allocatedStats });
-      setActiveTab('STATS');
     }
   }, [mercenary?.id]);
 
   if (!mercenary) return null;
 
-  // --- Core Stat Logic Sync ---
+  const isHired = mercenary.status !== 'VISITOR' && mercenary.status !== 'DEAD';
+
   const currentEqPrimaryStats = useMemo(() => {
     return (Object.values(mercenary.equipment).filter(Boolean) as Equipment[]).reduce(
       (acc: PrimaryStats, eq: Equipment) => ({
@@ -670,14 +791,15 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
 
   const mergedPrimary = mergePrimaryStats(mercenary.stats, localAllocated, currentEqPrimaryStats);
   const baseDerived = calculateDerivedStats(mergedPrimary, mercenary.level);
-  const currentEquipmentStats = (Object.values(mercenary.equipment) as (Equipment | null)[]).map((eq) => eq?.stats).filter(Boolean);
-  const currentStats = applyEquipmentBonuses(baseDerived, currentEquipmentStats as any);
+  const currentEquipmentStatsList = (Object.values(mercenary.equipment) as (Equipment | null)[]).map((eq) => eq?.stats).filter(Boolean);
+  const currentStats = applyEquipmentBonuses(baseDerived, currentEquipmentStatsList as any);
   const currentAttackType = mergedPrimary.int > mergedPrimary.str ? 'MAGICAL' : 'PHYSICAL';
   const currentCombatPower = calculateCombatPower(currentStats, mercenary.job, currentAttackType);
 
-  // --- Preview Logic Sync ---
   let previewStats: DerivedStats | null = null;
   let previewCombatPower: number | null = null;
+  let previewEqPrimaryStats: PrimaryStats | null = null;
+
   if (selectedInventoryItemId) {
     const item = state.inventory.find((i) => i.id === selectedInventoryItemId)?.equipmentData;
     if (item) {
@@ -686,7 +808,7 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
       else if (item.slotType === 'OFF_HAND' && previewEq.MAIN_HAND?.isTwoHanded) previewEq.MAIN_HAND = null;
       previewEq[item.slotType] = item;
 
-      const previewEqPrimary = (Object.values(previewEq).filter(Boolean) as Equipment[]).reduce(
+      previewEqPrimaryStats = (Object.values(previewEq).filter(Boolean) as Equipment[]).reduce(
         (acc: PrimaryStats, eq: Equipment) => ({
           str: acc.str + (eq.stats.str || 0),
           vit: acc.vit + (eq.stats.vit || 0),
@@ -697,7 +819,7 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
         { str: 0, vit: 0, dex: 0, int: 0, luk: 0 }
       );
 
-      const previewMerged = mergePrimaryStats(mercenary.stats, localAllocated, previewEqPrimary);
+      const previewMerged = mergePrimaryStats(mercenary.stats, localAllocated, previewEqPrimaryStats);
       const previewBase = calculateDerivedStats(previewMerged, mercenary.level);
       previewStats = applyEquipmentBonuses(
         previewBase,
@@ -711,7 +833,7 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
   const effectiveCombatPower = previewCombatPower !== null ? previewCombatPower : currentCombatPower;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-2 md:p-6 py-[15dvh] md:py-6 animate-in fade-in duration-300 overflow-hidden">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-2 md:p-6 py-[10dvh] md:py-6 animate-in fade-in duration-300 overflow-hidden">
       <button
         onClick={onClose}
         className="fixed top-4 right-4 z-[1050] p-1.5 md:p-3 bg-red-900/30 hover:bg-red-600 rounded-full text-red-500 hover:text-white border border-red-500/30 transition-all shadow-2xl backdrop-blur-md active:scale-90"
@@ -719,68 +841,63 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ merc
         <X className="w-4 h-4 md:w-6 md:h-6" />
       </button>
 
-      <div className="w-full h-full md:max-w-7xl md:h-[90dvh] bg-stone-950 border border-white/10 rounded-2xl md:rounded-[2rem] shadow-2xl flex flex-row overflow-hidden relative ring-1 ring-white/10">
-        <MercenaryPaperDoll
-          mercenary={mercenary}
-          baseCombatPower={currentCombatPower}
-          nextCombatPower={effectiveCombatPower}
-          showAffinityGain={false}
-          onUnequip={(slot) => onUnequip(mercenary.id, slot)}
-          onSlotClick={(s) => {
-            setSelectedSlot(s);
-            if (s) setActiveTab('STORAGE');
-          }}
-          selectedSlot={selectedSlot}
-          isReadOnly={isReadOnly}
-        />
-
-        <div className="flex-1 bg-stone-900/30 flex flex-col h-full overflow-hidden">
-          <div className="flex border-b border-white/5 bg-stone-950/80 shrink-0 z-20 backdrop-blur-3xl pr-16 md:pr-0">
-            <button
-              onClick={() => setActiveTab('STATS')}
-              className={`flex-1 py-3 md:py-6 text-[10px] md:text-sm font-black uppercase tracking-widest flex items-center justify-center gap-1.5 md:gap-3 transition-all whitespace-nowrap ${
-                activeTab === 'STATS' ? 'text-amber-400 bg-stone-900/60 border-b-2 border-amber-500' : 'text-stone-600 hover:text-stone-300'
-              }`}
-            >
-              <Activity className="w-3.5 h-3.5 md:w-5 md:h-5" /> <span>Stats</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('STORAGE')}
-              className={`flex-1 py-3 md:py-6 text-[10px] md:text-sm font-black uppercase tracking-widest flex items-center justify-center gap-1.5 md:gap-3 transition-all whitespace-nowrap ${
-                activeTab === 'STORAGE' ? 'text-amber-400 bg-stone-900/60 border-b-2 border-amber-500' : 'text-stone-600 hover:text-stone-300'
-              }`}
-            >
-              <Box className="w-3.5 h-3.5 md:w-5 md:h-5" /> <span>Storage</span>
-            </button>
-          </div>
-
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-safe pb-safe">
-            {activeTab === 'STATS' ? (
-              <MercenaryStatsPanel
-                mercenary={mercenary}
-                baseStats={currentStats}
-                finalStats={effectiveFinalStats}
-                localAllocated={localAllocated}
-                equipmentStats={currentEqPrimaryStats}
-                onSetLocalAllocated={setLocalAllocated}
-                isReadOnly={isReadOnly}
-              />
-            ) : (
-              <EquipmentInventoryList
-                inventory={state.inventory.filter((i) => i.type === 'EQUIPMENT')}
-                selectedItemId={selectedInventoryItemId}
-                onSelect={setSelectedInventoryItemId}
-                onEquip={(id) => {
-                  actions.equipItem(mercenary.id, id);
-                  setSelectedInventoryItemId(null);
-                }}
-                selectedSlotFilter={selectedSlot}
-                mercenary={mercenary}
-                isReadOnly={isReadOnly}
-              />
-            )}
+      <div className={`w-full h-full md:max-w-7xl md:h-[90dvh] bg-stone-950 border border-white/10 rounded-2xl md:rounded-[2rem] shadow-2xl flex flex-col md:flex-row overflow-hidden relative ring-1 ring-white/10 transition-all duration-500`}>
+        
+        {/* Left Column: Profile + PaperDoll + Stats (Scrollable) */}
+        <div className={`flex flex-col overflow-hidden transition-all duration-500 border-stone-800 ${isHired && isInventoryOpen ? 'w-full md:w-[45%] h-1/2 md:h-full border-b md:border-b-0 md:border-r' : 'w-full h-full'}`}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-stone-900/20">
+            <MercenaryPaperDoll
+              mercenary={mercenary}
+              currentCombatPower={currentCombatPower}
+              nextCombatPower={effectiveCombatPower}
+              showAffinityGain={false}
+              onUnequip={(slot) => onUnequip(mercenary.id, slot)}
+              onSlotClick={(s) => {
+                setSelectedSlot(s);
+                if (s && !isInventoryOpen && isHired) setIsInventoryOpen(true);
+              }}
+              selectedSlot={selectedSlot}
+              isReadOnly={isReadOnly}
+              isInventoryOpen={isInventoryOpen}
+              onToggleInventory={() => setIsInventoryOpen(!isInventoryOpen)}
+              isHired={isHired}
+            />
+            <MercenaryStatsPanel
+              mercenary={mercenary}
+              baseStats={currentStats}
+              finalStats={effectiveFinalStats}
+              localAllocated={localAllocated}
+              equipmentStats={currentEqPrimaryStats}
+              previewEquipmentStats={previewEqPrimaryStats}
+              onSetLocalAllocated={setLocalAllocated}
+              isReadOnly={isReadOnly}
+            />
           </div>
         </div>
+
+        {/* Right Column: Inventory Only (Toggleable) - Only render if hired */}
+        {isHired && (
+          <div className={`bg-stone-950/20 flex flex-col transition-all duration-500 overflow-hidden ${isInventoryOpen ? 'flex-1 h-1/2 md:h-full opacity-100' : 'w-0 h-0 md:h-full opacity-0'}`}>
+            <EquipmentInventoryList
+              inventory={state.inventory.filter((i) => i.type === 'EQUIPMENT' || i.type === 'CONSUMABLE')}
+              selectedItemId={selectedInventoryItemId}
+              onSelect={setSelectedInventoryItemId}
+              onEquip={(id) => {
+                actions.equipItem(mercenary.id, id);
+                setSelectedInventoryItemId(null);
+              }}
+              onConsume={(id) => {
+                actions.useItem(id, mercenary.id);
+                // No need to clear selected state if multiple potions exist, but good for UI clarity
+                setSelectedInventoryItemId(null);
+              }}
+              selectedSlotFilter={selectedSlot}
+              mercenary={mercenary}
+              isReadOnly={isReadOnly}
+              onToggleInventory={() => setIsInventoryOpen(!isInventoryOpen)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

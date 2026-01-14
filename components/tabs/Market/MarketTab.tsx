@@ -1,14 +1,13 @@
+
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
 import {
-  Store,
   ShoppingCart,
   ShoppingBag,
   Coins,
   ChevronRight,
   ChevronLeft,
-  Trash2,
   Plus,
   Minus,
   Package,
@@ -19,18 +18,16 @@ import {
   Heart,
   Gift,
   Lock,
-  Unlock,
-  Sword,
-  Shield,
-  Star,
   Wrench,
   Zap,
   Layers,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import { MATERIALS } from '../../../data/materials';
-import { MARKET_CATALOG } from '../../../data/market/index';
+import { MARKET_CATALOG, MarketItemConfig } from '../../../data/market/index';
 import { getAssetUrl } from '../../../utils';
 import { InventoryItem } from '../../../types/inventory';
 import { ItemSelectorList } from '../../ItemSelectorList';
@@ -417,8 +414,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   const calculateTotal = () => {
     return Object.entries(cart).reduce((total, [id, count]) => {
-      const item = MARKET_CATALOG.find(i => i.id === id);
-      return total + (item ? item.price * (count as number) : 0);
+      const meta = MATERIALS[id];
+      return total + ((meta?.baseValue ?? 0) * (count as number));
     }, 0);
   };
 
@@ -477,7 +474,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         return false;
     }
 
-    const isOneTimeItem = itemId === 'furnace' || itemId === 'workbench' || itemId.startsWith('scroll_');
+    const meta = MATERIALS[itemId];
+    const isOneTimeItem = meta?.type === 'KEY_ITEM' || meta?.type === 'SCROLL';
     const availableStock = state.marketStock[itemId] || 0;
     const currentInCart = cart[itemId] || 0;
 
@@ -604,33 +602,34 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     const facilities: any[] = [];
     const supplies: any[] = [];
     const materials: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] };
+    const techniques: any[] = [];
 
-    MARKET_CATALOG.forEach(marketItem => {
-        const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
-        const isScroll = marketItem.id.startsWith('scroll_');
-        const isOwned = (marketItem.id === 'furnace' && state.forge.hasFurnace) || (marketItem.id === 'workbench' && state.forge.hasWorkbench);
+    MARKET_CATALOG.forEach(config => {
+        const meta = MATERIALS[config.id];
+        if (!meta) return;
 
-        if (isKeyItem && isOwned) return;
+        const isOwned = (config.id === 'furnace' && state.forge.hasFurnace) || (config.id === 'workbench' && state.forge.hasWorkbench);
+        if (config.type === 'FACILITY' && isOwned) return;
 
-        let itemTier = 1;
-        if (marketItem.id === 'furnace') itemTier = 0;
-        else if (marketItem.id === 'workbench') itemTier = 1;
-        else if (marketItem.id === 'scroll_t2') { itemTier = 1; if (currentTier >= 2) return; }
-        else if (marketItem.id === 'scroll_t3') { itemTier = 2; if (currentTier >= 3) return; }
-        else {
-            const itemDef = Object.values(MATERIALS).find(i => i.id === marketItem.id);
-            if (!itemDef) return;
-            itemTier = (itemDef as any).tier || 1;
-        }
+        const itemTier = meta.tier ?? 1;
+        // Don't show tiered resources player can't use yet
+        if (config.type === 'RESOURCE' && itemTier > currentTier) return;
 
-        if (itemTier > currentTier) return;
+        const payload = { ...config, meta };
 
-        const isSupply = ['energy_potion', 'stamina_potion', 'affinity_debug_gift'].includes(marketItem.id);
-
-        if (isKeyItem || isScroll) facilities.push(marketItem);
-        else if (isSupply) supplies.push(marketItem);
-        else {
-            if (materials[itemTier]) materials[itemTier].push(marketItem);
+        switch(config.type) {
+          case 'RESOURCE':
+            if (materials[itemTier]) materials[itemTier].push(payload);
+            break;
+          case 'SUPPLY':
+            supplies.push(payload);
+            break;
+          case 'FACILITY':
+            facilities.push(payload);
+            break;
+          case 'TECHNIQUE':
+            techniques.push(payload);
+            break;
         }
     });
 
@@ -646,30 +645,31 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     // 2. Supplies (Consumables)
     if (supplies.length > 0) groups.push({ id: 'sup', name: 'Potions & Supplies', icon: <Zap className="w-3 h-3"/>, items: supplies });
 
-    // 3. Facilities & Techniques
-    if (facilities.length > 0) groups.push({ id: 'fac', name: 'Facilities & Techniques', icon: <Wrench className="w-3 h-3"/>, items: facilities });
+    // 3. Techniques (Scrolls)
+    if (techniques.length > 0) groups.push({ id: 'tech', name: 'Techniques', icon: <BookOpen className="w-3 h-3"/>, items: techniques });
+
+    // 4. Facilities (Infrastructure)
+    if (facilities.length > 0) groups.push({ id: 'fac', name: 'Facilities', icon: <Wrench className="w-3 h-3"/>, items: facilities });
 
     return groups;
   }, [MARKET_CATALOG, state.forge, currentTier]);
 
-  const renderMarketItem = (marketItem: any) => {
-    const isKeyItem = marketItem.id === 'furnace' || marketItem.id === 'workbench';
-    const itemName = marketItem.id === 'furnace' ? 'Furnace' : 
-                     marketItem.id === 'workbench' ? 'Workbench' : 
-                     marketItem.id === 'scroll_t2' ? 'Scroll T2' : 
-                     marketItem.id === 'scroll_t3' ? 'Scroll T3' : 
-                     (Object.values(MATERIALS).find(i => i.id === marketItem.id) as any)?.name || marketItem.id;
+  const renderMarketItem = (item: any) => {
+    const { id, maxStock, meta } = item;
+    const isKeyItem = meta.type === 'KEY_ITEM';
+    const itemName = meta.name;
+    const price = meta.baseValue;
 
-    const stockLeft = (state.marketStock[marketItem.id] || 0) - (cart[marketItem.id] || 0);
+    const stockLeft = (state.marketStock[id] || 0) - (cart[id] || 0);
     const isSoldOut = stockLeft <= 0;
-    const invCount = state.inventory.find(i => i.id === marketItem.id)?.quantity || 0;
-    const currentMultiplier = itemMultipliers[marketItem.id] || 1;
-    const isAffinityLocked = (marketItem.id === 'scroll_t2' && state.garrickAffinity < 20) || (marketItem.id === 'scroll_t3' && state.garrickAffinity < 40);
+    const invCount = state.inventory.find(i => i.id === id)?.quantity || 0;
+    const currentMultiplier = itemMultipliers[id] || 1;
+    const isAffinityLocked = (id === 'scroll_t2' && state.garrickAffinity < 20) || (id === 'scroll_t3' && state.garrickAffinity < 40);
 
     return (
       <div
-        key={marketItem.id}
-        data-tutorial-id={marketItem.id === 'furnace' ? 'FURNACE_ITEM' : undefined}
+        key={id}
+        data-tutorial-id={id === 'furnace' ? 'FURNACE_ITEM' : undefined}
         className={`group relative flex flex-col items-center p-1 md:p-2 rounded-2xl border transition-all h-[150px] md:h-[220px] justify-between overflow-hidden shadow-md select-none ${
           isSoldOut
             ? 'bg-stone-900 border-stone-800 opacity-40 grayscale'
@@ -697,10 +697,11 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
           className={`flex-1 w-full flex items-center justify-center transition-all relative mt-1 overflow-hidden rounded-lg
             ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-stone-800/50 group-hover:scale-105 active:scale-95'}
           `}
-          onClick={() => { if (!isSoldOut) addToCart(marketItem.id, currentMultiplier); }}
+          onClick={() => { if (!isSoldOut) addToCart(id, currentMultiplier); }}
+          title={meta.description}
         >
           <img
-            src={getAssetUrl(`${marketItem.id}.png`)}
+            src={getAssetUrl(`${id}.png`)}
             className="w-10 h-10 md:w-24 md:h-24 object-contain drop-shadow-md pointer-events-none"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
@@ -710,7 +711,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
           <div className="hidden text-base md:text-3xl pointer-events-none">📦</div>
         </div>
 
-        {!isSoldOut && !isKeyItem && !marketItem.id.startsWith('scroll_') && (
+        {!isSoldOut && !isKeyItem && meta.type !== 'SCROLL' && (
             <div className="flex items-center gap-1 mb-1 scale-75 md:scale-100">
                 {[1, 5, 10].map(val => {
                     const isDisabled = stockLeft < val;
@@ -719,7 +720,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                             key={val}
                             type="button"
                             disabled={isDisabled}
-                            onClick={() => setItemMultiplier(marketItem.id, val)}
+                            onClick={() => setItemMultiplier(id, val)}
                             className={`w-5 h-5 md:w-8 md:h-8 rounded-full border text-[7px] md:text-[10px] font-black transition-all flex items-center justify-center ${
                                 isDisabled 
                                 ? 'bg-stone-900 border-stone-800 text-stone-700 opacity-20 grayscale cursor-not-allowed'
@@ -735,8 +736,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        <div className="w-full text-center mb-0.5">
-          <h4 className={`text-[7px] md:text-[11px] font-black leading-none truncate px-1 ${marketItem.id === 'furnace' || marketItem.id === 'workbench' || marketItem.id.startsWith('scroll_') ? 'text-amber-400' : 'text-stone-400'}`}>
+        <div className="w-full text-center mb-0.5 px-1">
+          <h4 className={`text-[7px] md:text-[11px] font-black leading-none truncate ${meta.type === 'KEY_ITEM' || meta.type === 'SCROLL' ? 'text-amber-400' : 'text-stone-400'}`}>
             {itemName}
           </h4>
         </div>
@@ -745,10 +746,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
           className={`w-full py-0.5 md:py-2 rounded-b-xl border-t flex flex-col items-center justify-center gap-0.5 font-mono font-black transition-all
             ${isSoldOut ? 'bg-stone-900 border-stone-800 text-stone-700' : 'bg-stone-950 border-stone-800 text-amber-500 cursor-pointer hover:bg-amber-900/20 active:scale-95'}
           `}
-          onClick={() => { if (!isSoldOut) addToCart(marketItem.id, currentMultiplier); }}
+          onClick={() => { if (!isSoldOut) addToCart(id, currentMultiplier); }}
         >
           <div className="flex items-center gap-1 text-[7px] md:text-sm">
-            <span>{marketItem.price * currentMultiplier}</span>
+            <span>{price * currentMultiplier}</span>
             <Coins className="w-2 h-2 md:w-4 md:h-4 text-amber-500" />
           </div>
           {currentMultiplier > 1 && (
@@ -990,9 +991,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                       </div>
                     ) : (
                       Object.entries(cart).map(([id, count]) => {
-                        const marketItem = MARKET_CATALOG.find(i => i.id === id);
-                        const name = id === 'furnace' ? 'Furnace' : id === 'workbench' ? 'Workbench' : MATERIALS[id.toUpperCase() as keyof typeof MATERIALS]?.name || id;
-                        if (!marketItem) return null;
+                        const meta = MATERIALS[id];
+                        const name = meta?.name || id;
+                        const price = meta?.baseValue ?? 0;
                         return (
                           <div key={id} className="flex flex-col gap-1.5 bg-stone-900/60 p-2 md:p-3 rounded-xl border border-stone-800 select-none shadow-inner">
                             <div className="flex items-center gap-2">
@@ -1001,7 +1002,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="text-stone-100 font-bold text-[10px] md:text-sm truncate leading-tight">{name}</div>
-                                  <div className="text-amber-600 font-mono text-[9px] md:text-xs font-black">{marketItem.price * (count as number)} G</div>
+                                  <div className="text-amber-600 font-mono text-[9px] md:text-xs font-black">{price * (count as number)} G</div>
                                 </div>
                                 <button type="button" onClick={() => deleteFromCart(id)} className="p-1.5 text-stone-600 hover:text-red-500 transition-colors shrink-0">
                                   <X className="w-4 h-4" />

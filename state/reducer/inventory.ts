@@ -6,7 +6,7 @@ import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 
 export const handleAcquireItem = (state: GameState, payload: { id: string; quantity: number }): GameState => {
     const { id, quantity } = payload;
-    const itemDef = Object.values(MATERIALS).find(i => i.id === id);
+    const itemDef = MATERIALS[id];
     if (!itemDef) return state;
 
     const existingItem = state.inventory.find(i => i.id === id);
@@ -87,7 +87,7 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
                 logUpdates.unshift('Workbench installed! You can now craft leather and wood equipment.');
                 return;
             }
-            const itemDef = Object.values(MATERIALS).find(i => i.id === buyItem.id);
+            const itemDef = MATERIALS[buyItem.id];
             if (itemDef) {
                 const existingItem = newInventory.find(i => i.id === buyItem.id);
                 if (existingItem) {
@@ -119,12 +119,9 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
 };
 
 export const handleInstallFurnace = (state: GameState): GameState => {
-    let newUnlockedTabs = [...state.unlockedTabs];
-
     return {
         ...state,
         forge: { ...state.forge, hasFurnace: true },
-        unlockedTabs: newUnlockedTabs,
         logs: ['The Furnace has been installed! The forge comes alive.', ...state.logs]
     };
 };
@@ -242,14 +239,15 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     };
 };
 
-export const handleUseItem = (state: GameState, payload: { itemId: string }): GameState => {
-    const { itemId } = payload;
+export const handleUseItem = (state: GameState, payload: { itemId: string; mercenaryId?: string }): GameState => {
+    const { itemId, mercenaryId } = payload;
     const inventoryItem = state.inventory.find(i => i.id === itemId);
 
     if (!inventoryItem || inventoryItem.quantity <= 0) return state;
 
     let newStats = { ...state.stats };
     let newUnlockedRecipes = [...(state.unlockedRecipes || [])];
+    let newKnownMercenaries = [...state.knownMercenaries];
     let logMsg = '';
     let itemUsed = false;
 
@@ -258,6 +256,7 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
         if (newStats.energy >= newStats.maxEnergy) {
             return {
                 ...state,
+                toastQueue: [...state.toastQueue, `Blacksmith energy is already at maximum.`],
                 logs: [`Energy is already full!`, ...state.logs]
             };
         }
@@ -277,6 +276,52 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
         logMsg = `Studied the scroll. Bronze Longsword recipe unlocked!`;
         itemUsed = true;
     }
+    else if (mercenaryId) {
+        const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);
+        if (mercIdx > -1) {
+            const merc = { ...newKnownMercenaries[mercIdx] };
+            if (itemId === 'hp_potion') {
+                const heal = 50;
+                if (merc.currentHp >= merc.maxHp) {
+                    return { 
+                        ...state, 
+                        toastQueue: [...state.toastQueue, `${merc.name} is already at full health.`],
+                        logs: [`${merc.name} is already at full health.`, ...state.logs] 
+                    };
+                }
+                merc.currentHp = Math.min(merc.maxHp, merc.currentHp + heal);
+                logMsg = `${merc.name} consumed HP Potion. Recovered ${heal} HP.`;
+                itemUsed = true;
+            } 
+            else if (itemId === 'mp_potion') {
+                const restore = 30;
+                if (merc.currentMp >= merc.maxMp) {
+                    return { 
+                        ...state, 
+                        toastQueue: [...state.toastQueue, `${merc.name} is already at full mana.`],
+                        logs: [`${merc.name} is already at full MP.`, ...state.logs] 
+                    };
+                }
+                merc.currentMp = Math.min(merc.maxMp, merc.currentMp + restore);
+                logMsg = `${merc.name} consumed MP Potion. Recovered ${restore} MP.`;
+                itemUsed = true;
+            }
+            else if (itemId === 'stamina_potion') {
+                const stamina = 50;
+                if ((merc.expeditionEnergy || 0) >= DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY) {
+                    return { 
+                        ...state, 
+                        toastQueue: [...state.toastQueue, `${merc.name} is already at full stamina.`],
+                        logs: [`${merc.name} is already at full stamina.`, ...state.logs] 
+                    };
+                }
+                merc.expeditionEnergy = Math.min(DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, (merc.expeditionEnergy || 0) + stamina);
+                logMsg = `${merc.name} consumed Stamina Potion. Recovered ${stamina} Stamina.`;
+                itemUsed = true;
+            }
+            newKnownMercenaries[mercIdx] = merc;
+        }
+    }
 
     if (!itemUsed) return state;
 
@@ -292,6 +337,7 @@ export const handleUseItem = (state: GameState, payload: { itemId: string }): Ga
         stats: newStats,
         inventory: newInventory,
         unlockedRecipes: newUnlockedRecipes,
+        knownMercenaries: newKnownMercenaries,
         logs: [logMsg, ...state.logs]
     };
 };

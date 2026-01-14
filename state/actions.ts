@@ -45,7 +45,7 @@ export type GameAction =
   | { type: 'DISMISS_DUNGEON_RESULT' }
   | { type: 'EQUIP_ITEM'; payload: { mercenaryId: string; inventoryItemId: string } }
   | { type: 'UNEQUIP_ITEM'; payload: { mercenaryId: string; slot: EquipmentSlotType } }
-  | { type: 'USE_ITEM'; payload: { itemId: string } }
+  | { type: 'USE_ITEM'; payload: { itemId: string; mercenaryId?: string } }
   | { type: 'TOGGLE_LOCK_ITEM'; payload: { itemId: string } }
   | { type: 'TALK_GARRICK' }
   | { type: 'GIFT_GARRICK'; payload: { itemId: string } }
