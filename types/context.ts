@@ -59,7 +59,7 @@ export interface GameContextType {
     equipItem: (mercenaryId: string, inventoryItemId: string) => void;
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => void;
 
-    useItem: (itemId: string) => void;
+    useItem: (itemId: string, mercenaryId?: string) => void;
     toggleLockItem: (itemId: string) => void;
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => void;
     updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;

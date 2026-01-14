@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
@@ -424,8 +425,8 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
           </div>
       )}
 
-      {isAnyTutorialActive && TUTORIAL_STEPS_CONFIG[state.tutorialStep!] && (
-          <TutorialOverlay step={state.tutorialStep!] } />
+      {isAnyTutorialActive && state.tutorialStep && TUTORIAL_STEPS_CONFIG[state.tutorialStep] && (
+          <TutorialOverlay step={state.tutorialStep} />
       )}
 
       {/* Narrative Popups - Back to Bottom */}
