@@ -32,7 +32,7 @@ const distributeRandomPoints = (weights: PrimaryStats, points: number): PrimaryS
 
 const generateBaseStats = (job: JobClass): PrimaryStats => {
     const weights = JOB_STAT_WEIGHTS[job];
-    // Base stats at level 1: 5-8 points distributed randomly using weights
+    // Base stats at level 1: 20-25 points distributed randomly using weights
     const baseTotal = 20 + Math.floor(Math.random() * 5);
     return distributeRandomPoints(weights, baseTotal);
 };
@@ -75,11 +75,8 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
     const { level, currentXp, xpToNextLevel } = calculateLevelDataFromTotalXp(totalXp);
 
     const baseStats = generateBaseStats(job);
-    // Level up points: (level - 1) * 3
-    const bonusPoints = (level - 1) * 3;
-    const allocatedStats = distributeRandomPoints(JOB_STAT_WEIGHTS[job], bonusPoints);
     
-    const merged = mergePrimaryStats(baseStats, allocatedStats);
+    const merged = mergePrimaryStats(baseStats, { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
     const maxHp = calculateMaxHp(merged, level);
     const maxMp = calculateMaxMp(merged, level);
     
@@ -93,7 +90,8 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
         job: job,
         level: level,
         stats: baseStats,
-        allocatedStats: allocatedStats,
+        allocatedStats: { str: 0, vit: 0, dex: 0, int: 0, luk: 0 },
+        bonusStatPoints: (level - 1) * 3, // All level up points given as spendable bonus
         currentHp: maxHp,
         maxHp: maxHp,
         currentMp: maxMp,

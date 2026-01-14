@@ -1,19 +1,23 @@
-
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
-import { MATERIALS } from '../data/materials';
+import { materials } from '../data/materials';
 import { MARKET_CATALOG } from '../data/market/index';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
 
 const createInitialInventory = (): InventoryItem[] => [
-    { ...MATERIALS.ANVIL, type: 'TOOL', quantity: 1 },
-    { ...MATERIALS.HAMMER, type: 'TOOL', quantity: 1 },
+    { ...materials.anvil, type: 'TOOL', quantity: 1 },
+    { ...materials.hammer, type: 'TOOL', quantity: 1 },
     // Starter Materials
-    { ...MATERIALS.CHARCOAL, quantity: 5 },
-    { ...MATERIALS.COPPER_ORE, quantity: 2 },
-    { ...MATERIALS.TIN_ORE, quantity: 1 },
-    { ...MATERIALS.OAK_LOG, quantity: 1 },
-    { ...MATERIALS.EMERGENCY_GOLD, quantity: 1 },
+    { ...materials.charcoal, quantity: 10 }, // Increased from 5
+    { ...materials.copper_ore, quantity: 4 }, // Increased from 2
+    { ...materials.tin_ore, quantity: 2 },    // Increased from 1
+    { ...materials.oak_log, quantity: 2 },    // Increased from 1
+    
+    // Recovery Items for early testing
+    { ...materials.energy_potion, quantity: 2 },
+    { ...materials.stamina_potion, quantity: 2 },
+    
+    { ...materials.emergency_gold, quantity: 1 },
 ];
 
 export const createInitialGameState = (): GameState => ({
@@ -48,8 +52,10 @@ export const createInitialGameState = (): GameState => ({
         ...m,
         expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: 0,
-        xpToNextLevel: m.level * 100, // Fixed name from xpToNext to xpToNextLevel
-        status: 'VISITOR'
+        xpToNextLevel: m.level * 100,
+        status: 'VISITOR' as const,
+        // Explicitly ensure bonus points are set based on level
+        bonusStatPoints: m.bonusStatPoints ?? Math.max(0, (m.level - 1) * 3)
     })),
 
     // Shop State

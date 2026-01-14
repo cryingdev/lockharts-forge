@@ -1,7 +1,7 @@
 import { GameState, InventoryItem, DungeonResult } from '../../types/index';
 import { DUNGEONS } from '../../data/dungeons';
 import { Expedition } from '../../models/Dungeon';
-import { MATERIALS } from '../../data/materials';
+import { materials } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
 import { TILLY_FOOTLOOSE } from '../../data/mercenaries';
 // Add import for MercenaryStatus
@@ -107,7 +107,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
             if (Math.random() <= adjustedChance) {
                 const quantity = Math.floor(Math.random() * (reward.maxQuantity - reward.minQuantity + 1)) + reward.minQuantity;
                 if (quantity > 0) {
-                    const materialDef = Object.values(MATERIALS).find(m => m.id === reward.itemId);
+                    const materialDef = Object.values(materials).find(m => m.id === reward.itemId);
                     if (materialDef) {
                         const existingItem = newInventory.find(i => i.id === reward.itemId);
                         if (existingItem) {
@@ -125,7 +125,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
 
     const isFirstClear = (state.dungeonClearCounts[dungeon.id] || 0) === 0;
     if (isFirstClear && dungeon.id === 'dungeon_t1_rats') {
-        const scrollDef = MATERIALS.RECIPE_SCROLL_BRONZE_LONGSWORD;
+        const scrollDef = materials.recipe_scroll_bronze_longsword;
         const alreadyHasScroll = newInventory.some(i => i.id === scrollDef.id);
         const alreadyHasRecipe = state.unlockedRecipes.includes('sword_bronze_long_t1');
         
@@ -159,11 +159,14 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
             let maxMp = merc.maxMp;
             let currentHp = merc.currentHp;
             
+            let bonusStatPoints = merc.bonusStatPoints || 0;
             if (level > levelBefore) {
                 const merged = mergePrimaryStats(merc.stats, merc.allocatedStats);
                 maxHp = calculateMaxHp(merged, level);
                 maxMp = calculateMaxMp(merged, level);
                 currentHp = maxHp;
+                // Add 3 points per level gained
+                bonusStatPoints += (level - levelBefore) * 3;
             }
 
             // Fix: Explicitly type nextStatus as MercenaryStatus to allow assignment of 'INJURED'
@@ -193,6 +196,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
                 level,
                 currentXp,
                 xpToNextLevel: xpToNext,
+                bonusStatPoints,
                 maxHp,
                 maxMp,
                 currentHp,
@@ -253,6 +257,10 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     };
 };
 
+// Fixed: Added the missing handleDismissDungeonResult function
 export const handleDismissDungeonResult = (state: GameState): GameState => {
-    return { ...state, dungeonResult: null };
+    return {
+        ...state,
+        dungeonResult: null
+    };
 };

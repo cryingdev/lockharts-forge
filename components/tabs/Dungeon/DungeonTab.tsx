@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
-import { MATERIALS } from '../../../data/materials';
+// Fixed: Changed MATERIALS to lowercase materials to match export in data/materials.ts
+import { materials } from '../../../data/materials';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { calculatePartyPower, calculateMercenaryPower } from '../../../utils/combatLogic';
 import { Sword, Skull, Timer, Zap, Map as MapIcon, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Triangle, Box, AlertCircle, Gamepad2, Navigation2, Play, Ban, RefreshCw, LogOut, AlertTriangle, HeartOff } from 'lucide-react';
@@ -291,7 +292,8 @@ const DungeonTab = () => {
                                 </div>
                                 <div className="flex wrap justify-center gap-1 sm:gap-3">
                                     {displayRewards.map((reward, ridx) => {
-                                        const mat = Object.values(MATERIALS).find(m => m.id === reward.itemId);
+                                        // Fixed: Changed MATERIALS to materials to match lowercase export
+                                        const mat = Object.values(materials).find(m => m.id === reward.itemId);
                                         return (
                                             <div key={`${selectedDungeon.id}-reward-${ridx}`} className="group relative w-7 h-7 sm:w-12 sm:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center hover:border-amber-500/50 transition-colors shadow-inner">
                                                 <img 

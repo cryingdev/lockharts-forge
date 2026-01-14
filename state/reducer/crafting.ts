@@ -1,8 +1,7 @@
-
 import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
 import { getEnergyCost, generateEquipment, calcCraftExp, getSmithingLevel, getUnlockedTier } from '../../utils/craftingLogic';
-import { MATERIALS } from '../../data/materials';
+import { materials } from '../../data/materials';
 
 const getQualityLabel = (q: number): string => {
     if (q >= 110) return "MASTERWORK";
@@ -56,7 +55,7 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
         if (existing) {
             newInventory = newInventory.map(i => i.id === req.id ? { ...i, quantity: i.quantity + req.count } : i);
         } else {
-            const itemDef = Object.values(MATERIALS).find(m => m.id === req.id);
+            const itemDef = Object.values(materials).find(m => m.id === req.id);
             if (itemDef) {
                 newInventory.push({ ...itemDef, quantity: req.count } as InventoryItem);
             }

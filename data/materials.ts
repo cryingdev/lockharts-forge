@@ -1,4 +1,3 @@
-
 import { ItemType } from '../types/inventory';
 
 export interface MaterialDefinition {
@@ -12,7 +11,7 @@ export interface MaterialDefinition {
     icon?: string;
 }
 
-export const MATERIALS: Record<string, MaterialDefinition> = {
+export const materials: Record<string, MaterialDefinition> = {
     // --- 1. METALS ---
     copper_ore: {
         id: 'copper_ore', name: 'Copper Ore', type: 'RESOURCE', category: 'METAL', tier: 1,

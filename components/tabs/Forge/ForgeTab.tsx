@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
@@ -8,7 +7,7 @@ import { Hammer, Shield, Sword, ChevronRight, Info, ChevronLeft, Lock, Check, X 
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
-import { MATERIALS } from '../../../data/materials';
+import { materials } from '../../../data/materials';
 import { getAssetUrl } from '../../../utils';
 import { getSmithingLevel, getUnlockedTier, LEVEL_EXP_TABLE } from '../../../utils/craftingLogic';
 
@@ -198,7 +197,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
       if (missing.length > 0) {
           const names = missing.map(m => {
-              const def = Object.values(MATERIALS).find(mat => mat.id === m.id);
+              const def = Object.values(materials).find(mat => mat.id === m.id);
               const needed = m.count - getInventoryCount(m.id);
               return `${def ? def.name : m.id} x${needed}`;
           }).join(', ');
@@ -382,7 +381,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
       if (missing.length > 0) {
           const names = missing.map(m => {
-              const def = Object.values(MATERIALS).find(mat => mat.id === m.id);
+              const def = Object.values(materials).find(mat => mat.id === m.id);
               const needed = m.count - getInventoryCount(m.id);
               return `${def ? def.name : m.id} x${needed}`;
           }).join(', ');
@@ -633,7 +632,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                         {hoveredItem.requirements.map(req => {
                             const hasCount = getInventoryCount(req.id);
                             const isEnough = hasCount >= req.count;
-                            const mat = Object.values(MATERIALS).find(m => m.id === req.id);
+                            const mat = Object.values(materials).find(m => m.id === req.id);
                             return (
                                 <div key={req.id} className="flex justify-between items-center text-[7px] md:text-[10px]">
                                     <span className={`truncate mr-2 ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>{mat?.name || req.id}</span>

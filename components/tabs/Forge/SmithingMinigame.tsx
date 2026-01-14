@@ -1,9 +1,8 @@
-
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Phaser from 'phaser';
 import { X } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
-import { MATERIALS } from '../../../data/materials';
+import { materials } from '../../../data/materials';
 import SmithingScene from '../../../game/SmithingScene';
 
 interface SmithingMinigameProps {
@@ -25,7 +24,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   const containerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
 
-  const charcoalCount = state.inventory.find((i) => i.id === MATERIALS.CHARCOAL.id || i.id === 'charcoal')?.quantity || 0;
+  const charcoalCount = state.inventory.find((i) => i.id === materials.charcoal.id || i.id === 'charcoal')?.quantity || 0;
 
   const onCompleteRef = useRef(onComplete);
   const actionsRef = useRef(actions);
@@ -98,7 +97,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
 
     const handleHeatUp = () => {
       if (!isTutorial) {
-          actionsRef.current.consumeItem(MATERIALS.CHARCOAL.id, 1);
+          actionsRef.current.consumeItem(materials.charcoal.id, 1);
       }
       const scene = game.scene.getScene('SmithingScene') as SmithingScene;
       if (scene) scene.heatUp();

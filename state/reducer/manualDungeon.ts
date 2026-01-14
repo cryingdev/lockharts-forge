@@ -275,16 +275,19 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             let nextMaxHp = m.maxHp;
             let nextMaxMp = m.maxMp;
             let nextCurrentHp = combatant.currentHp;
+            let bonusStatPoints = m.bonusStatPoints || 0;
 
             if (payload.win && combatant.currentHp > 0) {
                 nextXp += xpPerMember;
                 while (nextXp >= m.xpToNextLevel) {
+                    const levelGain = 1;
                     nextXp -= m.xpToNextLevel;
                     nextLevel++;
                     const merged = mergePrimaryStats(m.stats, m.allocatedStats);
                     nextMaxHp = calculateMaxHp(merged, nextLevel);
                     nextMaxMp = calculateMaxMp(merged, nextLevel);
                     nextCurrentHp = nextMaxHp; // 레벨업 시 완치
+                    bonusStatPoints += 3; // Add 3 points per level gained
                     logMsg += ` ${m.name} reached Level ${nextLevel}!`;
                 }
             }
@@ -295,6 +298,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
                 currentMp: combatant.currentMp,
                 currentXp: nextXp,
                 level: nextLevel,
+                bonusStatPoints,
                 maxHp: nextMaxHp,
                 maxMp: nextMaxMp,
                 xpToNextLevel: nextLevel * 100

@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { User, ChevronRight, Coins, Package, Lock } from 'lucide-react';
 import { useGame } from '../context/GameContext';
-import { MATERIALS } from '../data/materials';
+import { materials } from '../data/materials';
 
 interface DialogueOption {
   label: string;
@@ -188,7 +187,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
             {itemDetail.requirements?.map(req => {
               const hasCount = getInventoryCount(req.id);
               const isEnough = hasCount >= req.count;
-              const mat = Object.values(MATERIALS).find(m => m.id === req.id);
+              const mat = Object.values(materials).find(m => m.id === req.id);
               return (
                 <div key={req.id} className="flex justify-between items-center text-[8px] md:text-xs">
                   <span className={`truncate mr-2 font-bold tracking-tight ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>

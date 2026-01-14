@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { createRandomMercenary, getUnmetNamedMercenary } from '../../../utils/mercenaryGenerator';
-import { Heart, PlusCircle, UserPlus, ShieldAlert, ChevronUp, Map, Beer } from 'lucide-react';
+import { Heart, PlusCircle, UserPlus, ShieldAlert, ChevronUp, Map, Beer, Users, UserRound, Skull } from 'lucide-react';
 import TavernInteraction from './TavernInteraction';
 import { getAssetUrl } from '../../../utils';
 import ConfirmationModal from '../../modals/ConfirmationModal';
+import { Mercenary } from '../../../models/Mercenary';
 
 const EnergyBattery = ({ value }: { value: number }) => {
     let color = 'bg-emerald-500';
@@ -18,10 +20,48 @@ const EnergyBattery = ({ value }: { value: number }) => {
     );
 };
 
+const MercenaryCard = ({ merc, onClick, isHired }: { merc: Mercenary, onClick: () => void, isHired: boolean }) => {
+    const hasUnallocated = isHired && (merc.bonusStatPoints || 0) > 0;
+    const xpPer = (merc.currentXp / (merc.xpToNextLevel || 100)) * 100;
+
+    return (
+        <div onClick={onClick} className={`group relative bg-stone-900 border ${isHired ? 'border-amber-900/50 hover:border-amber-500 shadow-lg shadow-black/40' : 'border-stone-800 hover:border-stone-600'} p-3 rounded-2xl cursor-pointer transition-all ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}>
+            <div className="flex justify-between items-start mb-3">
+                <div className="relative">
+                    <div className={`w-12 h-12 bg-stone-800 rounded-full border-2 ${merc.status === 'ON_EXPEDITION' ? 'border-blue-500' : isHired ? 'border-amber-600' : 'border-stone-700'} flex items-center justify-center text-2xl shadow-inner`}>
+                        {merc.status === 'DEAD' ? '💀' : merc.icon}
+                    </div>
+                    {hasUnallocated && (
+                        <div className="absolute -top-1 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.8)] animate-bounce border border-stone-950 z-10">
+                            <ChevronUp className="w-3 h-3 font-black" />
+                        </div>
+                    )}
+                </div>
+                <div className="text-right">
+                    <div className="text-[10px] font-mono text-stone-500 font-bold">LV.{merc.level}</div>
+                    {isHired && merc.status !== 'DEAD' && <EnergyBattery value={merc.expeditionEnergy} />}
+                </div>
+            </div>
+            <h3 className="font-bold text-xs text-stone-100 truncate mb-1">{merc.name}</h3>
+            <div className="text-[9px] text-stone-500 uppercase font-black tracking-widest mb-2">{merc.job}</div>
+            {merc.status !== 'DEAD' && (
+                <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${xpPer}%` }} />
+                </div>
+            )}
+            <div className="flex justify-between items-center">
+                <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${merc.status === 'ON_EXPEDITION' ? 'bg-blue-900/30 text-blue-400' : merc.status === 'INJURED' ? 'bg-red-900/30 text-red-400' : isHired ? 'bg-amber-900/30 text-amber-500' : 'bg-stone-800 text-stone-500'}`}>
+                    {merc.status === 'ON_EXPEDITION' ? 'Exploring' : merc.status === 'INJURED' ? 'Injured' : merc.status === 'DEAD' ? 'Dead' : isHired ? 'Hired' : 'Visitor'}
+                </span>
+                <Heart className={`w-3 h-3 ${merc.affinity > 20 ? 'text-pink-500 fill-pink-500' : 'text-stone-700'}`} />
+            </div>
+        </div>
+    );
+};
+
 const TavernTab = ({ activeTab }: { activeTab?: string }) => {
     const { state, actions } = useGame();
     const [selectedMercId, setSelectedMercId] = useState<string | null>(null);
-    const [mercToRecall, setMercToRecall] = useState<string | null>(null);
 
     useEffect(() => { if (activeTab !== 'TAVERN') setSelectedMercId(null); }, [activeTab]);
 
@@ -31,63 +71,81 @@ const TavernTab = ({ activeTab }: { activeTab?: string }) => {
         actions.scoutMercenary(newMerc, 50);
     };
 
+    const groupedMercs = useMemo(() => {
+        const hired = state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
+        const visitors = state.knownMercenaries.filter(m => !['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
+        return { hired, visitors };
+    }, [state.knownMercenaries]);
+
     const selectedMercenary = state.knownMercenaries.find(m => m.id === selectedMercId);
     if (selectedMercenary) return < TavernInteraction mercenary={selectedMercenary} onBack={() => setSelectedMercId(null)} />;
 
     return (
         <div className="h-full w-full bg-stone-950 relative overflow-hidden">
             <div className="absolute inset-0 opacity-20"><img src={getAssetUrl('tavern_bg.jpeg')} className="w-full h-full object-cover blur-[2px]" /></div>
-            <div className="relative z-10 h-full p-4 overflow-y-auto custom-scrollbar">
-                <div className="flex justify-between items-center mb-6 border-b border-stone-800 pb-4">
-                    <div><h2 className="text-2xl font-black text-amber-500 font-serif">THE BROKEN ANVIL</h2><p className="text-stone-500 text-xs">Wayfarers gather under the candlelight.</p></div>
-                    <button onClick={handleScout} className="bg-stone-900 border border-stone-700 px-4 py-2 rounded-xl text-stone-200 flex items-center gap-2 hover:border-amber-500 transition-all">
-                        <PlusCircle className="w-4 h-4 text-amber-500" /><span className="text-xs font-bold uppercase">Scout (50G)</span>
+            <div className="relative z-10 h-full p-4 md:p-6 overflow-y-auto custom-scrollbar flex flex-col gap-8 pb-20">
+                
+                {/* Header Toolbar */}
+                <div className="flex justify-between items-end border-b border-stone-800 pb-4 shrink-0">
+                    <div>
+                        <h2 className="text-2xl md:text-3xl font-black text-amber-500 font-serif leading-none">THE BROKEN ANVIL</h2>
+                        <p className="text-stone-500 text-[10px] md:text-xs mt-1 uppercase tracking-widest font-bold">Wayfarers gather under the candlelight.</p>
+                    </div>
+                    <button onClick={handleScout} className="bg-stone-900 border border-stone-700 px-5 py-2.5 rounded-xl text-stone-200 flex items-center gap-2 hover:border-amber-500 transition-all shadow-xl active:scale-95 group">
+                        <PlusCircle className="w-4 h-4 text-amber-500 group-hover:rotate-90 transition-transform duration-300" />
+                        <span className="text-xs font-black uppercase tracking-tight">Scout (50G)</span>
                     </button>
                 </div>
-                <div className="grid grid-cols-2 xs:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {state.knownMercenaries.map(merc => {
-                        const isHired = ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(merc.status);
-                        
-                        // pointsUsed: Use cleaner casting for reduce operands
-                        const pointsUsed = (Object.values(merc.allocatedStats) as number[]).reduce((a, b) => a + b, 0);
-                        // hasUnallocated: Shows a yellow arrow if the mercenary has pending stat points
-                        const hasUnallocated = isHired && (merc.level - 1) * 3 > pointsUsed;
-                        // xpPer: Progress bar calculation with safety default to prevent NaN
-                        const xpPer = (merc.currentXp / (merc.xpToNextLevel || 100)) * 100;
 
-                        return (
-                            <div key={merc.id} onClick={() => merc.status !== 'DEAD' && setSelectedMercId(merc.id)} className={`group relative bg-stone-900 border ${isHired ? 'border-amber-900/50 hover:border-amber-500' : 'border-stone-800 hover:border-stone-600'} p-3 rounded-2xl cursor-pointer transition-all ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}>
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="relative">
-                                        <div className={`w-12 h-12 bg-stone-800 rounded-full border-2 ${merc.status === 'ON_EXPEDITION' ? 'border-blue-500' : isHired ? 'border-amber-600' : 'border-stone-700'} flex items-center justify-center text-2xl shadow-inner`}>
-                                            {merc.status === 'DEAD' ? '💀' : merc.icon}
-                                        </div>
-                                        {hasUnallocated && (
-                                            <div className="absolute -top-1 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.8)] animate-bounce border border-stone-950">
-                                                <ChevronUp className="w-3 h-3 font-black" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-[10px] font-mono text-stone-500 font-bold">LV.{merc.level}</div>
-                                        {isHired && <EnergyBattery value={merc.expeditionEnergy} />}
-                                    </div>
-                                </div>
-                                <h3 className="font-bold text-xs text-stone-100 truncate mb-1">{merc.name}</h3>
-                                <div className="text-[9px] text-stone-500 uppercase font-black tracking-widest mb-2">{merc.job}</div>
-                                <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden mb-2">
-                                    <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${xpPer}%` }} />
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${merc.status === 'ON_EXPEDITION' ? 'bg-blue-900/30 text-blue-400' : isHired ? 'bg-amber-900/30 text-amber-500' : 'bg-stone-800 text-stone-500'}`}>
-                                        {merc.status === 'ON_EXPEDITION' ? 'Exploring' : isHired ? 'Hired' : 'Visitor'}
-                                    </span>
-                                    <Heart className={`w-3 h-3 ${merc.affinity > 20 ? 'text-pink-500 fill-pink-500' : 'text-stone-700'}`} />
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                {/* SECTION 1: HIRED SQUAD */}
+                <section className="animate-in fade-in slide-in-from-left-4 duration-500">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-1.5 bg-amber-900/20 rounded-lg border border-amber-900/30">
+                            <Users className="w-4 h-4 text-amber-500" />
+                        </div>
+                        <h3 className="text-sm md:text-lg font-black text-stone-300 uppercase tracking-[0.2em] font-serif italic">Your Squad Members</h3>
+                        <div className="flex-1 h-px bg-gradient-to-r from-stone-800 to-transparent"></div>
+                        <span className="text-[10px] font-mono text-stone-600 uppercase font-black">{groupedMercs.hired.length} / 12</span>
+                    </div>
+
+                    {groupedMercs.hired.length === 0 ? (
+                        <div className="py-12 border-2 border-dashed border-stone-800 rounded-2xl flex flex-col items-center justify-center text-stone-700 gap-3">
+                            <ShieldAlert className="w-10 h-10 opacity-20" />
+                            <p className="text-[10px] md:text-xs uppercase font-black tracking-widest">No active contracts. Recruit from visitors below.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 xs:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {groupedMercs.hired.map(merc => (
+                                <MercenaryCard key={merc.id} merc={merc} isHired={true} onClick={() => setSelectedMercId(merc.id)} />
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                {/* SECTION 2: VISITORS & KNOWN RECURS */}
+                <section className="animate-in fade-in slide-in-from-left-4 duration-700 delay-200">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-1.5 bg-stone-800 rounded-lg border border-stone-700">
+                            <UserRound className="w-4 h-4 text-stone-400" />
+                        </div>
+                        <h3 className="text-sm md:text-lg font-black text-stone-500 uppercase tracking-[0.2em] font-serif italic">Tavern Visitors</h3>
+                        <div className="flex-1 h-px bg-gradient-to-r from-stone-800 to-transparent"></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 xs:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {groupedMercs.visitors.map(merc => (
+                            <MercenaryCard key={merc.id} merc={merc} isHired={false} onClick={() => merc.status !== 'DEAD' && setSelectedMercId(merc.id)} />
+                        ))}
+                        {/* Placeholder for scouting */}
+                        <button 
+                            onClick={handleScout}
+                            className="bg-stone-950/40 border-2 border-dashed border-stone-800 rounded-2xl flex flex-col items-center justify-center gap-2 text-stone-700 hover:text-stone-500 hover:border-stone-600 transition-all min-h-[140px]"
+                        >
+                            <PlusCircle className="w-8 h-8 opacity-20" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Find New Talent</span>
+                        </button>
+                    </div>
+                </section>
             </div>
         </div>
     );
