@@ -53,6 +53,71 @@ const ShopSign = ({ isOpen, onToggle, disabled }: { isOpen: boolean, onToggle: (
     );
 };
 
+const BlinkingMercenary = ({ mercenary, className }: { mercenary: any, className?: string }) => {
+  const [frame, setFrame] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 현재 Pip the Green만 애니메이션을 지원함
+  const isPip = mercenary.id === 'pip_green';
+
+  const blink = useCallback(() => {
+    setFrame(1);
+    setTimeout(() => {
+      setFrame(2);
+      setTimeout(() => {
+        setFrame(1);
+        setTimeout(() => {
+          setFrame(0);
+          scheduleNextBlink();
+        }, 80);
+      }, 100);
+    }, 80);
+  }, []);
+
+  const scheduleNextBlink = useCallback(() => {
+    const delay = 3000 + Math.random() * 4000;
+    timerRef.current = setTimeout(blink, delay);
+  }, [blink]);
+
+  useEffect(() => {
+    if (isPip) {
+      scheduleNextBlink();
+    }
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isPip, scheduleNextBlink]);
+
+  if (isPip) {
+    return (
+      <div 
+        className={className}
+        style={{ 
+          aspectRatio: '453.3 / 1058', 
+          overflow: 'hidden'
+        }}
+      >
+        <div 
+          className="h-full w-full transition-transform duration-75 ease-linear"
+          style={{
+            backgroundImage: `url(${getAssetUrl(mercenary.sprite)})`,
+            backgroundSize: '300% 100%',
+            backgroundPosition: `${frame * 50}% 0%`,
+            imageRendering: 'pixelated'
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
+      className={className}
+    />
+  );
+};
+
 const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   const { isShopOpen } = state.forge;
@@ -380,8 +445,8 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                                 style={{ left: `${heart.left}%`, bottom: '40%', width: heart.size, height: heart.size, animationDelay: `${heart.delay}s`, '--wobble': `${(Math.random() - 0.5) * 60}px` } as React.CSSProperties}
                            />
                        ))}
-                       <img 
-                           src={activeCustomer.mercenary.sprite ? getAssetUrl(activeCustomer.mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
+                       <BlinkingMercenary 
+                           mercenary={activeCustomer.mercenary} 
                            className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${refusalReaction === 'ANGRY' ? 'brightness-50 sepia-50' : ''}`}
                        />
                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-black/60 blur-3xl rounded-full -z-10"></div>
