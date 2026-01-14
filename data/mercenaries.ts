@@ -77,7 +77,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 0,
     visitCount: 0,
     isUnique: true,
-    sprite: 'pip_the_green.png',
+    sprite: 'pip_the_green_fullbody.png',
     icon: '🌱',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,

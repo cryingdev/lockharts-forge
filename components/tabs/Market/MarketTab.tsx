@@ -598,6 +598,21 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   // --- CATALOG CATEGORIZATION LOGIC ---
   const categorizedMarketItems = useMemo(() => {
+    // Tutorial Filter: Only show Furnace during the specific tutorial step
+    if (state.tutorialStep === 'FURNACE_GUIDE') {
+        const furnaceConfig = MARKET_CATALOG.find(c => c.id === 'furnace');
+        if (furnaceConfig) {
+            const meta = materials['furnace'];
+            return [{
+                id: 'fac',
+                name: 'Facilities',
+                icon: <Wrench className="w-3 h-3"/>,
+                items: [{ ...furnaceConfig, meta }]
+            }];
+        }
+        return [];
+    }
+
     const facilities: any[] = [];
     const supplies: any[] = [];
     const materialGroups: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] };
@@ -651,7 +666,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     if (facilities.length > 0) groups.push({ id: 'fac', name: 'Facilities', icon: <Wrench className="w-3 h-3"/>, items: facilities });
 
     return groups;
-  }, [MARKET_CATALOG, state.forge, currentTier]);
+  }, [MARKET_CATALOG, state.forge, currentTier, state.tutorialStep]);
 
   const renderMarketItem = (item: any) => {
     const { id, maxStock, meta } = item;

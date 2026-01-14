@@ -20,7 +20,8 @@ const EnergyBattery = ({ value }: { value: number }) => {
     );
 };
 
-const MercenaryCard = ({ merc, onClick, isHired }: { merc: Mercenary, onClick: () => void, isHired: boolean }) => {
+// Fix: Added React.FC type to MercenaryCard to correctly handle React props like 'key'
+const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: boolean }> = ({ merc, onClick, isHired }) => {
     const hasUnallocated = isHired && (merc.bonusStatPoints || 0) > 0;
     const xpPer = (merc.currentXp / (merc.xpToNextLevel || 100)) * 100;
 
