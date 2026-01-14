@@ -1,12 +1,11 @@
-
 import { GameState, InventoryItem } from '../../types/index';
-import { MATERIALS } from '../../data/materials';
+import { materials } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 
 export const handleAcquireItem = (state: GameState, payload: { id: string; quantity: number }): GameState => {
     const { id, quantity } = payload;
-    const itemDef = MATERIALS[id];
+    const itemDef = materials[id];
     if (!itemDef) return state;
 
     const existingItem = state.inventory.find(i => i.id === id);
@@ -87,7 +86,7 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
                 logUpdates.unshift('Workbench installed! You can now craft leather and wood equipment.');
                 return;
             }
-            const itemDef = MATERIALS[buyItem.id];
+            const itemDef = materials[buyItem.id];
             if (itemDef) {
                 const existingItem = newInventory.find(i => i.id === buyItem.id);
                 if (existingItem) {

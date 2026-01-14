@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
 import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, Info, ChevronLeft, ChevronRight, Pointer, Lock as LockIcon, FastForward, MessageSquare, AlertCircle } from 'lucide-react';
@@ -334,6 +333,12 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
   const isFullscreenOverlay = state.isCrafting || (state.activeManualDungeon && state.showManualDungeonOverlay);
 
+  // Optimized Badge logic: check dedicated bonusStatPoints field for hired members
+  const unallocatedPointsCount = useMemo(() => {
+      const hiredMercs = state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
+      return hiredMercs.filter(merc => (merc.bonusStatPoints || 0) > 0).length;
+  }, [state.knownMercenaries]);
+
   const renderTabButton = (tab: { id: typeof activeTab, icon: any, label: string, badge?: number }) => {
     const { id, icon: Icon, label, badge: badgeCount } = tab;
     const isActive = activeTab === id;
@@ -370,7 +375,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
             <Icon className={`w-4 h-4 md:w-5 md:h-5 z-10 ${isActive ? 'scale-110' : ''}`} />
             <span className={`font-bold tracking-wide text-[10px] md:text-sm uppercase z-10`}>{label}</span>
             {!isUnlocked && <LockIcon className="w-3 h-3 text-stone-600 ml-0.5" />}
-            {isUnlocked && badgeCount ? <div className="absolute top-1 right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-600 text-[8px] md:text-[10px] font-black text-white shadow-lg ring-2 ring-stone-900 animate-in zoom-in z-20">{badgeCount}</div> : null}
+            {isUnlocked && badgeCount ? <div className={`absolute top-1 right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full text-[8px] md:text-[10px] font-black text-white shadow-lg ring-2 ring-stone-900 animate-in zoom-in z-20 ${id === 'TAVERN' ? 'bg-amber-500' : 'bg-red-600'}`}>{badgeCount}</div> : null}
         </button>
     );
   };
@@ -380,7 +385,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
     { id: 'INVENTORY' as const, icon: Package, label: 'Storage' },
     { id: 'MARKET' as const, icon: ShoppingBag, label: 'Market' },
     { id: 'SHOP' as const, icon: Coins, label: 'Shop', badge: activeTab !== 'SHOP' ? totalShopVisitors : 0 },
-    { id: 'TAVERN' as const, icon: Beer, label: 'Tavern' },
+    { id: 'TAVERN' as const, icon: Beer, label: 'Tavern', badge: unallocatedPointsCount > 0 ? unallocatedPointsCount : 0 },
     { id: 'DUNGEON' as const, icon: MapIcon, label: 'Dungeon', badge: completedExpeditionsCount },
     { id: 'SIMULATION' as const, icon: Activity, label: 'Sim' },
   ];

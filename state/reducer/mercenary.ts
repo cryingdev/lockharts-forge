@@ -1,4 +1,3 @@
-
 import { GameState } from '../../types/index';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
@@ -12,7 +11,8 @@ export const handleAddKnownMercenary = (state: GameState, merc: Mercenary): Game
         expeditionEnergy: merc.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: merc.currentXp ?? 0,
         xpToNextLevel: merc.xpToNextLevel ?? (merc.level * 100),
-        status: 'VISITOR' as const
+        status: 'VISITOR' as const,
+        bonusStatPoints: merc.bonusStatPoints ?? 0
     };
     return {
         ...state,
@@ -30,7 +30,8 @@ export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mer
         expeditionEnergy: mercenary.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: mercenary.currentXp ?? 0,
         xpToNextLevel: mercenary.xpToNextLevel ?? (mercenary.level * 100),
-        status: 'VISITOR' as const
+        status: 'VISITOR' as const,
+        bonusStatPoints: mercenary.bonusStatPoints ?? 0
     };
 
     return {
@@ -192,10 +193,7 @@ export const handleAllocateStat = (state: GameState, payload: { mercenaryId: str
     if (mercIndex === -1) return state;
 
     const merc = state.knownMercenaries[mercIndex];
-    const totalAllocated = merc.allocatedStats.str + merc.allocatedStats.vit + merc.allocatedStats.dex + merc.allocatedStats.int + merc.allocatedStats.luk;
-    const totalPossible = (merc.level - 1) * 3;
-
-    if (totalAllocated >= totalPossible) return state;
+    if ((merc.bonusStatPoints || 0) <= 0) return state;
 
     const newAllocated = { ...merc.allocatedStats, [stat]: merc.allocatedStats[stat] + 1 };
     const merged = mergePrimaryStats(merc.stats, newAllocated);
@@ -210,6 +208,7 @@ export const handleAllocateStat = (state: GameState, payload: { mercenaryId: str
     const updatedMerc: Mercenary = {
         ...merc,
         allocatedStats: newAllocated,
+        bonusStatPoints: merc.bonusStatPoints - 1, // Consume point
         maxHp: newMaxHp,
         currentHp: merc.currentHp + (hpGain > 0 ? hpGain : 0),
         maxMp: newMaxMp,

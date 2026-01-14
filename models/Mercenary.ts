@@ -16,6 +16,7 @@ export interface Mercenary {
   level: number;
   stats: PrimaryStats; // Base/Initial attributes
   allocatedStats: PrimaryStats; // Points from leveling up
+  bonusStatPoints: number; // New: Remaining points to be allocated by player
   
   // Vitals
   currentHp: number;

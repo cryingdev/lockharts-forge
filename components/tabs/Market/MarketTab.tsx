@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -26,7 +25,7 @@ import {
   Sparkles,
   BookOpen
 } from 'lucide-react';
-import { MATERIALS } from '../../../data/materials';
+import { materials } from '../../../data/materials';
 import { MARKET_CATALOG, MarketItemConfig } from '../../../data/market/index';
 import { getAssetUrl } from '../../../utils';
 import { InventoryItem } from '../../../types/inventory';
@@ -414,7 +413,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
   const calculateTotal = () => {
     return Object.entries(cart).reduce((total, [id, count]) => {
-      const meta = MATERIALS[id];
+      const meta = materials[id];
       return total + ((meta?.baseValue ?? 0) * (count as number));
     }, 0);
   };
@@ -474,7 +473,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         return false;
     }
 
-    const meta = MATERIALS[itemId];
+    const meta = materials[itemId];
     const isOneTimeItem = meta?.type === 'KEY_ITEM' || meta?.type === 'SCROLL';
     const availableStock = state.marketStock[itemId] || 0;
     const currentInCart = cart[itemId] || 0;
@@ -601,11 +600,11 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
   const categorizedMarketItems = useMemo(() => {
     const facilities: any[] = [];
     const supplies: any[] = [];
-    const materials: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] };
+    const materialGroups: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] };
     const techniques: any[] = [];
 
     MARKET_CATALOG.forEach(config => {
-        const meta = MATERIALS[config.id];
+        const meta = materials[config.id];
         if (!meta) return;
 
         const isOwned = (config.id === 'furnace' && state.forge.hasFurnace) || (config.id === 'workbench' && state.forge.hasWorkbench);
@@ -619,7 +618,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
         switch(config.type) {
           case 'RESOURCE':
-            if (materials[itemTier]) materials[itemTier].push(payload);
+            if (materialGroups[itemTier]) materialGroups[itemTier].push(payload);
             break;
           case 'SUPPLY':
             supplies.push(payload);
@@ -637,8 +636,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     
     // 1. Resources (Tier sorted)
     [1, 2, 3, 4].forEach(t => {
-        if (materials[t].length > 0) {
-            groups.push({ id: `tier${t}`, name: `Tier ${t} Resources`, icon: <Layers className="w-3 h-3"/>, items: materials[t] });
+        if (materialGroups[t].length > 0) {
+            groups.push({ id: `tier${t}`, name: `Tier ${t} Resources`, icon: <Layers className="w-3 h-3"/>, items: materialGroups[t] });
         }
     });
 
@@ -991,7 +990,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                       </div>
                     ) : (
                       Object.entries(cart).map(([id, count]) => {
-                        const meta = MATERIALS[id];
+                        const meta = materials[id];
                         const name = meta?.name || id;
                         const price = meta?.baseValue ?? 0;
                         return (

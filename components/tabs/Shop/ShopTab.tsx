@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
 import { Store, Coins, PackageOpen, Heart, Users, ArrowLeft, ZapOff, Info, Check, X, Lock, Star, Sword, Shield, Zap, Brain, ChevronRight, Search, Unlock, Sparkles } from 'lucide-react';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
-import { MATERIALS } from '../../../data/materials';
+import { materials } from '../../../data/materials';
 import { getAssetUrl } from '../../../utils';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { InventoryItem } from '../../../types/inventory';
@@ -112,7 +111,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const getItemName = (id: string) => {
     const eq = EQUIPMENT_ITEMS.find(e => e.id === id);
     if (eq) return eq.name;
-    const res = Object.values(MATERIALS).find(i => i.id === id);
+    const res = Object.values(materials).find(i => i.id === id);
     return res ? res.name : id;
   };
 

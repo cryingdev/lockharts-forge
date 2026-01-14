@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Mercenary } from '../../models/Mercenary';
@@ -287,10 +286,8 @@ const MercenaryStatsPanel = ({
   const hpPercent = finalStats.maxHp > 0 ? (mercenary.currentHp / finalStats.maxHp) * 100 : 0;
   const mpPercent = finalStats.maxMp > 0 ? (mercenary.currentMp / finalStats.maxMp) * 100 : 0;
 
-  const totalUsedLocal = Object.values(localAllocated).reduce((a, b) => a + b, 0);
-  const totalPoints = (mercenary.level - 1) * 3;
-  const availablePoints = Math.max(0, totalPoints - totalUsedLocal);
-  const hasChanges = JSON.stringify(localAllocated) !== JSON.stringify(mercenary.allocatedStats);
+  // Use dedicated bonusStatPoints field for easier access
+  const availablePoints = mercenary.bonusStatPoints || 0;
 
   const renderStatRow = (icon: React.ReactNode, label: string, baseValue: number, nextValue: number, isPercent = false) => {
     return (
@@ -311,13 +308,6 @@ const MercenaryStatsPanel = ({
         </div>
       </div>
     );
-  };
-
-  const updateLocalStat = (key: keyof PrimaryStats, delta: number) => {
-    const newVal = localAllocated[key] + delta;
-    if (delta > 0 && availablePoints <= 0) return;
-    if (delta < 0 && newVal < mercenary.allocatedStats[key]) return;
-    onSetLocalAllocated({ ...localAllocated, [key]: newVal });
   };
 
   const skillIds = (mercenary as any).skillIds as string[] | undefined;
@@ -385,18 +375,11 @@ const MercenaryStatsPanel = ({
                 {!isReadOnly && (
                   <div className="flex flex-col gap-0.5 md:gap-1">
                     <button
-                      onClick={() => updateLocalStat(stat.key, 1)}
+                      onClick={() => actions.allocateStat(mercenary.id, stat.key)}
                       disabled={availablePoints <= 0}
                       className="w-full h-4 md:h-7 bg-stone-800 hover:bg-amber-600 text-stone-500 hover:text-white rounded transition-all disabled:opacity-0 flex items-center justify-center shadow-sm"
                     >
                       <Plus className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => updateLocalStat(stat.key, -1)}
-                      disabled={localAllocated[stat.key] <= mercenary.allocatedStats[stat.key]}
-                      className="w-full h-3 md:h-5 bg-stone-950 hover:bg-red-700 text-stone-700 hover:text-white rounded transition-all disabled:opacity-0 flex items-center justify-center"
-                    >
-                      <Minus className="w-2.5 h-2.5" />
                     </button>
                   </div>
                 )}
@@ -404,17 +387,6 @@ const MercenaryStatsPanel = ({
             );
           })}
         </div>
-
-        {!isReadOnly && hasChanges && (
-          <div className="mt-4 md:mt-6 flex gap-2 md:gap-3 animate-in slide-in-from-top-2">
-            <button onClick={() => onSetLocalAllocated({ ...mercenary.allocatedStats })} className="flex-1 py-2 bg-stone-800 text-stone-500 text-[10px] font-black rounded-lg transition-all uppercase">
-              Discard
-            </button>
-            <button onClick={() => actions.updateMercenaryStats(mercenary.id, localAllocated)} className="flex-[2] py-2 bg-amber-700 text-white text-[10px] font-black rounded-lg shadow-lg transition-all uppercase">
-              Confirm
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2 md:gap-6 shrink-0">
@@ -672,7 +644,7 @@ const EquipmentInventoryList = ({
 
                   <div className="flex-1 min-w-0">
                     <div className="text-[11px] md:text-lg font-black truncate text-stone-200">{item.name}</div>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <div className="flex wrap items-center gap-2 mt-1">
                       <span className={`text-[7px] md:text-[9px] px-1.5 py-0.5 rounded font-black uppercase border leading-none ${rarityClasses}`}>
                         {isConsumable ? 'CONSUMABLE' : item.equipmentData?.rarity}
                       </span>

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Trophy, Check, Star, Heart, Sparkles, Coins, Award, User, XCircle, AlertTriangle, Skull } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
-import { MATERIALS } from '../../data/materials';
+// Fixed: Changed MATERIALS to lowercase materials to match export in data/materials.ts
+import { materials } from '../../data/materials';
 
 /**
  * 용병별 경험치 게이지 컴포넌트
@@ -121,7 +122,7 @@ const DungeonResultModal = () => {
                         <h3 className={`font-black uppercase text-[8px] md:text-xs tracking-[0.2em] border-b pb-1 flex items-center gap-2 ${isDefeat ? 'text-red-500 border-red-900/30' : 'text-stone-500 border-stone-800'}`}>
                             <Award className={`w-3 h-3 ${isDefeat ? 'text-red-500' : 'text-amber-500'}`} /> {isDefeat ? 'Casualty Report' : 'Squad Growth'}
                         </h3>
-                        <div className="flex flex-wrap justify-center gap-6 md:gap-10 py-2">
+                        <div className="flex wrap justify-center gap-6 md:gap-10 py-2">
                             {dungeonResult.mercenaryResults.map((m, idx) => (
                                 <MercenaryExpRadial key={m.id} result={m} delay={idx * 150} isDefeat={isDefeat} />
                             ))}
