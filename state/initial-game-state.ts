@@ -48,7 +48,7 @@ export const createInitialGameState = (): GameState => ({
         ...m,
         expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: 0,
-        xpToNext: m.level * 100,
+        xpToNextLevel: m.level * 100, // Fixed name from xpToNext to xpToNextLevel
         status: 'VISITOR'
     })),
 

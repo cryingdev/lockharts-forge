@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -565,7 +564,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     const itemsToBuy = Object.entries(cart).map(([id, count]) => ({ id, count }));
     actions.buyItems(itemsToBuy, totalCost);
     setCart({});
-    actions.showToast("Purchase complete!");
   };
 
   const toggleCart = () => {

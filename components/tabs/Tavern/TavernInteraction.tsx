@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -6,7 +5,7 @@ import { ArrowLeft, Heart, Gift, MessageSquare, UserPlus, Package, X, Star, Wren
 import { getAssetUrl } from '../../../utils';
 import { Mercenary } from '../../../models/Mercenary';
 import { CONTRACT_CONFIG, calculateHiringCost } from '../../../config/contract-config';
-import { InventoryItem } from '../../../types/inventory';
+import { InventoryItem, EquipmentSlotType } from '../../../types/inventory';
 // Fix: Changed default import to named import as MercenaryDetailModal has no default export
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { ItemSelectorList } from '../../ItemSelectorList';
@@ -405,7 +404,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <MercenaryDetailModal 
                     mercenary={mercenary}
                     onClose={() => setShowDetail(false)}
-                    onUnequip={(mercId, slot) => actions.unequipItem(mercId, slot)}
+                    onUnequip={(mercId: string, slot: EquipmentSlotType) => actions.unequipItem(mercId, slot)}
                     isReadOnly={!isHired || isOnExpedition}
                 />
             )}

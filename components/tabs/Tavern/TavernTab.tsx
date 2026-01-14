@@ -32,7 +32,7 @@ const TavernTab = ({ activeTab }: { activeTab?: string }) => {
     };
 
     const selectedMercenary = state.knownMercenaries.find(m => m.id === selectedMercId);
-    if (selectedMercenary) return <TavernInteraction mercenary={selectedMercenary} onBack={() => setSelectedMercId(null)} />;
+    if (selectedMercenary) return < TavernInteraction mercenary={selectedMercenary} onBack={() => setSelectedMercId(null)} />;
 
     return (
         <div className="h-full w-full bg-stone-950 relative overflow-hidden">
@@ -47,9 +47,13 @@ const TavernTab = ({ activeTab }: { activeTab?: string }) => {
                 <div className="grid grid-cols-2 xs:grid-cols-3 lg:grid-cols-4 gap-4">
                     {state.knownMercenaries.map(merc => {
                         const isHired = ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(merc.status);
-                        const pointsUsed = Object.values(merc.allocatedStats).reduce((a, b) => a + b, 0);
+                        
+                        // pointsUsed: Use cleaner casting for reduce operands
+                        const pointsUsed = (Object.values(merc.allocatedStats) as number[]).reduce((a, b) => a + b, 0);
+                        // hasUnallocated: Shows a yellow arrow if the mercenary has pending stat points
                         const hasUnallocated = isHired && (merc.level - 1) * 3 > pointsUsed;
-                        const xpPer = (merc.currentXp / merc.xpToNextLevel) * 100;
+                        // xpPer: Progress bar calculation with safety default to prevent NaN
+                        const xpPer = (merc.currentXp / (merc.xpToNextLevel || 100)) * 100;
 
                         return (
                             <div key={merc.id} onClick={() => merc.status !== 'DEAD' && setSelectedMercId(merc.id)} className={`group relative bg-stone-900 border ${isHired ? 'border-amber-900/50 hover:border-amber-500' : 'border-stone-800 hover:border-stone-600'} p-3 rounded-2xl cursor-pointer transition-all ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}>
@@ -71,7 +75,9 @@ const TavernTab = ({ activeTab }: { activeTab?: string }) => {
                                 </div>
                                 <h3 className="font-bold text-xs text-stone-100 truncate mb-1">{merc.name}</h3>
                                 <div className="text-[9px] text-stone-500 uppercase font-black tracking-widest mb-2">{merc.job}</div>
-                                <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden mb-2"><div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${xpPer}%` }} /></div>
+                                <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden mb-2">
+                                    <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${xpPer}%` }} />
+                                </div>
                                 <div className="flex justify-between items-center">
                                     <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${merc.status === 'ON_EXPEDITION' ? 'bg-blue-900/30 text-blue-400' : isHired ? 'bg-amber-900/30 text-amber-500' : 'bg-stone-800 text-stone-500'}`}>
                                         {merc.status === 'ON_EXPEDITION' ? 'Exploring' : isHired ? 'Hired' : 'Visitor'}
