@@ -425,7 +425,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       )}
 
       {isAnyTutorialActive && TUTORIAL_STEPS_CONFIG[state.tutorialStep!] && (
-          <TutorialOverlay step={state.tutorialStep!} />
+          <TutorialOverlay step={state.tutorialStep!] } />
       )}
 
       {/* Narrative Popups - Back to Bottom */}
@@ -484,7 +484,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                 className="bg-stone-900/95 backdrop-blur-xl border-2 border-amber-600/50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 ring-1 ring-white/10 pointer-events-auto cursor-pointer active:scale-95 transition-transform"
               >
                   <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
-                  <span className="text-stone-100 font-bold text-xs md:text-sm uppercase tracking-wide whitespace-pre-wrap break-words leading-tight">{state.toast.message}</span>
+                  <span className="text-stone-100 font-black text-xs md:text-sm uppercase tracking-widest whitespace-pre-wrap break-words leading-tight font-serif italic">{state.toast.message}</span>
               </div>
           </div>
       )}
