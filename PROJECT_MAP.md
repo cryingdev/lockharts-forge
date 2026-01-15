@@ -50,17 +50,25 @@ This document provides a comprehensive structural map of the project, detailing 
 - `components/ItemSelectorList.tsx`: Reusable inventory browser with grid/list toggles synced to global settings.
 
 ### Tabs (Functional Pages)
-- `tabs/Forge/ForgeTab.tsx`: Crafting hub acting as an assembler for modular forge UI units.
-- `tabs/Forge/ForgeSkillHeader.tsx`: Smithing and Workbench level progress displays.
-- `tabs/Forge/ForgeStatsGrid.tsx`: Visual layout for equipment combat and bonus stats.
-- `tabs/Forge/RecipeCard.tsx`: Individual recipe item with favorite and inventory tracking.
-- `tabs/Forge/MasteryRadialGauge.tsx`: Circular mastery progress and item visualizer.
-- `tabs/Forge/QuickCraftOverlay.tsx`: Processing overlay for high-mastery automated crafting.
-- `tabs/Forge/RecipeTooltip.tsx`: Contextual material requirements hover UI.
-- `tabs/Forge/TutorialScene.tsx`: Narrative-driven introduction focusing on the furnace restoration.
+- `tabs/forge/ForgeTab.tsx`: Crafting hub acting as an assembler for modular forge UI units.
 - `tabs/Tavern/TavernTab.tsx`: Roster management and visitor interactions.
+- `tabs/Market/MarketTab.tsx`: Supply procurement and affinity-based facility upgrades.
 - `tabs/Dungeon/DungeonTab.tsx`: Expedition selection for Auto/Manual modes.
 - `tabs/Dungeon/AssaultNavigator.tsx`: Tactical D-Pad UI with **3-Tier Camera Control**.
+- `tabs/Simulation/SimulationTab.tsx`: Combat balance testing ground with bulk and live match analysis.
+
+### Forge Tab (Modular Architecture)
+- `tabs/forge/ForgeTab.tsx`: Main view assembler for the crafting system.
+- `tabs/forge/hooks/useForge.ts`: Central logic hook for recipe filtering, materials validation, and minigame state management.
+- `tabs/forge/ui/ForgeSkillHeader.tsx`: Smithing and Workbench level progress displays with Tier tracking.
+- `tabs/forge/ui/ForgeStatsGrid.tsx`: Visual layout for equipment combat and bonus attributes.
+- `tabs/forge/ui/RecipeCard.tsx`: Individual recipe item with favorite toggles and inventory tracking.
+- `tabs/forge/ui/MasteryRadialGauge.tsx`: Circular mastery progress and high-fidelity item visualizer.
+- `tabs/forge/ui/QuickCraftOverlay.tsx`: Processing overlay for high-mastery automated crafting.
+- `tabs/forge/ui/RecipeTooltip.tsx`: Contextual material requirements and inventory lookup UI.
+- `tabs/forge/ui/SmithingMinigame.tsx`: Phaser-based rhythm forging interface with heat management.
+- `tabs/forge/ui/WorkbenchMinigame.tsx`: Phaser-based precision assembly interface with path-tracking.
+- `tabs/forge/ui/MainForgeCanvas.tsx`: Interactive world viewport for the forge environment (Furnace, Anvil).
 
 ### Shop Tab (Domain-Specific Structure)
 - `tabs/shop/ShopTab.tsx`: Shop view assembler. Orchestrates domain-specific hooks and UI fragments.
@@ -72,6 +80,9 @@ This document provides a comprehensive structural map of the project, detailing 
 - `tabs/shop/ui/ShopClosedOverlay.tsx`: Full-screen overlay for closed status or energy exhaustion.
 - `tabs/shop/ui/InstanceSelectorPopup.tsx`: Detailed item selection modal with stats inspection and lock toggles.
 
+### Tutorial System
+- `tutorial/TutorialScene.tsx`: Narrative-driven introduction focusing on the furnace restoration. (Relocated to dedicated tutorial folder)
+
 ### Modals (Popup System)
 - `modals/ConfirmationModal.tsx`: Safety prompts with **Mobile-Stacking** button layouts.
 - `modals/CraftingResultModal.tsx`: Post-forge summary with animated Mastery progress.
@@ -82,24 +93,25 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 4. Phaser Game Engine (`game/`)
+## 4. Phaser Game Engine (`game/)
 
 - `game/SmithingScene.ts`: Rhythm-based forging with billet morphing.
 - `game/WorkbenchScene.ts`: Precision stitching with path-tracking and hammer strike animations.
 - `game/DungeonScene.ts`: Manual exploration renderer with fog-of-war and **Delayed Tracking Camera**.
+- `game/IntroScene.ts`: Narrative prologue with dynamic camera shake and breath-fire effects.
+- `game/MainForgeScene.ts`: Interactive world map for the forge interior.
 
 ---
 
 ## 🔄 Recent Updates (v0.1.39)
 
-*   **Architectural Refactoring (Shop Tab)**: 
-    *   Renamed `shop-tab` folder to `shop`.
-    *   Moved `useShop` hook to `tabs/shop/hooks/`.
-    *   Decomposed `ShopTab.tsx` into modular UI fragments under `tabs/shop/ui/`.
-    *   The main `ShopTab.tsx` now serves as a clean assembler, improving maintainability.
-*   **UI Consolidation**: Centralized modal layout and Z-index management in `config/ui-config.ts`.
-*   **Modular Forge UI**: Refactored `ForgeTab.tsx` into specialized sub-components (`ForgeSkillHeader`, `ForgeStatsGrid`, etc.) for improved code readability.
-*   **Market Optimization**: Catalog reordered (Resources > Supplies > Facilities) and initial Furnace cost set to 0G for tutorial flow.
-*   **UI Persistence**: Inventory view mode (Grid/List) now saves to user settings.
-*   **Safety UX**: Added explicit Select/Cancel buttons to the Shop's item instance selection popup.
-*   **System**: version incremented to `v0.1.39`.
+*   **Forge Tab Modularization**: 
+    *   Renamed folder to lowercase `forge`.
+    *   Moved business logic to `tabs/forge/hooks/useForge.ts`.
+    *   Separated UI components into `tabs/forge/ui/` for improved maintainability.
+*   **Tutorial Scene Relocation**: Moved `TutorialScene.tsx` to `components/tutorial/` to separate narrative content from core facilities.
+*   **Shop Tab Architectural Refactoring**: 
+    *   Decomposed `ShopTab.tsx` into modular UI fragments.
+    *   Integrated `useShop` hook for centralized state.
+*   **UI Consolidation**: Standardized modal layout and Z-index management in `config/ui-config.ts`.
+*   **System**: Version incremented to `v0.1.39`.
