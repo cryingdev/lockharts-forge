@@ -3,7 +3,7 @@ import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipmen
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
 import SmithingMinigame from './SmithingMinigame';
 import WorkbenchMinigame from './WorkbenchMinigame';
-import { Hammer, Shield, Sword, ChevronRight, ChevronLeft, Lock, Box, Flame, ChevronDown, ChevronUp, FastForward, Activity, AlertCircle } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, ChevronLeft, Lock, Box, Flame, ChevronDown, ChevronUp, FastForward, Activity, AlertCircle, Heart } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import { GAME_CONFIG } from '../../../config/game-config';
 import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
@@ -35,6 +35,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const [isSkillsExpanded, setIsSkillsExpanded] = useState(false);
   const [expandedSubCat, setExpandedSubCat] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [isFavExpanded, setIsFavExpanded] = useState(true);
   const [hoveredItem, setHoveredItem] = useState<EquipmentItem | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [quickCraftProgress, setQuickCraftProgress] = useState<number | null>(null);
@@ -103,6 +104,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
       });
   }, [activeCategory, unlockedSmithingTier, unlockedWorkbenchTier, unlockedRecipes]);
 
+  const favoriteItems = useMemo(() => {
+    return visibleItems.filter(item => favorites.includes(item.id));
+  }, [visibleItems, favorites]);
+
   const groupedItems = useMemo(() => {
       const groups: Record<string, EquipmentItem[]> = {};
       visibleItems.forEach(item => {
@@ -119,14 +124,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   }, [activeCategory, groupedItems]);
 
   useEffect(() => {
-      if (visibleSubCats.length > 0) {
-          const isCurrentValid = visibleSubCats.some(sc => sc.id === expandedSubCat);
-          if (!isCurrentValid) {
-              setExpandedSubCat(visibleSubCats[0].id);
-          }
-      } else {
-          setExpandedSubCat(null);
+    // If the currently expanded sub-category is no longer in the visible list (due to tab change), close it.
+    if (expandedSubCat) {
+      const isStillVisible = visibleSubCats.some(sc => sc.id === expandedSubCat);
+      if (!isStillVisible) {
+        setExpandedSubCat(null);
       }
+    }
   }, [activeCategory, visibleSubCats, expandedSubCat]);
 
   const handleCategoryChange = useCallback((cat: EquipmentCategory) => {
@@ -478,6 +482,38 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                         <button onClick={() => handleCategoryChange('ARMOR')} className={`flex-1 py-3 md:py-4 text-center font-bold tracking-wider transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${activeCategory === 'ARMOR' ? 'bg-stone-800 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/50'}`}><Shield className="w-3 h-3 md:w-4 md:h-4" /> ARMORS</button>
                     </div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 space-y-4">
+                        {/* Favorites Section */}
+                        {favoriteItems.length > 0 && (
+                            <div className="space-y-2">
+                                <button onClick={() => setIsFavExpanded(!isFavExpanded)} className="w-full flex items-center justify-between px-3 py-2 bg-stone-800/40 rounded-lg hover:bg-amber-900/20 transition-colors border border-amber-500/20">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] md:text-xs font-black uppercase text-stone-400 tracking-widest">Favorites</span>
+                                    </div>
+                                    {isFavExpanded ? <ChevronDown className="w-4 h-4 text-amber-700" /> : <ChevronRight className="w-4 h-4 text-amber-700" />}
+                                </button>
+                                {isFavExpanded && (
+                                    <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-300">
+                                        {favoriteItems.map(item => (
+                                            <RecipeCard 
+                                                key={`fav-${item.id}`}
+                                                item={item}
+                                                isSelected={selectedItem?.id === item.id}
+                                                isFav={true}
+                                                inventoryCount={inventory.filter(i => i.name === item.name).length}
+                                                onSelect={handleSelectItem}
+                                                onToggleFavorite={toggleFavorite}
+                                                onMouseEnter={handleMouseEnter}
+                                                onMouseMove={handleMouseMove}
+                                                onMouseLeave={handleMouseLeave}
+                                                imageUrl={getItemImageUrl(item)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Standard Categories */}
                         {visibleSubCats.map(subCat => (
                             <div key={subCat.id} className="space-y-2">
                                 <button onClick={() => toggleSubCategory(subCat.id)} className="w-full flex items-center justify-between px-3 py-2 bg-stone-800/40 rounded-lg hover:bg-stone-800/60 transition-colors">
