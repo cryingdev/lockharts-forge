@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useGame } from '../../../context/GameContext';
-import DialogueBox from '../../DialogueBox';
-import { getAssetUrl } from '../../../utils';
-import { TutorialSceneMode } from '../../../types/game-state';
-// Fix: changed 'HandPointer' to 'Pointer' as it is the correct name in lucide-react
+import { useGame } from '../../context/GameContext';
+import DialogueBox from '../DialogueBox';
+import { getAssetUrl } from '../../utils';
+import { TutorialSceneMode } from '../../types/game-state';
 import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
-import ConfirmationModal from '../../modals/ConfirmationModal';
+import ConfirmationModal from '../modals/ConfirmationModal';
 
 type SequenceStep = 
     | 'IDLE' 
@@ -102,64 +102,34 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
 
     const cardinalBuffer = 12;
 
-    // HandPointer (Pointer icon) points UP (North) by default.
-    // translate offsets are fine-tuned to land the finger tip (top-center of svg) on the target point.
     switch (config.direction) {
         case 'top':
             pointerStyles = { left: centerX, top: top - cardinalBuffer, transform: 'translate(-50%, -100%)' };
-            iconRotation = 'rotate(180deg)'; // Point DOWN
+            iconRotation = 'rotate(180deg)';
             animationClass = 'animate-bounce-reverse';
             containerLayout = 'flex-col-reverse';
             labelMargin = 'mb-3';
             break;
         case 'bottom':
             pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
-            iconRotation = 'rotate(0deg)'; // Point UP
+            iconRotation = 'rotate(0deg)';
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
             labelMargin = 'mt-3';
             break;
         case 'left':
             pointerStyles = { left: left - cardinalBuffer, top: centerY, transform: 'translate(-100%, -50%)' };
-            iconRotation = 'rotate(90deg)'; // Point RIGHT
+            iconRotation = 'rotate(90deg)';
             animationClass = 'animate-bounce-x-reverse';
             containerLayout = 'flex-row-reverse';
             labelMargin = 'mr-3';
             break;
         case 'right':
             pointerStyles = { left: left + width + cardinalBuffer, top: centerY, transform: 'translateY(-50%)' };
-            iconRotation = 'rotate(-90deg)'; // Point LEFT
+            iconRotation = 'rotate(-90deg)';
             animationClass = 'animate-bounce-x';
             containerLayout = 'flex-row';
             labelMargin = 'ml-3';
-            break;
-        case 'topleft':
-            pointerStyles = { left, top, transform: 'translate(-50%, -50%)' };
-            iconRotation = 'rotate(135deg)'; // SE
-            animationClass = 'animate-bounce-tl';
-            containerLayout = 'flex-col-reverse items-end';
-            labelMargin = 'mb-2 mr-2';
-            break;
-        case 'topright':
-            pointerStyles = { left: left + width, top, transform: 'translate(-50%, -50%)' };
-            iconRotation = 'rotate(-135deg)'; // SW
-            animationClass = 'animate-bounce-tr';
-            containerLayout = 'flex-col-reverse items-start';
-            labelMargin = 'mb-2 ml-2';
-            break;
-        case 'bottomleft':
-            pointerStyles = { left, top: top + height, transform: 'translate(-50%, -50%)' };
-            iconRotation = 'rotate(45deg)'; // NE
-            animationClass = 'animate-bounce-bl';
-            containerLayout = 'flex-col items-end';
-            labelMargin = 'mt-2 mr-2';
-            break;
-        case 'bottomright':
-            pointerStyles = { left: left + width, top: top + height, transform: 'translate(-50%, -50%)' };
-            iconRotation = 'rotate(-45deg)'; // NW
-            animationClass = 'animate-bounce-br';
-            containerLayout = 'flex-col items-start';
-            labelMargin = 'mt-2 ml-2';
             break;
         default:
             pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
@@ -189,6 +159,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 />
             </svg>
 
+            {/* Click-blocking overlay around the target */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full pointer-events-auto bg-transparent" style={{ height: top }} />
                 <div className="absolute left-0 w-full pointer-events-auto bg-transparent" style={{ top: top + height, bottom: 0 }} />
@@ -242,8 +213,7 @@ const TutorialScene: React.FC = () => {
     }, [seq]);
 
     const bgImage = useMemo(() => {
-        if (mode === 'PROLOGUE') return 'forge_ruined_bg.png';
-        if (seq === 'IDLE' && !isStarted) return 'forge_ruined_bg.png';
+        if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'forge_ruined_bg.png';
         if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'forge_fixed_bg.png';
         if (temp >= 99.5) return 'forge_hot_bg.png';
         if (['HEAT_CONFIRM', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FINAL_TALK'].includes(seq)) return 'forge_start_bg.png';
@@ -324,10 +294,7 @@ const TutorialScene: React.FC = () => {
     const promptText = mode === 'FURNACE_RESTORED' ? "REPLACE FURNACE" : "TAP TO BEGIN";
 
     return (
-        <div 
-            className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer px-safe"
-            onClick={handleStart}
-        >
+        <div className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer px-safe" onClick={handleStart}>
             <style>{`
                 @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
                 @keyframes bounce-x-reverse { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
@@ -340,17 +307,13 @@ const TutorialScene: React.FC = () => {
             `}</style>
 
             <div className="absolute inset-0 z-0 pointer-events-none">
-                <img src={getAssetUrl(bgImage)} className="w-full h-full object-cover opacity-80 scale-105" alt="Forge Background" />
+                <img src={getAssetUrl(bgImage)} className="w-full h-full object-cover opacity-80" alt="Background" />
                 <div className="absolute inset-0 bg-black/30"></div>
             </div>
 
-            {/* GLOBAL SKIP BUTTON - Unified Style */}
-            <div className="absolute top-4 right-4 z-[6000] pointer-events-auto">
-                <button 
-                    onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} 
-                    className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-amber-500/50 text-stone-300 hover:text-amber-400 rounded-full transition-all text-[10px] md:text-xs font-black uppercase tracking-widest shadow-2xl backdrop-blur-md group ring-2 ring-white/5 active:scale-95"
-                >
-                    <FastForward className="w-3 h-3 md:w-4 md:h-4 group-hover:animate-pulse" /> Skip Tutorial
+            <div className="absolute top-4 right-4 z-[6000]">
+                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[10px] font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group">
+                    <FastForward className="w-3 h-3 group-hover:animate-pulse" /> Skip Tutorial
                 </button>
             </div>
 
@@ -365,11 +328,22 @@ const TutorialScene: React.FC = () => {
             {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && (
                 <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />
             )}
+            
+            {isStarted && <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
+                <DialogueBox 
+                    speaker={mode === 'PROLOGUE' || seq !== 'FINAL_TALK' ? "Lockhart" : "Master Smith"} 
+                    text={dialogue.text} 
+                    options={['WAIT_HEAT', 'WAIT_PUMP'].includes(seq) ? [] : [{ label: "Continue", action: handleNext, variant: 'primary' }]} 
+                    className="w-full relative pointer-events-auto" 
+                />
+            </div>}
 
-            {isStarted && mode === 'FURNACE_RESTORED' && (
+            {mode === 'FURNACE_RESTORED' && isStarted && (
                 <div className="absolute top-[15dvh] right-[5vw] z-[3040] flex flex-col items-center gap-6 animate-in slide-in-from-right-8 duration-700 pointer-events-auto">
                     <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-black text-stone-300 uppercase tracking-tighter mb-2 font-mono drop-shadow-md">{Math.floor(20 + (temp / 100) * 1480)}°C</span>
+                        <span className="text-[10px] font-black text-stone-300 uppercase tracking-tighter mb-2 font-mono drop-shadow-md">
+                            {Math.floor(20 + (temp / 100) * 1480)}°C
+                        </span>
                         <div className="w-7 h-48 md:h-64 bg-stone-950 rounded-full border-2 border-stone-800 relative shadow-2xl overflow-hidden">
                             <div className="absolute inset-1 rounded-full overflow-hidden">
                                 <div className={`absolute bottom-0 left-0 right-0 rounded-full transition-all duration-300 ${temp < 30 ? 'bg-blue-600' : temp > 80 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'}`} style={{ height: `${temp}%` }} />
@@ -389,13 +363,7 @@ const TutorialScene: React.FC = () => {
                 </div>
             )}
 
-            {isStarted && (
-                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-[5000] pointer-events-none">
-                    <DialogueBox speaker={mode === 'PROLOGUE' || seq !== 'FINAL_TALK' ? "Lockhart" : "Master Smith"} text={dialogue.text} options={['WAIT_HEAT', 'WAIT_PUMP'].includes(seq) ? [] : [{ label: "Continue", action: handleNext, variant: 'primary' }]} className="w-full relative pointer-events-auto" />
-                </div>
-            )}
-
-            <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked." confirmLabel="Skip Everything" cancelLabel="Keep Playing" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
+            <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked." confirmLabel="Skip Everything" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
         </div>
     );
 };

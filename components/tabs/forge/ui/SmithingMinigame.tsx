@@ -1,9 +1,10 @@
+
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Phaser from 'phaser';
 import { X } from 'lucide-react';
-import { useGame } from '../../../context/GameContext';
-import { materials } from '../../../data/materials';
-import SmithingScene from '../../../game/SmithingScene';
+import { useGame } from '../../../../context/GameContext';
+import { materials } from '../../../../data/materials';
+import SmithingScene from '../../../../game/SmithingScene';
 
 interface SmithingMinigameProps {
   onComplete: (score: number, bonus?: number) => void;

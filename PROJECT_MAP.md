@@ -63,14 +63,14 @@ This document provides a comprehensive structural map of the project, detailing 
 - `tabs/Dungeon/AssaultNavigator.tsx`: Tactical D-Pad UI with **3-Tier Camera Control**.
 
 ### Shop Tab (Domain-Specific Structure)
-- `tabs/shop-tab/ShopTab.tsx`: Shop view assembler. Orchestrates domain-specific hooks and UI fragments.
-- `tabs/shop-tab/hooks/useShop.ts`: Shop business logic, including customer queue management, sale execution, and tutorial flow.
-- `tabs/shop-tab/ui/ShopSign.tsx`: Interactive sign component with 3D flip animation for shop status.
-- `tabs/shop-tab/ui/BlinkingMercenary.tsx`: Animated mercenary sprite renderer with eye-blink logic.
-- `tabs/shop-tab/ui/CustomerHUD.tsx`: Customer status display (HP/MP, Affinity) with reactive animations.
-- `tabs/shop-tab/ui/ShopQueueBadge.tsx`: Visual indicator for the number of customers waiting in line.
-- `tabs/shop-tab/ui/ShopClosedOverlay.tsx`: Full-screen overlay for closed status or energy exhaustion.
-- `tabs/shop-tab/ui/InstanceSelectorPopup.tsx`: Detailed item selection modal with stats inspection and lock toggles.
+- `tabs/shop/ShopTab.tsx`: Shop view assembler. Orchestrates domain-specific hooks and UI fragments.
+- `tabs/shop/hooks/useShop.ts`: Shop business logic, including customer queue management, sale execution, and tutorial flow.
+- `tabs/shop/ui/ShopSign.tsx`: Interactive sign component with 3D flip animation for shop status.
+- `tabs/shop/ui/BlinkingMercenary.tsx`: Animated mercenary sprite renderer with eye-blink logic.
+- `tabs/shop/ui/CustomerHUD.tsx`: Customer status display (HP/MP, Affinity) with reactive animations.
+- `tabs/shop/ui/ShopQueueBadge.tsx`: Visual indicator for the number of customers waiting in line.
+- `tabs/shop/ui/ShopClosedOverlay.tsx`: Full-screen overlay for closed status or energy exhaustion.
+- `tabs/shop/ui/InstanceSelectorPopup.tsx`: Detailed item selection modal with stats inspection and lock toggles.
 
 ### Modals (Popup System)
 - `modals/ConfirmationModal.tsx`: Safety prompts with **Mobile-Stacking** button layouts.
@@ -93,8 +93,9 @@ This document provides a comprehensive structural map of the project, detailing 
 ## 🔄 Recent Updates (v0.1.39)
 
 *   **Architectural Refactoring (Shop Tab)**: 
-    *   Moved `useShop` hook to `tabs/shop-tab/hooks/`.
-    *   Decomposed `ShopTab.tsx` into modular UI fragments under `tabs/shop-tab/ui/`.
+    *   Renamed `shop-tab` folder to `shop`.
+    *   Moved `useShop` hook to `tabs/shop/hooks/`.
+    *   Decomposed `ShopTab.tsx` into modular UI fragments under `tabs/shop/ui/`.
     *   The main `ShopTab.tsx` now serves as a clean assembler, improving maintainability.
 *   **UI Consolidation**: Centralized modal layout and Z-index management in `config/ui-config.ts`.
 *   **Modular Forge UI**: Refactored `ForgeTab.tsx` into specialized sub-components (`ForgeSkillHeader`, `ForgeStatsGrid`, etc.) for improved code readability.

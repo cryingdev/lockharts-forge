@@ -1,11 +1,9 @@
 
-
-
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { X, Scissors } from 'lucide-react';
-import { useGame } from '../../../context/GameContext';
-import WorkbenchScene from '../../../game/WorkbenchScene';
+import { useGame } from '../../../../context/GameContext';
+import WorkbenchScene from '../../../../game/WorkbenchScene';
 
 interface WorkbenchMinigameProps {
   onComplete: (score: number, bonus?: number) => void;
