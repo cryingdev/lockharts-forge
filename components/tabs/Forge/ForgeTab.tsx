@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../data/equipment';
 import { EquipmentCategory, EquipmentItem } from '../../../types/index';
@@ -33,7 +34,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [isSkillsExpanded, setIsSkillsExpanded] = useState(false);
-  const [expandedSubCat, setExpandedSubCat] = useState<string | null>(null);
+  const [expandedSubCat, setExpandedSubCat] = useState<string | null>('SWORD');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isFavExpanded, setIsFavExpanded] = useState(true);
   const [hoveredItem, setHoveredItem] = useState<EquipmentItem | null>(null);
@@ -136,6 +137,12 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const handleCategoryChange = useCallback((cat: EquipmentCategory) => {
     setActiveCategory(cat);
     setSelectedItem(null);   
+    // Set default subcategories when switching
+    if (cat === 'WEAPON') {
+      setExpandedSubCat('SWORD');
+    } else if (cat === 'ARMOR') {
+      setExpandedSubCat('HELMET');
+    }
   }, []);
 
   const toggleSubCategory = useCallback((subCatId: string) => {
@@ -518,7 +525,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             <div key={subCat.id} className="space-y-2">
                                 <button onClick={() => toggleSubCategory(subCat.id)} className="w-full flex items-center justify-between px-3 py-2 bg-stone-800/40 rounded-lg hover:bg-stone-800/60 transition-colors">
                                     <span className="text-[10px] md:text-xs font-black uppercase text-stone-400 tracking-widest">{subCat.name}</span>
-                                    {expandedSubCat === subCat.id ? <ChevronDown className="w-4 h-4 text-stone-600" /> : <ChevronRight className="w-4 h-4 text-stone-600" />}
+                                    {expandedSubCat === subCat.id ? <ChevronDown className="w-3 h-3 text-stone-600" /> : <ChevronRight className="w-3 h-3 text-stone-600" />}
                                 </button>
                                 {expandedSubCat === subCat.id && (
                                     <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-300">
