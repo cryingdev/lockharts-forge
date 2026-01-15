@@ -50,7 +50,13 @@ This document provides a comprehensive structural map of the project, detailing 
 - `components/ItemSelectorList.tsx`: Reusable inventory browser with grid/list toggles synced to global settings.
 
 ### Tabs (Functional Pages)
-- `tabs/Forge/ForgeTab.tsx`: Crafting hub with Mastery Radial gauges.
+- `tabs/Forge/ForgeTab.tsx`: Crafting hub acting as an assembler for modular forge UI units.
+- `tabs/Forge/ForgeSkillHeader.tsx`: Smithing and Workbench level progress displays.
+- `tabs/Forge/ForgeStatsGrid.tsx`: Visual layout for equipment combat and bonus stats.
+- `tabs/Forge/RecipeCard.tsx`: Individual recipe item with favorite and inventory tracking.
+- `tabs/Forge/MasteryRadialGauge.tsx`: Circular mastery progress and item visualizer.
+- `tabs/Forge/QuickCraftOverlay.tsx`: Processing overlay for high-mastery automated crafting.
+- `tabs/Forge/RecipeTooltip.tsx`: Contextual material requirements hover UI.
 - `tabs/Forge/TutorialScene.tsx`: Narrative-driven introduction focusing on the furnace restoration.
 - `tabs/Shop/ShopTab.tsx`: Store management with instance-selection confirmation UI.
 - `tabs/Tavern/TavernTab.tsx`: Roster management and visitor interactions.
@@ -77,7 +83,8 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ## 🔄 Recent Updates (v0.1.39)
 
-*   **UI Consolidation**: Created `config/ui-config.ts` to centralize modal layout and Z-index management.
+*   **UI Consolidation**: Centralized modal layout and Z-index management in `config/ui-config.ts`.
+*   **Modular Forge UI**: Refactored `ForgeTab.tsx` into specialized sub-components (`ForgeSkillHeader`, `ForgeStatsGrid`, etc.) for improved code readability.
 *   **Market Optimization**: Catalog reordered (Resources > Supplies > Facilities) and initial Furnace cost set to 0G for tutorial flow.
 *   **UI Persistence**: Inventory view mode (Grid/List) now saves to user settings.
 *   **Safety UX**: Added explicit Select/Cancel buttons to the Shop's item instance selection popup.
