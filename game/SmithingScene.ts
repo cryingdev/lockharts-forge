@@ -1,14 +1,19 @@
 
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
+import { SmithingTutorialHandler } from './SmithingTutorialHandler';
+import { SMITHING_CONFIG } from '../config/smithing-config';
 
 export interface SmithingSceneData {
   onComplete: (score: number, enhancementCount: number) => void;
   onStatusUpdate?: (temp: number) => void;
   onHeatUpRequest?: () => void;
+  onTutorialTargetUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
+  onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => void;
   difficulty: number;
   initialTemp: number;
   charcoalCount: number | string;
+  isTutorial?: boolean;
 }
 
 interface Point {
@@ -17,6 +22,9 @@ interface Point {
 }
 
 type SmithingTool = 'HAMMER' | 'TONGS';
+
+const MAX_TEMP = 1500;
+const IDLE_TEMP = 10;
 
 export default class SmithingScene extends Phaser.Scene {
   declare public add: Phaser.GameObjects.GameObjectFactory;
@@ -30,6 +38,7 @@ export default class SmithingScene extends Phaser.Scene {
   declare public textures: Phaser.Textures.TextureManager;
   declare public anims: Phaser.Animations.AnimationManager;
   declare public make: Phaser.GameObjects.GameObjectCreator;
+  declare public game: Phaser.Game;
 
   private backgroundTile!: Phaser.GameObjects.TileSprite;
   private bgOverlay!: Phaser.GameObjects.Rectangle;
@@ -130,6 +139,9 @@ export default class SmithingScene extends Phaser.Scene {
   private onComplete?: (score: number, enhancementCount: number) => void;
   private onStatusUpdate?: (temp: number) => void;
   private onHeatUpRequest?: () => void;
+  private onTutorialTargetUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
+  private onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => void;
+  private isTutorial = false;
 
   private root!: Phaser.GameObjects.Container;
 
@@ -176,6 +188,9 @@ export default class SmithingScene extends Phaser.Scene {
     this.onComplete = data.onComplete;
     this.onStatusUpdate = data.onStatusUpdate;
     this.onHeatUpRequest = data.onHeatUpRequest;
+    this.onTutorialTargetUpdate = data.onTutorialTargetUpdate;
+    this.onTutorialAction = data.onTutorialAction;
+    this.isTutorial = !!data.isTutorial;
     this.charcoalCount = data.charcoalCount;
     this.shrinkDuration = Math.max(800, 2000 - data.difficulty * 200);
     this.coolingRate = 2 + data.difficulty * 0.8;
@@ -410,7 +425,7 @@ export default class SmithingScene extends Phaser.Scene {
             if (isRot) {
                 this.isRotatingManual = true;
                 this.startPointerAngle = Phaser.Math.Angle.Between(this.billetContainer.x, this.billetContainer.y, p.x, p.y);
-                this.startBilletRotation = this.billetContainer.rotation;
+                this.startBilletRotation = this.startBilletRotation;
             } else if (mode === 'X') {
                 this.isMovingManualX = true;
             } else if (mode === 'Y') {
@@ -467,7 +482,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.qualityText = this.add.text(0, 55, 'PRISTINE', { fontFamily: 'Grenze Gotisch', fontSize: '18px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add([this.progBg, this.progressBar, this.qualityText]);
     this.tempBgGraphics = this.add.graphics(); this.tempBarGraphics = this.add.graphics();
-    this.tempValueText = this.add.text(0, 0, '20°C', { fontFamily: 'Grenze', fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    this.tempValueText = this.add.text(0, 0, '10°C', { fontFamily: 'Grenze', fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add([this.tempBgGraphics, this.tempBarGraphics, this.tempValueText]);
     const r = 48; 
     this.bellowsContainer = this.add.container(0, 0);
@@ -574,7 +589,9 @@ export default class SmithingScene extends Phaser.Scene {
       if (this.flashOverlay) this.flashOverlay.setSize(sw, sh);
       const anvilW = sw * 1.2; const anvilScale = anvilW / this.anvilImage.width;
       const forgeCenterX = sw * 0.4; this.anvilImage.setScale(anvilScale).setPosition(forgeCenterX, this.centerY);
-      if (this.ambientGlow) this.ambientGlow.setPosition(forgeCenterX, this.centerY);
+      if (this.anvilImage) {
+        if (this.ambientGlow) this.ambientGlow.setPosition(forgeCenterX, this.centerY);
+      }
       this.placeBilletOnAnvil();
       const basis = Math.min(sw, sh); 
       this.startRadius = Phaser.Math.Clamp(basis * (portrait ? 0.28 : 0.35), 105, 240);
@@ -635,7 +652,6 @@ export default class SmithingScene extends Phaser.Scene {
     const currentKey = this.billetImage.texture.key; 
     const localPoints = this.generateOutlinePoints(currentKey); 
     
-    // 월드 좌표 변환 로직 강화: 회전, 스케일, 위치를 정확히 반영
     const rad = Phaser.Math.DegToRad(this.billetContainer.angle);
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
@@ -643,7 +659,6 @@ export default class SmithingScene extends Phaser.Scene {
     const cx = this.billetContainer.x;
     const cy = this.billetContainer.y;
 
-    // 히트 판정용 폴리곤 (살짝 넉넉하게)
     const hitDetectionScale = visualScale * 1.15;
     const transformedPoints = localPoints.map(p => ({
         x: cx + (p.x * hitDetectionScale * cos - p.y * hitDetectionScale * sin),
@@ -651,7 +666,6 @@ export default class SmithingScene extends Phaser.Scene {
     }));
     this.hitPoly = new Phaser.Geom.Polygon(transformedPoints);
     
-    // 타겟 링 생성용 폴리곤 (이미지 영역 내로 타이트하게)
     const spawnPoints = localPoints.map(p => ({
         x: cx + (p.x * visualScale * cos - p.y * visualScale * sin),
         y: cy + (p.x * visualScale * sin + p.y * visualScale * cos)
@@ -682,19 +696,39 @@ export default class SmithingScene extends Phaser.Scene {
 
     const diff = Math.abs(this.currentRadius - this.targetRadius);
     const eff = this.currentTempStage === 'AURA' ? 1.5 : this.currentTempStage === 'HOT' ? 1.0 : 0.5;
-    if (diff < this.targetRadius * 0.35) {
+    
+    if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.PERFECT_THRESHOLD) {
       this.score += Math.ceil(8 * eff); this.combo++; this.perfectCount++;
       if (this.perfectCount >= 6) { this.currentQuality += 1; }
       if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(x, y);
       this.createSparks(30, this.currentTargetColor, 1.5, 'spark_perfect', x, y); this.showFeedback('PERFECT!', 0xffb300, 1.4, x, y); this.cameras.main.shake(150, 0.02);
       this.applyKickback(0.05); 
-    } else if (diff < this.targetRadius * 0.95) {
+      
+      // 튜토리얼 체크: 첫 번째 타격 성공 시 React에 알림
+      if (this.isTutorial && this.perfectCount === 1 && this.onTutorialAction) {
+          this.onTutorialAction('FIRST_HIT_DONE');
+          // 튜토리얼 일시정지를 위해 즉시 반환 (resetRing 호출 안함)
+          this.targetRing.clear(); // 링 그래픽 명시적 제거
+          this.approachRing.clear(); // 링 그래픽 명시적 제거
+          this.updateProgressBar();
+          return;
+      }
+    } else if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.GOOD_THRESHOLD) {
       this.score += Math.ceil(5 * eff); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
       this.createSparks(15, 0xffffff, 1.1, 'spark_normal', x, y); this.showFeedback('GOOD', 0xe5e5e5, 1.1, x, y);
       this.applyKickback(0.4); 
     } else { this.handleMiss(x, y); }
     this.updateProgressBar();
     if (this.score >= this.targetScore) this.winGame(); else this.resetRing();
+  }
+
+  /**
+   * 튜토리얼 중 리액트의 확인 신호를 받고 다음 단계를 재개합니다.
+   */
+  public resumeTutorialCrafting() {
+      if (this.isTutorial && this.perfectCount === 1) {
+          this.resetRing();
+      }
   }
 
   private handleEnhancement(x: number, y: number) {
@@ -713,17 +747,50 @@ export default class SmithingScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     if (this.isFinished) return;
-    if (this.isPlaying && this.currentTool === 'HAMMER') this.handleRingLogic(delta);
-    this.temperature = Math.max(0, this.temperature - this.coolingRate * (delta / 1000));
+
+    const currentStep = (this.game as any).tutorialStep;
+    // 튜토리얼 단계 중 'FIRST_HIT_DIALOG' 등 대화가 출력되는 동안은 링 로직 일시 중지
+    const isTutorialDialogueActive = this.isTutorial && (currentStep === 'FIRST_HIT_DIALOG' || currentStep?.includes('_DIALOG'));
+
+    if (this.isPlaying && this.currentTool === 'HAMMER' && !isTutorialDialogueActive) {
+        this.handleRingLogic(delta);
+    }
+    
+    const floorVal = SmithingTutorialHandler.getTemperatureFloor(this.isTutorial);
+    
+    // 튜토리얼 중이며 아직 본격적인 제작(망치질)을 시작하기 위해 화면을 탭하지 않은 상태일 때,
+    // 온도가 정점(98% 이상)에 도달했다면 냉각을 정지하여 유저가 여유롭게 TOUCH TO START를 할 수 있게 함.
+    const isPeakInTutorialWait = this.isTutorial && !this.isPlaying && this.temperature >= 98;
+    
+    if (!isPeakInTutorialWait) {
+        this.temperature = Math.max(floorVal, this.temperature - this.coolingRate * (delta / 1000));
+    }
+    
     this.refreshVisuals();
-    if (!this.isPlaying && this.isReadyToStart && this.temperature <= 0) {
+
+    if (this.onStatusUpdate) this.onStatusUpdate(this.temperature);
+
+    if (!this.isPlaying && this.isReadyToStart && this.temperature <= floorVal + 0.1 && !this.isTutorial) {
       this.isReadyToStart = false; this.infoText.setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6');
+    }
+
+    if (this.isTutorial && this.onTutorialTargetUpdate) {
+        const activeRect = SmithingTutorialHandler.getHighlightRect(this.isTutorial, currentStep, this.isPlaying, {
+          heatUpBtn: this.heatUpBtnContainer,
+          bellowsBtn: this.bellowsContainer,
+          hitX: this.hitX,
+          hitY: this.hitY,
+          targetRadius: this.targetRadius
+        });
+        this.onTutorialTargetUpdate(activeRect);
     }
   }
 
   private refreshVisuals() {
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
-    const ratio = this.temperature / 100; this.tempValueText.setText(`${Math.floor(20 + ratio * 1480)}°C`);
+    const ratio = this.temperature / 100; 
+    this.tempValueText.setText(`${Math.round(IDLE_TEMP + ratio * (MAX_TEMP - IDLE_TEMP))}°C`);
+    
     if (this.tempBarGraphics) {
         const sideAreaWidth = Math.min(this.viewW, this.viewH) * 0.18; const rightX = this.viewW - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
         const panelStartY = this.viewH * 0.45; const btnScale = sideAreaWidth / 100; const btnH = 100 * btnScale;
@@ -753,7 +820,10 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   private handleRingLogic(delta: number) {
-    this.ringTimer += delta * this.currentSpeedMult; 
+    const tutorialStep = (this.game as any).tutorialStep;
+    const speedFactor = SmithingTutorialHandler.getRingSpeedFactor(this.isTutorial, tutorialStep, this.perfectCount);
+    
+    this.ringTimer += delta * this.currentSpeedMult * speedFactor; 
     const t = Math.min(this.ringTimer / this.shrinkDuration, 1.5); this.currentRadius = this.startRadius * (1 - t * t);
     const colorT = Math.min(this.ringTimer / this.shrinkDuration, 1.0);
     const targetRGB = Phaser.Display.Color.IntegerToColor(this.currentTargetColor);
@@ -770,22 +840,41 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.temperature <= 0 || !this.spawnPoly) return; 
     this.targetRing.clear(); this.approachRing.clear(); this.currentRadius = this.startRadius; this.ringTimer = 0;
     
-    const redBias = Math.min(0.75, this.combo * 0.08); 
-    const randType = Math.random();
-    
-    if (randType < Math.max(0.02, 0.15 - (redBias * 0.2))) { 
-        this.currentTargetColor = 0x10b981; this.currentSpeedMult = 0.70; 
-    } 
-    else if (randType < (0.75 - redBias)) { 
-        this.currentTargetColor = 0xfabf24; this.currentSpeedMult = 1.0; 
-    } 
-    else { 
-        this.currentTargetColor = 0xef4444; this.currentSpeedMult = 1.6; 
+    // Check for forced tutorial difficulty
+    const tutorialStep = (this.game as any).tutorialStep;
+    const forced = SmithingTutorialHandler.getForcedDifficulty(this.isTutorial, tutorialStep, this.perfectCount);
+
+    if (forced) {
+        this.currentTargetColor = forced.color;
+        this.currentSpeedMult = forced.speedMult;
+    } else {
+        // 신규 밸런싱 로직 적용
+        const bias = SMITHING_CONFIG.BALANCING;
+        const redBias = Math.min(bias.MAX_RED_BIAS, this.combo * bias.BIAS_PER_COMBO); 
+        const randType = Math.random();
+        
+        const diffCfg = SMITHING_CONFIG.DIFFICULTY;
+        
+        // 추첨 로직: EASY -> NORMAL -> HARD 순으로 범위 판정
+        const easyThreshold = Math.max(bias.MIN_GREEN_PROB, diffCfg.EASY.baseProbability - (redBias * bias.EASY_REDUCTION_FACTOR));
+        const normalThreshold = easyThreshold + (1.0 - easyThreshold - redBias);
+
+        if (randType < easyThreshold) { 
+            this.currentTargetColor = diffCfg.EASY.color; 
+            this.currentSpeedMult = diffCfg.EASY.speedMult; 
+        } 
+        else if (randType < normalThreshold) { 
+            this.currentTargetColor = diffCfg.NORMAL.color; 
+            this.currentSpeedMult = diffCfg.NORMAL.speedMult; 
+        } 
+        else { 
+            this.currentTargetColor = diffCfg.HARD.color; 
+            this.currentSpeedMult = diffCfg.HARD.speedMult; 
+        }
     }
 
     this.targetRadius = this.startRadius * Phaser.Math.FloatBetween(0.18, 0.32);
     
-    // 무작위 좌표 추출 로직 개선: 폴리곤 내부 포인트를 더 적극적으로 샘플링
     const rect = Phaser.Geom.Polygon.GetAABB(this.spawnPoly);
     let found = false; let attempts = 0;
     while (!found && attempts < 200) {
@@ -797,7 +886,6 @@ export default class SmithingScene extends Phaser.Scene {
         attempts++;
     }
     
-    // 폴리곤 내부를 찾지 못한 경우 정점 중 하나를 무작위로 선택
     if (!found && this.spawnPoly.points.length > 0) {
         const p = this.spawnPoly.points[Math.floor(Math.random() * this.spawnPoly.points.length)];
         this.hitX = p.x; this.hitY = p.y;
@@ -829,6 +917,12 @@ export default class SmithingScene extends Phaser.Scene {
 
   private winGame() {
     this.isFinished = true; this.isPlaying = false; this.targetRing.clear(); this.approachRing.clear();
+    
+    // 튜토리얼 체크: 제작 완료 시 React에 알림
+    if (this.isTutorial && this.onTutorialAction) {
+        this.onTutorialAction('CRAFT_FINISHED');
+    }
+
     if (this.onStatusUpdate) this.onStatusUpdate(this.temperature);
     const bg = this.add.rectangle(this.centerX, this.centerY, this.viewW, this.viewH, 0x000000).setAlpha(0).setDepth(100);
     this.root.add(bg); this.tweens.add({ targets: bg, alpha: 0.8, duration: 500 });
@@ -840,7 +934,10 @@ export default class SmithingScene extends Phaser.Scene {
   private pumpBellows() {
     this.isPumping = true; this.bellowsSprite.play('bellows_pump', true); 
     this.tweens.add({ targets: this.bellowsBg, alpha: { from: 1, to: 0.7 }, scale: { from: 1, to: 1.1 }, duration: 150, yoyo: true, ease: 'Cubic.out' });
-    if (this.temperature > 0) { this.temperature = Math.min(100, this.temperature + 5); if (!this.isPlaying && !this.isReadyToStart) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } }
+    if (this.temperature > 0) { 
+        this.temperature = Math.min(100, this.temperature + 5.5); 
+        if (!this.isPlaying && !this.isReadyToStart) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } 
+    }
   }
 
   private requestHeatUp() { 
@@ -849,7 +946,10 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   public heatUp() {
-    this.temperature = Math.min(100, this.temperature + 40); if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } this.flashOverlay.setFillStyle(0xff8800, 1).setAlpha(0.4); this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 400, ease: 'Cubic.easeOut' });
+    this.temperature = 39.6; 
+    if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } 
+    this.flashOverlay.setFillStyle(0xff8800, 1).setAlpha(0.4); 
+    this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 400, ease: 'Cubic.easeOut' });
   }
   public updateCharcoalCount(count: number | string) { this.charcoalCount = count; this.refreshHeatUpButton(); }
   private refreshHeatUpButton() { 

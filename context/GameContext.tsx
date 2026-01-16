@@ -42,6 +42,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     prevDayRef.current = state.stats.day;
   }, [state.stats.day, state]);
 
+  // Debug: Tutorial Step Logging
+  useEffect(() => {
+      const scene = state.activeTutorialScene || 'NONE';
+      const step = state.tutorialStep || 'NONE (Active Gameplay)';
+      console.log(
+          `%c[Tutorial Tracker] Scene: ${scene} | Step: ${step}`, 
+          'color: #fbbf24; font-weight: bold; background: #1c1917; padding: 2px 6px; border-radius: 4px; border: 1px solid #fbbf24;'
+      );
+  }, [state.activeTutorialScene, state.tutorialStep]);
+
   useEffect(() => {
       if (!state.toast?.visible && state.toastQueue.length > 0) {
           const processTimer = setTimeout(() => {

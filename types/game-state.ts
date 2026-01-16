@@ -79,7 +79,7 @@ export interface GameToast {
     visible: boolean;
 }
 
-export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED';
+export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED' | 'MARKET' | 'SMITHING';
 
 export interface GameSettings {
     showLogTicker: boolean;
@@ -115,7 +115,43 @@ export interface GameState {
   unlockedTabs: string[]; 
   unlockedTierPopup: { type: 'FORGE' | 'WORKBENCH'; tier: number } | null; 
   
-  tutorialStep: 'MARKET_GUIDE' | 'BROWSE_GOODS_GUIDE' | 'FURNACE_GUIDE' | 'OPEN_SHOPPING_CART' | 'CLOSE_SHOPPING_CART' | 'PAY_NOW' | 'TALK_TO_GARRICK_AFTER_PURCHASE' | 'LEAVE_MARKET_GUIDE' | 'CRAFT_PROMPT' | 'FORGE_TAB_GUIDE' | 'SELECT_SWORD_GUIDE' | 'START_FORGING_GUIDE' | 'CRAFT_RESULT_PROMPT' | 'FINALIZE_FORGE_GUIDE' | 'SHOP_INTRO_PROMPT' | 'OPEN_SHOP_TAB_GUIDE' | 'OPEN_SHOP_SIGN_GUIDE' | 'SELL_ITEM_GUIDE' | 'PIP_PRAISE' | 'DRAGON_TALK' | 'TUTORIAL_END_MONOLOGUE' | null;
+  tutorialStep: 
+    | 'PROLOGUE_DIALOG'
+    | 'MARKET_GUIDE' 
+    | 'BROWSE_GOODS_GUIDE' 
+    | 'FURNACE_GUIDE' 
+    | 'OPEN_SHOPPING_CART' 
+    | 'CLOSE_SHOPPING_CART' 
+    | 'PAY_NOW' 
+    | 'GARRICK_AFTER_PURCHASE_DIALOG' 
+    | 'LEAVE_MARKET_GUIDE' 
+    | 'CRAFT_START_DIALOG' 
+    | 'FORGE_TAB_GUIDE' 
+    | 'SELECT_SWORD_GUIDE' 
+    | 'START_FORGING_GUIDE' 
+    | 'PRE_IGNITE_DIALOG_1' 
+    | 'PRE_IGNITE_DIALOG_2' 
+    | 'PRE_IGNITE_INDICATE'
+    | 'SMITHING_MINIGAME_IGNITE' 
+    | 'PRE_PUMP_DIALOG' 
+    | 'PRE_PUMP_INDICATE'
+    | 'SMITHING_MINIGAME_PUMP' 
+    | 'POST_PUMP_DIALOG'
+    | 'SMITHING_MINIGAME_HIT'
+    | 'FIRST_HIT_DIALOG' 
+    | 'CRAFT_RESULT_DIALOG' 
+    | 'FINALIZE_FORGE_GUIDE' 
+    | 'SHOP_INTRO_DIALOG' 
+    | 'OPEN_SHOP_TAB_GUIDE' 
+    | 'OPEN_SHOP_SIGN_GUIDE' 
+    | 'SELL_ITEM_GUIDE' 
+    | 'PIP_PRAISE_DIALOG' 
+    | 'DRAGON_TALK_DIALOG' 
+    | 'TUTORIAL_END_DIALOG' 
+    | 'HEAT_CONFIRM_DIALOG'
+    | 'FURNACE_FINAL_DIALOG'
+    | null;
+    
   activeTutorialScene: TutorialSceneMode | null;
   hasCompletedPrologue: boolean;
 

@@ -7,14 +7,17 @@ import { TutorialSceneMode } from '../../types/game-state';
 import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
 import ConfirmationModal from '../modals/ConfirmationModal';
 
+const MAX_TEMP = 1500;
+const IDLE_TEMP = 10;
+
 type SequenceStep = 
     | 'IDLE' 
     | 'POST_REPLACE_TALK' 
     | 'WAIT_HEAT' 
-    | 'HEAT_CONFIRM' 
+    | 'HEAT_CONFIRM_DIALOG' 
     | 'WAIT_CONTINUE_BELLOWS' 
     | 'WAIT_PUMP' 
-    | 'FINAL_TALK';
+    | 'FURNACE_FINAL_DIALOG';
 
 type TutorialDirection = 'top' | 'bottom' | 'left' | 'right' | 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
 
@@ -37,12 +40,12 @@ const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
     PROLOGUE_4: { text: "I must head to the Market immediately to find a replacement. The hammer of the Lockhart lineage will not be silenced." },
     
     FURNACE_0: { text: "The furnace is finally in place. The air in the forge doesn't feel so heavy and cold anymore." },
-    FURNACE_1: { text: "It's a sturdy unit. I've managed to seal the connections, but I should check if the flue is drawing correctly." },
-    FURNACE_HEAT_PROMPT: { text: "Let's see if the fuel takes. I need to check the ignition systems." },
+    FURNACE_1: { text: "It's a sturdy unit. I've managed to seal the connections, but I should check if the flue is drawing correctly. Striking the flint now..." },
+    
     FURNACE_HEATED: { text: "The temperature is rising. The heat is building... the chimney is drawing well." },
     FURNACE_COOLING: { text: "The fire is settling down. I should use the bellows to keep the oxygen flowing." },
-    FURNACE_BELLOWS_MONO: { text: "If the temperature drops below 400°C, the bellows won't be enough to bring it back to a roar. I must act while the embers are hot." },
-    FURNACE_PUMP_PROMPT: { text: "Let's see if we can reach the forging temperature. Pump it to the limit!" },
+    FURNACE_BELLOWS_MONO: { text: "If the temperature drops below 400°C, the bellows won't be enough to bring it back to a roar. Pump it to the limit!" },
+    
     FURNACE_MAXED: { text: "Magnificent. The forge is finally alive and roaring. I'm ready to begin the work of retribution." }
 };
 
@@ -112,7 +115,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
             break;
         case 'bottom':
             pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
-            iconRotation = 'rotate(0deg)';
+            iconRotation = '';
             animationClass = 'animate-bounce';
             containerLayout = 'flex-col';
             labelMargin = 'mt-3';
@@ -131,13 +134,6 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
             containerLayout = 'flex-row';
             labelMargin = 'ml-3';
             break;
-        default:
-            pointerStyles = { left: centerX, top: top + height + cardinalBuffer, transform: 'translateX(-50%)' };
-            iconRotation = 'rotate(0deg)';
-            animationClass = 'animate-bounce';
-            containerLayout = 'flex-col';
-            labelMargin = 'mt-3';
-            break;
     }
 
     const currentLabel = (step === 'WAIT_PUMP' && hasPumpedOnce) ? "Keep Pump!" : config.label;
@@ -154,7 +150,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 <rect 
                     width="100%" 
                     height="100%" 
-                    fill={`rgba(0,0,0,${Math.min(0.75, 1.5 - (animatedRadius / 1000))})`} 
+                    fill={`rgba(0,0,0,0.75)`} 
                     mask="url(#tutorial-mask-local)" 
                 />
             </svg>
@@ -174,7 +170,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
             >
                 <div className={`flex items-center ${containerLayout} ${animationClass}`}>
                     <Pointer className={`w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]`} style={{ transform: iconRotation }} />
-                    <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl whitespace-nowrap border-2 border-amber-400`}>
+                    <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl border-2 border-amber-400 whitespace-nowrap`}>
                         {currentLabel}
                     </div>
                 </div>
@@ -196,27 +192,34 @@ const TutorialScene: React.FC = () => {
     
     const mode = state.activeTutorialScene || 'PROLOGUE';
 
+    // Reset internal state whenever the tutorial mode changes
     useEffect(() => {
-        if (seq === 'HEAT_CONFIRM' || seq === 'WAIT_CONTINUE_BELLOWS' || seq === 'WAIT_PUMP') {
+        setIsStarted(false);
+        setHasPumpedOnce(false);
+        setTemp(0);
+        setCurrentStep(0);
+        setSeq('IDLE');
+    }, [mode]);
+
+    useEffect(() => {
+        if (seq === 'HEAT_CONFIRM_DIALOG' || seq === 'WAIT_CONTINUE_BELLOWS' || seq === 'WAIT_PUMP') {
             const timer = setInterval(() => {
                 setTemp(prev => {
-                    if (prev > 29.1) return prev - 0.12;
-                    return prev;
+                    const floorVal = 26.17;
+                    if (prev > floorVal) return prev - 0.12;
+                    return floorVal;
                 });
             }, 50);
             return () => clearInterval(timer);
         }
     }, [seq]);
 
-    useEffect(() => {
-        setHasPumpedOnce(false);
-    }, [seq]);
-
     const bgImage = useMemo(() => {
         if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'forge_ruined_bg.png';
         if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'forge_fixed_bg.png';
-        if (temp >= 99.5) return 'forge_hot_bg.png';
-        if (['HEAT_CONFIRM', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FINAL_TALK'].includes(seq)) return 'forge_start_bg.png';
+        const currentDegrees = Math.round(IDLE_TEMP + (temp / 100) * (MAX_TEMP - IDLE_TEMP));
+        if (currentDegrees >= 1490) return 'forge_hot_bg.png';
+        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'forge_start_bg.png';
         return 'forge_fixed_bg.png';
     }, [mode, seq, temp, isStarted]);
 
@@ -237,17 +240,19 @@ const TutorialScene: React.FC = () => {
 
     const handleHeatUp = () => {
         if (seq !== 'WAIT_HEAT') return;
-        setTemp(80);
-        setSeq('HEAT_CONFIRM');
+        setTemp(39.6);
+        setSeq('HEAT_CONFIRM_DIALOG');
     };
 
     const handlePump = () => {
         setIsPumping(true);
         setHasPumpedOnce(true);
-        setTemp(prev => Math.min(100, prev + 5));
+        const nextTempRatio = Math.min(100, temp + 5.5);
+        setTemp(nextTempRatio);
         setTimeout(() => setIsPumping(false), 300);
-        if (seq === 'WAIT_PUMP' && temp + 5 >= 100) {
-            setSeq('FINAL_TALK');
+        
+        if (seq === 'WAIT_PUMP' && nextTempRatio >= 99) {
+            setSeq('FURNACE_FINAL_DIALOG');
         }
     };
 
@@ -255,13 +260,11 @@ const TutorialScene: React.FC = () => {
         if (!isStarted) return { text: "" };
         if (mode === 'PROLOGUE') return SCRIPTS[`PROLOGUE_${currentStep}`];
         if (seq === 'POST_REPLACE_TALK') return SCRIPTS[`FURNACE_${currentStep}`];
-        if (seq === 'WAIT_HEAT') return SCRIPTS.FURNACE_HEAT_PROMPT;
-        if (seq === 'HEAT_CONFIRM') return SCRIPTS.FURNACE_HEATED;
+        if (seq === 'HEAT_CONFIRM_DIALOG') return SCRIPTS.FURNACE_HEATED;
         if (seq === 'WAIT_CONTINUE_BELLOWS') {
             return currentStep === 0 ? SCRIPTS.FURNACE_COOLING : SCRIPTS.FURNACE_BELLOWS_MONO;
         }
-        if (seq === 'WAIT_PUMP') return SCRIPTS.FURNACE_PUMP_PROMPT;
-        if (seq === 'FINAL_TALK') return SCRIPTS.FURNACE_MAXED;
+        if (seq === 'FURNACE_FINAL_DIALOG') return SCRIPTS.FURNACE_MAXED;
         return { text: "..." };
     }, [isStarted, mode, currentStep, seq]);
 
@@ -273,15 +276,15 @@ const TutorialScene: React.FC = () => {
             if (seq === 'POST_REPLACE_TALK') {
                 if (currentStep < 1) setCurrentStep(prev => prev + 1);
                 else setSeq('WAIT_HEAT');
-            } else if (seq === 'HEAT_CONFIRM') {
+            } else if (seq === 'HEAT_CONFIRM_DIALOG') {
                 setSeq('WAIT_CONTINUE_BELLOWS');
                 setCurrentStep(0);
             } else if (seq === 'WAIT_CONTINUE_BELLOWS') {
                 if (currentStep < 1) setCurrentStep(prev => prev + 1);
                 else setSeq('WAIT_PUMP');
-            } else if (seq === 'FINAL_TALK') {
-                actions.setTutorialScene(null);
-                actions.setTutorialStep('CRAFT_PROMPT');
+            } else if (seq === 'FURNACE_FINAL_DIALOG') {
+                actions.setTutorialScene('SMITHING');
+                actions.setTutorialStep('CRAFT_START_DIALOG');
             }
         }
     };
@@ -292,6 +295,9 @@ const TutorialScene: React.FC = () => {
     };
 
     const promptText = mode === 'FURNACE_RESTORED' ? "REPLACE FURNACE" : "TAP TO BEGIN";
+
+    // 지시 단계(Spotlight가 활성화되는 단계)인지 확인
+    const isIndicateStep = seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP';
 
     return (
         <div className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer px-safe" onClick={handleStart}>
@@ -325,24 +331,27 @@ const TutorialScene: React.FC = () => {
                 </div>
             )}
 
-            {isStarted && (seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP') && (
+            {isStarted && isIndicateStep && (
                 <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />
             )}
             
-            {isStarted && <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
-                <DialogueBox 
-                    speaker={mode === 'PROLOGUE' || seq !== 'FINAL_TALK' ? "Lockhart" : "Master Smith"} 
-                    text={dialogue.text} 
-                    options={['WAIT_HEAT', 'WAIT_PUMP'].includes(seq) ? [] : [{ label: "Continue", action: handleNext, variant: 'primary' }]} 
-                    className="w-full relative pointer-events-auto" 
-                />
-            </div>}
+            {/* 다이얼로그는 지시 단계가 아닐 때만 렌더링 (설명 -> 클릭 -> 다이얼로그 숨김 -> 인터랙션 지시) */}
+            {isStarted && !isIndicateStep && (
+                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto z-[5000]">
+                    <DialogueBox 
+                        speaker={mode === 'PROLOGUE' || seq !== 'FURNACE_FINAL_DIALOG' ? "Lockhart" : "Master Smith"} 
+                        text={dialogue.text} 
+                        options={[{ label: "Continue", action: handleNext, variant: 'primary' }]} 
+                        className="w-full relative" 
+                    />
+                </div>
+            )}
 
             {mode === 'FURNACE_RESTORED' && isStarted && (
                 <div className="absolute top-[15dvh] right-[5vw] z-[3040] flex flex-col items-center gap-6 animate-in slide-in-from-right-8 duration-700 pointer-events-auto">
                     <div className="flex flex-col items-center">
                         <span className="text-[10px] font-black text-stone-300 uppercase tracking-tighter mb-2 font-mono drop-shadow-md">
-                            {Math.floor(20 + (temp / 100) * 1480)}°C
+                            {Math.round(IDLE_TEMP + (temp / 100) * (MAX_TEMP - IDLE_TEMP))}°C
                         </span>
                         <div className="w-7 h-48 md:h-64 bg-stone-950 rounded-full border-2 border-stone-800 relative shadow-2xl overflow-hidden">
                             <div className="absolute inset-1 rounded-full overflow-hidden">

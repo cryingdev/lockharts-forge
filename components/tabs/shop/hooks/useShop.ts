@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
@@ -173,21 +174,21 @@ export const useShop = () => {
     }, [refusalReaction, activeCustomer]);
 
     const tutorialContent = useMemo(() => {
-        if (tutorialStep === 'PIP_PRAISE') {
+        if (tutorialStep === 'PIP_PRAISE_DIALOG') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
                 text: "This... this is incredible. I can feel the balance in the grip. It's much better than the scraps I found in the woods. You really are a Lockhart, aren't you?",
-                options: [{ label: "Continue", action: () => actions.setTutorialStep('DRAGON_TALK'), variant: 'primary' as const }]
+                options: [{ label: "Continue", action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG'), variant: 'primary' as const }]
             };
         }
-        if (tutorialStep === 'DRAGON_TALK') {
+        if (tutorialStep === 'DRAGON_TALK_DIALOG') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
                 text: "The village... it hasn't been the same since the Dragon's fire. I lost my brother that night. I see that same shadow in your eyes, smith. We all lost someone. Good luck with the forge.",
-                options: [{ label: "Farewell", action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_MONOLOGUE'); }, variant: 'primary' as const }]
+                options: [{ label: "Farewell", action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_DIALOG'); }, variant: 'primary' as const }]
             };
         }
-        if (tutorialStep === 'TUTORIAL_END_MONOLOGUE') {
+        if (tutorialStep === 'TUTORIAL_END_DIALOG') {
             return {
                 speaker: "Lockhart",
                 text: "Finally... the first sale. It's just a simple bronze blade, but it marks the beginning of my resurgence. I will rebuild this forge, piece by piece, until the name Lockhart once again commands respect across the realm. Every strike of my hammer brings me closer to the day I face that dragon. ... I miss my people. I miss my home. But I will not falter. My business starts now.",

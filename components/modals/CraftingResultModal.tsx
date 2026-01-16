@@ -84,12 +84,12 @@ const CraftingResultModal = () => {
     const label = getQualityLabel(data.quality);
     const qColor = getQualityColor(data.quality);
 
-    const isLockedByTutorial = state.tutorialStep === 'CRAFT_RESULT_PROMPT';
+    const isLockedByTutorial = state.tutorialStep === 'CRAFT_RESULT_DIALOG';
 
     const handleFinalize = () => {
         if (isLockedByTutorial) return;
         if (state.tutorialStep === 'FINALIZE_FORGE_GUIDE') {
-            actions.setTutorialStep('SHOP_INTRO_PROMPT');
+            actions.setTutorialStep('SHOP_INTRO_DIALOG');
         }
         actions.dismissCraftingResult();
     };
@@ -149,7 +149,7 @@ const CraftingResultModal = () => {
                     
                     <div className="flex flex-col items-center gap-1 mt-1 md:mt-2">
                         <div className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-stone-950 border border-stone-800 font-black uppercase tracking-widest text-[7px] md:text-[10px] ${qColor} flex items-center gap-1 shadow-inner`}>
-                            <Sparkles className="w-2.5 h-2.5 md:w-3 md:h-3 fill-current" /> {label} Quality
+                            <Sparkles className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-current" /> {label} Quality
                         </div>
                         <div className="flex items-center gap-1 text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest">
                             <Award className="w-2 h-2 md:w-2.5 md:h-2.5" /> Mastery: {Math.round(masteryInfo.progress)}%

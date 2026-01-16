@@ -37,7 +37,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                         onComplete={handlers.handleMinigameComplete}
                         onClose={() => actions.cancelCrafting(selectedItem)}
                         difficulty={selectedItem.tier}
-                        isTutorial={state.tutorialStep === 'START_FORGING_GUIDE'}
+                        isTutorial={state.activeTutorialScene === 'SMITHING'}
                     />
                 ) : (
                     <WorkbenchMinigame 

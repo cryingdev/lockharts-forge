@@ -155,8 +155,9 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
       actions.finishCrafting(selectedItem, score, bonus);
+      // Fix: Updated 'CRAFT_RESULT_PROMPT' to 'CRAFT_RESULT_DIALOG' to match type definition
       if (tutorialStep === 'START_FORGING_GUIDE' && selectedItem.id === 'sword_bronze_t1') {
-        actions.setTutorialStep('CRAFT_RESULT_PROMPT');
+        actions.setTutorialStep('CRAFT_RESULT_DIALOG');
       }
     }
     setIsPanelOpen(true);

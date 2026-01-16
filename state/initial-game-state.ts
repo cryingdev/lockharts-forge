@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { materials } from '../data/materials';
@@ -8,10 +9,10 @@ const createInitialInventory = (): InventoryItem[] => [
     { ...materials.anvil, type: 'TOOL', quantity: 1 },
     { ...materials.hammer, type: 'TOOL', quantity: 1 },
     // Starter Materials
-    { ...materials.charcoal, quantity: 10 }, // Increased from 5
-    { ...materials.copper_ore, quantity: 4 }, // Increased from 2
-    { ...materials.tin_ore, quantity: 2 },    // Increased from 1
-    { ...materials.oak_log, quantity: 2 },    // Increased from 1
+    { ...materials.charcoal, quantity: 10 }, 
+    { ...materials.copper_ore, quantity: 4 }, 
+    { ...materials.tin_ore, quantity: 2 },    
+    { ...materials.oak_log, quantity: 2 },    
     
     // Recovery Items for early testing
     { ...materials.energy_potion, quantity: 2 },
@@ -54,7 +55,6 @@ export const createInitialGameState = (): GameState => ({
         currentXp: 0,
         xpToNextLevel: m.level * 100,
         status: 'VISITOR' as const,
-        // Explicitly ensure bonus points are set based on level
         bonusStatPoints: m.bonusStatPoints ?? Math.max(0, (m.level - 1) * 3)
     })),
 
@@ -82,7 +82,7 @@ export const createInitialGameState = (): GameState => ({
     unlockedRecipes: [],
     unlockedTabs: ['FORGE', 'MARKET'],
     unlockedTierPopup: null,
-    tutorialStep: null,
+    tutorialStep: 'PROLOGUE_DIALOG',
     activeTutorialScene: 'PROLOGUE',
     hasCompletedPrologue: false,
 

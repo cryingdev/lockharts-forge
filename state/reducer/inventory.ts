@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../../types/index';
 import { materials } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -212,8 +213,9 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
             };
         }
 
+        // Fix: Updated tutorial step name from 'PIP_PRAISE' to 'PIP_PRAISE_DIALOG'
         if (isPipTutorial) {
-            newTutorialStep = 'PIP_PRAISE';
+            newTutorialStep = 'PIP_PRAISE_DIALOG';
         }
     } else {
         logMessage = `Sold ${itemName} for ${price} Gold.`;
