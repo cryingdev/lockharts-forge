@@ -130,6 +130,9 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
             break;
     }
 
+    // 대화 위주의 안내 단계에서는 배경 암전 효과를 숨깁니다.
+    const isDialogueStep = step === 'BROWSE_GOODS_GUIDE' || step === 'GARRICK_AFTER_PURCHASE_DIALOG' || step === 'LEAVE_MARKET_GUIDE';
+
     return (
         <div className="fixed inset-0 z-[4000] pointer-events-none overflow-hidden">
             {/* Visual Darkening Mask */}
@@ -140,7 +143,13 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
                         {targetRect && <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />}
                     </mask>
                 </defs>
-                <rect width="100%" height="100%" fill="rgba(0,0,0,0.75)" mask="url(#m-mask)" />
+                <rect 
+                    width="100%" 
+                    height="100%" 
+                    fill="rgba(0,0,0,0.75)" 
+                    mask="url(#m-mask)" 
+                    className={`transition-opacity duration-700 ${isDialogueStep ? 'opacity-0' : 'opacity-100'}`}
+                />
             </svg>
 
             {/* Logical Interaction Walls (Blocking 4 sides around the target) */}
