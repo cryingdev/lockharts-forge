@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Heart, Box } from 'lucide-react';
-import { EquipmentItem } from '../../../types/index';
+import { EquipmentItem } from '../../../../types';
 
 interface RecipeCardProps {
     item: EquipmentItem;

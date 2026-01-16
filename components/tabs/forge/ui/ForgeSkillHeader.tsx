@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { getSmithingLevel, getUnlockedTier, LEVEL_EXP_TABLE } from '../../../utils/craftingLogic';
+import { getSmithingLevel, getUnlockedTier, LEVEL_EXP_TABLE } from '../../../../utils/craftingLogic';
 
 interface ForgeSkillHeaderProps {
     exp: number;

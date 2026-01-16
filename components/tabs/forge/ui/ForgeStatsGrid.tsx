@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Sword, Shield, Zap, Brain, Activity, Heart, Star, Wind } from 'lucide-react';
-import { EquipmentItem } from '../../../types/index';
+import { EquipmentItem } from '../../../../types';
 
 interface ForgeStatsGridProps {
     item: EquipmentItem;
