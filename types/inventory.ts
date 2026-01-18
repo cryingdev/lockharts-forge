@@ -12,6 +12,7 @@ export interface ItemDefinition {
   description: string;
   baseValue: number;
   icon?: string; 
+  image?: string;
 }
 
 export interface InventoryItem extends ItemDefinition {

@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { materials } from '../data/materials';
@@ -15,8 +14,8 @@ const createInitialInventory = (): InventoryItem[] => [
     { ...materials.oak_log, quantity: 2 },    
     
     // Recovery Items for early testing
-    { ...materials.energy_potion, quantity: 2 },
-    { ...materials.stamina_potion, quantity: 2 },
+    { ...materials.potion_energy_small, quantity: 2 },
+    { ...materials.potion_stamina_small, quantity: 2 },
     
     { ...materials.emergency_gold, quantity: 1 },
 ];

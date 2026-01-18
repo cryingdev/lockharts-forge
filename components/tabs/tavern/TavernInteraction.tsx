@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -225,12 +224,13 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     );
 
     const getItemImageUrl = (item: InventoryItem) => {
-        if (item.type === 'SCROLL') return getAssetUrl('scroll.png');
-        if (item.id.startsWith('scroll_') || item.id.startsWith('recipe_scroll_')) return getAssetUrl('scroll.png');
         if (item.type === 'EQUIPMENT' && item.equipmentData) {
             if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
             return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
         }
+        if (item.image) return getAssetUrl(item.image);
+        if (item.type === 'SCROLL') return getAssetUrl('scroll_contract.png');
+        if (item.id.startsWith('scroll_') || item.id.startsWith('recipe_scroll_')) return getAssetUrl('scroll_contract.png');
         return getAssetUrl(`${item.id}.png`);
     };
 

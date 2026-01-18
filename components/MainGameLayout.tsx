@@ -12,7 +12,7 @@ import { useDungeonService } from '../services/dungeon/dungeon-service';
 // Import Tabs
 import ForgeTab from './tabs/forge/ForgeTab';
 import ShopTab from './tabs/shop/ShopTab';
-import TavernTab from './tabs/Tavern/TavernTab';
+import TavernTab from './tabs/tavern/TavernTab';
 import MarketTab from './tabs/market/MarketTab';
 import DungeonTab from './tabs/Dungeon/DungeonTab';
 import SimulationTab from './tabs/Simulation/SimulationTab';

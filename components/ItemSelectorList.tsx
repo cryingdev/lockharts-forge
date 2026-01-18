@@ -1,9 +1,40 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutGrid, List, Lock, Unlock, Star, Sword, Shield, Coins, Package, Sparkles } from 'lucide-react';
 import { InventoryItem } from '../types/inventory';
 import { getAssetUrl } from '../utils';
 import { useGame } from '../context/GameContext';
+
+const RomanTierOverlay = ({ id, isList = false }: { id: string, isList?: boolean }) => {
+    const sizeClasses = isList ? "text-[10px] md:text-lg" : "text-xs md:text-2xl";
+    const translateClasses = isList ? "translate-y-0.5" : "translate-y-1 md:translate-y-2";
+    
+    if (id === 'scroll_t2') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className={`text-amber-500 font-serif font-black ${sizeClasses} drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] ${translateClasses}`}>II</span></div>;
+    if (id === 'scroll_t3') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className={`text-amber-500 font-serif font-black ${sizeClasses} drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] ${translateClasses}`}>III</span></div>;
+    if (id === 'scroll_t4') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className={`text-amber-500 font-serif font-black ${sizeClasses} drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] ${translateClasses}`}>IV</span></div>;
+    return null;
+};
+
+const AdaptiveItemImage = ({ item, className }: { item: InventoryItem, className?: string }) => {
+    const baseId = (item.type === 'EQUIPMENT' && item.equipmentData?.recipeId) 
+        ? item.equipmentData.recipeId 
+        : item.id;
+    
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`));
+
+    // 아이템이 변경되면 이미지 소스 초기화
+    useEffect(() => {
+        setImgSrc(getAssetUrl(`${baseId}.png`));
+    }, [baseId]);
+
+    const handleImgError = () => {
+        const fallbackPath = item.image || item.equipmentData?.image;
+        if (fallbackPath && imgSrc !== getAssetUrl(fallbackPath)) {
+            setImgSrc(getAssetUrl(fallbackPath));
+        }
+    };
+
+    return <img src={imgSrc} onError={handleImgError} className={className} />;
+};
 
 interface ItemSelectorListProps {
     items: InventoryItem[];
@@ -47,15 +78,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
             case 'Uncommon': return 'text-emerald-100 border-emerald-400 bg-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.4)]';
             default: return 'text-stone-300 border-stone-600 bg-stone-700';
         }
-    };
-
-    const getItemImageUrl = (item: InventoryItem) => {
-        if (item.type === 'SCROLL') return getAssetUrl('scroll.png');
-        if (item.type === 'EQUIPMENT' && item.equipmentData) {
-            if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
-            return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
-        }
-        return getAssetUrl(`${item.id}.png`);
     };
 
     if (items.length === 0) {
@@ -114,10 +136,13 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
                                     
-                                    <img src={getItemImageUrl(item)} className="w-16 h-16 md:w-20 md:h-20 object-contain p-1 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
+                                    <div className="relative">
+                                        <AdaptiveItemImage item={item} className="w-16 h-16 md:w-20 md:h-20 object-contain p-1 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
+                                        <RomanTierOverlay id={item.id} />
+                                    </div>
                                     
                                     {/* Grid Top Info: Rarity Badge & Quantity */}
-                                    <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 pointer-events-none items-start max-w-[85%]">
+                                    <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 pointer-events-none items-start max-w-[85%] z-20">
                                         {isEquip && (
                                             <div className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase border shadow-md leading-none ${rarityClasses}`}>
                                                 {item.equipmentData!.rarity}
@@ -132,7 +157,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
 
                                     {/* Quality Label Sparkle Overlay */}
                                     {isEquip && (
-                                        <div className="absolute top-[60%] left-1/2 -translate-x-1/2 pointer-events-none">
+                                        <div className="absolute top-[60%] left-1/2 -translate-x-1/2 pointer-events-none z-20">
                                             <div className="bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/10 shadow-lg">
                                                 <Sparkles className="w-2 h-2 text-amber-400" />
                                                 <span className="text-[7px] font-black text-amber-200 uppercase whitespace-nowrap tracking-tight">{qualityLabel}</span>
@@ -141,7 +166,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                     )}
 
                                     {/* Grid Bottom Info: Stats & Price */}
-                                    <div className="absolute bottom-1 inset-x-1.5 flex justify-between items-end pointer-events-none">
+                                    <div className="absolute bottom-1 inset-x-1.5 flex justify-between items-end pointer-events-none z-20">
                                         {isEquip ? (
                                             <div className="flex flex-col gap-0.5">
                                                 {mainAtk > 0 && (
@@ -169,7 +194,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                 {/* Floating Lock for Grid */}
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); onToggleLock(item.id); }}
-                                    className={`absolute top-1.5 right-1.5 p-1.5 rounded-lg border transition-all z-10 shadow-xl ${isLocked ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-900/80 border-stone-700 text-stone-500 opacity-0 group-hover:opacity-100 hover:text-stone-200 hover:bg-stone-800'}`}
+                                    className={`absolute top-1.5 right-1.5 p-1.5 rounded-lg border transition-all z-30 shadow-xl ${isLocked ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-900/80 border-stone-700 text-stone-500 opacity-0 group-hover:opacity-100 hover:text-stone-200 hover:bg-stone-800'}`}
                                 >
                                     {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                                 </button>
@@ -191,8 +216,9 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                 <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent pointer-events-none"></div>
 
                                 <div className="w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-lg border border-stone-800 flex items-center justify-center shrink-0 overflow-hidden relative shadow-[inset_0_2px_10px_rgba(0,0,0,0.6)]">
-                                    <img src={getItemImageUrl(item)} className="w-8 h-8 md:w-12 md:h-12 object-contain drop-shadow-md" />
-                                    {isLocked && <Lock className="absolute top-0.5 right-0.5 w-2.5 h-2.5 text-amber-500" />}
+                                    <AdaptiveItemImage item={item} className="w-8 h-8 md:w-12 md:h-12 object-contain drop-shadow-md" />
+                                    <RomanTierOverlay id={item.id} isList />
+                                    {isLocked && <Lock className="absolute top-0.5 right-0.5 w-2.5 h-2.5 text-amber-500 z-30" />}
                                 </div>
 
                                 <div className="flex-1 min-w-0">
@@ -237,7 +263,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                             {/* Lock Toggle Button for List */}
                             <button 
                                 onClick={(e) => { e.stopPropagation(); onToggleLock(item.id); }}
-                                className={`absolute top-3 right-3 p-1.5 rounded-lg border transition-all z-10 ${isLocked ? 'bg-amber-600 border-amber-400 text-white shadow-lg' : 'bg-stone-900 border-stone-700 text-stone-500 opacity-0 group-hover:opacity-100 hover:text-stone-200'}`}
+                                className={`absolute top-3 right-3 p-1.5 rounded-lg border transition-all z-30 ${isLocked ? 'bg-amber-600 border-amber-400 text-white shadow-lg' : 'bg-stone-900 border-stone-700 text-stone-500 opacity-0 group-hover:opacity-100 hover:text-stone-200'}`}
                             >
                                 {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                             </button>

@@ -1,9 +1,34 @@
-
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle, Brain, Lock, Unlock, Star, Sparkles } from 'lucide-react';
 import { InventoryItem } from '../types/index';
 import { getAssetUrl } from '../utils';
+
+const RomanTierOverlay = ({ id }: { id: string }) => {
+    if (id === 'scroll_t2') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-xs md:text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] translate-y-1">II</span></div>;
+    if (id === 'scroll_t3') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-xs md:text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] translate-y-1">III</span></div>;
+    if (id === 'scroll_t4') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-xs md:text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] translate-y-1">IV</span></div>;
+    return null;
+};
+
+const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, className?: string }) => {
+    // 1순위: ID 기반 파일명 시도 (Equipment는 recipeId 우선)
+    const baseId = (item.type === 'EQUIPMENT' && item.equipmentData?.recipeId) 
+        ? item.equipmentData.recipeId 
+        : item.id;
+    
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`));
+
+    const handleImgError = () => {
+        // 2순위: 아이템 메타데이터의 image 또는 equipmentData의 image 폴백
+        const fallbackPath = item.image || item.equipmentData?.image;
+        if (fallbackPath && imgSrc !== getAssetUrl(fallbackPath)) {
+            setImgSrc(getAssetUrl(fallbackPath));
+        }
+    };
+
+    return <img src={imgSrc} onError={handleImgError} className={className} />;
+};
 
 export const InventoryDisplay = () => {
     const { state, actions } = useGame();
@@ -55,14 +80,6 @@ export const InventoryDisplay = () => {
     const currentSelectedItem = state.inventory.find(i => i.id === selectedItem?.id) || null;
     if (selectedItem && !currentSelectedItem) setSelectedItem(null);
 
-    const getItemImageUrl = (item: InventoryItem) => {
-        if (item.type === 'EQUIPMENT' && item.equipmentData) {
-            if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
-            return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
-        }
-        return getAssetUrl(`${item.id}.png`);
-    };
-
     const renderEquipmentStats = (item: InventoryItem) => {
         if (!item.equipmentData?.stats) return null;
         const s = item.equipmentData.stats;
@@ -107,7 +124,7 @@ export const InventoryDisplay = () => {
             <div className="flex-[1.5] md:flex-[2.5] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex flex-col min-w-0">
                 <div className="bg-slate-800/50 p-2 md:p-3 border-b border-slate-700 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
-                        <Package className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
+                        <Package className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-50" />
                         <h3 className="text-slate-200 text-xs md:text-sm uppercase tracking-wider font-bold">Storage</h3>
                     </div>
                     <span className="text-[10px] text-slate-500 font-mono">{state.inventory.length}</span>
@@ -124,12 +141,13 @@ export const InventoryDisplay = () => {
                                         key={item.id} onClick={() => handleSelect(item)}
                                         className={`relative flex flex-col items-center p-2 rounded-lg border transition-all h-20 md:h-28 justify-between ${isSelected ? 'bg-amber-900/20 border-amber-500 shadow-md ring-1 ring-amber-500/50' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'}`}
                                     >
-                                        <div className="absolute top-1 right-1 bg-slate-950/80 px-1 rounded text-[8px] md:text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                                        <div className="absolute top-1 right-1 bg-slate-950/80 px-1 rounded text-[8px] md:text-[10px] text-slate-400 font-mono flex items-center gap-1 z-20">
                                             {item.isLocked && <Lock className="w-2 h-2 md:w-2.5 md:h-2.5 text-amber-500" />}
                                             x{item.quantity}
                                         </div>
-                                        <div className="flex-1 flex items-center justify-center">
-                                             <img src={getItemImageUrl(item)} className="w-6 h-6 md:w-10 md:h-10 object-contain" />
+                                        <div className="flex-1 flex items-center justify-center relative">
+                                             <AdaptiveInventoryImage item={item} className="w-6 h-6 md:w-10 md:h-10 object-contain" />
+                                             <RomanTierOverlay id={item.id} />
                                         </div>
                                         <div className="text-[9px] md:text-xs text-center font-medium text-slate-300 w-full truncate">{item.name}</div>
                                     </button>
@@ -160,9 +178,10 @@ export const InventoryDisplay = () => {
                     <div className="flex-1 p-3 md:p-5 flex flex-col animate-in fade-in duration-300 overflow-y-auto custom-scrollbar">
                         <div className="flex flex-col items-center text-center mb-4 shrink-0">
                             <div className={`w-12 h-12 md:w-20 md:h-20 bg-stone-900 rounded-full border-2 flex items-center justify-center mb-2 shadow-lg relative ${currentSelectedItem.equipmentData ? getRarityClasses(currentSelectedItem.equipmentData.rarity) : 'border-stone-700'}`}>
-                                <img src={getItemImageUrl(currentSelectedItem)} className="w-8 h-8 md:w-12 md:h-12 object-contain" />
+                                <AdaptiveInventoryImage item={currentSelectedItem} className="w-8 h-8 md:w-12 md:h-12 object-contain" />
+                                <RomanTierOverlay id={currentSelectedItem.id} />
                                 {currentSelectedItem.isLocked && (
-                                    <div className="absolute -top-1 -right-1 bg-amber-600 text-white p-1 rounded-full border border-stone-900 shadow-lg">
+                                    <div className="absolute -top-1 -right-1 bg-amber-600 text-white p-1 rounded-full border border-stone-900 shadow-lg z-30">
                                         <Lock className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
                                     </div>
                                 )}

@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { materials } from '../../../../data/materials';
@@ -55,10 +54,12 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         prevAffinityRef.current = state.garrickAffinity;
     }, [state.garrickAffinity, spawnHearts]);
 
-    const cartItemCount = useMemo(() => Object.values(cart).reduce((a, b) => a + b, 0), [cart]);
+    // Explicitly typed parameters to fix "Operator '+' cannot be applied to types 'unknown' and 'unknown'"
+    const cartItemCount = useMemo(() => Object.values(cart).reduce((a: number, b: number) => a + b, 0), [cart]);
 
+    // Explicitly typed parameters to fix arithmetic operation errors on unknown types
     const totalCost = useMemo(() => {
-        return Object.entries(cart).reduce((total, [id, count]) => {
+        return Object.entries(cart).reduce((total: number, [id, count]: [string, number]) => {
             return total + ((materials[id]?.baseValue ?? 0) * count);
         }, 0);
     }, [cart]);
@@ -75,7 +76,10 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
             if (!meta) return;
             const isOwned = (config.id === 'furnace' && hasFurnace) || (config.id === 'workbench' && hasWorkbench);
             if (config.type === 'FACILITY' && isOwned) return;
-            if (config.type === 'RESOURCE' && (meta.tier || 1) > currentTier) return;
+            
+            // 티어 제한이 있는 아이템들 (RESOURCE, SUPPLY, TECHNIQUE) 필터링
+            const isTierRestricted = config.type === 'RESOURCE' || config.type === 'SUPPLY' || config.type === 'TECHNIQUE';
+            if (isTierRestricted && (meta.tier || 1) > currentTier) return;
 
             const payload = { ...config, meta };
             if (config.type === 'RESOURCE') groups[`t${meta.tier || 1}`].push(payload);
