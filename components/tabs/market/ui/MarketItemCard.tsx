@@ -1,7 +1,13 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Package, Coins, Lock } from 'lucide-react';
 import { getAssetUrl } from '../../../../utils';
+
+const RomanTierOverlay = ({ id }: { id: string }) => {
+    if (id === 'scroll_t2') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-xs md:text-3xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] translate-y-2">II</span></div>;
+    if (id === 'scroll_t3') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-xs md:text-3xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] translate-y-2">III</span></div>;
+    if (id === 'scroll_t4') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-xs md:text-3xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] translate-y-2">IV</span></div>;
+    return null;
+};
 
 interface MarketItemCardProps {
     item: any;
@@ -16,6 +22,17 @@ interface MarketItemCardProps {
 export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inventoryCount, multiplier, isLocked, onAdd, onSetMultiplier }) => {
     const isSoldOut = stock <= 0;
     const meta = item.meta;
+    
+    // 1순위: ID 기반 파일명 우선 시도
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${item.id}.png`));
+
+    // 이미지 로드 실패 시 폴백 처리
+    const handleImgError = () => {
+        if (meta.image && imgSrc !== getAssetUrl(meta.image)) {
+            // 2순위: 메타데이터에 정의된 image 경로
+            setImgSrc(getAssetUrl(meta.image));
+        }
+    };
 
     return (
         <div data-tutorial-id={item.id === 'furnace' ? 'FURNACE_ITEM' : undefined} className={`relative flex flex-col items-center p-2 rounded-2xl border transition-all h-[150px] md:h-[220px] justify-between overflow-hidden shadow-md ${isSoldOut ? 'bg-stone-900 border-stone-800 opacity-40 grayscale' : 'bg-stone-850 border-stone-800 hover:border-stone-600'}`}>
@@ -23,8 +40,9 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
             {inventoryCount > 0 && <div className="absolute top-1 left-1 px-1 py-0.5 rounded text-[6px] font-black uppercase border z-10 bg-slate-900/80 border-slate-600 text-slate-300 flex items-center gap-1"><Package className="w-2 h-2" />{inventoryCount}</div>}
             <div className={`absolute top-1 right-1 px-1 py-0.5 rounded text-[6px] font-black tracking-tighter border z-10 ${stock > 0 ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40' : 'bg-red-950/60 text-red-500 border-red-500/40'}`}>{isSoldOut ? 'X' : stock}</div>
             
-            <div className={`flex-1 w-full flex items-center justify-center transition-all mt-1 rounded-lg ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-stone-800/50 active:scale-95'}`} onClick={() => !isSoldOut && onAdd(item.id, multiplier)}>
-                <img src={getAssetUrl(`${item.id}.png`)} className="w-10 h-10 md:w-24 md:h-24 object-contain drop-shadow-md" />
+            <div className={`flex-1 w-full flex items-center justify-center transition-all mt-1 rounded-lg relative ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-stone-800/50 active:scale-95'}`} onClick={() => !isSoldOut && onAdd(item.id, multiplier)}>
+                <img src={imgSrc} onError={handleImgError} className="w-10 h-10 md:w-24 md:h-24 object-contain drop-shadow-md" />
+                <RomanTierOverlay id={item.id} />
             </div>
 
             {!isSoldOut && meta.type !== 'KEY_ITEM' && meta.type !== 'SCROLL' && (
@@ -35,7 +53,7 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
 
             <div className="w-full text-center px-1"><h4 className={`text-[7px] md:text-[11px] font-black leading-none truncate ${meta.type === 'TECHNIQUE' ? 'text-amber-400' : 'text-stone-400'}`}>{meta.name}</h4></div>
             <div className={`w-full py-0.5 md:py-2 rounded-b-xl border-t flex flex-col items-center justify-center font-mono font-black ${isSoldOut ? 'bg-stone-900 border-stone-800 text-stone-700' : 'bg-stone-950 border-stone-800 text-amber-500 cursor-pointer hover:bg-amber-900/20 active:scale-95'}`} onClick={() => !isSoldOut && onAdd(item.id, multiplier)}>
-                <div className="flex items-center gap-1 text-[7px] md:text-sm"><span>{meta.baseValue * multiplier}</span><Coins className="w-2 h-2 md:w-4 md:h-4" /></div>
+                <div className="flex items-center gap-1 text-[7px] md:sm"><span>{meta.baseValue * multiplier}</span><Coins className="w-2 h-2 md:w-4 md:h-4" /></div>
             </div>
             {isSoldOut && <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60"><span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded rotate-12 uppercase">Sold Out</span></div>}
         </div>

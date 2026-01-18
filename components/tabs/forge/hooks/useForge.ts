@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EquipmentCategory, EquipmentItem } from '../../../../types';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../../data/equipment';
@@ -190,7 +189,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     setTooltipPos({ x: finalX, y: finalY });
   };
 
-  // Added missing handlers
+  // Added missing handlers with explicit React.MouseEvent type
   const handleSelectItem = useCallback((item: EquipmentItem) => {
       setSelectedItem(item);
       if (tutorialStep === 'SELECT_SWORD_GUIDE' && item.id === 'sword_bronze_t1') {

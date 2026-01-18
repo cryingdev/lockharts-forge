@@ -1,4 +1,3 @@
-
 export type MarketItemType = 'RESOURCE' | 'SUPPLY' | 'FACILITY' | 'TECHNIQUE';
 
 export interface MarketItemConfig {
@@ -12,11 +11,27 @@ export const MARKET_CATALOG: MarketItemConfig[] = [
   { id: 'furnace', maxStock: 1, type: 'FACILITY' }, 
   { id: 'workbench', maxStock: 1, type: 'FACILITY' },
 
-  // --- SUPPLIES ---
-  { id: 'energy_potion', maxStock: 5, type: 'SUPPLY' },
-  { id: 'stamina_potion', maxStock: 5, type: 'SUPPLY' },
-  { id: 'hp_potion', maxStock: 5, type: 'SUPPLY' },
-  { id: 'mp_potion', maxStock: 5, type: 'SUPPLY' },
+  // --- SUPPLIES: Potions & More ---
+  { id: 'potion_health_small',  maxStock: 5, type: 'SUPPLY' },
+  { id: 'potion_mana_small',    maxStock: 5, type: 'SUPPLY' },
+  { id: 'potion_stamina_small', maxStock: 5, type: 'SUPPLY' },
+  { id: 'potion_energy_small',  maxStock: 5, type: 'SUPPLY' },
+  
+  { id: 'potion_health_medium',  maxStock: 3, type: 'SUPPLY' },
+  { id: 'potion_mana_medium',    maxStock: 3, type: 'SUPPLY' },
+  { id: 'potion_stamina_medium', maxStock: 3, type: 'SUPPLY' },
+  { id: 'potion_energy_medium',  maxStock: 3, type: 'SUPPLY' },
+
+  { id: 'potion_health_large',  maxStock: 2, type: 'SUPPLY' },
+  { id: 'potion_mana_large',    maxStock: 2, type: 'SUPPLY' },
+  { id: 'potion_stamina_large', maxStock: 2, type: 'SUPPLY' },
+  { id: 'potion_energy_large',  maxStock: 2, type: 'SUPPLY' },
+
+  { id: 'potion_health_huge',  maxStock: 1, type: 'SUPPLY' },
+  { id: 'potion_mana_huge',    maxStock: 1, type: 'SUPPLY' },
+  { id: 'potion_stamina_huge', maxStock: 1, type: 'SUPPLY' },
+  { id: 'potion_energy_huge',  maxStock: 1, type: 'SUPPLY' },
+
   { id: 'affinity_debug_gift', maxStock: 2, type: 'SUPPLY' },
 
   // --- TIER 1 ---

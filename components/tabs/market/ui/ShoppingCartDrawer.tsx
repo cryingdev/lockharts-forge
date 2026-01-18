@@ -1,8 +1,31 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { ShoppingCart, X, Minus, Plus, ShoppingBag, Coins } from 'lucide-react';
 import { materials } from '../../../../data/materials';
 import { getAssetUrl } from '../../../../utils';
+
+const RomanTierOverlay = ({ id }: { id: string }) => {
+    if (id === 'scroll_t2') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-[10px] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] translate-y-0.5">II</span></div>;
+    if (id === 'scroll_t3') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-[10px] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] translate-y-0.5">III</span></div>;
+    if (id === 'scroll_t4') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-[10px] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] translate-y-0.5">IV</span></div>;
+    return null;
+};
+
+const CartItemImage = ({ id, meta }: { id: string, meta: any }) => {
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${id}.png`));
+    
+    const handleImgError = () => {
+        if (meta?.image && imgSrc !== getAssetUrl(meta.image)) {
+            setImgSrc(getAssetUrl(meta.image));
+        }
+    };
+
+    return (
+        <div className="w-10 h-10 bg-stone-950 rounded-lg flex items-center justify-center shrink-0 shadow-inner relative">
+            <img src={imgSrc} onError={handleImgError} className="w-8 h-8 object-contain" />
+            <RomanTierOverlay id={id} />
+        </div>
+    );
+};
 
 interface ShoppingCartDrawerProps {
     isOpen: boolean;
@@ -25,11 +48,13 @@ export const ShoppingCartDrawer: React.FC<ShoppingCartDrawerProps> = ({ isOpen, 
                 ) : (
                     Object.entries(cart).map(([id, count]) => {
                         const meta = materials[id];
+                        // Fixed: Added explicit type cast to count to ensure arithmetic operation is valid
+                        const currentCount = count as number;
                         return (
                             <div key={id} className="bg-stone-900/60 p-2 rounded-xl border border-stone-800">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-10 h-10 bg-stone-950 rounded-lg flex items-center justify-center shrink-0 shadow-inner"><img src={getAssetUrl(`${id}.png`)} className="w-8 h-8 object-contain" /></div>
-                                    <div className="flex-1 min-w-0"><div className="text-stone-100 font-bold text-[10px] truncate">{meta?.name || id}</div><div className="text-amber-600 font-mono text-[9px] font-black">{ (meta?.baseValue || 0) * count } G</div></div>
+                                    <CartItemImage id={id} meta={meta} />
+                                    <div className="flex-1 min-w-0"><div className="text-stone-100 font-bold text-[10px] truncate">{meta?.name || id}</div><div className="text-amber-600 font-mono text-[9px] font-black">{ (meta?.baseValue || 0) * currentCount } G</div></div>
                                     <button onClick={() => onDelete(id)} className="text-stone-600 hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                 </div>
                                 <div className="flex items-center justify-between bg-black/40 rounded p-1">

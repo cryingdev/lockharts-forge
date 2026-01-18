@@ -1,4 +1,3 @@
-
 import { GameState, InventoryItem } from '../../types/index';
 import { materials } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
@@ -113,16 +112,23 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
         inventory: newInventory,
         marketStock: newMarketStock,
         unlockedTabs: newUnlockedTabs,
-        garrickAffinity: Math.min(100, state.garrickAffinity + 1), // 감사의 호감도 +1
         logs: [...logUpdates, ...state.logs]
     };
 };
 
+/**
+ * handleInstallFurnace
+ * Sets the forge status to indicate a furnace is installed.
+ */
+// Added missing handleInstallFurnace export to satisfy import in gameReducer.ts
 export const handleInstallFurnace = (state: GameState): GameState => {
     return {
         ...state,
-        forge: { ...state.forge, hasFurnace: true },
-        logs: ['The Furnace has been installed! The forge comes alive.', ...state.logs]
+        forge: {
+            ...state.forge,
+            hasFurnace: true
+        },
+        logs: ["The furnace has been installed and is ready for use.", ...state.logs]
     };
 };
 
@@ -240,6 +246,13 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
     };
 };
 
+const POTION_EFFECTS: Record<string, Record<string, number | 'FULL'>> = {
+    health: { small: 50, medium: 150, large: 400, huge: 'FULL' },
+    mana: { small: 30, medium: 100, large: 250, huge: 'FULL' },
+    stamina: { small: 25, medium: 50, large: 75, huge: 100 },
+    energy: { small: 20, medium: 45, large: 75, huge: 100 }
+};
+
 export const handleUseItem = (state: GameState, payload: { itemId: string; mercenaryId?: string }): GameState => {
     const { itemId, mercenaryId } = payload;
     const inventoryItem = state.inventory.find(i => i.id === itemId);
@@ -252,75 +265,66 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
     let logMsg = '';
     let itemUsed = false;
 
-    if (itemId === 'energy_potion') {
-        const recoverAmount = 25;
-        if (newStats.energy >= newStats.maxEnergy) {
-            return {
-                ...state,
-                toastQueue: [...state.toastQueue, `Blacksmith energy is already at maximum.`],
-                logs: [`Energy is already full!`, ...state.logs]
-            };
-        }
-        newStats.energy = Math.min(newStats.maxEnergy, newStats.energy + recoverAmount);
-        logMsg = `Consumed Energy Potion. +${recoverAmount} Energy.`;
-        itemUsed = true;
-    } 
-    else if (itemId === 'recipe_scroll_bronze_longsword') {
+    // --- Special Logic: Scrolls & Recipes ---
+    if (itemId === 'recipe_scroll_bronze_longsword') {
         const targetRecipeId = 'sword_bronze_long_t1';
         if (newUnlockedRecipes.includes(targetRecipeId)) {
-            return {
-                ...state,
-                logs: [`You already know the techniques in this scroll.`, ...state.logs]
-            };
+            return { ...state, logs: [`You already know the techniques in this scroll.`, ...state.logs] };
         }
         newUnlockedRecipes.push(targetRecipeId);
         logMsg = `Studied the scroll. Bronze Longsword recipe unlocked!`;
         itemUsed = true;
-    }
-    else if (mercenaryId) {
-        const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);
-        if (mercIdx > -1) {
-            const merc = { ...newKnownMercenaries[mercIdx] };
-            if (itemId === 'hp_potion') {
-                const heal = 50;
-                if (merc.currentHp >= merc.maxHp) {
-                    return { 
-                        ...state, 
-                        toastQueue: [...state.toastQueue, `${merc.name} is already at full health.`],
-                        logs: [`${merc.name} is already at full health.`, ...state.logs] 
-                    };
-                }
-                merc.currentHp = Math.min(merc.maxHp, merc.currentHp + heal);
-                logMsg = `${merc.name} consumed HP Potion. Recovered ${heal} HP.`;
-                itemUsed = true;
-            } 
-            else if (itemId === 'mp_potion') {
-                const restore = 30;
-                if (merc.currentMp >= merc.maxMp) {
-                    return { 
-                        ...state, 
-                        toastQueue: [...state.toastQueue, `${merc.name} is already at full mana.`],
-                        logs: [`${merc.name} is already at full MP.`, ...state.logs] 
-                    };
-                }
-                merc.currentMp = Math.min(merc.maxMp, merc.currentMp + restore);
-                logMsg = `${merc.name} consumed MP Potion. Recovered ${restore} MP.`;
-                itemUsed = true;
+    } 
+    // --- Unified Potion System ---
+    else if (itemId.startsWith('potion_')) {
+        const parts = itemId.split('_'); // potion, type, size
+        const type = parts[1];
+        const size = parts[2];
+        const recoverValue = POTION_EFFECTS[type]?.[size];
+
+        if (recoverValue === undefined) return state;
+
+        if (type === 'energy') {
+            // Blacksmith Energy Potion
+            if (newStats.energy >= newStats.maxEnergy) {
+                return { ...state, toastQueue: [...state.toastQueue, `Blacksmith energy is already at maximum.`], logs: [`Energy is already full!`, ...state.logs] };
             }
-            else if (itemId === 'stamina_potion') {
-                const stamina = 50;
-                if ((merc.expeditionEnergy || 0) >= DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY) {
-                    return { 
-                        ...state, 
-                        toastQueue: [...state.toastQueue, `${merc.name} is already at full stamina.`],
-                        logs: [`${merc.name} is already at full stamina.`, ...state.logs] 
-                    };
+            const amount = typeof recoverValue === 'number' ? recoverValue : newStats.maxEnergy;
+            newStats.energy = Math.min(newStats.maxEnergy, newStats.energy + amount);
+            logMsg = `Consumed ${inventoryItem.name}. +${amount} Energy.`;
+            itemUsed = true;
+        } else if (mercenaryId) {
+            // Mercenary Targeted Potions
+            const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);
+            if (mercIdx > -1) {
+                const merc = { ...newKnownMercenaries[mercIdx] };
+                if (type === 'health') {
+                    if (merc.currentHp >= merc.maxHp) {
+                        return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is already at full health.`] };
+                    }
+                    const amount = recoverValue === 'FULL' ? merc.maxHp : (recoverValue as number);
+                    merc.currentHp = Math.min(merc.maxHp, merc.currentHp + amount);
+                    logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} HP.`;
+                    itemUsed = true;
+                } else if (type === 'mana') {
+                    if (merc.currentMp >= merc.maxMp) {
+                        return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is already at full mana.`] };
+                    }
+                    const amount = recoverValue === 'FULL' ? merc.maxMp : (recoverValue as number);
+                    merc.currentMp = Math.min(merc.maxMp, merc.currentMp + amount);
+                    logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} MP.`;
+                    itemUsed = true;
+                } else if (type === 'stamina') {
+                    if ((merc.expeditionEnergy || 0) >= DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY) {
+                        return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is already at full stamina.`] };
+                    }
+                    const amount = typeof recoverValue === 'number' ? recoverValue : 100;
+                    merc.expeditionEnergy = Math.min(DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, (merc.expeditionEnergy || 0) + amount);
+                    logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} Stamina.`;
+                    itemUsed = true;
                 }
-                merc.expeditionEnergy = Math.min(DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, (merc.expeditionEnergy || 0) + stamina);
-                logMsg = `${merc.name} consumed Stamina Potion. Recovered ${stamina} Stamina.`;
-                itemUsed = true;
+                newKnownMercenaries[mercIdx] = merc;
             }
-            newKnownMercenaries[mercIdx] = merc;
         }
     }
 
@@ -343,7 +347,12 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
     };
 };
 
+/**
+ * handleToggleLockItem
+ * Toggles the lock status of an item.
+ */
 export const handleToggleLockItem = (state: GameState, payload: { itemId: string }): GameState => {
+    // Fix: Corrected typo where newInventory was declared and assigned to itself
     const newInventory = state.inventory.map(item => {
         if (item.id === payload.itemId) {
             return { ...item, isLocked: !item.isLocked };

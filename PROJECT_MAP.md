@@ -43,7 +43,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `tabs/shop/ShopTab.tsx`: Shop view assembler with modular fragments.
 - `tabs/shop/hooks/useShop.ts`: Business logic for customer queue and sales.
 
-- `tabs/Tavern/TavernTab.tsx`: Roster management and visitor interactions.
+- `tabs/tavern/TavernTab.tsx`: Roster management and visitor interactions.
 - `tabs/Dungeon/DungeonTab.tsx`: Expedition selection for Auto/Manual modes.
 - `tabs/Simulation/SimulationTab.tsx`: Combat balance testing ground.
 

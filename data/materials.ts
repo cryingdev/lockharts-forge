@@ -9,6 +9,7 @@ export interface MaterialDefinition {
     description: string;
     baseValue: number; // Single source of truth for item value (Buy/Sell base)
     icon?: string;
+    image?: string;
 }
 
 export const materials: Record<string, MaterialDefinition> = {
@@ -87,30 +88,37 @@ export const materials: Record<string, MaterialDefinition> = {
     },
 
     // --- 6. POTIONS & SUPPLIES ---
-    energy_potion: {
-        id: 'energy_potion', name: 'Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1,
-        description: 'Restores 25 Blacksmith Energy.', baseValue: 100 
-    },
-    stamina_potion: {
-        id: 'stamina_potion', name: 'Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1,
-        description: 'Restores 50 Stamina for a Mercenary.', baseValue: 100
-    },
-    hp_potion: {
-        id: 'hp_potion', name: 'HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1,
-        description: 'Instantly restores 50 HP to a mercenary.', baseValue: 120
-    },
-    mp_potion: {
-        id: 'mp_potion', name: 'MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1,
-        description: 'Instantly restores 30 MP to a mercenary.', baseValue: 120
-    },
+    // Health Potions
+    potion_health_small: { id: 'potion_health_small', name: 'Small HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 50 HP.', baseValue: 120 },
+    potion_health_medium: { id: 'potion_health_medium', name: 'Medium HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 150 HP.', baseValue: 300 },
+    potion_health_large: { id: 'potion_health_large', name: 'Large HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 400 HP.', baseValue: 750 },
+    potion_health_huge: { id: 'potion_health_huge', name: 'Huge HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Fully restores HP.', baseValue: 1800 },
 
-    // --- 7. FACILITIES & KEY ITEMS ---
+    // Mana Potions
+    potion_mana_small: { id: 'potion_mana_small', name: 'Small MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 30 MP.', baseValue: 120 },
+    potion_mana_medium: { id: 'potion_mana_medium', name: 'Medium MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 100 MP.', baseValue: 300 },
+    potion_mana_large: { id: 'potion_mana_large', name: 'Large MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 250 MP.', baseValue: 750 },
+    potion_mana_huge: { id: 'potion_mana_huge', name: 'Huge MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Fully restores MP.', baseValue: 1800 },
+
+    // Stamina Potions (Mercenary)
+    potion_stamina_small: { id: 'potion_stamina_small', name: 'Small Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 25 Stamina.', baseValue: 100 },
+    potion_stamina_medium: { id: 'potion_stamina_medium', name: 'Medium Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 50 Stamina.', baseValue: 250 },
+    potion_stamina_large: { id: 'potion_stamina_large', name: 'Large Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 Stamina.', baseValue: 600 },
+    potion_stamina_huge: { id: 'potion_stamina_huge', name: 'Huge Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 Stamina.', baseValue: 1500 },
+
+    // Energy Potions (Blacksmith)
+    potion_energy_small: { id: 'potion_energy_small', name: 'Small Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 20 Energy.', baseValue: 100 },
+    potion_energy_medium: { id: 'potion_energy_medium', name: 'Medium Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 45 Energy.', baseValue: 250 },
+    potion_energy_large: { id: 'potion_energy_large', name: 'Large Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 Energy.', baseValue: 600 },
+    potion_energy_huge: { id: 'potion_energy_huge', name: 'Huge Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 Energy.', baseValue: 1500 },
+
+    // Facilities & Key Items
     furnace: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for smelting metal ores.', baseValue: 0 },
     workbench: { id: 'workbench', name: 'Workbench', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for leatherworking and woodworking.', baseValue: 300 },
-    scroll_t2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', category: 'SCROLL', description: 'Enhances equipment quality techniques.', baseValue: 1200 },
-    scroll_t3: { id: 'scroll_t3', name: 'Upgrade Scroll (Tier 3)', type: 'SCROLL', category: 'SCROLL', description: 'Unlock expert craftsmanship techniques.', baseValue: 3000 },
+    scroll_t2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', category: 'SCROLL', tier: 1, description: 'Enhances equipment quality techniques.', baseValue: 1200, image: 'scroll_contract.png' },
+    scroll_t3: { id: 'scroll_t3', name: 'Upgrade Scroll (Tier 3)', type: 'SCROLL', category: 'SCROLL', tier: 2, description: 'Unlock expert craftsmanship techniques.', baseValue: 3000, image: 'scroll_contract.png' },
     
-    // --- 8. OTHERS ---
+    // Others
     hammer: { id: 'hammer', name: 'Blacksmith Hammer', type: 'TOOL', category: 'TOOL', description: 'Your trusty tool.', baseValue: 0 },
     anvil: { id: 'anvil', name: 'Old Anvil', type: 'TOOL', category: 'TOOL', description: 'Heavy and reliable.', baseValue: 0 },
     recipe_scroll_bronze_longsword: {
