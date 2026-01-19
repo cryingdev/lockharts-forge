@@ -7,7 +7,7 @@ import { useShop } from './hooks/useShop';
 
 // Sub-components
 import { ShopSign } from './ui/ShopSign';
-import { BlinkingMercenary } from './ui/BlinkingMercenary';
+import { AnimatedMercenary } from '../../common/ui/AnimatedMercenary';
 import { CustomerHUD } from './ui/CustomerHUD';
 import { ShopQueueBadge } from './ui/ShopQueueBadge';
 import { ShopClosedOverlay } from './ui/ShopClosedOverlay';
@@ -65,7 +65,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                                 style={{ left: `${heart.left}%`, bottom: '40%', width: heart.size, height: heart.size, animationDelay: `${heart.delay}s`, '--wobble': `${(Math.random() - 0.5) * 60}px` } as React.CSSProperties}
                            />
                        ))}
-                       <BlinkingMercenary 
+                       <AnimatedMercenary 
                            mercenary={shop.activeCustomer.mercenary} 
                            className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${shop.refusalReaction === 'ANGRY' ? 'brightness-50 sepia-50' : ''}`}
                        />

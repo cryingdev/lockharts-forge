@@ -1,16 +1,22 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { getAssetUrl } from '../../../../utils';
+import { getAssetUrl } from '../../../utils';
 
-interface BlinkingMercenaryProps {
+interface AnimatedMercenaryProps {
     mercenary: any;
     className?: string;
+    height?: string;
 }
 
-export const BlinkingMercenary: React.FC<BlinkingMercenaryProps> = ({ mercenary, className }) => {
+/**
+ * AnimatedMercenary
+ * 용병의 스프라이트를 표시하며, '_sprite'가 파일명에 포함된 경우
+ * 눈 깜빡임(3프레임) 애니메이션을 자동으로 처리합니다.
+ */
+export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({ mercenary, className, height = "100%" }) => {
     const [frame, setFrame] = useState(0);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const isPip = mercenary.id === 'pip_green';
+    const isSpriteSheet = mercenary.sprite?.includes('_sprite');
 
     const blink = useCallback(() => {
         setFrame(1);
@@ -32,13 +38,20 @@ export const BlinkingMercenary: React.FC<BlinkingMercenaryProps> = ({ mercenary,
     }, [blink]);
 
     useEffect(() => {
-        if (isPip) scheduleNextBlink();
+        if (isSpriteSheet) scheduleNextBlink();
         return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-    }, [isPip, scheduleNextBlink]);
+    }, [isSpriteSheet, scheduleNextBlink]);
 
-    if (isPip) {
+    if (isSpriteSheet) {
         return (
-            <div className={className} style={{ aspectRatio: '453.3 / 1058', overflow: 'hidden' }}>
+            <div 
+                className={className} 
+                style={{ 
+                    height: height,
+                    aspectRatio: '1 / 2.15', 
+                    overflow: 'hidden' 
+                }}
+            >
                 <div 
                     className="h-full w-full transition-transform duration-75 ease-linear"
                     style={{
@@ -56,6 +69,8 @@ export const BlinkingMercenary: React.FC<BlinkingMercenaryProps> = ({ mercenary,
         <img 
             src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
             className={className}
+            style={{ height: height }}
+            alt={mercenary.name}
         />
     );
 };

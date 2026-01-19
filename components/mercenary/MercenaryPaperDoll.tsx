@@ -53,7 +53,7 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
     if (equippedItem) {
       switch (equippedItem.rarity) {
         case 'Common':
-          borderColor = isSelected ? 'border-amber-400' : 'border-stone-500';
+          borderColor = isSelected ? 'border-amber-400' : 'border-stone-50';
           break;
         case 'Uncommon':
           borderColor = isSelected ? 'border-amber-400' : 'border-emerald-600';
@@ -106,6 +106,7 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
   };
 
   const hasPowerDiff = nextCombatPower !== currentCombatPower;
+  const isSpriteSheet = mercenary.sprite?.includes('_sprite');
 
   return (
     <div className="w-full flex flex-col shrink-0">
@@ -157,11 +158,26 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
 
       <div className="relative w-full aspect-[4/3] md:aspect-square flex items-center justify-center overflow-hidden min-h-[180px] md:min-h-[280px]">
         <div className="relative h-[90%] w-full flex items-center justify-center pointer-events-none opacity-80">
-          <img
-            src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')}
-            className="h-full object-contain filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]"
-            alt={mercenary.name}
-          />
+          {isSpriteSheet ? (
+            <div 
+              className="h-full" 
+              style={{ 
+                aspectRatio: '1 / 2.15',
+                backgroundImage: `url(${getAssetUrl(mercenary.sprite!)})`,
+                backgroundSize: '300% 100%',
+                backgroundPosition: '0% 0%',
+                backgroundRepeat: 'no-repeat',
+                imageRendering: 'pixelated',
+                filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.5))'
+              }} 
+            />
+          ) : (
+            <img
+              src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')}
+              className="h-full object-contain filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+              alt={mercenary.name}
+            />
+          )}
         </div>
         {renderSlot({ slot: 'HEAD', icon: <Crown className="w-5 h-5" />, style: 'top-[6%] left-1/2 -translate-x-1/2' })}
         {renderSlot({ slot: 'BODY', icon: <Shirt className="w-5 h-5" />, style: 'top-[26%] left-1/2 -translate-x-1/2' })}
