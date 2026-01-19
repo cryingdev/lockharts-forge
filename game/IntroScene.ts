@@ -17,10 +17,14 @@ export default class IntroScene extends Phaser.Scene {
 
   private bgs: Phaser.GameObjects.Image[] = [];
   private dragon?: Phaser.GameObjects.Image;
+  private flyingDragon?: Phaser.GameObjects.Image;
+  private dragonGlow?: Phaser.GameObjects.Arc;
   private narrativeTexts: Phaser.GameObjects.Text[] = [];
   private devText?: Phaser.GameObjects.Text;
   private skipHint?: Phaser.GameObjects.Text;
   private fireEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private boilingFireEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private embersEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
   private breathOverlay?: Phaser.GameObjects.Rectangle;
 
   private root!: Phaser.GameObjects.Container;
@@ -38,14 +42,15 @@ export default class IntroScene extends Phaser.Scene {
     this.load.image('intro_bg_03', getAssetUrl('intro_bg_03.png'));
     this.load.image('intro_bg_04', getAssetUrl('intro_bg_04.png'));
     this.load.image('intro_bg_05', getAssetUrl('intro_bg_05.png'));
-    this.load.image('intro_dragon', getAssetUrl('intro_dragon_02.png'));
+    this.load.image('intro_dragon', getAssetUrl('dragon_front.png'));
+    this.load.image('dragon_top', getAssetUrl('dragon_top.png'));
   }
 
   private createNarrativeText(text: string, color: string = '#b91c1c') {
     const t = this.add
       .text(0, 0, text, {
         fontFamily: '"Grenze Gotisch"',
-        fontSize: '40px', // 기본 크기 상향 (32px -> 40px)
+        fontSize: '40px',
         color,
         align: 'center',
         fontStyle: '900',
@@ -73,6 +78,11 @@ export default class IntroScene extends Phaser.Scene {
       g.fillStyle(0xff5500, 1).fillCircle(16, 16, 16).generateTexture('intro_flame', 32, 32).destroy();
     }
 
+    if (!this.textures.exists('intro_ember')) {
+        const g = this.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(0xffaa00, 1).fillCircle(4, 4, 4).generateTexture('intro_ember', 8, 8).destroy();
+    }
+
     this.input.once('pointerdown', () => {
       this.game.events.emit('intro-complete');
     });
@@ -80,7 +90,7 @@ export default class IntroScene extends Phaser.Scene {
     this.skipHint = this.add
       .text(0, 0, 'TOUCH TO SKIP', {
         fontFamily: '"Grenze"',
-        fontSize: '14px', // 12px -> 14px
+        fontSize: '14px',
         color: '#a8a29e',
         fontStyle: 'bold',
         letterSpacing: 2,
@@ -98,13 +108,19 @@ export default class IntroScene extends Phaser.Scene {
       this.bgs.push(img);
     });
 
-    this.dragon = this.add.image(0, 0, 'intro_dragon').setDepth(2).setVisible(false);
+    this.dragon = this.add.image(0, 0, 'intro_dragon').setDepth(2).setVisible(false).setAlpha(1);
     this.root.add(this.dragon);
+
+    this.flyingDragon = this.add.image(0, 0, 'dragon_top').setDepth(6).setVisible(false).setAlpha(1);
+    this.root.add(this.flyingDragon);
+
+    this.dragonGlow = this.add.circle(0, 0, 100, 0xff0000, 0.4).setDepth(1.5).setVisible(false).setBlendMode(Phaser.BlendModes.ADD);
+    this.root.add(this.dragonGlow);
 
     this.devText = this.add
       .text(0, 0, 'CRYINGDEV STUDIO\nPRESENTS', {
         fontFamily: '"Grenze Gotisch"',
-        fontSize: '48px', // 40px -> 48px
+        fontSize: '48px',
         color: '#f5f5f4',
         align: 'center',
         fontStyle: '900',
@@ -130,27 +146,58 @@ export default class IntroScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD);
     this.root.add(this.breathOverlay);
 
+    // 드래곤 브레스 파티클 (집중적)
     this.fireEmitter = this.add.particles(0, 0, 'intro_flame', {
-      speedY: { min: 1200, max: 2200 },
-      speedX: { min: -600, max: 600 },
-      scale: { start: 6, end: 15 },
+      speedY: { min: 1400, max: 3200 },
+      speedX: { min: -1800, max: 1800 },
+      scale: { start: 10, end: 32 },
       alpha: { start: 1, end: 0 },
-      lifespan: 1500,
-      quantity: 40,
+      lifespan: 1800,
+      quantity: 100,
       blendMode: 'ADD',
       emitting: false,
     });
     this.fireEmitter.setDepth(4);
     this.root.add(this.fireEmitter);
 
-    this.handleResize(this.scale.gameSize);
+    // 화면 전체 불길 이미터 (들끓는 효과)
+    this.boilingFireEmitter = this.add.particles(0, 0, 'intro_flame', {
+        x: { min: 0, max: 1280 },
+        y: 720,
+        speedY: { min: -200, max: -800 },
+        speedX: { min: -100, max: 100 },
+        scale: { start: 8, end: 20 },
+        alpha: { start: 0.6, end: 0 },
+        lifespan: { min: 1000, max: 2500 },
+        frequency: 50,
+        blendMode: 'ADD',
+        emitting: false,
+    });
+    this.boilingFireEmitter.setDepth(4.5);
+    this.root.add(this.boilingFireEmitter);
+
+    // 화면 전체 불씨 이미터
+    this.embersEmitter = this.add.particles(0, 0, 'intro_ember', {
+        x: { min: 0, max: 1280 },
+        y: { min: 0, max: 720 },
+        speedY: { min: -50, max: -150 },
+        speedX: { min: -50, max: 50 },
+        scale: { start: 1, end: 2.5 },
+        alpha: { start: 1, end: 0 },
+        lifespan: { min: 2000, max: 4000 },
+        frequency: 30,
+        blendMode: 'ADD',
+        emitting: false,
+    });
+    this.embersEmitter.setDepth(7);
+    this.root.add(this.embersEmitter);
+
     this.scale.on('resize', this.handleResize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off('resize', this.handleResize, this);
     });
 
-    this.time.delayedCall(80, () => this.handleResize());
-    this.time.delayedCall(180, () => this.handleResize());
+    this.handleResize(this.scale.gameSize);
 
     this.startSequence(n1, n2, n3, nD, nV);
   }
@@ -195,45 +242,92 @@ export default class IntroScene extends Phaser.Scene {
       img.setPosition(cx, cy);
       img.setScale(Math.max(w / img.width, h / img.height));
     });
+    
     if (this.dragon) {
-      const s = Math.min((h * 0.5) / this.dragon.height, (w * 0.8) / this.dragon.width);
+      const targetY = h / 7;
+      const s = (w * 1.5) / this.dragon.width;
       this.dragon.setScale(s);
-      this.dragon.setPosition(cx, cy - h * 0.2);
+      this.dragon.setPosition(cx, targetY);
+      const postionMouthY = targetY + this.dragon.displayHeight * 0.65;
+      this.dragonGlow?.setPosition(cx, postionMouthY).setRadius(w * 0.5);
+      
+      if (this.fireEmitter) {
+        this.fireEmitter.setPosition(cx, postionMouthY);
+      }
     }
+
+    if (this.boilingFireEmitter) {
+        this.boilingFireEmitter.setPosition(0, h);
+        this.boilingFireEmitter.addEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, 20) });
+    }
+    if (this.embersEmitter) {
+        this.embersEmitter.addEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, h) });
+    }
+
+    if (this.flyingDragon) {
+      const s = (w * 1.8) / this.flyingDragon.width;
+      this.flyingDragon.setScale(s);
+      this.flyingDragon.setPosition(cx, -1000);
+    }
+    
     this.devText?.setPosition(cx, cy).setFontSize(Math.round(48 * uiScale));
     if (this.skipHint) {
       this.skipHint.setPosition(cx, h - 24);
       this.skipHint.setFontSize(Math.round(14 * uiScale));
     }
     this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
-    this.narrativeTexts.forEach((t) => {
-      t.setPosition(cx, cy);
+
+    // 일반 서사 텍스트 정렬
+    this.narrativeTexts.forEach((t, i) => {
+      // 마지막 두 문장(nD, nV)은 겹치지 않게 분리 정렬
+      if (i === 3) { // nD: "NEVER FORGET..."
+        t.setPosition(cx, cy - 50 * uiScale);
+      } else if (i === 4) { // nV: "AND FORGED A VENGEANCE."
+        t.setPosition(cx, cy + 50 * uiScale);
+      } else {
+        t.setPosition(cx, cy);
+      }
       t.setFontSize(Math.round(40 * uiScale));
       t.setWordWrapWidth(w * 0.75);
     });
-    const despairIdx = this.narrativeTexts.length - 2;
-    const gap = h * 0.12;
-    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = cy - gap / 2;
-    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = cy + gap / 2;
-    if (this.fireEmitter) {
-      const y = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.12 : h * 0.35;
-      this.fireEmitter.setPosition(cx, y);
-    }
   }
 
   private layoutPortrait(w: number, h: number) {
     const cx = w / 2;
     const cy = h / 2;
-    const uiScale = Phaser.Math.Clamp(w / 400, 0.7, 1.0); // 스케일 조정 (0.6 -> 0.7)
+    const uiScale = Phaser.Math.Clamp(w / 400, 0.7, 1.0);
     this.bgs.forEach((img) => {
       img.setPosition(cx, cy);
       img.setScale(Math.max(w / img.width, h / img.height));
     });
-    if (this.dragon) {
-      const s = Math.min((w * 0.8) / this.dragon.width, (h * 0.3) / this.dragon.height);
+    
+  if (this.dragon) {
+      const targetY = h / 7;
+      const s = (w * 1.5) / this.dragon.height;
       this.dragon.setScale(s);
-      this.dragon.setPosition(cx, h * 0.25);
+      this.dragon.setPosition(cx, targetY);
+      const postionMouthY = targetY + this.dragon.displayHeight * 0.65;
+      this.dragonGlow?.setPosition(cx, postionMouthY).setRadius(w * 0.5);
+      
+      if (this.fireEmitter) {
+        this.fireEmitter.setPosition(cx, postionMouthY);
+      }
     }
+
+    if (this.boilingFireEmitter) {
+        this.boilingFireEmitter.setPosition(0, h);
+        this.boilingFireEmitter.addEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, 20) });
+    }
+    if (this.embersEmitter) {
+        this.embersEmitter.addEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, h) });
+    }
+
+    if (this.flyingDragon) {
+      const s = (w * 2.0) / this.flyingDragon.width;
+      this.flyingDragon.setScale(s * 2.0);
+      this.flyingDragon.setPosition(cx, -1000);
+    }
+    
     this.devText?.setPosition(cx, h * 0.45).setFontSize(Math.round(44 * uiScale));
     if (this.skipHint) {
       this.skipHint.setPosition(cx, h - 36);
@@ -241,25 +335,23 @@ export default class IntroScene extends Phaser.Scene {
     }
     this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
     
-    const textBaseY = h * 0.55;
-    this.narrativeTexts.forEach((t) => {
-      t.setPosition(cx, textBaseY);
-      t.setFontSize(Math.round(36 * uiScale)); // 28 -> 36 상향
+    this.narrativeTexts.forEach((t, i) => {
+      if (i === 3) { // nD
+        t.setPosition(cx, cy - 70 * uiScale);
+      } else if (i === 4) { // nV
+        t.setPosition(cx, cy + 70 * uiScale);
+      } else {
+        t.setPosition(cx, cy);
+      }
+      t.setFontSize(Math.round(36 * uiScale));
       t.setWordWrapWidth(w * 0.9);
     });
-    
-    const despairIdx = this.narrativeTexts.length - 2;
-    const gap = h * 0.1;
-    if (this.narrativeTexts[despairIdx]) this.narrativeTexts[despairIdx].y = textBaseY - gap / 2;
-    if (this.narrativeTexts[despairIdx + 1]) this.narrativeTexts[despairIdx + 1].y = textBaseY + gap / 2;
-    
-    if (this.fireEmitter) {
-      const y = this.dragon ? this.dragon.y + this.dragon.displayHeight * 0.12 : h * 0.35;
-      this.fireEmitter.setPosition(cx, y);
-    }
   }
 
   private startSequence(n1: any, n2: any, n3: any, nD: any, nV: any) {
+    const h = this.scale.height;
+    const targetY = h / 6;
+    
     this.tweens.chain({
       tweens: [
         { targets: this.devText, alpha: 1, duration: 2500, ease: 'Power2' },
@@ -268,30 +360,69 @@ export default class IntroScene extends Phaser.Scene {
         { targets: this.bgs[0], alpha: 1, duration: 1500, ease: 'Linear' },
         {
           targets: this.dragon,
-          alpha: { from: 0, to: 1 },
-          duration: 3000,
-          ease: 'Sine.easeInOut',
-          hold: 500,
+          alpha: { from: 1, to: 1 },
+          y: { from: -1000, to: targetY },
+          scale: { from: this.dragon!.scaleX * 0.6, to: this.dragon!.scaleX },
+          duration: 3800,
+          ease: 'Back.easeOut',
           onStart: () => {
             this.dragon!.setVisible(true);
-            this.cameras.main.shake(3500, 0.005);
+            this.cameras.main.shake(4000, 0.009);
           },
         },
-        { targets: this.dragon, y: '-=150', scale: '*=0.7', duration: 1000, ease: 'Quad.easeOut' },
+        {
+          targets: this.dragonGlow,
+          alpha: { from: 0, to: 1 },
+          scale: { from: 0.2, to: 1.6 },
+          duration: 1300,
+          onStart: () => this.dragonGlow!.setVisible(true),
+          ease: 'Sine.easeInOut'
+        },
         {
           targets: this.breathOverlay,
-          alpha: 0.8,
+          alpha: 1,
           duration: 2500,
           yoyo: true,
-          hold: 100,
+          hold: 1000,
           onStart: () => {
             this.fireEmitter!.start();
-            this.cameras.main.shake(2500, 0.03);
+            this.cameras.main.shake(3000, 0.07);
+            this.dragonGlow!.setVisible(false);
           },
           onComplete: () => {
             this.fireEmitter!.stop();
             this.dragon!.setVisible(false);
+            
+            // "들끓는 불길" 효과 시작
+            this.boilingFireEmitter!.start();
+            this.embersEmitter!.start();
+            
+            // 오버레이가 사라지지 않고 미세하게 펄스하며 열기 유도
+            this.tweens.add({
+                targets: this.breathOverlay,
+                alpha: { from: 0.2, to: 0.4 },
+                duration: 1000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            // 지속적인 미세 진동
+            this.cameras.main.shake(60000, 0.002);
           },
+        },
+        {
+          targets: this.flyingDragon,
+          y: { from: -800, to: h + 800 },
+          duration: 2800,
+          ease: 'Sine.easeInOut',
+          onStart: () => {
+            this.flyingDragon!.setVisible(true);
+            this.cameras.main.shake(2500, 0.004);
+          },
+          onComplete: () => {
+            this.flyingDragon!.setVisible(false);
+          }
         },
         { targets: this.bgs[1], alpha: 1, duration: 2000, hold: 2500, ease: 'Linear' },
         { targets: n1, alpha: 1, duration: 1000, hold: 3000, ease: 'Power2' },
@@ -306,11 +437,15 @@ export default class IntroScene extends Phaser.Scene {
         { targets: nD, alpha: 1, duration: 2000, ease: 'Power2', delay: 500 },
         { targets: nV, alpha: 1, duration: 2500, ease: 'Power2' },
         {
-          targets: [...this.bgs, nD, nV],
+          targets: [...this.bgs, nD, nV, this.breathOverlay],
           alpha: 0,
           duration: 3000,
           delay: 3000,
-          onComplete: () => this.game.events.emit('intro-complete'),
+          onComplete: () => {
+            this.boilingFireEmitter!.stop();
+            this.embersEmitter!.stop();
+            this.game.events.emit('intro-complete');
+          },
         },
       ],
     });
