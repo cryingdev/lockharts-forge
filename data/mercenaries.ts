@@ -183,12 +183,12 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     equipment: { ...defaultEquipment }
   },
   {
-    id: 'xan_void',
-    name: 'Xan the Whisperer',
+    id: 'lucian_ravenscar',
+    name: 'Lucian Ravenscar',
     gender: 'Male',
     job: JobClass.MAGE,
-    level: 4,
-    stats: stats(4, 8, 12, 22, 12),
+    level: 4, // 12
+    stats: stats(4, 8, 4, 12, 8),
     allocatedStats: emptyAllocated(),
     bonusStatPoints: 0,
     currentHp: 0,
@@ -198,7 +198,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     affinity: 0,
     visitCount: 0,
     isUnique: true,
-    sprite: 'xan_the_whisperer.png',
+    sprite: 'lucian_ravenscar_sprite.png',
     icon: '🌑',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
