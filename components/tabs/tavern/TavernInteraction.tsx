@@ -258,32 +258,35 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
-               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                   <div className="relative h-[80vh] flex justify-center bottom-[15dvh] md:bottom-0 md:translate-y-[10dvh]">
-                       <AnimatedMercenary 
-                           mercenary={mercenary} 
-                           height="100%"
-                           className="object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
-                       />
-                       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-3xl rounded-full -z-10"></div>
-                       
-                       {floatingHearts.map(heart => (
-                           <Heart 
-                                key={heart.id}
-                                className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]"
-                                style={{
-                                    left: `${heart.left}%`,
-                                    bottom: '30%',
-                                    width: heart.size,
-                                    height: heart.size,
-                                    animationDelay: `${heart.delay}s`,
-                                    '--wobble': `${(Math.random() - 0.5) * 40}px`
-                                } as React.CSSProperties}
-                           />
-                       ))}
-                   </div>
-               </div>
+            {/* Character Stage - Stick to bottom of screen */}
+            <div className="absolute inset-0 z-10 w-full h-full pointer-events-none flex items-end justify-center">
+                <div className="relative w-full h-full flex items-end justify-center animate-in fade-in zoom-in-95 duration-700 ease-out">
+                    {/* 캐릭터 박스: 바닥 정렬 기준 */}
+                    <div className="relative h-[80dvh] max-h-[110dvh] flex items-end justify-center">
+                    <AnimatedMercenary
+                        mercenary={mercenary}
+                        // height prop 제거: 부모 박스 높이로 제어
+                        className="h-full w-auto filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
+                    />
+
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-3xl rounded-full -z-10"></div>
+
+                    {floatingHearts.map((heart) => (
+                        <Heart
+                        key={heart.id}
+                        className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]"
+                        style={{
+                            left: `${heart.left}%`,
+                            bottom: '30%',
+                            width: heart.size,
+                            height: heart.size,
+                            animationDelay: `${heart.delay}s`,
+                            '--wobble': `${(Math.random() - 0.5) * 40}px`,
+                        } as React.CSSProperties}
+                        />
+                    ))}
+                    </div>
+                </div>
             </div>
 
             <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 flex items-end justify-center pointer-events-none">
