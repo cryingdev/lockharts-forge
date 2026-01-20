@@ -7,7 +7,7 @@ import { useShop } from './hooks/useShop';
 
 // Sub-components
 import { ShopSign } from './ui/ShopSign';
-import { BlinkingMercenary } from './ui/BlinkingMercenary';
+import { AnimatedMercenary } from '../../common/ui/AnimatedMercenary';
 import { CustomerHUD } from './ui/CustomerHUD';
 import { ShopQueueBadge } from './ui/ShopQueueBadge';
 import { ShopClosedOverlay } from './ui/ShopClosedOverlay';
@@ -53,26 +53,39 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             </>
         )}
 
-        {/* Character Stage */}
-        <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
-            {shop.isShopOpen && shop.activeCustomer && shop.dialogueState && (
-               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                   <div className="relative h-[75dvh] md:h-[110dvh] w-auto flex justify-center bottom-[12dvh] md:bottom-0 md:translate-y-[20dvh]">
-                       {shop.floatingHearts.map(heart => (
-                           <Heart 
-                                key={heart.id}
-                                className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)] z-0"
-                                style={{ left: `${heart.left}%`, bottom: '40%', width: heart.size, height: heart.size, animationDelay: `${heart.delay}s`, '--wobble': `${(Math.random() - 0.5) * 60}px` } as React.CSSProperties}
-                           />
-                       ))}
-                       <BlinkingMercenary 
-                           mercenary={shop.activeCustomer.mercenary} 
-                           className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${shop.refusalReaction === 'ANGRY' ? 'brightness-50 sepia-50' : ''}`}
-                       />
-                       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-black/60 blur-3xl rounded-full -z-10"></div>
-                   </div>
-               </div>
-            )}
+        {/* Character Stage - Anchored to bottom of ShopTab */}
+        <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none">
+        {shop.isShopOpen && shop.activeCustomer && shop.dialogueState && (
+            <div className="relative flex justify-center items-end w-full h-full animate-in fade-in zoom-in-95 duration-700 ease-out">
+                {/* ✅ ShopTab(=h-full) 기준 80% 스테이지 */}
+                <div className="relative w-full h-[80%] flex items-end justify-center">
+                    {shop.floatingHearts.map((heart) => (
+                    <Heart
+                        key={heart.id}
+                        className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)] z-0"
+                        style={{
+                        left: `${heart.left}%`,
+                        bottom: '40%',
+                        width: heart.size,
+                        height: heart.size,
+                        animationDelay: `${heart.delay}s`,
+                        '--wobble': `${(Math.random() - 0.5) * 60}px`,
+                        } as React.CSSProperties}
+                    />
+                    ))}
+
+                    {/* ✅ height prop 제거 + h-full로 스테이지에 정확히 맞춤 */}
+                    <AnimatedMercenary
+                        mercenary={shop.activeCustomer.mercenary}
+                        className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${
+                            shop.refusalReaction === 'ANGRY' ? 'brightness-50 sepia-50' : ''
+                        }`}
+                    />
+
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-black/60 blur-3xl rounded-full -z-10"></div>
+                </div>
+            </div>
+        )}
         </div>
 
         {/* Shop Counter */}

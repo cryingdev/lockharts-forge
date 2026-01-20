@@ -9,6 +9,7 @@ import { InventoryItem, EquipmentSlotType } from '../../../types/inventory';
 // Fix: Changed default import to named import as MercenaryDetailModal has no default export
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { ItemSelectorList } from '../../ItemSelectorList';
+import { AnimatedMercenary } from '../../common/ui/AnimatedMercenary';
 
 interface TavernInteractionProps {
     mercenary: Mercenary;
@@ -23,71 +24,6 @@ interface FloatingHeart {
 }
 
 type InteractionStep = 'IDLE' | 'CONFIRM_HIRE' | 'CONFIRM_FIRE';
-
-const BlinkingMercenary = ({ mercenary, className }: { mercenary: any, className?: string }) => {
-  const [frame, setFrame] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // 현재 Pip the Green만 애니메이션을 지원함
-  const isPip = mercenary.id === 'pip_green';
-
-  const blink = useCallback(() => {
-    setFrame(1);
-    setTimeout(() => {
-      setFrame(2);
-      setTimeout(() => {
-        setFrame(1);
-        setTimeout(() => {
-          setFrame(0);
-          scheduleNextBlink();
-        }, 80);
-      }, 100);
-    }, 80);
-  }, []);
-
-  const scheduleNextBlink = useCallback(() => {
-    const delay = 3000 + Math.random() * 4000;
-    timerRef.current = setTimeout(blink, delay);
-  }, [blink]);
-
-  useEffect(() => {
-    if (isPip) {
-      scheduleNextBlink();
-    }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [isPip, scheduleNextBlink]);
-
-  if (isPip) {
-    return (
-      <div 
-        className={className}
-        style={{ 
-          aspectRatio: '453.3 / 1058', 
-          overflow: 'hidden'
-        }}
-      >
-        <div 
-          className="h-full w-full transition-transform duration-75 ease-linear"
-          style={{
-            backgroundImage: `url(${getAssetUrl(mercenary.sprite)})`,
-            backgroundSize: '300% 100%',
-            backgroundPosition: `${frame * 50}% 0%`,
-            imageRendering: 'pixelated'
-          }}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <img 
-      src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')} 
-      className={className}
-    />
-  );
-};
 
 const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack }) => {
     const { state, actions } = useGame();
@@ -105,6 +41,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const hiringCost = calculateHiringCost(mercenary.level, mercenary.job);
     const canAfford = state.stats.gold >= hiringCost;
     const hasAffinity = mercenary.affinity >= CONTRACT_CONFIG.HIRE_AFFINITY_THRESHOLD;
+    // Fixed: Changed 'merc' to 'mercenary' to resolve name error on line 107.
     const hasUnallocated = isHired && (mercenary.bonusStatPoints || 0) > 0;
 
     const handleTalk = () => {
@@ -278,7 +215,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
                         <div className="flex flex-col leading-tight min-w-0">
-                            <span className="font-black text-amber-500 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{mercenary.job}</span>
+                            <span className="font-black text-amber-50 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{mercenary.job}</span>
                             <span className="text-stone-500 text-[8px] md:text-[10px] font-mono">Lv.{mercenary.level}</span>
                         </div>
                         <div className="flex items-center gap-1 text-pink-400 font-bold bg-pink-950/20 px-1 md:px-1.5 py-0.5 rounded border border-pink-900/30 shrink-0">
@@ -321,31 +258,35 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
-               <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                   <div className="relative h-[75dvh] md:h-[110dvh] w-auto flex justify-center bottom-[12dvh] md:bottom-0 md:translate-y-[20dvh]">
-                       <BlinkingMercenary 
-                           mercenary={mercenary} 
-                           className="h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
-                       />
-                       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-3xl rounded-full -z-10"></div>
-                       
-                       {floatingHearts.map(heart => (
-                           <Heart 
-                                key={heart.id}
-                                className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]"
-                                style={{
-                                    left: `${heart.left}%`,
-                                    bottom: '30%',
-                                    width: heart.size,
-                                    height: heart.size,
-                                    animationDelay: `${heart.delay}s`,
-                                    '--wobble': `${(Math.random() - 0.5) * 40}px`
-                                } as React.CSSProperties}
-                           />
-                       ))}
-                   </div>
-               </div>
+            {/* Character Stage - Stick to bottom of screen */}
+            <div className="absolute inset-0 z-10 w-full h-full pointer-events-none flex items-end justify-center">
+                <div className="relative w-full h-full flex items-end justify-center animate-in fade-in zoom-in-95 duration-700 ease-out">
+                    {/* 캐릭터 박스: 바닥 정렬 기준 */}
+                    <div className="relative h-[90dvh] max-h-[110dvh] flex items-end justify-center">
+                    <AnimatedMercenary
+                        mercenary={mercenary}
+                        // height prop 제거: 부모 박스 높이로 제어
+                        className="h-full w-auto filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
+                    />
+
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-black/60 blur-3xl rounded-full -z-10"></div>
+
+                    {floatingHearts.map((heart) => (
+                        <Heart
+                        key={heart.id}
+                        className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]"
+                        style={{
+                            left: `${heart.left}%`,
+                            bottom: '30%',
+                            width: heart.size,
+                            height: heart.size,
+                            animationDelay: `${heart.delay}s`,
+                            '--wobble': `${(Math.random() - 0.5) * 40}px`,
+                        } as React.CSSProperties}
+                        />
+                    ))}
+                    </div>
+                </div>
             </div>
 
             <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 flex items-end justify-center pointer-events-none">
