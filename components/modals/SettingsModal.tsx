@@ -10,7 +10,7 @@ interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     onQuit: () => void;
-    onLoadRequest: (data: any, index: number) => void;
+    onLoadRequest: (data: any, depth: number) => void;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, onLoadRequest }) => {
@@ -22,7 +22,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         index: null
     });
 
-    const APP_VERSION = "0.1.39";
+    const APP_VERSION = "0.1.40";
 
     if (!isOpen) return null;
 
