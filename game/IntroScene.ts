@@ -258,10 +258,10 @@ export default class IntroScene extends Phaser.Scene {
 
     if (this.boilingFireEmitter) {
         this.boilingFireEmitter.setPosition(0, h);
-        this.boilingFireEmitter.addEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, 20) });
+        this.boilingFireEmitter.setEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, 20) } as any);
     }
     if (this.embersEmitter) {
-        this.embersEmitter.addEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, h) });
+        this.embersEmitter.setEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, h) } as any);
     }
 
     if (this.flyingDragon) {
@@ -316,10 +316,10 @@ export default class IntroScene extends Phaser.Scene {
 
     if (this.boilingFireEmitter) {
         this.boilingFireEmitter.setPosition(0, h);
-        this.boilingFireEmitter.addEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, 20) });
+        this.boilingFireEmitter.setEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, 20) } as any);
     }
     if (this.embersEmitter) {
-        this.embersEmitter.addEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, h) });
+        this.embersEmitter.setEmitZone({ type: 'random', source: new Phaser.Geom.Rectangle(0, 0, w, h) } as any);
     }
 
     if (this.flyingDragon) {
