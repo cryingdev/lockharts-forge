@@ -262,7 +262,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
             <div className="absolute inset-0 z-10 w-full h-full pointer-events-none flex items-end justify-center">
                 <div className="relative w-full h-full flex items-end justify-center animate-in fade-in zoom-in-95 duration-700 ease-out">
                     {/* 캐릭터 박스: 바닥 정렬 기준 */}
-                    <div className="relative h-[80dvh] max-h-[110dvh] flex items-end justify-center">
+                    <div className="relative h-[90dvh] max-h-[110dvh] flex items-end justify-center">
                     <AnimatedMercenary
                         mercenary={mercenary}
                         // height prop 제거: 부모 박스 높이로 제어
