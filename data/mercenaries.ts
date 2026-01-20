@@ -207,6 +207,30 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     equipment: { ...defaultEquipment }
   },
   {
+    id: 'skeld_stormblood',
+    name: 'Skeld Stormblood',
+    gender: 'Male',
+    job: JobClass.FIGHTER,
+    level: 4, // 12
+    stats: stats(14, 6, 6, 4, 6),
+    allocatedStats: emptyAllocated(),
+    bonusStatPoints: 0,
+    currentHp: 0,
+    maxHp: 0,
+    currentMp: 0,
+    maxMp: 0,
+    affinity: 0,
+    visitCount: 0,
+    isUnique: true,
+    sprite: 'skeld_stormblood_sprite.png',
+    icon: '🐻',
+    expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+    currentXp: 0,
+    xpToNextLevel: 400,
+    status: 'VISITOR',
+    equipment: { ...defaultEquipment }
+  },
+  {
     id: 'sly_vargo',
     name: 'Sly Vargo',
     gender: 'Male',
