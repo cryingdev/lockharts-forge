@@ -130,7 +130,12 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
     // Toast Notifications
     case 'SHOW_TOAST':
+        // 현재 노출 중인 메시지와 동일하면 무시
         if (state.toast?.visible && state.toast.message === action.payload) {
+            return state;
+        }
+        // 큐의 마지막 메시지와 동일하면 무시
+        if (state.toastQueue.length > 0 && state.toastQueue[state.toastQueue.length - 1] === action.payload) {
             return state;
         }
         return {

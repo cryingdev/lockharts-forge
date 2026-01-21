@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Hammer, Shield, Sword, ChevronRight, ChevronLeft, Lock, ChevronDown, ChevronUp, Activity } from 'lucide-react';
+import { Hammer, Shield, Sword, ChevronRight, ChevronLeft, Lock, ChevronDown, ChevronUp, Activity, FastForward, Flame } from 'lucide-react';
 import { useForge } from './hooks/useForge';
 import { getAssetUrl } from '../../../utils';
+import { MASTERY_THRESHOLDS } from '../../../config/mastery-config';
 
 // Sub-components
 import ForgeSkillHeader from './ui/ForgeSkillHeader';
@@ -25,6 +26,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const getItemImageUrl = (item: any) => {
     if (item.image) return getAssetUrl(item.image);
     return getAssetUrl(`${item.id}.png`);
+  };
+
+  // 퀵 크래프트 추가 연료 소모량 계산
+  const getExtraFuelCost = (tier: number) => {
+    if (tier === 1) return 3;
+    if (tier === 2) return 5;
+    return 8;
   };
 
   return (
@@ -51,7 +59,12 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
             </div>
         )}
 
-        {quickCraftProgress !== null && <QuickCraftOverlay progress={quickCraftProgress} />}
+        {quickCraftProgress !== null && selectedItem && (
+            <QuickCraftOverlay 
+                progress={quickCraftProgress} 
+                extraFuel={getExtraFuelCost(selectedItem.tier)}
+            />
+        )}
 
         <div className="absolute top-2 left-2 md:top-4 md:left-4 z-20 pointer-events-auto">
             {!isSkillsExpanded ? (
@@ -88,15 +101,34 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1.5 font-serif tracking-wide">{selectedItem.name}</h2>
                             <p className="text-stone-500 mb-6 italic text-[9px] md:text-sm px-6">"{selectedItem.description}"</p>
                             <ForgeStatsGrid item={selectedItem} />
-                            <div className="flex flex-col sm:flex-row gap-3 w-full items-center justify-center">
+                            
+                            <div className="flex flex-col sm:flex-row gap-3 w-full items-center justify-center px-4">
                                 <button 
                                     onClick={handlers.startCrafting} 
                                     data-tutorial-id="START_FORGING_BUTTON"
-                                    className={`w-full max-w-[200px] h-14 md:h-20 rounded-lg font-black text-sm md:text-base shadow-lg transition-all flex items-center justify-center gap-3 border ${forge.canEnterForge ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600' : 'bg-emerald-700 hover:bg-emerald-600') : 'bg-stone-800 text-stone-500 border-stone-700 grayscale opacity-70'}`}
+                                    className={`w-full max-w-[200px] h-14 md:h-20 rounded-lg font-black text-sm md:text-base shadow-lg transition-all flex items-center justify-center gap-3 border ${forge.canEnterForge ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500') : 'bg-stone-800 text-stone-500 border-stone-700 grayscale opacity-70'}`}
                                 >
                                     <Hammer className="w-4 h-4 md:w-6 md:h-6" />
-                                    <span>Start Crafting</span>
+                                    <span>Start Forging</span>
                                 </button>
+
+                                {/* Quick Craft Button - Unlocked after 1 craft for testing */}
+                                {(state.craftingMastery[selectedItem.id] || 0) >= 1 && (
+                                    <button 
+                                        onClick={handlers.handleQuickCraft}
+                                        disabled={!forge.canEnterForge || quickCraftProgress !== null}
+                                        className={`w-full max-w-[200px] h-14 md:h-20 rounded-lg font-black text-sm md:text-base shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 border border-indigo-500/50 bg-indigo-900/40 hover:bg-indigo-800/60 text-indigo-100 ${!forge.canEnterForge ? 'grayscale opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <FastForward className="w-4 h-4 md:w-5 md:h-5" />
+                                            <span>Quick Craft</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-[8px] md:text-[9px] font-bold text-indigo-400 uppercase tracking-tighter">
+                                            <Flame className="w-2.5 h-2.5" />
+                                            <span>-{getExtraFuelCost(selectedItem.tier)} Fuel</span>
+                                        </div>
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ) : (
