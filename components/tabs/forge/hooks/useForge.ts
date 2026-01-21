@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EquipmentCategory, EquipmentItem } from '../../../../types';
@@ -82,7 +83,6 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     );
   }, [activeCategory, groupedItems]);
 
-  // Added masteryInfo calculation
   const masteryInfo = useMemo(() => {
     if (!selectedItem) return null;
     const count = craftingMastery[selectedItem.id] || 0;
@@ -154,7 +154,6 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
       actions.finishCrafting(selectedItem, score, bonus);
-      // Fix: Updated 'CRAFT_RESULT_PROMPT' to 'CRAFT_RESULT_DIALOG' to match type definition
       if (tutorialStep === 'START_FORGING_GUIDE' && selectedItem.id === 'sword_bronze_t1') {
         actions.setTutorialStep('CRAFT_RESULT_DIALOG');
       }
@@ -164,20 +163,51 @@ export const useForge = (onNavigate: (tab: any) => void) => {
 
   const handleQuickCraft = useCallback(() => {
     if (!selectedItem) return;
+
+    // 단계적 연료 소모치 계산 (티어 및 내구도 비례 패널티 시뮬레이션)
+    // 티어 1: 3개, 티어 2: 5개, 티어 3 이상: 8개
+    const extraFuel = selectedItem.tier === 1 ? 3 : selectedItem.tier === 2 ? 5 : 8;
+    const charcoalCount = getInventoryCount('charcoal');
+
+    if (charcoalCount < extraFuel) {
+        actions.showToast(`Quick Craft requires ${extraFuel} Charcoal.`);
+        return;
+    }
+
+    const energyCost = getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0);
+    if (stats.energy < energyCost) {
+        actions.triggerEnergyHighlight();
+        return;
+    }
+
+    const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
+    if (missing.length > 0) {
+      actions.showToast("Insufficient base materials.");
+      return;
+    }
+
+    // 퀵 크래프트 시뮬레이션 프로세스
     setQuickCraftProgress(0);
-    const duration = 1500;
+    const duration = 1500; // 1.5초 고정 연출
+    const interval = 30;
+    const step = (100 / (duration / interval));
+
     const timer = setInterval(() => {
       setQuickCraftProgress(prev => {
         if (prev === null || prev >= 100) {
           clearInterval(timer);
-          actions.startCrafting(selectedItem);
-          actions.finishCrafting(selectedItem, 80, 0, 0.7);
+          
+          // 연료 소모 및 제작 완료 (품질 80 고정 = 내구도 80% 패널티 효과)
+          actions.consumeItem('charcoal', extraFuel);
+          actions.startCrafting(selectedItem); // 기본 재료 및 에너지 소모
+          actions.finishCrafting(selectedItem, 80, 0, 0.7); // 숙련도 게인 0.7 패널티
+          
           return null;
         }
-        return prev + 2;
+        return prev + step;
       });
-    }, 30);
-  }, [selectedItem, actions]);
+    }, interval);
+  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery]);
 
   const updateTooltipPosition = (x: number, y: number) => {
     const viewportW = window.innerWidth;
@@ -189,7 +219,6 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     setTooltipPos({ x: finalX, y: finalY });
   };
 
-  // Added missing handlers with explicit React.MouseEvent type
   const handleSelectItem = useCallback((item: EquipmentItem) => {
       setSelectedItem(item);
       if (tutorialStep === 'SELECT_SWORD_GUIDE' && item.id === 'sword_bronze_t1') {
