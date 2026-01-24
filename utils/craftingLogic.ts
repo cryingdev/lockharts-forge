@@ -138,7 +138,7 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         durability: recipe.maxDurability, 
         maxDurability: recipe.maxDurability,
         isRepairable: recipe.isRepairable,
-        equipRequirements: recipe.equipRequirements,
+        minLevel: recipe.minLevel,
         craftedDate: Date.now(),
         crafterName: 'Lockhart',
         previousOwners: [], 

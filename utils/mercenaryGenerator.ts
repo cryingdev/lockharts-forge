@@ -44,6 +44,8 @@ const defaultEquipment: Record<EquipmentSlotType, Equipment | null> = {
     BODY: null,
     HANDS: null,
     FEET: null,
+    LEGS: null,
+    WAIST: null,
     ACCESSORY: null
 };
 

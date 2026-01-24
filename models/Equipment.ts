@@ -1,6 +1,6 @@
 import { PrimaryStats } from './Stats';
 
-export type EquipmentSlotType = 'MAIN_HAND' | 'OFF_HAND' | 'HEAD' | 'BODY' | 'HANDS' | 'FEET' | 'ACCESSORY';
+export type EquipmentSlotType = 'MAIN_HAND' | 'OFF_HAND' | 'HEAD' | 'BODY' | 'HANDS' | 'FEET' | 'LEGS' | 'WAIST' | 'ACCESSORY';
 
 export enum EquipmentRarity {
   COMMON = 'Common',
@@ -21,6 +21,9 @@ export enum EquipmentType {
   SHIELD = 'Shield',
   GLOVES = 'Gloves',
   BOOTS = 'Boots',
+  PANTS = 'Pants',
+  BELT = 'Belt',
+  RING = 'Ring'
 }
 
 export interface EquipmentStats {
@@ -76,8 +79,8 @@ export interface Equipment {
   maxDurability: number;   // 최대 내구도
   isRepairable: boolean;   // 수리 가능 여부
   
-  // 장착 가이드 (최소 스탯)
-  equipRequirements?: Partial<PrimaryStats>;
+  // 장착 가이드 (최소 레벨)
+  minLevel?: number;
 
   // 메타데이터
   craftedDate?: number;

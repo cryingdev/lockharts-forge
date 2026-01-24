@@ -18,24 +18,12 @@ export const handleEquipItem = (state: GameState, payload: { mercenaryId: string
     
     const equipData: Equipment = { ...invItem.equipmentData };
 
-    // --- 요구 스탯 검증 로직 ---
-    if (equipData.equipRequirements) {
-        const totalStats = mergePrimaryStats(mercenary.stats, mercenary.allocatedStats);
-        const req = equipData.equipRequirements;
-        const failedStats: string[] = [];
-
-        if (req.str && totalStats.str < req.str) failedStats.push(`STR ${req.str}`);
-        if (req.vit && totalStats.vit < req.vit) failedStats.push(`VIT ${req.vit}`);
-        if (req.dex && totalStats.dex < req.dex) failedStats.push(`DEX ${req.dex}`);
-        if (req.int && totalStats.int < req.int) failedStats.push(`INT ${req.int}`);
-        if (req.luk && totalStats.luk < req.luk) failedStats.push(`LUK ${req.luk}`);
-
-        if (failedStats.length > 0) {
-            return {
-                ...state,
-                logs: [`${mercenary.name} cannot equip ${equipData.name}. Missing: ${failedStats.join(', ')}`, ...state.logs]
-            };
-        }
+    // --- 요구 레벨 검증 로직 ---
+    if (equipData.minLevel && mercenary.level < equipData.minLevel) {
+        return {
+            ...state,
+            logs: [`${mercenary.name} cannot equip ${equipData.name}. Required Level: ${equipData.minLevel}`, ...state.logs]
+        };
     }
 
     const targetSlot: EquipmentSlotType = equipData.slotType;

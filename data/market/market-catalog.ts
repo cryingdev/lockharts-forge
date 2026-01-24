@@ -29,7 +29,7 @@ export const MARKET_CATALOG: MarketItemConfig[] = [
 
   { id: 'potion_health_huge',  maxStock: 1, type: 'SUPPLY' },
   { id: 'potion_mana_huge',    maxStock: 1, type: 'SUPPLY' },
-  { id: 'potion_stamina_huge', maxStock: 1, type: 'SUPPLY' },
+  { id: 'potion_stamina_huge',  maxStock: 1, type: 'SUPPLY' },
   { id: 'potion_energy_huge',  maxStock: 1, type: 'SUPPLY' },
 
   { id: 'affinity_debug_gift', maxStock: 2, type: 'SUPPLY' },
@@ -59,4 +59,5 @@ export const MARKET_CATALOG: MarketItemConfig[] = [
   // --- SPECIAL ---
   { id: 'scroll_t2', maxStock: 1, type: 'TECHNIQUE' },
   { id: 'scroll_t3', maxStock: 1, type: 'TECHNIQUE' },
+  { id: 'scroll_t4', maxStock: 1, type: 'TECHNIQUE' },
 ];

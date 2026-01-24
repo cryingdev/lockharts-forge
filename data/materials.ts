@@ -87,26 +87,354 @@ export const materials: Record<string, MaterialDefinition> = {
         description: 'Warm to the touch. Glows faintly.', baseValue: 900
     },
 
+    // --- TIER 1 SPECIAL & DROPS ---
+    rat_hide_patch: {
+        id: 'rat_hide_patch', name: 'Rat Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A tough patch cut from rat-man hide. Good for light armor seams.', baseValue: 140, icon: '🧷'
+    },
+    vermin_fang: {
+        id: 'vermin_fang', name: 'Vermin Fang', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A sharp, yellowed fang. Can be used for jagged dagger edges.', baseValue: 110, icon: '🦷'
+    },
+    slime_coagulum: {
+        id: 'slime_coagulum', name: 'Slime Coagulum', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A semi-solid slime mass. Acts as a decent adhesive for belts.', baseValue: 130, icon: '🟢'
+    },
+    bat_wing_membrane: {
+        id: 'bat_wing_membrane', name: 'Bat Wing Membrane', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'Thin but surprisingly durable leather-like membrane.', baseValue: 150, icon: '🦇'
+    },
+    bat_sonar_gland: {
+        id: 'bat_sonar_gland', name: 'Bat Sonar Gland', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A sensitive organ that pulses. Useful for accuracy-boosting charms.', baseValue: 190, icon: '👂'
+    },
+    sewer_buckle: {
+        id: 'sewer_buckle', name: 'Sewer Buckle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A rusted but functional metal buckle salvaged from the muck.', baseValue: 175, icon: '🪝'
+    },
+    mold_spore_sac: {
+        id: 'mold_spore_sac', name: 'Mold Spore Sac', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A dangerous sac filled with acidic spores.', baseValue: 210, icon: '🍄'
+    },
+    beetle_carapace_shard: {
+        id: 'beetle_carapace_shard', name: 'Carapace Shard', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A hard piece of insect shell. Great for reinforcing armor plates.', baseValue: 230, icon: '🪲'
+    },
+    vermin_ring_core: {
+        id: 'vermin_ring_core', name: 'Vermin Ring Core', type: 'RESOURCE', category: 'GEM', tier: 1,
+        description: 'A smooth bone-like sphere found inside sewer thieves\' loot.', baseValue: 280, icon: '⚪'
+    },
+    rat_king_molar: {
+        id: 'rat_king_molar', name: 'Rat King Molar', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A massive, yellow tooth. Heavy enough to be a mace-head.', baseValue: 350, icon: '🦴'
+    },
+    plague_sac: {
+        id: 'plague_sac', name: 'Plague Sac', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A toxic gland from the Rat King. Enables potent debuff catalysts.', baseValue: 320, icon: '🤢'
+    },
+    goblin_scrap_buckle: {
+        id: 'goblin_scrap_buckle', name: 'Goblin Scrap Buckle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A crude but sturdy buckle. Perfect for belts and straps.', baseValue: 160, icon: '🪝'
+    },
+    spider_silk_bundle: {
+        id: 'spider_silk_bundle', name: 'Spider Silk Bundle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'Fine silk thread. Used to reinforce cloth and bindings.', baseValue: 220, icon: '🕸️'
+    },
+    acidic_slime_core: {
+        id: 'acidic_slime_core', name: 'Acidic Slime Core', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A pulsing core that corrodes metal. Used for edge coating and poisons.', baseValue: 240, icon: '🧪'
+    },
+    wolf_fang_shard: {
+        id: 'wolf_fang_shard', name: 'Wolf Fang Shard', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A jagged fang shard. Can be set into blades for vicious cuts.', baseValue: 180, icon: '🦷'
+    },
+    rusty_amulet_fragment: {
+        id: 'rusty_amulet_fragment', name: 'Rusty Amulet Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A fragment of a cursed trinket. Useful for simple rings and charms.', baseValue: 200, icon: '🧿'
+    },
+    ember_beetle_gland: {
+        id: 'ember_beetle_gland', name: 'Ember Beetle Gland', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A warm gland from ember beetles. Adds minor heat resistance.', baseValue: 260, icon: '🔥'
+    },
+    bone_splint: {
+        id: 'bone_splint', name: 'Bone Splint', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'Small bones shaped as splints. Good for reinforcing leggings and boots.', baseValue: 150, icon: '🦴'
+    },
+    cave_moss_pad: {
+        id: 'cave_moss_pad', name: 'Cave Moss Pad', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A damp cushion-like moss. Helps reduce friction and impact.', baseValue: 120, icon: '🌿'
+    },
+
+    // --- TIER 2 SPECIAL & DROPS ---
+    goblin_sling_pouch: {
+        id: 'goblin_sling_pouch', name: 'Goblin Sling Pouch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A leather pouch used by slingers. Handy for belt accessory slots.', baseValue: 340, icon: '👝'
+    },
+    fetish_totem_shard: {
+        id: 'fetish_totem_shard', name: 'Totem Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
+        description: 'A shard of a goblin shaman\'s focus. Resonates with minor spells.', baseValue: 380, icon: '🪵'
+    },
+    brute_tendon: {
+        id: 'brute_tendon', name: 'Brute Tendon', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'Incredibly tough tendon. Ideal for heavy-duty reinforcement.', baseValue: 400, icon: '🎗️'
+    },
+    hyena_pelt_strip: {
+        id: 'hyena_pelt_strip', name: 'Hyena Pelt Strip', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'Coarse fur strip. Used for warm armor linings.', baseValue: 370, icon: '🐕'
+    },
+    bandit_emblem_ring: {
+        id: 'bandit_emblem_ring', name: 'Bandit Emblem Ring', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A brass ring bearing a bandit clan mark.', baseValue: 450, icon: '💍'
+    },
+    sharpened_shiv_fragment: {
+        id: 'sharpened_shiv_fragment', name: 'Shiv Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A broken but wicked-sharp blade tip.', baseValue: 390, icon: '🗡️'
+    },
+    bowstring_bundle: {
+        id: 'bowstring_bundle', name: 'Bowstring Bundle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'High-tension strings. Excellent for DEX-focused equipment.', baseValue: 410, icon: '🧵'
+    },
+    crown_gilded_shard: {
+        id: 'crown_gilded_shard', name: 'Gilded Crown Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
+        description: 'A piece of the Goblin King\'s crown. Highly sought by collectors.', baseValue: 600, icon: '👑'
+    },
+    king_blood_seal: {
+        id: 'king_blood_seal', name: 'King\'s Blood Seal', type: 'RESOURCE', category: 'GEM', tier: 2,
+        description: 'A sigil stained with royal goblin blood. Boosts rarity chances.', baseValue: 650, icon: '🩸'
+    },
+    kobold_scale: {
+        id: 'kobold_scale', name: 'Kobold Scale', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A rough scale from tunnel kobolds. Great for flexible armor plates.', baseValue: 320, icon: '🟫'
+    },
+    trap_spring_coil: {
+        id: 'trap_spring_coil', name: 'Trap Spring Coil', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A compact spring coil. Used for belts and mechanisms.', baseValue: 360, icon: '🌀'
+    },
+    venom_sac: {
+        id: 'venom_sac', name: 'Venom Sac', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A dangerous sack of venom. Enables poison edge coatings.', baseValue: 420, icon: '☠️'
+    },
+    brood_chitin_plate: {
+        id: 'brood_chitin_plate', name: 'Brood Chitin Plate', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A thick chitin plate. Excellent reinforcement for armor.', baseValue: 480, icon: '🛡️'
+    },
+    runestone_fragment: {
+        id: 'runestone_fragment', name: 'Runestone Fragment', type: 'RESOURCE', category: 'GEM', tier: 2,
+        description: 'A fragment that faintly hums. Used as a base for rings.', baseValue: 520, icon: '🪨'
+    },
+    crystal_shard: {
+        id: 'crystal_shard', name: 'Crystal Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
+        description: 'A sharp crystal shard. Used for focus cores and rings.', baseValue: 560, icon: '💎'
+    },
+    foreman_badge: {
+        id: 'foreman_badge', name: 'Foreman Badge', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A heavy badge taken from a kobold foreman.', baseValue: 450, icon: '🎖️'
+    },
+    tempered_claw: {
+        id: 'tempered_claw', name: 'Tempered Claw', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'A claw hardened by heat and stone dust.', baseValue: 500, icon: '🦴'
+    },
+    ember_powder: {
+        id: 'ember_powder', name: 'Ember Powder', type: 'RESOURCE', category: 'GEM', tier: 2,
+        description: 'A warm powder that sparks when shaken.', baseValue: 420, icon: '✨'
+    },
+    queen_thread_spool: {
+        id: 'queen_thread_spool', name: 'Queen\'s Thread', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'Luminous thread from the Brood Mother. Increases rarity outcomes.', baseValue: 580, icon: '🧶'
+    },
+
+    // --- TIER 3 SPECIAL & DROPS ---
+    etched_arrowhead: {
+        id: 'etched_arrowhead', name: 'Etched Arrowhead', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'A bone arrowhead etched with accuracy runes.', baseValue: 680, icon: '🏹'
+    },
+    rotting_hide: {
+        id: 'rotting_hide', name: 'Rotting Hide', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'Foul-smelling but magically resistant hide.', baseValue: 640, icon: '🤢'
+    },
+    cursed_iron_fragment: {
+        id: 'cursed_iron_fragment', name: 'Cursed Iron Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'Shattered metal from haunted armor. Retains defensive malice.', baseValue: 720, icon: '🔗'
+    },
+    bone_fragment: {
+        id: 'bone_fragment', name: 'Bone Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'Ancient bone shards. Reinforces undead-themed gear.', baseValue: 620, icon: '🦴'
+    },
+    ancient_rivet: {
+        id: 'ancient_rivet', name: 'Ancient Rivet', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'A rivet from old armor. Used for plated joints.', baseValue: 700, icon: '📌'
+    },
+    ectoplasm: {
+        id: 'ectoplasm', name: 'Ectoplasm', type: 'RESOURCE', category: 'GEM', tier: 3,
+        description: 'Cold residue from spirits. Used for magic rings.', baseValue: 820, icon: '👻'
+    },
+    cursed_ink: {
+        id: 'cursed_ink', name: 'Cursed Ink', type: 'RESOURCE', category: 'GEM', tier: 3,
+        description: 'Ink infused with malice. Used for inscriptions.', baseValue: 880, icon: '🖋️'
+    },
+    mana_crystal_dust: {
+        id: 'mana_crystal_dust', name: 'Mana Crystal Dust', type: 'RESOURCE', category: 'GEM', tier: 3,
+        description: 'Fine glittering dust. Used for mana enhancements.', baseValue: 920, icon: '🧊'
+    },
+    haunted_iron_fragment: {
+        id: 'haunted_iron_fragment', name: 'Haunted Iron Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'Iron that remembers fear. Great for shields and helms.', baseValue: 980, icon: '🧲'
+    },
+    spirit_buckle: {
+        id: 'spirit_buckle', name: 'Spirit Buckle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'A buckle that feels weightless. Used for accessory frames.', baseValue: 1050, icon: '🪝'
+    },
+    haunt_sigil: {
+        id: 'haunt_sigil', name: 'Haunt Sigil', type: 'RESOURCE', category: 'GEM', tier: 3,
+        description: 'A spectral sigil. Enables wraith-like passives.', baseValue: 1100, icon: '🧿'
+    },
+    grave_wax: {
+        id: 'grave_wax', name: 'Grave Wax', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'Wax scraped from old tomb candles.', baseValue: 780, icon: '🕯️'
+    },
+    sunstone_shard: {
+        id: 'sunstone_shard', name: 'Sunstone Shard', type: 'RESOURCE', category: 'GEM', tier: 3,
+        description: 'A radiant shard that glows like the morning sun.', baseValue: 1150, icon: '🌞'
+    },
+    storm_core: {
+        id: 'storm_core', name: 'Storm Core', type: 'RESOURCE', category: 'GEM', tier: 3,
+        description: 'A pulsing core that crackles with static energy.', baseValue: 1200, icon: '⚡'
+    },
+    shade_ichor: {
+        id: 'shade_ichor', name: 'Shade Ichor', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'Viscous dark fluid that seems to absorb surrounding light.', baseValue: 1050, icon: '🌑'
+    },
+    phoenix_ash: {
+        id: 'phoenix_ash', name: 'Phoenix Ash', type: 'RESOURCE', category: 'GEM', tier: 3,
+        description: 'Undying residue that smolders with eternal heat.', baseValue: 1350, icon: '🔥'
+    },
+    wyvern_membrane: {
+        id: 'wyvern_membrane', name: 'Wyvern Membrane', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
+        description: 'Leathery membrane from a wyvern\'s wing. Extremely tough and springy.', baseValue: 1100, icon: '🪽'
+    },
+
+    // --- TIER 4 SPECIAL & DROPS ---
+    shadow_pelt: {
+        id: 'shadow_pelt', name: 'Shadow Pelt', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'Fur that seems to absorb light. Ideal for stealthy leggings.', baseValue: 1600, icon: '🌑'
+    },
+    frost_shard: {
+        id: 'frost_shard', name: 'Frost Shard', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'A shard of eternal ice. Used for cold resistance charms.', baseValue: 1550, icon: '❄️'
+    },
+    storm_spark: {
+        id: 'storm_spark', name: 'Storm Spark', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'A crackling spark of lightning. Boosts speed and crit.', baseValue: 1580, icon: '⚡'
+    },
+    heated_scale_plate: {
+        id: 'heated_scale_plate', name: 'Heated Scale Plate', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A glowing plate from a Fire Drake. Essential for high-rarity gear.', baseValue: 2100, icon: '🔥'
+    },
+    bloodsteel_flake: {
+        id: 'bloodsteel_flake', name: 'Bloodsteel Flake', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'Pulsing metal flake. Used for bleed-like affixes.', baseValue: 1650, icon: '🩸'
+    },
+    sigil_thread: {
+        id: 'sigil_thread', name: 'Sigil Thread', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'Thread woven with ritual marks.', baseValue: 1500, icon: '🧵'
+    },
+    night_essence: {
+        id: 'night_essence', name: 'Night Essence', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'Dark mana condensed into a drop.', baseValue: 1750, icon: '🌑'
+    },
+    molten_core: {
+        id: 'molten_core', name: 'Molten Core', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'A dense core of elemental heat.', baseValue: 1900, icon: '🌋'
+    },
+    ashen_sigil: {
+        id: 'ashen_sigil', name: 'Ashen Sigil', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'A sigil burned into stone.', baseValue: 2000, icon: '⚱️'
+    },
+    hellforged_scrap: {
+        id: 'hellforged_scrap', name: 'Hellforged Scrap', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A scrap of infernal metal.', baseValue: 2100, icon: '⛓️'
+    },
+    drake_scale: {
+        id: 'drake_scale', name: 'Drake Scale', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A scale from drakes. Excellent for heat resistance.', baseValue: 2200, icon: '🐉'
+    },
+    drake_claw: {
+        id: 'drake_claw', name: 'Drake Claw', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A sharp drake claw. Used for high piercing weapons.', baseValue: 2350, icon: '🦴'
+    },
+    obsidian_shard: {
+        id: 'obsidian_shard', name: 'Obsidian Shard', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'Black volcanic glass. Reinforces defenses.', baseValue: 1850, icon: '🖤'
+    },
+    troll_heartstone: {
+        id: 'troll_heartstone', name: 'Troll Heartstone', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'A warm stone-like organ from magma trolls.', baseValue: 2100, icon: '❤️‍🔥'
+    },
+    wyrm_blessing_seal: {
+        id: 'wyrm_blessing_seal', name: 'Wyrm Blessing Seal', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'A sacred seal. Increases rarity outcome significantly.', baseValue: 2400, icon: '🜁'
+    },
+    wyvern_talon: {
+        id: 'wyvern_talon', name: 'Wyvern Talon', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A razor talon. Used for top-end blades.', baseValue: 2600, icon: '🪽'
+    },
+    skyhide_panel: {
+        id: 'skyhide_panel', name: 'Skyhide Panel', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'Tough hide from aerial predators.', baseValue: 2450, icon: '🧷'
+    },
+    dragon_scale: {
+        id: 'dragon_scale', name: 'Dragon Scale', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A true dragon scale. Ultimate reinforcement.', baseValue: 3200, icon: '🐲'
+    },
+    dragon_heart: {
+        id: 'dragon_heart', name: 'Dragon Heart', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'A burning heart that never cools.', baseValue: 4500, icon: '❤️'
+    },
+    ancient_flame_gland: {
+        id: 'ancient_flame_gland', name: 'Ancient Flame Gland', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'A gland that produces eternal flame.', baseValue: 3800, icon: '🔥'
+    },
+    stardust_powder: {
+        id: 'stardust_powder', name: 'Stardust Powder', type: 'RESOURCE', category: 'GEM', tier: 4,
+        description: 'Finely ground celestial remnants. Resonates with cosmic energy.', baseValue: 2800, icon: '✨'
+    },
+    dragon_scale_fragment: {
+        id: 'dragon_scale_fragment', name: 'Dragon Scale Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A hardened fragment of a true dragon\'s hide.', baseValue: 3200, icon: '🐉'
+    },
+    ancient_heartwood_core: {
+        id: 'ancient_heartwood_core', name: 'Ancient Heartwood Core', type: 'RESOURCE', category: 'WOOD', tier: 4,
+        description: 'The dense, pulsing core of a millennia-old ironwood tree.', baseValue: 2500, icon: '🌳'
+    },
+    titan_bone_plate: {
+        id: 'titan_bone_plate', name: 'Titan Bone Plate', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A massive fossilized bone plate from an ancient titan.', baseValue: 3000, icon: '🦴'
+    },
+    void_ichor: {
+        id: 'void_ichor', name: 'Void Ichor', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A shimmering, reality-warping fluid found in shadow realms.', baseValue: 2900, icon: '🕳️'
+    },
+    ancient_rune_plate: {
+        id: 'ancient_rune_plate', name: 'Ancient Rune Plate', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
+        description: 'A metal plate etched with forgotten power runes.', baseValue: 3400, icon: '📜'
+    },
+
     // --- 6. POTIONS & SUPPLIES ---
-    // Health Potions
     potion_health_small: { id: 'potion_health_small', name: 'Small HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 50 HP.', baseValue: 120 },
     potion_health_medium: { id: 'potion_health_medium', name: 'Medium HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 150 HP.', baseValue: 300 },
     potion_health_large: { id: 'potion_health_large', name: 'Large HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 400 HP.', baseValue: 750 },
     potion_health_huge: { id: 'potion_health_huge', name: 'Huge HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Fully restores HP.', baseValue: 1800 },
 
-    // Mana Potions
     potion_mana_small: { id: 'potion_mana_small', name: 'Small MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 30 MP.', baseValue: 120 },
     potion_mana_medium: { id: 'potion_mana_medium', name: 'Medium MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 100 MP.', baseValue: 300 },
     potion_mana_large: { id: 'potion_mana_large', name: 'Large MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 250 MP.', baseValue: 750 },
     potion_mana_huge: { id: 'potion_mana_huge', name: 'Huge MP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Fully restores MP.', baseValue: 1800 },
 
-    // Stamina Potions (Mercenary)
     potion_stamina_small: { id: 'potion_stamina_small', name: 'Small Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 25 Stamina.', baseValue: 100 },
     potion_stamina_medium: { id: 'potion_stamina_medium', name: 'Medium Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 50 Stamina.', baseValue: 250 },
     potion_stamina_large: { id: 'potion_stamina_large', name: 'Large Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 Stamina.', baseValue: 600 },
     potion_stamina_huge: { id: 'potion_stamina_huge', name: 'Huge Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 Stamina.', baseValue: 1500 },
 
-    // Energy Potions (Blacksmith)
     potion_energy_small: { id: 'potion_energy_small', name: 'Small Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 20 Energy.', baseValue: 100 },
     potion_energy_medium: { id: 'potion_energy_medium', name: 'Medium Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 45 Energy.', baseValue: 250 },
     potion_energy_large: { id: 'potion_energy_large', name: 'Large Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 Energy.', baseValue: 600 },
@@ -118,7 +446,6 @@ export const materials: Record<string, MaterialDefinition> = {
     scroll_t2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', category: 'SCROLL', tier: 1, description: 'Enhances equipment quality techniques.', baseValue: 1200, image: 'scroll_contract.png' },
     scroll_t3: { id: 'scroll_t3', name: 'Upgrade Scroll (Tier 3)', type: 'SCROLL', category: 'SCROLL', tier: 2, description: 'Unlock expert craftsmanship techniques.', baseValue: 3000, image: 'scroll_contract.png' },
     
-    // Others
     hammer: { id: 'hammer', name: 'Blacksmith Hammer', type: 'TOOL', category: 'TOOL', description: 'Your trusty tool.', baseValue: 0 },
     anvil: { id: 'anvil', name: 'Old Anvil', type: 'TOOL', category: 'TOOL', description: 'Heavy and reliable.', baseValue: 0 },
     recipe_scroll_bronze_longsword: {
