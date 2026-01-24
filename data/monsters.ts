@@ -145,7 +145,7 @@ export const MONSTERS: Record<string, Monster> = {
   },
 
   // =========================
-  // BAND 2 (Goblins / Bandits) - 8
+  // BAND 2 (Goblins / Bandits / Wolves) - 10
   // =========================
   goblin_grunt: {
     id: 'goblin_grunt',
@@ -198,6 +198,23 @@ export const MONSTERS: Record<string, Monster> = {
       accuracy: 98, evasion: 12, speed: 118
     }
   },
+  dire_wolf: {
+    id: 'dire_wolf',
+    name: 'Dire Wolf',
+    level: 5,
+    icon: '🐺',
+    sprite: 'dire_wolf.png',
+    description: 'A massive gray wolf with eyes that glint with predatory intelligence.',
+    currentHp: 580,
+    rewardXp: 280,
+    stats: {
+      maxHp: 580, maxMp: 0,
+      physicalAttack: 52, physicalDefense: 24, physicalReduction: 0.14,
+      magicalAttack: 0, magicalDefense: 18, magicalReduction: 0.11,
+      critChance: 8, critDamage: 160,
+      accuracy: 102, evasion: 18, speed: 142
+    }
+  },
   goblin_brute: {
     id: 'goblin_brute',
     name: 'Goblin Brute',
@@ -230,6 +247,23 @@ export const MONSTERS: Record<string, Monster> = {
       magicalAttack: 0, magicalDefense: 20, magicalReduction: 0.12,
       critChance: 10, critDamage: 165,
       accuracy: 104, evasion: 18, speed: 138
+    }
+  },
+  werewolf: {
+    id: 'werewolf',
+    name: 'Werewolf',
+    level: 6,
+    icon: '🐺',
+    sprite: 'werewolf.png',
+    description: 'A cursed beast of the full moon. Its fangs are legendary and lethal.',
+    currentHp: 850,
+    rewardXp: 450,
+    stats: {
+      maxHp: 850, maxMp: 50,
+      physicalAttack: 82, physicalDefense: 38, physicalReduction: 0.20,
+      magicalAttack: 10, magicalDefense: 30, magicalReduction: 0.16,
+      critChance: 15, critDamage: 180,
+      accuracy: 115, evasion: 25, speed: 155
     }
   },
   bandit_cutthroat: {
@@ -285,7 +319,7 @@ export const MONSTERS: Record<string, Monster> = {
   },
 
   // =========================
-  // BAND 3 (Mines / Kobolds) - 8
+  // BAND 3 (Mines / Kobolds) - 9
   // =========================
   kobold_miner: {
     id: 'kobold_miner',
@@ -353,6 +387,23 @@ export const MONSTERS: Record<string, Monster> = {
       magicalAttack: 0, magicalDefense: 28, magicalReduction: 0.16,
       critChance: 16, critDamage: 180,
       accuracy: 110, evasion: 30, speed: 150
+    }
+  },
+  frost_wolf: {
+    id: 'frost_wolf',
+    name: 'Frost Wolf',
+    level: 9,
+    icon: '🐺',
+    sprite: 'frost_wolf.png',
+    description: 'A wolf with fur like ice crystals, found in the frozen depths of the mines.',
+    currentHp: 1100,
+    rewardXp: 720,
+    stats: {
+      maxHp: 1100, maxMp: 40,
+      physicalAttack: 98, physicalDefense: 62, physicalReduction: 0.29,
+      magicalAttack: 45, magicalDefense: 50, magicalReduction: 0.25,
+      critChance: 10, critDamage: 170,
+      accuracy: 112, evasion: 22, speed: 138
     }
   },
   brood_mother: {
@@ -425,7 +476,7 @@ export const MONSTERS: Record<string, Monster> = {
   },
 
   // =========================
-  // BAND 4 (Undead / Ruins) - 7
+  // BAND 4 (Undead / Ruins / Shadows) - 8
   // =========================
   skeleton_soldier: {
     id: 'skeleton_soldier',
@@ -476,6 +527,23 @@ export const MONSTERS: Record<string, Monster> = {
       magicalAttack: 0, magicalDefense: 62, magicalReduction: 0.29,
       critChance: 6, critDamage: 160,
       accuracy: 98, evasion: 4, speed: 92
+    }
+  },
+  shadow_wolf: {
+    id: 'shadow_wolf',
+    name: 'Shadow Wolf',
+    level: 12,
+    icon: '🐺',
+    sprite: 'shadow_wolf.png',
+    description: 'A specter-like wolf that slips through physical barriers.',
+    currentHp: 1950,
+    rewardXp: 1350,
+    stats: {
+      maxHp: 1950, maxMp: 120,
+      physicalAttack: 140, physicalDefense: 80, physicalReduction: 0.35,
+      magicalAttack: 95, magicalDefense: 110, magicalReduction: 0.42,
+      critChance: 16, critDamage: 185,
+      accuracy: 122, evasion: 35, speed: 162
     }
   },
   wraith: {
@@ -548,7 +616,7 @@ export const MONSTERS: Record<string, Monster> = {
   },
 
   // =========================
-  // BAND 5 (Cult / Elemental) - 7
+  // BAND 5 (Cult / Elemental) - 8
   // =========================
   cultist_blade: {
     id: 'cultist_blade',
@@ -635,6 +703,23 @@ export const MONSTERS: Record<string, Monster> = {
       accuracy: 112, evasion: 12, speed: 110
     }
   },
+  phoenix: {
+    id: 'phoenix',
+    name: 'Phoenix',
+    level: 18,
+    icon: '🦅',
+    sprite: 'phoenix.png',
+    description: 'A legendary bird of eternal flame. It can rise from its own ashes once when defeated.',
+    currentHp: 4800,
+    rewardXp: 4500,
+    stats: {
+      maxHp: 4800, maxMp: 500,
+      physicalAttack: 150, physicalDefense: 120, physicalReduction: 0.40,
+      magicalAttack: 420, magicalDefense: 350, magicalReduction: 0.65,
+      critChance: 20, critDamage: 200,
+      accuracy: 135, evasion: 45, speed: 175
+    }
+  },
   storm_sprite: {
     id: 'storm_sprite',
     name: 'Storm Sprite',
@@ -671,7 +756,7 @@ export const MONSTERS: Record<string, Monster> = {
   },
 
   // =========================
-  // BAND 6 (Dragon Domain) - 7
+  // BAND 6 (Dragon Domain) - 8
   // =========================
   drake_whelp: {
     id: 'drake_whelp',
@@ -756,6 +841,23 @@ export const MONSTERS: Record<string, Monster> = {
       magicalAttack: 620, magicalDefense: 480, magicalReduction: 0.76,
       critChance: 14, critDamage: 190,
       accuracy: 120, evasion: 18, speed: 118
+    }
+  },
+  ancient_treant: {
+    id: 'ancient_treant',
+    name: 'Ancient Treant',
+    level: 25,
+    icon: '🌳',
+    sprite: 'ancient_treant.png',
+    description: 'A massive, sentient tree with hide harder than ironwood.',
+    currentHp: 22000,
+    rewardXp: 9500,
+    stats: {
+      maxHp: 22000, maxMp: 200,
+      physicalAttack: 380, physicalDefense: 650, physicalReduction: 0.81,
+      magicalAttack: 150, magicalDefense: 520, magicalReduction: 0.78,
+      critChance: 5, critDamage: 150,
+      accuracy: 110, evasion: 4, speed: 85
     }
   },
   ancient_wyvern: {

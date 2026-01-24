@@ -45,7 +45,8 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, boss, flee
     const [bossState, setBossState] = useState({
         ...boss,
         gauge: 0,
-        lastDamaged: false
+        lastDamaged: false,
+        hasUsedRevival: false
     });
 
     const [logs, setLogs] = useState<CombatLogEntry[]>([]);
@@ -85,7 +86,18 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, boss, flee
             setBossState(prev => {
                 const next = { ...prev, lastDamaged: res.isHit };
                 if (res.isHit) {
-                    next.currentHp = Math.max(0, next.currentHp - res.damage);
+                    let nextHp = Math.max(0, next.currentHp - res.damage);
+                    
+                    // Special Revival Logic for Phoenix
+                    if (nextHp <= 0 && next.id === 'phoenix' && !next.hasUsedRevival) {
+                        nextHp = next.stats.maxHp;
+                        next.hasUsedRevival = true;
+                        addLog("The Phoenix bursts into blinding flames and rises from the ashes!", 'ENEMY', true, true);
+                        triggerDamagePopup('BOSS', 0, true, true);
+                    } else {
+                        next.currentHp = nextHp;
+                    }
+                    
                     triggerDamagePopup('BOSS', res.damage, res.isCrit, !!skill);
                 }
                 setTimeout(() => setBossState(curr => ({ ...curr, lastDamaged: false })), 200);
@@ -113,7 +125,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, boss, flee
             }));
             addLog(`${attacker.name} struck ${target.name.split(' ')[0]} for ${res.damage}`, 'ENEMY');
         }
-    }, []);
+    }, [addLog]);
 
     const processLoop = useCallback(() => {
         if (isPaused || activeActorId) return;
