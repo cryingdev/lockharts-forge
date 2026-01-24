@@ -10,6 +10,7 @@ import { InventoryItem, EquipmentSlotType } from '../../../types/inventory';
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { ItemSelectorList } from '../../ItemSelectorList';
 import { AnimatedMercenary } from '../../common/ui/AnimatedMercenary';
+import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 
 interface TavernInteractionProps {
     mercenary: Mercenary;
@@ -214,9 +215,12 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
             <div className="absolute top-20 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
-                        <div className="flex flex-col leading-tight min-w-0">
-                            <span className="font-black text-amber-50 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{mercenary.job}</span>
-                            <span className="text-stone-500 text-[8px] md:text-[10px] font-mono">Lv.{mercenary.level}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <MercenaryPortrait mercenary={mercenary} className="w-7 h-7 md:w-9 md:h-9 rounded-lg border border-white/10 shrink-0" />
+                            <div className="flex flex-col leading-tight min-w-0">
+                                <span className="font-black text-amber-50 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{mercenary.job}</span>
+                                <span className="text-stone-500 text-[8px] md:text-[10px] font-mono">Lv.{mercenary.level}</span>
+                            </div>
                         </div>
                         <div className="flex items-center gap-1 text-pink-400 font-bold bg-pink-950/20 px-1 md:px-1.5 py-0.5 rounded border border-pink-900/30 shrink-0">
                             <Heart className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-pink-400" />

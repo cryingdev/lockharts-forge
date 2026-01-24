@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { createRandomMercenary, getUnmetNamedMercenary } from '../../../utils/mercenaryGenerator';
@@ -7,6 +6,7 @@ import TavernInteraction from './TavernInteraction';
 import { getAssetUrl } from '../../../utils';
 import { Mercenary } from '../../../models/Mercenary';
 import { calculateMercenaryPower } from '../../../utils/combatLogic';
+import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 
 const EnergyBattery = ({ value }: { value: number }) => {
     let color = 'bg-emerald-500';
@@ -53,9 +53,10 @@ const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: b
             {/* Top Row: Avatar & Mini Tags */}
             <div className="flex justify-between items-start mb-2">
                 <div className="relative">
-                    <div className={`w-11 h-11 bg-stone-800 rounded-xl border-2 ${merc.status === 'ON_EXPEDITION' ? 'border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : isHired ? 'border-amber-600/40' : 'border-stone-700'} flex items-center justify-center text-2xl shadow-inner group-hover:scale-105 transition-transform`}>
-                        {merc.status === 'DEAD' ? '💀' : merc.icon}
-                    </div>
+                    <MercenaryPortrait 
+                        mercenary={merc}
+                        className={`w-11 h-11 rounded-xl border-2 ${merc.status === 'ON_EXPEDITION' ? 'border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : isHired ? 'border-amber-600/40' : 'border-stone-700'} group-hover:scale-105 transition-transform`}
+                    />
                     {hasUnallocated && (
                         <div className="absolute -top-1 -right-1 bg-amber-500 text-stone-900 p-0.5 rounded shadow-lg animate-bounce border border-stone-950 z-10">
                             <ChevronUp className="w-2.5 h-2.5 font-black" />

@@ -1,4 +1,3 @@
-
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
@@ -25,6 +24,7 @@ export interface ManualDungeonSession {
     // 전투 관련 상태
     encounterStatus: 'NONE' | 'ENCOUNTERED' | 'BATTLE' | 'VICTORY' | 'DEFEAT';
     currentEnemyHp?: number;
+    lastActionMessage?: string; // 탐험 중 발생한 마지막 사건 메시지
 }
 
 export interface DailyFinancials {

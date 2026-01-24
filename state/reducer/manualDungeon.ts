@@ -5,7 +5,7 @@ import { MONSTERS } from '../../data/monsters';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
 
 // Helper to generate the dungeon grid for manual assault mode
-const generateManualGrid = (width: number, height: number, dungeonId: string): RoomType[][] => {
+const generateManualGrid = (width: number, height: number, dungeonId: string, forceNPC: boolean = false): RoomType[][] => {
     const grid: RoomType[][] = Array.from({ length: height }, () => Array(width).fill('EMPTY'));
     // Entry point is always at the top-left
     grid[0][0] = 'ENTRANCE';
@@ -27,14 +27,34 @@ const generateManualGrid = (width: number, height: number, dungeonId: string): R
     }
 
     // Populate the rest of the grid with random points of interest
+    let npcPlaced = false;
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             if (grid[y][x] === 'EMPTY') {
                 const r = Math.random();
                 if (r < 0.12) grid[y][x] = 'GOLD';
                 else if (r < 0.22) grid[y][x] = 'TRAP';
-                else if (r < 0.25) grid[y][x] = 'NPC';
+                else if (r < 0.25) {
+                    grid[y][x] = 'NPC';
+                    npcPlaced = true;
+                }
             }
+        }
+    }
+
+    // If NPC is forced but didn't spawn by chance, pick a random empty tile
+    if (forceNPC && !npcPlaced) {
+        const emptyTiles: { x: number, y: number }[] = [];
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (grid[y][x] === 'EMPTY') {
+                    emptyTiles.push({ x, y });
+                }
+            }
+        }
+        if (emptyTiles.length > 0) {
+            const choice = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+            grid[choice.y][choice.x] = 'NPC';
         }
     }
     
@@ -54,6 +74,10 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         return { ...state, logs: [`Your squad is too exhausted to enter ${dungeon.name}.`, ...state.logs] };
     }
 
+    // Check if Tilly needs to be rescued (Dungeon: Rat Cellar & Not in known mercenaries)
+    const isTillyRescued = state.knownMercenaries.some(m => m.id === 'tilly_footloose');
+    const shouldForceNPC = payload.dungeonId === 'dungeon_t1_rats' && !isTillyRescued;
+
     // Update mercenary status and energy levels
     const updatedMercs = state.knownMercenaries.map(m => {
         if (payload.partyIds.includes(m.id)) {
@@ -66,7 +90,7 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         return m;
     });
 
-    const grid = generateManualGrid(dungeon.gridWidth, dungeon.gridHeight, dungeon.id);
+    const grid = generateManualGrid(dungeon.gridWidth, dungeon.gridHeight, dungeon.id, shouldForceNPC);
     const visited = Array.from({ length: dungeon.gridHeight }, () => Array(dungeon.gridWidth).fill(false));
     // Reveal the starting location
     visited[0][0] = true;
@@ -81,7 +105,8 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         hasKey: false,
         isBossLocked: dungeon.isBossLocked ?? true,
         goldCollected: 0,
-        encounterStatus: 'NONE'
+        encounterStatus: 'NONE',
+        lastActionMessage: `Scanning sector... Vital signs stable.`
     };
 
     return {
@@ -104,7 +129,13 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     const newY = session.playerPos.y + payload.y;
 
     if (newX < 0 || newX >= dungeon.gridWidth || newY < 0 || newY >= dungeon.gridHeight) {
-        return { ...state, toastQueue: [...state.toastQueue, "Area boundary reached."] };
+        return { 
+            ...state, 
+            activeManualDungeon: {
+                ...session,
+                lastActionMessage: "Structural barrier detected. Movement obstructed."
+            }
+        };
     }
 
     const targetRoom = session.grid[newY][newX];
@@ -115,7 +146,13 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
 
     const party = state.knownMercenaries.filter(m => session.partyIds.includes(m.id));
     if (cost > 0 && party.some(m => (m.expeditionEnergy || 0) < cost)) {
-        return { ...state, logs: [`Your squad is too exhausted to move.`, ...state.logs] };
+        return { 
+            ...state, 
+            activeManualDungeon: {
+                ...session,
+                lastActionMessage: "SQUAD ALERT: Energy levels critically low. Recovery required."
+            }
+        };
     }
 
     let updatedMercs = state.knownMercenaries.map(m => {
@@ -140,20 +177,27 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     let extraGold = 0;
     let newGrid = [...session.grid.map(row => [...row])];
     let logMsg = '';
+    let actionMsg = session.lastActionMessage;
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
 
     if (targetRoom === 'GOLD' && !isAlreadyVisited) {
         extraGold = (dungeon.tier || 1) * 50;
         newGrid[newY][newX] = 'EMPTY';
         logMsg = `Cache secured. (+${extraGold} G)`;
+        actionMsg = `Material cache secured. Transferring to forge treasury. (+${extraGold} G)`;
     } else if (targetRoom === 'TRAP' && !isAlreadyVisited) {
         logMsg = `AMBUSH: Squad hit by a trap! (-25 HP)`;
+        actionMsg = `EMERGENCY: Defensive perimeter breached. Structural integrity compromised.`;
     } else if (targetRoom === 'KEY' && !isAlreadyVisited) {
         logMsg = `Chamber key recovered.`;
+        actionMsg = `Sector key identified and recovered. Decrypting lock coordinates...`;
         newGrid[newY][newX] = 'EMPTY';
     } else if (targetRoom === 'BOSS' && !session.isBossDefeated) {
         encounterStatus = 'ENCOUNTERED';
         logMsg = `CRITICAL ALERT: Boss identified.`;
+        actionMsg = `CRITICAL ALERT: Hostile boss detected. Combat systems engaging...`;
+    } else if (!isAlreadyVisited) {
+        actionMsg = `Advancing to new coordinates... Scanning for threats.`;
     }
 
     return {
@@ -167,7 +211,8 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
             visited: newVisited,
             hasKey: targetRoom === 'KEY' ? true : session.hasKey,
             encounterStatus,
-            goldCollected: session.goldCollected + extraGold
+            goldCollected: session.goldCollected + extraGold,
+            lastActionMessage: actionMsg
         },
         logs: logMsg ? [logMsg, ...state.logs] : state.logs
     };
@@ -313,7 +358,10 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
         activeManualDungeon: {
             ...session,
             encounterStatus: payload.win ? 'VICTORY' : (payload.flee ? 'NONE' : 'DEFEAT'),
-            isBossDefeated: payload.win || session.isBossDefeated
+            isBossDefeated: payload.win || session.isBossDefeated,
+            lastActionMessage: payload.win 
+                ? `Sector neutralized. Extraction point is clear. Prepare to return.`
+                : (payload.flee ? `SQUAD STATUS: Tactical withdrawal successful.` : `SQUAD STATUS: MISSION FAILURE. Emergency rescue required.`)
         },
         logs: logMsg ? [logMsg, ...state.logs] : state.logs
     };
@@ -380,7 +428,13 @@ export const handleRescueNPC = (state: GameState, payload: { npcId: string }): G
 
     return {
         ...state,
-        activeManualDungeon: { ...currentSession, grid: newGrid, npcFound: true, rescuedNpcId: payload.npcId },
+        activeManualDungeon: { 
+            ...currentSession, 
+            grid: newGrid, 
+            npcFound: true, 
+            rescuedNpcId: payload.npcId,
+            lastActionMessage: `Survivor secured! Initiating extraction protocol.`
+        },
         logs: [`Survivor secured! Initiating extraction.`, ...state.logs]
     };
 };

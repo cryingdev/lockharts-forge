@@ -43,7 +43,8 @@ export const TILLY_FOOTLOOSE: Mercenary = {
     affinity: 15, // Starts with some affinity if rescued
     visitCount: 0,
     isUnique: true,
-    sprite: 'tily_footloose.png',
+    sprite: 'tilly_footloose_sprite.png',
+    profileImage: 'tilly_footloose_profile.png',
     icon: '🌾',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,
@@ -78,6 +79,7 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     visitCount: 0,
     isUnique: true,
     sprite: 'pip_green_sprite.png',
+    profileImage: 'pip_green_profile.png',
     icon: '🌱',
     expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
     currentXp: 0,

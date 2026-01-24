@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { getAssetUrl } from '../../../utils';
 
@@ -12,23 +11,27 @@ interface AnimatedMercenaryProps {
  * AnimatedMercenary
  * 용병의 스프라이트를 표시하며, '_sprite'가 파일명에 포함된 경우
  * 눈 깜빡임(3프레임) 애니메이션을 자동으로 처리합니다.
- * 이미지의 실제 크기를 측정하여 원본 비율에 맞는 aspect-ratio를 동적으로 적용합니다.
  */
-export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({ mercenary, className, height = "100%" }) => {
+export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({ 
+    mercenary, 
+    className, 
+    height 
+}) => {
     const [frame, setFrame] = useState(0);
-    const [aspectRatio, setAspectRatio] = useState<number>(1 / 1.8); // 초기 기본값
+    const [aspectRatio, setAspectRatio] = useState<number>(1 / 2.15); // 초기 기본값 (Tilly 등 기준)
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const isSpriteSheet = mercenary.sprite?.includes('_sprite');
-    const spriteUrl = mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png');
+    const isSpriteSheet = mercenary?.sprite?.includes('_sprite');
+    const spriteUrl = mercenary?.sprite 
+        ? getAssetUrl(mercenary.sprite) 
+        : getAssetUrl('adventurer_wanderer_01.png');
 
-    // 이미지 로드 시 실제 해상도를 측정하여 가로세로비 계산
+    // 이미지 로드 시 실제 해상도를 측정하여 가로세로비 계산 (프레임 단위 비율)
     useEffect(() => {
-        if (isSpriteSheet && mercenary.sprite) {
+        if (isSpriteSheet && mercenary?.sprite) {
             const img = new Image();
             img.src = spriteUrl;
             img.onload = () => {
-                // 사용자가 제시한 공식 적용: (전체 너비 / 3) : 전체 높이
                 const singleFrameWidth = img.naturalWidth / 3;
                 const ratio = singleFrameWidth / img.naturalHeight;
                 if (!isNaN(ratio) && ratio > 0) {
@@ -36,7 +39,7 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({ mercenary,
                 }
             };
         }
-    }, [spriteUrl, isSpriteSheet]);
+    }, [spriteUrl, isSpriteSheet, mercenary?.sprite]);
 
     const blink = useCallback(() => {
         setFrame(1);
@@ -62,14 +65,18 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({ mercenary,
         return () => { if (timerRef.current) clearTimeout(timerRef.current); };
     }, [isSpriteSheet, scheduleNextBlink]);
 
+    if (!mercenary) return null;
+
     if (isSpriteSheet) {
         return (
             <div 
                 className={className} 
                 style={{ 
-                    height: height,
+                    height: height || undefined, // height prop이 있으면 스타일로 적용, 없으면 className에 맡김
                     aspectRatio: `${aspectRatio}`, 
-                    overflow: 'hidden' 
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'flex-end'
                 }}
             >
                 <div 
@@ -89,7 +96,7 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({ mercenary,
         <img 
             src={spriteUrl} 
             className={className}
-            style={{ height: height, objectFit: 'contain' }}
+            style={{ height: height || 'auto', objectFit: 'contain' }}
             alt={mercenary.name}
         />
     );

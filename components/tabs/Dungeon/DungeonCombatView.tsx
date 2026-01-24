@@ -7,6 +7,7 @@ import { calculateCombatResult } from '../../../utils/combatLogic';
 import { calculateDerivedStats, applyEquipmentBonuses, mergePrimaryStats } from '../../../models/Stats';
 import { useGame } from '../../../context/GameContext';
 import { SKILLS } from '../../../data/skills';
+import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 
 const ACTION_THRESHOLD = 1000;
 
@@ -255,10 +256,10 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, boss, flee
                         return (
                             <div key={p.id} className={`bg-stone-900 border-2 rounded-xl p-3 flex flex-col gap-2 transition-all ${isActive ? 'border-amber-500 shadow-glow-sm bg-stone-850' : 'border-stone-800'} ${p.currentHp <= 0 ? 'grayscale opacity-40' : ''}`}>
                                 <div className="flex gap-3">
-                                    <div className="w-12 h-12 bg-stone-800 rounded-lg flex items-center justify-center text-3xl shadow-inner shrink-0 relative">
-                                        {p.icon}
+                                    <div className="w-12 h-12 bg-stone-800 rounded-lg flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden">
+                                        <MercenaryPortrait mercenary={p} className="w-full h-full" />
                                         {damagePopups.filter(dp => dp.targetId === p.id).map(dp => (
-                                            <div key={dp.id} className={`absolute top-0 left-0 right-0 text-center font-black text-lg animate-damage text-red-500`}>
+                                            <div key={dp.id} className={`absolute top-0 left-0 right-0 text-center font-black text-lg animate-damage text-red-500 z-20`}>
                                                 -{dp.value}
                                             </div>
                                         ))}
