@@ -17,6 +17,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 300,
     isRepairable: true,
+    unlockedByDefault: true,
   },
   {
     id: 'sword_mithril_t4',
@@ -34,6 +35,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 500,
     isRepairable: true,
+    unlockedByDefault: true,
   },
   {
     id: 'dagger_mithril_t4',
@@ -52,6 +54,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 420,
     isRepairable: true,
+    unlockedByDefault: true,
   },
   {
     id: 'shield_mithril_t4',
@@ -69,6 +72,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 450,
     isRepairable: true,
+    unlockedByDefault: true,
   },
   {
     id: 'helm_mithril_t4',
@@ -86,6 +90,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 380,
     isRepairable: true,
+    unlockedByDefault: true,
   },
   {
     id: 'pants_mithril_t4',
@@ -102,6 +107,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 400,
     isRepairable: true,
+    unlockedByDefault: true,
   },
   {
     id: 'boots_mithril_t4',
@@ -119,6 +125,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 360,
     isRepairable: true,
+    unlockedByDefault: true,
   },
   {
     id: 'belt_mithril_t4',
@@ -135,6 +142,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 300,
     isRepairable: true,
+    unlockedByDefault: true,
   },
   {
     id: 'ring_gem_t4',
@@ -151,6 +159,7 @@ export const TIER4_ITEMS: EquipmentItem[] = [
     craftingType: 'FORGE',
     maxDurability: 500,
     isRepairable: true,
+    unlockedByDefault: true,
   },
 
   // --------------------------
