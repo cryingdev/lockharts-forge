@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Star, 
-  Package, ChevronLeft, ChevronDown 
+  Package, ChevronLeft, ChevronDown, Anchor, GripVertical 
 } from 'lucide-react';
 import { Mercenary } from '../../models/Mercenary';
 import { EquipmentSlotType } from '../../types/inventory';
@@ -129,7 +129,7 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
         
         <div className="flex justify-between items-end">
           <div className="flex wrap items-center gap-1">
-            <span className="text-[7px] md:text-xs font-black text-amber-500 uppercase tracking-widest bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/20">
+            <span className="text-[7px] md:text-xs font-black text-amber-50 uppercase tracking-widest bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/20">
               {mercenary.job}
             </span>
             <div
@@ -181,6 +181,9 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
         </div>
         {renderSlot({ slot: 'HEAD', icon: <Crown className="w-5 h-5" />, style: 'top-[6%] left-1/2 -translate-x-1/2' })}
         {renderSlot({ slot: 'BODY', icon: <Shirt className="w-5 h-5" />, style: 'top-[26%] left-1/2 -translate-x-1/2' })}
+        {renderSlot({ slot: 'WAIST', icon: <GripVertical className="w-5 h-5" />, style: 'top-[42%] left-1/2 -translate-x-1/2' })}
+        {renderSlot({ slot: 'LEGS', icon: <Anchor className="w-5 h-5" />, style: 'top-[60%] left-1/2 -translate-x-1/2' })}
+        
         {renderSlot({ slot: 'HANDS', icon: <Hand className="w-5 h-5" />, style: 'top-[26%] left-[10%]' })}
         {renderSlot({ slot: 'ACCESSORY', icon: <Sparkles className="w-5 h-5" />, style: 'top-[26%] right-[10%]' })}
         {renderSlot({ slot: 'MAIN_HAND', icon: <Sword className="w-5 h-5" />, style: 'top-[50%] left-[4%]' })}
@@ -188,7 +191,7 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
         {renderSlot({
           slot: 'FEET',
           icon: <Footprints className="w-5 h-5" />,
-          style: 'bottom-[8%] left-1/2 -translate-x-1/2',
+          style: 'bottom-[4%] left-1/2 -translate-x-1/2',
         })}
       </div>
     </div>

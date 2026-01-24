@@ -1,4 +1,3 @@
-
 export interface DungeonReward {
   itemId: string;
   minQuantity: number;
@@ -16,6 +15,7 @@ export interface DungeonDefinition {
   energyCost: number; // For Auto Expedition
   
   // Manual Expedition Settings
+  maxFloors: number; // New: Total depth of this dungeon area
   gridWidth: number;
   gridHeight: number;
   moveEnergy: number; 
@@ -27,7 +27,7 @@ export interface DungeonDefinition {
   bossUnlockReq?: number; // Number of clears to unlock boss variant
   bossVariantId?: string;
   baseXp: number; // XP gained per mercenary
-  maxPartySize?: number; // New: Maximum allowed party size for this dungeon
+  maxPartySize?: number; // Maximum allowed party size for this dungeon
 }
 
 export type ExpeditionStatus = 'ACTIVE' | 'COMPLETED';

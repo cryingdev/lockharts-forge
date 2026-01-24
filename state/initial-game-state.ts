@@ -3,6 +3,7 @@ import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { materials } from '../data/materials';
 import { MARKET_CATALOG } from '../data/market/index';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
+import { DUNGEONS } from '../data/dungeons';
 
 const createInitialInventory = (): InventoryItem[] => [
     { ...materials.anvil, type: 'TOOL', quantity: 1 },
@@ -92,6 +93,7 @@ export const createInitialGameState = (): GameState => ({
     // Dungeon System
     activeExpeditions: [],
     dungeonClearCounts: {},
+    maxFloorReached: DUNGEONS.reduce((acc, d) => ({ ...acc, [d.id]: 1 }), {}),
     dungeonResult: null,
     activeManualDungeon: null,
     showManualDungeonOverlay: false,

@@ -76,11 +76,11 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
     }
     if (activeFilter === 'ARMOR') {
       return filtered.filter((item) => 
-        ['HEAD', 'BODY', 'HANDS', 'FEET', 'OFF_HAND'].includes(item.equipmentData?.slotType || '')
+        ['HEAD', 'BODY', 'LEGS', 'HANDS', 'FEET', 'OFF_HAND'].includes(item.equipmentData?.slotType || '')
       );
     }
     if (activeFilter === 'ACCESSORY') {
-      return filtered.filter((item) => item.equipmentData?.slotType === 'ACCESSORY');
+      return filtered.filter((item) => ['ACCESSORY', 'WAIST'].includes(item.equipmentData?.slotType || ''));
     }
     if (activeFilter === 'CONSUMABLE') {
       return filtered.filter((item) => item.type === 'CONSUMABLE');
@@ -154,9 +154,8 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
             const isConsumable = item.type === 'CONSUMABLE';
             const isSelected = selectedItemId === item.id;
             
-            const reqs = item.equipmentData?.equipRequirements || {};
-            const failedStats = Object.entries(reqs).filter(([stat, val]) => pureMercStats[stat as keyof PrimaryStats] < (val as number));
-            const canEquip = !isConsumable && failedStats.length === 0;
+            const minLevel = item.equipmentData?.minLevel || 1;
+            const canEquip = isConsumable || (mercenary.level >= minLevel);
 
             const rarityClasses = isConsumable ? 'text-stone-400 border-stone-700 bg-stone-900/40' : getRarityClasses(item.equipmentData?.rarity);
             const imageUrl = item.type === 'EQUIPMENT' && item.equipmentData
@@ -230,7 +229,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                 {!isConsumable && !canEquip && isSelected && (
                   <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-2 flex items-center gap-2 text-[8px] md:text-[10px] text-red-400 font-bold uppercase tracking-tight">
                     <AlertCircle className="w-3 h-3 shrink-0" />
-                    Missing: {failedStats.map(([s, v]) => `${s.toUpperCase()} ${v}`).join(', ')}
+                    Requires Level {minLevel} (Current: {mercenary.level})
                   </div>
                 )}
 
@@ -241,9 +240,14 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                                 {item.description}
                              </span>
                         ) : (
-                            <span className="text-[7px] md:text-[9px] text-amber-600 font-black uppercase tracking-tighter bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-900/20">
-                            {getQualityLabel(item.equipmentData?.quality || 100)}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[7px] md:text-[9px] text-amber-600 font-black uppercase tracking-tighter bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-900/20">
+                                {getQualityLabel(item.equipmentData?.quality || 100)}
+                                </span>
+                                <span className={`text-[7px] md:text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${mercenary.level >= minLevel ? 'text-stone-500 border-stone-800' : 'text-red-500 border-red-900/30 bg-red-900/10'}`}>
+                                    Req. Lv.{minLevel}
+                                </span>
+                            </div>
                         )}
                     </div>
                     {!isConsumable && item.equipmentData && (

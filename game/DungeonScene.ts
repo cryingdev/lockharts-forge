@@ -143,24 +143,20 @@ export default class DungeonScene extends Phaser.Scene {
 
         this.redFocusOverlay.setScale(1);
 
-        const thickness = 140; // 그라데이션 가청 범위를 충분히 확보
+        const thickness = 140; 
         const color = 0x7f1d1d;
         const outerAlpha = 0.75;
         const innerAlpha = 0;
 
-        // 상단 그라데이션 (위 -> 아래로 투명)
         this.redFocusOverlay.fillGradientStyle(color, color, color, color, outerAlpha, outerAlpha, innerAlpha, innerAlpha);
         this.redFocusOverlay.fillRect(0, 0, width, thickness);
 
-        // 하단 그라데이션 (아래 -> 위로 투명)
         this.redFocusOverlay.fillGradientStyle(color, color, color, color, innerAlpha, innerAlpha, outerAlpha, outerAlpha);
         this.redFocusOverlay.fillRect(0, height - thickness, width, thickness);
 
-        // 좌측 그라데이션 (왼쪽 -> 오른쪽으로 투명)
         this.redFocusOverlay.fillGradientStyle(color, color, color, color, outerAlpha, innerAlpha, outerAlpha, innerAlpha);
         this.redFocusOverlay.fillRect(0, 0, thickness, height);
 
-        // 우측 그라데이션 (오른쪽 -> 왼쪽으로 투명)
         this.redFocusOverlay.fillGradientStyle(color, color, color, color, innerAlpha, outerAlpha, innerAlpha, outerAlpha);
         this.redFocusOverlay.fillRect(width - thickness, 0, thickness, height);
     }
@@ -240,6 +236,15 @@ export default class DungeonScene extends Phaser.Scene {
                 content = this.add.text(x, y, '💀', { fontSize: '32px' }).setOrigin(0.5);
                 if (this.session.isBossLocked && !this.session.hasKey) content.setAlpha(0.3);
                 break;
+            case 'ENEMY':
+                content = this.add.text(x, y, '⚔️', { fontSize: '28px' }).setOrigin(0.5);
+                break;
+            case 'RESOURCE':
+                content = this.add.text(x, y, Math.random() > 0.5 ? '💎' : '📦', { fontSize: '28px' }).setOrigin(0.5);
+                break;
+            case 'STAIRS':
+                content = this.add.text(x, y, '🪜', { fontSize: '32px' }).setOrigin(0.5);
+                break;
             case 'KEY': content = this.add.text(x, y, '🔑', { fontSize: '28px' }).setOrigin(0.5); break;
             case 'ENTRANCE': content = this.add.text(x, y, '🚪', { fontSize: '28px' }).setOrigin(0.5); break;
             case 'GOLD': content = this.add.text(x, y, '💰', { fontSize: '28px' }).setOrigin(0.5); break;
@@ -276,7 +281,13 @@ export default class DungeonScene extends Phaser.Scene {
 
     public updateSession(newSession: ManualDungeonSession) {
         const oldStatus = this.session.encounterStatus;
+        const oldFloor = this.session.currentFloor;
         this.session = newSession;
+        
+        if (oldFloor !== newSession.currentFloor) {
+            this.initialRender();
+        }
+
         if (oldStatus !== newSession.encounterStatus) this.drawRedFocus();
         const { width, height } = this.scale;
         const { x, y } = newSession.playerPos;

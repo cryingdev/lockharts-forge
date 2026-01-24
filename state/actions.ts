@@ -1,4 +1,3 @@
-
 import { GameEvent } from '../types/events';
 import { EquipmentItem, InventoryItem } from '../types/inventory';
 import { EquipmentSlotType } from '../models/Equipment';
@@ -62,11 +61,12 @@ export type GameAction =
   | { type: 'COMPLETE_TUTORIAL' }
   | { type: 'DISMISS_TUTORIAL_COMPLETE' }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<GameSettings> }
-  | { type: 'START_MANUAL_DUNGEON'; payload: { dungeonId: string; partyIds: string[] } }
+  | { type: 'START_MANUAL_DUNGEON'; payload: { dungeonId: string; partyIds: string[]; startFloor?: number } }
   | { type: 'MOVE_MANUAL_DUNGEON'; payload: { x: number; y: number } }
   | { type: 'FINISH_MANUAL_DUNGEON' }
   | { type: 'RETREAT_MANUAL_DUNGEON' }
   | { type: 'TOGGLE_MANUAL_DUNGEON_OVERLAY'; payload: boolean }
   | { type: 'RESCUE_NPC'; payload: { npcId: string } }
   | { type: 'START_COMBAT_MANUAL' }
-  | { type: 'RESOLVE_COMBAT_MANUAL'; payload: { win: boolean; flee: boolean; finalParty: any[] } };
+  | { type: 'RESOLVE_COMBAT_MANUAL'; payload: { win: boolean; flee: boolean; finalParty: any[] } }
+  | { type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' };

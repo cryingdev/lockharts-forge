@@ -5,7 +5,7 @@ import { Mercenary } from '../models/Mercenary';
 import { Expedition } from '../models/Dungeon';
 import { Monster } from '../models/Monster';
 
-export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP';
+export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP' | 'STAIRS' | 'ENEMY' | 'RESOURCE';
 
 export interface ManualDungeonSession {
     dungeonId: string;
@@ -17,14 +17,15 @@ export interface ManualDungeonSession {
     hasKey: boolean;
     isBossLocked: boolean;
     isBossDefeated?: boolean; 
-    bossEntity?: Monster; 
+    enemies?: Monster[]; 
     npcFound?: boolean; 
     rescuedNpcId?: string; 
     goldCollected: number; 
-    // 전투 관련 상태
-    encounterStatus: 'NONE' | 'ENCOUNTERED' | 'BATTLE' | 'VICTORY' | 'DEFEAT';
+    encounterStatus: 'NONE' | 'ENCOUNTERED' | 'BATTLE' | 'VICTORY' | 'DEFEAT' | 'STAIRS';
     currentEnemyHp?: number;
-    lastActionMessage?: string; // 탐험 중 발생한 마지막 사건 메시지
+    lastActionMessage?: string; 
+    currentFloor: number;
+    maxFloors: number;
 }
 
 export interface DailyFinancials {
@@ -160,6 +161,7 @@ export interface GameState {
 
   activeExpeditions: Expedition[];
   dungeonClearCounts: Record<string, number>; 
+  maxFloorReached: Record<string, number>; // New: Track progress per dungeon area
   dungeonResult: DungeonResult | null; 
   activeManualDungeon: ManualDungeonSession | null; 
   showManualDungeonOverlay: boolean; 

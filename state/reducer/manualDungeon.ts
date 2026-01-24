@@ -1,40 +1,67 @@
-import { GameState, ManualDungeonSession, RoomType, DungeonResult } from '../../types/game-state';
+import { GameState, ManualDungeonSession, RoomType, DungeonResult, InventoryItem } from '../../types/index';
 import { DUNGEONS } from '../../data/dungeons';
 import { handleClaimExpedition } from './expedition';
 import { MONSTERS } from '../../data/monsters';
+import { materials } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
+import { Monster } from '../../models/Monster';
 
-// Helper to generate the dungeon grid for manual assault mode
-const generateManualGrid = (width: number, height: number, dungeonId: string, forceNPC: boolean = false): RoomType[][] => {
+/**
+ * 랜덤한 입구와 그에 따른 가장 먼 출구를 포함한 그리드를 생성합니다.
+ */
+const generateManualGrid = (width: number, height: number, dungeonId: string, floor: number, maxFloors: number, forceNPC: boolean = false): { grid: RoomType[][], startPos: { x: number, y: number } } => {
     const grid: RoomType[][] = Array.from({ length: height }, () => Array(width).fill('EMPTY'));
-    // Entry point is always at the top-left
-    grid[0][0] = 'ENTRANCE';
     
-    // Boss room is typically at the bottom-right
-    grid[height - 1][width - 1] = 'BOSS';
+    // 1. 입구 위치 랜덤 결정 (외곽 벽면 중 하나)
+    let startX, startY;
+    if (Math.random() < 0.5) {
+        // 좌측 또는 우측 벽면
+        startX = Math.random() < 0.5 ? 0 : width - 1;
+        startY = Math.floor(Math.random() * height);
+    } else {
+        // 상단 또는 하단 벽면
+        startX = Math.floor(Math.random() * width);
+        startY = Math.random() < 0.5 ? 0 : height - 1;
+    }
     
-    // Randomly place exactly one key required for some dungeons
-    let keyPlaced = false;
-    let attempts = 0;
-    while (!keyPlaced && attempts < 100) {
-        let kx = Math.floor(Math.random() * width);
-        let ky = Math.floor(Math.random() * height);
-        if (grid[ky][kx] === 'EMPTY') {
-            grid[ky][kx] = 'KEY';
-            keyPlaced = true;
+    grid[startY][startX] = 'ENTRANCE';
+
+    // 2. 입구에서 가장 먼 반대편 코너를 출구로 설정
+    const endX = startX < width / 2 ? width - 1 : 0;
+    const endY = startY < height / 2 ? height - 1 : 0;
+    
+    if (floor === maxFloors) {
+        grid[endY][endX] = 'BOSS';
+    } else {
+        grid[endY][endX] = 'STAIRS';
+    }
+    
+    // 3. 열쇠 배치 (보스 층인 경우)
+    if (floor === maxFloors) {
+        let keyPlaced = false;
+        let attempts = 0;
+        while (!keyPlaced && attempts < 100) {
+            let kx = Math.floor(Math.random() * width);
+            let ky = Math.floor(Math.random() * height);
+            if (grid[ky][kx] === 'EMPTY') {
+                grid[ky][kx] = 'KEY';
+                keyPlaced = true;
+            }
+            attempts++;
         }
-        attempts++;
     }
 
-    // Populate the rest of the grid with random points of interest
+    // 4. 기타 요소들 배치 (적, 자원, 함정 등)
     let npcPlaced = false;
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             if (grid[y][x] === 'EMPTY') {
                 const r = Math.random();
-                if (r < 0.12) grid[y][x] = 'GOLD';
-                else if (r < 0.22) grid[y][x] = 'TRAP';
-                else if (r < 0.25) {
+                if (r < 0.18) grid[y][x] = 'ENEMY'; 
+                else if (r < 0.33) grid[y][x] = 'RESOURCE'; 
+                else if (r < 0.38) grid[y][x] = 'GOLD';
+                else if (r < 0.45) grid[y][x] = 'TRAP';
+                else if (r < 0.47 && !npcPlaced) {
                     grid[y][x] = 'NPC';
                     npcPlaced = true;
                 }
@@ -42,43 +69,37 @@ const generateManualGrid = (width: number, height: number, dungeonId: string, fo
         }
     }
 
-    // If NPC is forced but didn't spawn by chance, pick a random empty tile
-    if (forceNPC && !npcPlaced) {
-        const emptyTiles: { x: number, y: number }[] = [];
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                if (grid[y][x] === 'EMPTY') {
-                    emptyTiles.push({ x, y });
-                }
+    // NPC 강제 배치 (필요한 경우)
+    if (forceNPC && !npcPlaced && floor === 1) {
+        let attempts = 0;
+        while (!npcPlaced && attempts < 20) {
+            const rx = Math.floor(Math.random() * width);
+            const ry = Math.floor(Math.random() * height);
+            if (grid[ry][rx] === 'EMPTY') {
+                grid[ry][rx] = 'NPC';
+                npcPlaced = true;
             }
-        }
-        if (emptyTiles.length > 0) {
-            const choice = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
-            grid[choice.y][choice.x] = 'NPC';
+            attempts++;
         }
     }
     
-    return grid;
+    return { grid, startPos: { x: startX, y: startY } };
 };
 
-/**
- * handleStartManualDungeon
- * Initializes a new manual dungeon session, consumes entry energy, and prepares the grid.
- */
-export const handleStartManualDungeon = (state: GameState, payload: { dungeonId: string; partyIds: string[] }): GameState => {
+export const handleStartManualDungeon = (state: GameState, payload: { dungeonId: string; partyIds: string[]; startFloor?: number }): GameState => {
     const dungeon = DUNGEONS.find(d => d.id === payload.dungeonId);
     if (!dungeon) return state;
 
+    const startFloor = payload.startFloor || 1;
     const party = state.knownMercenaries.filter(m => payload.partyIds.includes(m.id));
+    
     if (party.some(m => (m.expeditionEnergy || 0) < dungeon.energyCost)) {
         return { ...state, logs: [`Your squad is too exhausted to enter ${dungeon.name}.`, ...state.logs] };
     }
 
-    // Check if Tilly needs to be rescued (Dungeon: Rat Cellar & Not in known mercenaries)
     const isTillyRescued = state.knownMercenaries.some(m => m.id === 'tilly_footloose');
-    const shouldForceNPC = payload.dungeonId === 'dungeon_t1_rats' && !isTillyRescued;
+    const shouldForceNPC = payload.dungeonId === 'dungeon_t1_sewers' && !isTillyRescued;
 
-    // Update mercenary status and energy levels
     const updatedMercs = state.knownMercenaries.map(m => {
         if (payload.partyIds.includes(m.id)) {
             return { 
@@ -90,23 +111,25 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         return m;
     });
 
-    const grid = generateManualGrid(dungeon.gridWidth, dungeon.gridHeight, dungeon.id, shouldForceNPC);
+    const { grid, startPos } = generateManualGrid(dungeon.gridWidth, dungeon.gridHeight, dungeon.id, startFloor, dungeon.maxFloors, shouldForceNPC);
+    
     const visited = Array.from({ length: dungeon.gridHeight }, () => Array(dungeon.gridWidth).fill(false));
-    // Reveal the starting location
-    visited[0][0] = true;
+    visited[startPos.y][startPos.x] = true;
 
     const session: ManualDungeonSession = {
         dungeonId: dungeon.id,
         partyIds: payload.partyIds,
         grid,
         visited,
-        playerPos: { x: 0, y: 0 },
-        pathHistory: [{ x: 0, y: 0 }],
+        playerPos: startPos,
+        pathHistory: [startPos],
         hasKey: false,
         isBossLocked: dungeon.isBossLocked ?? true,
         goldCollected: 0,
         encounterStatus: 'NONE',
-        lastActionMessage: `Scanning sector... Vital signs stable.`
+        lastActionMessage: `Scanning sector... Floor ${startFloor} initialized.`,
+        currentFloor: startFloor,
+        maxFloors: dungeon.maxFloors
     };
 
     return {
@@ -114,7 +137,7 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         knownMercenaries: updatedMercs,
         activeManualDungeon: session,
         showManualDungeonOverlay: true,
-        logs: [`Direct assault initiated: ${dungeon.name}.`, ...state.logs]
+        logs: [`Direct assault initiated: ${dungeon.name} (Floor ${startFloor}).`, ...state.logs]
     };
 };
 
@@ -131,10 +154,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     if (newX < 0 || newX >= dungeon.gridWidth || newY < 0 || newY >= dungeon.gridHeight) {
         return { 
             ...state, 
-            activeManualDungeon: {
-                ...session,
-                lastActionMessage: "Structural barrier detected. Movement obstructed."
-            }
+            activeManualDungeon: { ...session, lastActionMessage: "Structural barrier detected." }
         };
     }
 
@@ -142,16 +162,13 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     if (targetRoom === 'WALL') return state;
 
     const isAlreadyVisited = session.visited[newY][newX];
-    const cost = isAlreadyVisited ? -1 : (targetRoom === 'BOSS' ? dungeon.bossEnergy : dungeon.moveEnergy);
+    const cost = isAlreadyVisited ? -1 : (targetRoom === 'BOSS' || targetRoom === 'STAIRS' ? dungeon.bossEnergy : dungeon.moveEnergy);
 
     const party = state.knownMercenaries.filter(m => session.partyIds.includes(m.id));
     if (cost > 0 && party.some(m => (m.expeditionEnergy || 0) < cost)) {
         return { 
             ...state, 
-            activeManualDungeon: {
-                ...session,
-                lastActionMessage: "SQUAD ALERT: Energy levels critically low. Recovery required."
-            }
+            activeManualDungeon: { ...session, lastActionMessage: "SQUAD ALERT: Energy critically low." }
         };
     }
 
@@ -159,50 +176,66 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
         if (session.partyIds.includes(m.id)) {
             let nextEnergy = Math.max(0, (m.expeditionEnergy || 0) - cost);
             let nextHp = m.currentHp;
-            if (targetRoom === 'TRAP' && !isAlreadyVisited) nextHp = Math.max(0, m.currentHp - 25);
+            if (targetRoom === 'TRAP' && !isAlreadyVisited) nextHp = Math.max(0, m.currentHp - 15);
             return { ...m, expeditionEnergy: nextEnergy, currentHp: nextHp };
         }
         return m;
     });
 
-    // 전멸 체크: 모든 파티원의 체력이 0이 되면 탈락
     const isWipedOut = updatedMercs.filter(m => session.partyIds.includes(m.id)).every(m => m.currentHp <= 0);
-    if (isWipedOut) {
-        return handleRetreatManualDungeon({ ...state, knownMercenaries: updatedMercs });
-    }
+    if (isWipedOut) return handleRetreatManualDungeon({ ...state, knownMercenaries: updatedMercs });
 
     const newVisited = [...session.visited.map(row => [...row])];
     newVisited[newY][newX] = true;
 
     let extraGold = 0;
     let newGrid = [...session.grid.map(row => [...row])];
+    let newInventory = [...state.inventory];
     let logMsg = '';
     let actionMsg = session.lastActionMessage;
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
 
     if (targetRoom === 'GOLD' && !isAlreadyVisited) {
-        extraGold = (dungeon.tier || 1) * 50;
+        extraGold = (dungeon.tier || 1) * 30;
         newGrid[newY][newX] = 'EMPTY';
-        logMsg = `Cache secured. (+${extraGold} G)`;
-        actionMsg = `Material cache secured. Transferring to forge treasury. (+${extraGold} G)`;
+        actionMsg = `Credits recovered. (+${extraGold} G)`;
+    } else if (targetRoom === 'RESOURCE' && !isAlreadyVisited) {
+        const possibleResources = ['copper_ore', 'tin_ore', 'leather_strips', 'charcoal', 'rat_hide_patch'];
+        const resId = possibleResources[Math.floor(Math.random() * possibleResources.length)];
+        const count = 1 + Math.floor(Math.random() * 2);
+        const matDef = materials[resId];
+        
+        const existing = newInventory.find(i => i.id === resId);
+        if (existing) {
+            newInventory = newInventory.map(i => i.id === resId ? { ...i, quantity: i.quantity + count } : i);
+        } else {
+            newInventory.push({ ...matDef, quantity: count } as InventoryItem);
+        }
+        
+        newGrid[newY][newX] = 'EMPTY';
+        actionMsg = `Harvested ${matDef.name} x${count}.`;
+        logMsg = `Recovered materials from ruins.`;
     } else if (targetRoom === 'TRAP' && !isAlreadyVisited) {
-        logMsg = `AMBUSH: Squad hit by a trap! (-25 HP)`;
-        actionMsg = `EMERGENCY: Defensive perimeter breached. Structural integrity compromised.`;
+        actionMsg = `Structural hazard triggered. Integrity drop.`;
     } else if (targetRoom === 'KEY' && !isAlreadyVisited) {
-        logMsg = `Chamber key recovered.`;
-        actionMsg = `Sector key identified and recovered. Decrypting lock coordinates...`;
+        logMsg = `Area key recovered.`;
+        actionMsg = `Sector key identified. Decrypting...`;
         newGrid[newY][newX] = 'EMPTY';
+    } else if (targetRoom === 'ENEMY' && !isAlreadyVisited) {
+        encounterStatus = 'ENCOUNTERED';
+        actionMsg = `Hostile lifeforms detected. Combat protocol engaged.`;
     } else if (targetRoom === 'BOSS' && !session.isBossDefeated) {
         encounterStatus = 'ENCOUNTERED';
-        logMsg = `CRITICAL ALERT: Boss identified.`;
-        actionMsg = `CRITICAL ALERT: Hostile boss detected. Combat systems engaging...`;
-    } else if (!isAlreadyVisited) {
-        actionMsg = `Advancing to new coordinates... Scanning for threats.`;
+        actionMsg = `COMMANDER ALERT: Primary target identified.`;
+    } else if (targetRoom === 'STAIRS') {
+        encounterStatus = 'STAIRS';
+        actionMsg = `Downward passage identified. Scan for deeper sectors?`;
     }
 
     return {
         ...state,
         knownMercenaries: updatedMercs,
+        inventory: newInventory,
         activeManualDungeon: {
             ...session,
             grid: newGrid,
@@ -218,80 +251,71 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     };
 };
 
-/**
- * handleFinishManualDungeon
- * Successfully concludes a manual dungeon run, processing rewards and clearing the session.
- */
-export const handleFinishManualDungeon = (state: GameState): GameState => {
+export const handleProceedToNextFloorManual = (state: GameState): GameState => {
     const session = state.activeManualDungeon;
-    if (!session) return state;
-
-    // We reuse handleClaimExpedition by simulating a completed expedition object
-    const tempExpId = `temp_manual_${Date.now()}`;
-    const tempExp = {
-        id: tempExpId,
-        dungeonId: session.dungeonId,
-        partyIds: session.partyIds,
-        startTime: 0,
-        endTime: 0,
-        status: 'COMPLETED' as const
-    };
-
-    const stateWithTempExp = {
-        ...state,
-        activeExpeditions: [...state.activeExpeditions, tempExp]
-    };
-
-    // Calculate standard rewards and potential NPC rescues
-    const claimedState = handleClaimExpedition(stateWithTempExp, { 
-        expeditionId: tempExpId, 
-        rescuedNpcId: session.rescuedNpcId 
-    });
-
-    // Finalize manually collected currency
-    if (session.goldCollected > 0) {
-        claimedState.stats.gold += session.goldCollected;
-        if (claimedState.dungeonResult) {
-            claimedState.dungeonResult.goldGained = (claimedState.dungeonResult.goldGained || 0) + session.goldCollected;
-        }
-    }
-
-    return {
-        ...claimedState,
-        activeManualDungeon: null,
-        showManualDungeonOverlay: false
-    };
-};
-
-/**
- * handleStartCombatManual
- * Spawns the boss monster and transitions the session into the combat view.
- */
-export const handleStartCombatManual = (state: GameState): GameState => {
-    const session = state.activeManualDungeon;
-    if (!session || session.encounterStatus !== 'ENCOUNTERED') return state;
+    if (!session || session.encounterStatus !== 'STAIRS') return state;
 
     const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
     if (!dungeon) return state;
 
-    // Select boss based on dungeon variant availability and player clears
-    let bossId = 'rat_man'; 
-    if (dungeon.bossVariantId && MONSTERS[dungeon.bossVariantId]) {
-        const clears = state.dungeonClearCounts[dungeon.id] || 0;
-        if (clears >= (dungeon.bossUnlockReq || 0)) {
-            bossId = dungeon.bossVariantId;
+    const nextFloor = session.currentFloor + 1;
+    const { grid: nextGrid, startPos: nextStartPos } = generateManualGrid(dungeon.gridWidth, dungeon.gridHeight, dungeon.id, nextFloor, session.maxFloors);
+    
+    const nextVisited = Array.from({ length: dungeon.gridHeight }, () => Array(dungeon.gridWidth).fill(false));
+    nextVisited[nextStartPos.y][nextStartPos.x] = true;
+    
+    const nextMaxFloor = Math.max(state.maxFloorReached[session.dungeonId] || 1, nextFloor);
+
+    return {
+        ...state,
+        maxFloorReached: { ...state.maxFloorReached, [session.dungeonId]: nextMaxFloor },
+        activeManualDungeon: {
+            ...session,
+            grid: nextGrid,
+            visited: nextVisited,
+            playerPos: nextStartPos,
+            pathHistory: [nextStartPos],
+            currentFloor: nextFloor,
+            encounterStatus: 'NONE',
+            lastActionMessage: `Floor transition complete. Sector ${nextFloor} analysis in progress.`
+        },
+        logs: [`Proceeded to Floor ${nextFloor}.`, ...state.logs]
+    };
+};
+
+export const handleStartCombatManual = (state: GameState): GameState => {
+    const session = state.activeManualDungeon;
+    if (!session || session.encounterStatus !== 'ENCOUNTERED') return state;
+
+    const currentRoom = session.grid[session.playerPos.y][session.playerPos.x];
+    const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
+    const tier = dungeon?.tier || 1;
+    
+    let monsters: Monster[] = [];
+
+    if (currentRoom === 'BOSS') {
+        const monsterId = dungeon?.bossVariantId || 'plague_rat_king';
+        const monsterBase = MONSTERS[monsterId] || MONSTERS['giant_rat'];
+        monsters = [{ ...monsterBase, currentHp: monsterBase.stats.maxHp }];
+    } else {
+        const mobs = ['giant_rat', 'sewer_slime', 'mold_sporeling', 'carrion_beetle', 'sewer_thief', 'cave_bat', 'rat_man'];
+        let monsterCount = Math.floor(Math.random() * tier) + 1;
+        if (session.currentFloor > 3) monsterCount += 1;
+        monsterCount = Math.min(4, Math.max(1, monsterCount));
+
+        for (let i = 0; i < monsterCount; i++) {
+            const monsterId = mobs[Math.floor(Math.random() * mobs.length)];
+            const monsterBase = MONSTERS[monsterId] || MONSTERS['giant_rat'];
+            monsters.push({ ...monsterBase, currentHp: monsterBase.stats.maxHp });
         }
     }
-
-    const monsterBase = MONSTERS[bossId] || MONSTERS['rat_man'];
-    const bossEntity = { ...monsterBase, currentHp: monsterBase.stats.maxHp };
 
     return {
         ...state,
         activeManualDungeon: {
             ...session,
             encounterStatus: 'BATTLE',
-            bossEntity
+            enemies: monsters
         }
     };
 };
@@ -300,16 +324,22 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
     const session = state.activeManualDungeon;
     if (!session) return state;
 
+    const currentRoom = session.grid[session.playerPos.y][session.playerPos.x];
     let logMsg = '';
     
-    // 경험치 분배: 승리 시 보스 경험치를 생존 파티원 수로 나눔
     const livingMembers = payload.finalParty.filter(p => p.currentHp > 0);
-    const xpPerMember = (payload.win && session.bossEntity && livingMembers.length > 0) 
-        ? Math.floor(session.bossEntity.rewardXp / livingMembers.length) 
+    
+    let totalXpGained = 0;
+    if (payload.win && session.enemies) {
+        totalXpGained = session.enemies.reduce((sum, e) => sum + e.rewardXp, 0);
+    }
+    
+    const xpPerMember = (payload.win && totalXpGained > 0 && livingMembers.length > 0) 
+        ? Math.floor(totalXpGained / livingMembers.length) 
         : 0;
 
-    if (payload.win && xpPerMember > 0) {
-        logMsg = `VICTORY: ${session.bossEntity?.name} defeated! ${livingMembers.length} members gained ${xpPerMember} XP.`;
+    if (payload.win) {
+        logMsg = `Engagement complete. Sector secured. XP awarded.`;
     }
 
     const newKnownMercenaries = state.knownMercenaries.map(m => {
@@ -325,15 +355,13 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             if (payload.win && combatant.currentHp > 0) {
                 nextXp += xpPerMember;
                 while (nextXp >= m.xpToNextLevel) {
-                    const levelGain = 1;
                     nextXp -= m.xpToNextLevel;
                     nextLevel++;
                     const merged = mergePrimaryStats(m.stats, m.allocatedStats);
                     nextMaxHp = calculateMaxHp(merged, nextLevel);
                     nextMaxMp = calculateMaxMp(merged, nextLevel);
-                    nextCurrentHp = nextMaxHp; // 레벨업 시 완치
-                    bonusStatPoints += 3; // Add 3 points per level gained
-                    logMsg += ` ${m.name} reached Level ${nextLevel}!`;
+                    nextCurrentHp = nextMaxHp;
+                    bonusStatPoints += 3;
                 }
             }
 
@@ -352,16 +380,23 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
         return m;
     });
 
+    const isBossDefeated = (currentRoom === 'BOSS' && payload.win) || session.isBossDefeated;
+    let nextGrid = [...session.grid.map(row => [...row])];
+    if (payload.win && currentRoom === 'ENEMY') {
+        nextGrid[session.playerPos.y][session.playerPos.x] = 'EMPTY';
+    }
+
     return {
         ...state,
         knownMercenaries: newKnownMercenaries,
         activeManualDungeon: {
             ...session,
+            grid: nextGrid,
             encounterStatus: payload.win ? 'VICTORY' : (payload.flee ? 'NONE' : 'DEFEAT'),
-            isBossDefeated: payload.win || session.isBossDefeated,
+            isBossDefeated,
             lastActionMessage: payload.win 
-                ? `Sector neutralized. Extraction point is clear. Prepare to return.`
-                : (payload.flee ? `SQUAD STATUS: Tactical withdrawal successful.` : `SQUAD STATUS: MISSION FAILURE. Emergency rescue required.`)
+                ? `Area neutralized. Combat systems on standby.`
+                : (payload.flee ? `Withdrawal confirmed.` : `CRITICAL STATUS: Rescue required.`)
         },
         logs: logMsg ? [logMsg, ...state.logs] : state.logs
     };
@@ -436,5 +471,43 @@ export const handleRescueNPC = (state: GameState, payload: { npcId: string }): G
             lastActionMessage: `Survivor secured! Initiating extraction protocol.`
         },
         logs: [`Survivor secured! Initiating extraction.`, ...state.logs]
+    };
+};
+
+export const handleFinishManualDungeon = (state: GameState): GameState => {
+    const session = state.activeManualDungeon;
+    if (!session) return state;
+
+    const tempExpId = `temp_manual_${Date.now()}`;
+    const tempExp = {
+        id: tempExpId,
+        dungeonId: session.dungeonId,
+        partyIds: session.partyIds,
+        startTime: 0,
+        endTime: 0,
+        status: 'COMPLETED' as const
+    };
+
+    const stateWithTempExp = {
+        ...state,
+        activeExpeditions: [...state.activeExpeditions, tempExp]
+    };
+
+    const claimedState = handleClaimExpedition(stateWithTempExp, { 
+        expeditionId: tempExpId, 
+        rescuedNpcId: session.rescuedNpcId 
+    });
+
+    if (session.goldCollected > 0) {
+        claimedState.stats.gold += session.goldCollected;
+        if (claimedState.dungeonResult) {
+            claimedState.dungeonResult.goldGained = (claimedState.dungeonResult.goldGained || 0) + session.goldCollected;
+        }
+    }
+
+    return {
+        ...claimedState,
+        activeManualDungeon: null,
+        showManualDungeonOverlay: false
     };
 };

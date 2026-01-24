@@ -21,7 +21,7 @@ export interface InventoryItem extends ItemDefinition {
   isLocked?: boolean;
 }
 
-export type EquipmentCategory = 'WEAPON' | 'ARMOR';
+export type EquipmentCategory = 'WEAPON' | 'ARMOR' | 'ACCESSORY';
 
 export interface EquipmentSubCategory {
   id: string;
@@ -49,7 +49,7 @@ export interface EquipmentItem {
   // Durability & Requirements Template
   maxDurability: number;
   isRepairable: boolean;
-  equipRequirements?: Partial<PrimaryStats>;
+  minLevel: number;
 
   slotType: EquipmentSlotType;
   isTwoHanded?: boolean;

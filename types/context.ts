@@ -1,4 +1,3 @@
-
 import { GameState, GameSettings } from './game-state';
 import { EquipmentItem, EquipmentSlotType } from './inventory';
 import { ShopCustomer } from './shop';
@@ -77,7 +76,7 @@ export interface GameContextType {
     updateSettings: (settings: Partial<GameSettings>) => void;
 
     // Manual Dungeon Actions
-    startManualAssault: (dungeonId: string, partyIds: string[]) => void;
+    startManualAssault: (dungeonId: string, partyIds: string[], startFloor?: number) => void;
     moveInManualDungeon: (dx: number, dy: number) => void;
     finishManualAssault: () => void;
     retreatFromManualDungeon: () => void;
@@ -85,5 +84,6 @@ export interface GameContextType {
     rescueMercenary: (npcId: string) => void;
     startCombatManual: () => void;
     resolveCombatManual: (win: boolean, flee: boolean, finalParty: any[]) => void;
+    proceedToNextFloorManual: () => void;
   };
 }
