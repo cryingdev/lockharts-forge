@@ -44,6 +44,8 @@ export default class DungeonScene extends Phaser.Scene {
     private vignette!: Phaser.GameObjects.Graphics;
     private redFocusOverlay!: Phaser.GameObjects.Graphics;
     
+    private uiCamera!: Phaser.Cameras.Scene2D.Camera;
+    
     private tileWidth = 84;
     private tileGap = 8;
     private isMoving = false;
@@ -71,11 +73,16 @@ export default class DungeonScene extends Phaser.Scene {
     }
 
     create() {
+        const { width, height } = this.scale;
+        
         this.cameras.main.setBackgroundColor(0x000000);
         this.cameras.main.setZoom(this.zoom);
 
-        this.root = this.add.container(0, 0);
+        this.uiCamera = this.cameras.add(0, 0, width, height).setName('HUD');
+        this.uiCamera.setScroll(0, 0);
+        this.uiCamera.setZoom(1);
 
+        this.root = this.add.container(0, 0);
         this.mapLayer = this.add.container(0, 0);
         this.contentLayer = this.add.container(0, 0);
         this.playerLayer = this.add.container(0, 0);
@@ -86,6 +93,9 @@ export default class DungeonScene extends Phaser.Scene {
         this.vignette = this.add.graphics().setDepth(200).setScrollFactor(0);
         this.redFocusOverlay = this.add.graphics().setDepth(210).setScrollFactor(0);
         
+        this.cameras.main.ignore([this.vignette, this.redFocusOverlay]);
+        this.uiCamera.ignore(this.root);
+
         this.sprayEmitter = this.add.particles(0, 0, 'sparkle', {
             speed: { min: 60, max: 140 },
             scale: { start: 0.6, end: 0 },
@@ -101,7 +111,8 @@ export default class DungeonScene extends Phaser.Scene {
         this.createPlayer();
         this.alignViewToPlayer(); 
         
-        this.scale.on('resize', () => {
+        this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+            this.uiCamera.setSize(gameSize.width, gameSize.height);
             this.alignViewToPlayer();
             this.drawRedFocus();
         }, this);
@@ -113,7 +124,6 @@ export default class DungeonScene extends Phaser.Scene {
     public updateZoom(newZoom: number) {
         this.zoom = newZoom;
         this.cameras.main.setZoom(newZoom);
-        // 줌 변경 후 즉시 화면 중앙 정렬
         this.alignViewToPlayer();
     }
 
@@ -131,28 +141,28 @@ export default class DungeonScene extends Phaser.Scene {
         const isFocusNeeded = this.session.encounterStatus === 'ENCOUNTERED' || this.session.encounterStatus === 'BATTLE';
         if (!isFocusNeeded) return;
 
-        const thickness = 60;
-        this.redFocusOverlay.fillStyle(0x7f1d1d, 0.4);
-        
-        this.redFocusOverlay.fillRect(0, 0, width, thickness);
-        this.redFocusOverlay.fillRect(0, height - thickness, width, thickness);
-        this.redFocusOverlay.fillRect(0, thickness, thickness, height - thickness * 2);
-        this.redFocusOverlay.fillRect(width - thickness, thickness, thickness, height - thickness * 2);
+        this.redFocusOverlay.setScale(1);
 
-        if (Math.random() > 0.7) {
-            const rx = Math.random() * width;
-            const ry = Math.random() * height;
-            if (rx < thickness || rx > width - thickness || ry < thickness || ry > height - thickness) {
-                this.add.particles(rx, ry, 'red_mist', {
-                    speed: { min: 10, max: 30 },
-                    scale: { start: 0.8, end: 0 },
-                    alpha: { start: 0.4, end: 0 },
-                    lifespan: 2000,
-                    tint: 0xef4444,
-                    blendMode: 'ADD'
-                }).explode(3);
-            }
-        }
+        const thickness = 140; // 그라데이션 가청 범위를 충분히 확보
+        const color = 0x7f1d1d;
+        const outerAlpha = 0.75;
+        const innerAlpha = 0;
+
+        // 상단 그라데이션 (위 -> 아래로 투명)
+        this.redFocusOverlay.fillGradientStyle(color, color, color, color, outerAlpha, outerAlpha, innerAlpha, innerAlpha);
+        this.redFocusOverlay.fillRect(0, 0, width, thickness);
+
+        // 하단 그라데이션 (아래 -> 위로 투명)
+        this.redFocusOverlay.fillGradientStyle(color, color, color, color, innerAlpha, innerAlpha, outerAlpha, outerAlpha);
+        this.redFocusOverlay.fillRect(0, height - thickness, width, thickness);
+
+        // 좌측 그라데이션 (왼쪽 -> 오른쪽으로 투명)
+        this.redFocusOverlay.fillGradientStyle(color, color, color, color, outerAlpha, innerAlpha, outerAlpha, innerAlpha);
+        this.redFocusOverlay.fillRect(0, 0, thickness, height);
+
+        // 우측 그라데이션 (오른쪽 -> 왼쪽으로 투명)
+        this.redFocusOverlay.fillGradientStyle(color, color, color, color, innerAlpha, outerAlpha, innerAlpha, outerAlpha);
+        this.redFocusOverlay.fillRect(width - thickness, 0, thickness, height);
     }
 
     private setupDragControls() {

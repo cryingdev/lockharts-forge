@@ -96,7 +96,7 @@ const AssaultNavigator = () => {
 
     // --- D-pad & Camera Zoom State ---
     const [dpadTransform, setDpadTransform] = useState(() => {
-        const saved = localStorage.getItem('dpad_transform');
+        const saved = localStorage.getItem('dpad_transform_v2'); // 버전을 올려서 강제 리셋 (기준점이 바뀌었으므로)
         let parsed = saved ? JSON.parse(saved) : { x: 0, y: 0, scale: 0.8, opacity: 1.0 };
         if (parsed.scale > 1.2) parsed.scale = 1.2;
         if (parsed.scale < 0.4) parsed.scale = 0.4;
@@ -151,7 +151,6 @@ const AssaultNavigator = () => {
     const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
         if (!isDraggingDpad) return;
 
-        // Throttling with requestAnimationFrame to prevent rendering lag
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
         rafRef.current = requestAnimationFrame(() => {
@@ -174,7 +173,7 @@ const AssaultNavigator = () => {
                 cancelAnimationFrame(rafRef.current);
                 rafRef.current = null;
             }
-            localStorage.setItem('dpad_transform', JSON.stringify(dpadTransform));
+            localStorage.setItem('dpad_transform_v2', JSON.stringify(dpadTransform));
         }
     }, [isDraggingDpad, dpadTransform]);
 
@@ -198,7 +197,7 @@ const AssaultNavigator = () => {
             let nextScale = prev.scale + 0.2;
             if (nextScale > 1.25) nextScale = 0.4;
             const next = { ...prev, scale: parseFloat(nextScale.toFixed(1)) };
-            localStorage.setItem('dpad_transform', JSON.stringify(next));
+            localStorage.setItem('dpad_transform_v2', JSON.stringify(next));
             return next;
         });
     };
@@ -207,12 +206,11 @@ const AssaultNavigator = () => {
         const val = parseFloat(e.target.value);
         setDpadTransform((prev: any) => {
             const next = { ...prev, opacity: val };
-            localStorage.setItem('dpad_transform', JSON.stringify(next));
+            localStorage.setItem('dpad_transform_v2', JSON.stringify(next));
             return next;
         });
     };
 
-    // --- Camera Zoom UI Logic ---
     const handleZoom = (delta: number) => {
         const nextZoom = Math.min(1.5, Math.max(0.5, mapZoom + delta));
         setMapZoom(nextZoom);
@@ -253,7 +251,6 @@ const AssaultNavigator = () => {
         <div className="absolute inset-0 z-[100] bg-stone-950 flex flex-col animate-in fade-in duration-500 overflow-hidden">
             <div ref={containerRef} className={`absolute inset-0 z-0 transition-opacity ${isBattle ? 'opacity-20 blur-md' : 'opacity-100'}`} />
             
-            {/* Squad Info Recovery */}
             {!isBattle && <SquadPanel party={party} />}
 
             {/* Top Right: Zoom & Key Controls */}
@@ -263,7 +260,6 @@ const AssaultNavigator = () => {
                     <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
                 </div>
                 
-                {/* Camera Zoom Control Group */}
                 <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl">
                     <button onClick={() => handleZoom(0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-r border-white/5"><Plus className="w-4 h-4" /></button>
                     <div className="flex flex-col items-center justify-center px-2 min-w-[45px] select-none">
@@ -308,15 +304,15 @@ const AssaultNavigator = () => {
 
             {!isBattle && (
                 <>
-                    {/* Draggable D-pad Container - Optimized with translate3d */}
+                    {/* Draggable D-pad Container - 기준점을 DialogBox 위로 변경 (22dvh + 32px) */}
                     {!isOnNPCTile && (
                         <div 
                             className={`pointer-events-auto transition-all z-[200] select-none ${isDraggingDpad ? 'shadow-glow-amber cursor-grabbing' : 'cursor-default'}`}
                             style={{
                                 position: 'absolute',
-                                bottom: 16,
+                                // 대화창 높이(22dvh) + 약간의 여백(32px)을 기준점으로 잡습니다.
+                                bottom: 'calc(22dvh + 32px)',
                                 right: 16,
-                                // Using translate3d for GPU acceleration and smoother drag (avoiding reflow)
                                 transform: `translate3d(${dpadTransform.x}px, ${dpadTransform.y}px, 0) scale(${dpadTransform.scale})`,
                                 opacity: dpadTransform.opacity,
                                 transformOrigin: 'bottom right',
@@ -325,40 +321,29 @@ const AssaultNavigator = () => {
                         >
                             <div className="grid grid-cols-3 gap-2 bg-stone-900/90 backdrop-blur-xl p-3 rounded-3xl border border-white/10 shadow-2xl relative">
                                 
-                                {/* Conditional System Control Buttons Container */}
                                 {showDpadMenu && (
                                     <div className="absolute -top-12 right-0 flex items-center gap-3 pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        {/* Opacity Slider Group */}
                                         <div className="flex items-center gap-2 bg-stone-900/80 border border-white/10 px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md">
                                             <Ghost className="w-3.5 h-3.5 text-stone-500" />
                                             <input 
-                                                type="range"
-                                                min="0.1"
-                                                max="1.0"
-                                                step="0.1"
+                                                type="range" min="0.1" max="1.0" step="0.1"
                                                 value={dpadTransform.opacity}
                                                 onChange={handleOpacityChange}
                                                 className="w-16 h-1 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
-                                                title="Adjust Transparency"
                                             />
                                             <span className="text-[8px] font-mono font-bold text-stone-400 w-6">{Math.round(dpadTransform.opacity * 100)}%</span>
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {/* Move Handle Button */}
                                             <div 
-                                                onMouseDown={handleDragStart}
-                                                onTouchStart={handleDragStart}
+                                                onMouseDown={handleDragStart} onTouchStart={handleDragStart}
                                                 className="w-9 h-9 bg-stone-800 border border-white/20 rounded-full flex items-center justify-center text-blue-400 cursor-grab active:cursor-grabbing hover:bg-stone-700 transition-all shadow-lg active:scale-95"
-                                                title="Drag to Move Controller"
                                             >
                                                 <Move className="w-4 h-4" />
                                             </div>
-                                            {/* Resize Toggle Button */}
                                             <button 
                                                 onClick={cycleDpadScale}
                                                 className="w-9 h-9 bg-stone-800 border border-white/20 rounded-full flex items-center justify-center text-stone-300 hover:text-white transition-all shadow-lg active:scale-90"
-                                                title="Click to Cycle Size (0.4x -> 1.2x)"
                                             >
                                                 {dpadTransform.scale >= 1.2 ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                                             </button>
@@ -369,18 +354,15 @@ const AssaultNavigator = () => {
                                 <div />
                                 <button onClick={() => handleDpadMove(0,-1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronUp /></button>
                                 
-                                {/* Gear Box / Menu Toggle Button - Top Right Corner */}
                                 <button 
                                     onClick={() => setShowDpadMenu(!showDpadMenu)}
                                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${showDpadMenu ? 'bg-amber-600 text-white shadow-glow-amber' : 'bg-stone-800 text-stone-500 hover:text-stone-300'}`}
-                                    title="D-pad System Menu"
                                 >
                                     <Settings className={`w-6 h-6 ${showDpadMenu ? 'animate-spin-slow' : ''}`} />
                                 </button>
 
                                 <button onClick={() => handleDpadMove(-1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronLeft /></button>
                                 
-                                {/* Center Visual (Non-interactive) */}
                                 <div className="w-12 h-12 bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-400/40">
                                     <Zap className="w-6 h-6" />
                                 </div>
@@ -389,8 +371,6 @@ const AssaultNavigator = () => {
                                 
                                 <div />
                                 <button onClick={() => handleDpadMove(0,1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronDown /></button>
-                                
-                                {/* Empty cell where Gear Box used to be */}
                                 <div />
                             </div>
                         </div>
