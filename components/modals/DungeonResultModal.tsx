@@ -4,6 +4,7 @@ import { Trophy, Check, Star, Heart, Sparkles, Coins, Award, User, XCircle, Aler
 import { getAssetUrl } from '../../utils';
 // Fixed: Changed MATERIALS to lowercase materials to match export in data/materials.ts
 import { materials } from '../../data/materials';
+import { MercenaryPortrait } from '../common/ui/MercenaryPortrait';
 
 /**
  * 용병별 경험치 게이지 컴포넌트
@@ -29,9 +30,13 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
     delay,
     isDefeat
 }) => {
+    const { state } = useGame();
     const [progress, setProgress] = useState(0);
     const radius = 46;
     const circumference = 2 * Math.PI * radius;
+    
+    // Find mercenary data to get sprite
+    const merc = state.knownMercenaries.find(m => m.id === result.id);
     
     const targetPercent = (result.currentXp / result.xpToNext) * 100;
     const isLevelUp = result.levelAfter > result.levelBefore;
@@ -64,8 +69,16 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
                         />
                     </svg>
                     
-                    <div className="text-2xl md:text-4xl filter drop-shadow-md z-20">
-                        {isDead ? '💀' : (result.name.includes('Pip') ? '🌱' : result.name.includes('Garret') ? '🛡️' : result.name.includes('Elara') ? '🔥' : '👤')}
+                    <div className="relative w-[75%] h-[75%] rounded-full overflow-hidden border border-white/5 z-20">
+                        {isDead ? (
+                            <div className="w-full h-full bg-stone-950 flex items-center justify-center text-2xl md:text-4xl">💀</div>
+                        ) : (
+                            <MercenaryPortrait 
+                                mercenary={merc || { name: result.name }} 
+                                className="w-full h-full" 
+                                showBg={false}
+                            />
+                        )}
                     </div>
 
                     {/* Status/Level Badge */}
@@ -135,9 +148,10 @@ const DungeonResultModal = () => {
                                 <Sparkles className="w-3 h-3" /> Rescued Survivor
                             </h3>
                             <div className="bg-gradient-to-br from-amber-950/40 to-stone-900 p-3 rounded-xl border border-amber-600/30 flex items-center gap-3">
-                                <div className="w-12 h-12 md:w-16 md:h-16 bg-stone-950 rounded-full border-2 border-amber-500 flex items-center justify-center shrink-0">
-                                    <span className="text-2xl md:text-3xl">{dungeonResult.rescuedMercenary.icon}</span>
-                                </div>
+                                <MercenaryPortrait 
+                                    mercenary={dungeonResult.rescuedMercenary} 
+                                    className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-amber-500 shrink-0" 
+                                />
                                 <div className="flex flex-col min-w-0">
                                     <span className="text-sm md:text-lg font-black text-amber-50 uppercase truncate">{dungeonResult.rescuedMercenary.name}</span>
                                     <span className="text-amber-500/80 font-bold text-[8px] md:text-xs uppercase truncate">{dungeonResult.rescuedMercenary.job} • Lv.{dungeonResult.rescuedMercenary.level}</span>

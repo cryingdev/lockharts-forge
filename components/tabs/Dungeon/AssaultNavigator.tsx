@@ -1,17 +1,24 @@
-
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import Phaser from 'phaser';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
 import DungeonScene from '../../../game/DungeonScene';
 import DialogueBox from '../../DialogueBox';
-import { Key, Zap, LogOut, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Skull, Shield, Sword, Sparkles, Users, Activity, Heart } from 'lucide-react';
+import { 
+    Key, Zap, LogOut, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, 
+    Skull, Shield, Sword, Sparkles, Users, Activity, Heart, 
+    Maximize, Minimize, Plus, Minus, Move, Ghost, Settings
+} from 'lucide-react';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 import { calculateCombatPower, calculateMercenaryPower } from '../../../utils/combatLogic';
 import DungeonCombatView from './DungeonCombatView';
 import { getAssetUrl } from '../../../utils';
+import { AnimatedMercenary } from '../../common/ui/AnimatedMercenary';
+import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
+import { TILLY_FOOTLOOSE } from '../../../data/mercenaries';
 
-const SquadPanel = ({ party }: { party: any[] }) => {
+// Memoized to prevent re-renders during D-pad dragging
+const SquadPanel = React.memo(({ party }: { party: any[] }) => {
     const [isExpanded, setIsExpanded] = useState(true);
 
     return (
@@ -34,10 +41,10 @@ const SquadPanel = ({ party }: { party: any[] }) => {
 
                     return (
                         <div key={merc.id} className="bg-stone-900/90 backdrop-blur-xl border border-white/5 p-2 rounded-xl shadow-xl flex flex-col gap-1.5">
-                            {/* Header: Icon, Name, Energy */}
+                            {/* Header: Portrait, Name, Energy */}
                             <div className="flex justify-between items-center px-0.5 border-b border-white/5 pb-1 mb-0.5">
                                 <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-sm shrink-0">{merc.icon}</span>
+                                    <MercenaryPortrait mercenary={merc} className="w-5 h-5 rounded-md border border-white/10 shrink-0" />
                                     <span className={`text-[10px] font-black text-stone-200 truncate uppercase tracking-tighter ${isLowHp ? 'text-red-400 animate-pulse' : ''}`}>{merc.name.split(' ')[0]}</span>
                                 </div>
                                 <div className="flex items-center gap-1 bg-black/40 px-1 rounded border border-white/5 shrink-0">
@@ -76,7 +83,7 @@ const SquadPanel = ({ party }: { party: any[] }) => {
             </div>
         </div>
     );
-};
+});
 
 const AssaultNavigator = () => {
     const { state, actions } = useGame();
@@ -86,6 +93,23 @@ const AssaultNavigator = () => {
     const [isReady, setIsReady] = useState(false);
     const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
     const [lastMsg, setLastMsg] = useState("");
+
+    // --- D-pad & Camera Zoom State ---
+    const [dpadTransform, setDpadTransform] = useState(() => {
+        const saved = localStorage.getItem('dpad_transform_v2'); // 버전을 올려서 강제 리셋 (기준점이 바뀌었으므로)
+        let parsed = saved ? JSON.parse(saved) : { x: 0, y: 0, scale: 0.8, opacity: 1.0 };
+        if (parsed.scale > 1.2) parsed.scale = 1.2;
+        if (parsed.scale < 0.4) parsed.scale = 0.4;
+        if (parsed.opacity === undefined) parsed.opacity = 1.0;
+        return parsed;
+    });
+    const [isDraggingDpad, setIsDraggingDpad] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [mapZoom, setMapZoom] = useState(1.0);
+    const [showDpadMenu, setShowDpadMenu] = useState(false);
+
+    // Performance Optimization: Throttle drag updates
+    const rafRef = useRef<number | null>(null);
 
     const dungeon = session ? DUNGEONS.find(d => d.id === session.dungeonId) : null;
     const party = useMemo(() => {
@@ -98,22 +122,100 @@ const AssaultNavigator = () => {
     const currentRoom = session ? session.grid[session.playerPos.y][session.playerPos.x] : null;
 
     useEffect(() => {
-        if (!session) return;
-        if (session.encounterStatus === 'ENCOUNTERED') {
-            setLastMsg(`CRITICAL ALERT: Hostile boss detected. Combat systems engaging...`);
-        } else if (currentRoom === 'NPC' && !session.npcFound) {
-            setLastMsg(`"Help! Please... is someone there? The rats... they're everywhere..."`);
-        } else if (session.encounterStatus === 'VICTORY') {
-            setLastMsg(`Sector neutralized. Extraction point is clear. Prepare to return.`);
-        } else if (lastMsg === "") {
-            setLastMsg(`Scanning sector... Vital signs stable.`);
+        if (session?.lastActionMessage) {
+            setLastMsg(session.lastActionMessage);
         }
-    }, [session?.encounterStatus, currentRoom]);
+    }, [session?.lastActionMessage]);
+
+    useEffect(() => {
+        if (!session) return;
+        if (currentRoom === 'NPC' && !session.npcFound) {
+            setLastMsg(`"Help! Please... is someone there? The rats... they're everywhere..."`);
+        }
+    }, [currentRoom, session?.npcFound]);
 
     const handleDpadMove = (dx: number, dy: number) => {
         if (isEncountered || isBattle) return;
         const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
         if (scene) scene.move(dx, dy);
+    };
+
+    // --- Optimized Drag Logic ---
+    const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+        setIsDraggingDpad(true);
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        setDragStart({ x: clientX - dpadTransform.x, y: clientY - dpadTransform.y });
+    };
+
+    const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
+        if (!isDraggingDpad) return;
+
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+        rafRef.current = requestAnimationFrame(() => {
+            const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+            const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+            
+            setDpadTransform((prev: any) => {
+                const nextX = clientX - dragStart.x;
+                const nextY = clientY - dragStart.y;
+                return { ...prev, x: nextX, y: nextY };
+            });
+            rafRef.current = null;
+        });
+    }, [isDraggingDpad, dragStart.x, dragStart.y]);
+
+    const handleDragEnd = useCallback(() => {
+        if (isDraggingDpad) {
+            setIsDraggingDpad(false);
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
+            localStorage.setItem('dpad_transform_v2', JSON.stringify(dpadTransform));
+        }
+    }, [isDraggingDpad, dpadTransform]);
+
+    useEffect(() => {
+        if (isDraggingDpad) {
+            window.addEventListener('mousemove', handleDragMove, { passive: true });
+            window.addEventListener('mouseup', handleDragEnd);
+            window.addEventListener('touchmove', handleDragMove, { passive: true });
+            window.addEventListener('touchend', handleDragEnd);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchmove', handleDragMove);
+            window.removeEventListener('touchend', handleDragEnd);
+        };
+    }, [isDraggingDpad, handleDragMove, handleDragEnd]);
+
+    const cycleDpadScale = () => {
+        setDpadTransform((prev: any) => {
+            let nextScale = prev.scale + 0.2;
+            if (nextScale > 1.25) nextScale = 0.4;
+            const next = { ...prev, scale: parseFloat(nextScale.toFixed(1)) };
+            localStorage.setItem('dpad_transform_v2', JSON.stringify(next));
+            return next;
+        });
+    };
+
+    const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseFloat(e.target.value);
+        setDpadTransform((prev: any) => {
+            const next = { ...prev, opacity: val };
+            localStorage.setItem('dpad_transform_v2', JSON.stringify(next));
+            return next;
+        });
+    };
+
+    const handleZoom = (delta: number) => {
+        const nextZoom = Math.min(1.5, Math.max(0.5, mapZoom + delta));
+        setMapZoom(nextZoom);
+        const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
+        if (scene) scene.updateZoom(nextZoom);
     };
 
     useEffect(() => {
@@ -125,7 +227,11 @@ const AssaultNavigator = () => {
             };
             const game = new Phaser.Game(config);
             gameRef.current = game;
-            game.scene.start('DungeonScene', { session, onMove: (dx: number, dy: number) => actions.moveInManualDungeon(dx, dy) });
+            game.scene.start('DungeonScene', { 
+                session, 
+                onMove: (dx: number, dy: number) => actions.moveInManualDungeon(dx, dy),
+                initialZoom: mapZoom 
+            });
         } else {
             const scene = gameRef.current.scene.getScene('DungeonScene') as DungeonScene;
             if (scene) scene.updateSession(session);
@@ -145,15 +251,24 @@ const AssaultNavigator = () => {
         <div className="absolute inset-0 z-[100] bg-stone-950 flex flex-col animate-in fade-in duration-500 overflow-hidden">
             <div ref={containerRef} className={`absolute inset-0 z-0 transition-opacity ${isBattle ? 'opacity-20 blur-md' : 'opacity-100'}`} />
             
-            {/* Squad Info Recovery */}
             {!isBattle && <SquadPanel party={party} />}
 
-            {/* Top Right: Key & Retreat Indicator */}
+            {/* Top Right: Zoom & Key Controls */}
             <div className="absolute top-4 right-4 z-[110] flex flex-col items-end gap-2 pointer-events-auto">
                 <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
                     <Key className={`w-4 h-4 ${session.hasKey ? 'animate-pulse' : ''}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
                 </div>
+                
+                <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                    <button onClick={() => handleZoom(0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-r border-white/5"><Plus className="w-4 h-4" /></button>
+                    <div className="flex flex-col items-center justify-center px-2 min-w-[45px] select-none">
+                        <span className="text-[8px] font-black text-stone-500 font-bold leading-none">ZOOM</span>
+                        <span className="text-[10px] font-mono font-bold text-amber-500">{mapZoom.toFixed(1)}x</span>
+                    </div>
+                    <button onClick={() => handleZoom(-0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-l border-white/5"><Minus className="w-4 h-4" /></button>
+                </div>
+
                 <button 
                     onClick={() => setShowRetreatConfirm(true)}
                     className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/30 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl"
@@ -164,17 +279,16 @@ const AssaultNavigator = () => {
 
             {/* NPC Discovery Scene */}
             {isOnNPCTile && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-end pointer-events-none pb-20">
-                    <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in slide-in-from-bottom-12 duration-1000 ease-out">
+                <div className="absolute inset-0 z-40 flex flex-col items-center justify-end pointer-events-none pb-20">
+                    <div className="relative flex justify-center items-end w-full h-[80dvh] animate-in fade-in zoom-in slide-in-from-bottom-12 duration-1000 ease-out">
                         <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/20 blur-[80px] rounded-full -z-10 animate-pulse"></div>
                         <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-48 h-10 bg-black/60 blur-2xl rounded-full -z-10"></div>
                         <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2 z-0">
                             <Sparkles className="w-12 h-12 text-amber-300 opacity-40 animate-bounce" />
                         </div>
-                        <img 
-                            src={getAssetUrl('tily_footloose.png')} 
-                            alt="Survivor"
-                            className="h-[60dvh] md:h-[75dvh] w-auto object-contain object-bottom filter drop-shadow-[0_0_50px_rgba(245,158,11,0.5)] transition-all duration-500"
+                        <AnimatedMercenary
+                            mercenary={TILLY_FOOTLOOSE}
+                            className="h-full w-auto filter drop-shadow-[0_0_50px_rgba(245,158,11,0.5)] transition-all duration-500 relative z-10"
                         />
                     </div>
                 </div>
@@ -189,37 +303,100 @@ const AssaultNavigator = () => {
             )}
 
             {!isBattle && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[95vw] max-w-5xl z-50 pointer-events-none">
-                    <div className="flex flex-col items-end gap-4">
-                        {!isOnNPCTile && (
-                            <div className="pointer-events-auto transition-all scale-90 sm:scale-100">
-                                <div className="grid grid-cols-3 gap-2 bg-stone-900/60 backdrop-blur-xl p-3 rounded-3xl border border-white/10 shadow-2xl">
-                                    <div /><button onClick={() => handleDpadMove(0,-1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700"><ChevronUp /></button><div />
-                                    <button onClick={() => handleDpadMove(-1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700"><ChevronLeft /></button>
-                                    <div className="w-12 h-12 bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-400"><Zap className="w-6 h-6" /></div>
-                                    <button onClick={() => handleDpadMove(1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700"><ChevronRight /></button>
-                                    <div /><button onClick={() => handleDpadMove(0,1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700"><ChevronDown /></button><div />
+                <>
+                    {/* Draggable D-pad Container - 기준점을 DialogBox 위로 변경 (22dvh + 32px) */}
+                    {!isOnNPCTile && (
+                        <div 
+                            className={`pointer-events-auto transition-all z-[200] select-none ${isDraggingDpad ? 'shadow-glow-amber cursor-grabbing' : 'cursor-default'}`}
+                            style={{
+                                position: 'absolute',
+                                // 대화창 높이(22dvh) + 약간의 여백(32px)을 기준점으로 잡습니다.
+                                bottom: 'calc(22dvh + 32px)',
+                                right: 16,
+                                transform: `translate3d(${dpadTransform.x}px, ${dpadTransform.y}px, 0) scale(${dpadTransform.scale})`,
+                                opacity: dpadTransform.opacity,
+                                transformOrigin: 'bottom right',
+                                willChange: 'transform'
+                            }}
+                        >
+                            <div className="grid grid-cols-3 gap-2 bg-stone-900/90 backdrop-blur-xl p-3 rounded-3xl border border-white/10 shadow-2xl relative">
+                                
+                                {showDpadMenu && (
+                                    <div className="absolute -top-12 right-0 flex items-center gap-3 pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="flex items-center gap-2 bg-stone-900/80 border border-white/10 px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md">
+                                            <Ghost className="w-3.5 h-3.5 text-stone-500" />
+                                            <input 
+                                                type="range" min="0.1" max="1.0" step="0.1"
+                                                value={dpadTransform.opacity}
+                                                onChange={handleOpacityChange}
+                                                className="w-16 h-1 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                                            />
+                                            <span className="text-[8px] font-mono font-bold text-stone-400 w-6">{Math.round(dpadTransform.opacity * 100)}%</span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <div 
+                                                onMouseDown={handleDragStart} onTouchStart={handleDragStart}
+                                                className="w-9 h-9 bg-stone-800 border border-white/20 rounded-full flex items-center justify-center text-blue-400 cursor-grab active:cursor-grabbing hover:bg-stone-700 transition-all shadow-lg active:scale-95"
+                                            >
+                                                <Move className="w-4 h-4" />
+                                            </div>
+                                            <button 
+                                                onClick={cycleDpadScale}
+                                                className="w-9 h-9 bg-stone-800 border border-white/20 rounded-full flex items-center justify-center text-stone-300 hover:text-white transition-all shadow-lg active:scale-90"
+                                            >
+                                                {dpadTransform.scale >= 1.2 ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div />
+                                <button onClick={() => handleDpadMove(0,-1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronUp /></button>
+                                
+                                <button 
+                                    onClick={() => setShowDpadMenu(!showDpadMenu)}
+                                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${showDpadMenu ? 'bg-amber-600 text-white shadow-glow-amber' : 'bg-stone-800 text-stone-500 hover:text-stone-300'}`}
+                                >
+                                    <Settings className={`w-6 h-6 ${showDpadMenu ? 'animate-spin-slow' : ''}`} />
+                                </button>
+
+                                <button onClick={() => handleDpadMove(-1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronLeft /></button>
+                                
+                                <div className="w-12 h-12 bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-400/40">
+                                    <Zap className="w-6 h-6" />
                                 </div>
+
+                                <button onClick={() => handleDpadMove(1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronRight /></button>
+                                
+                                <div />
+                                <button onClick={() => handleDpadMove(0,1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronDown /></button>
+                                <div />
                             </div>
-                        )}
-                        
-                        <DialogueBox 
-                            speaker={isOnNPCTile ? "Tilly Footloose" : isEncountered ? "Tactical AI" : "Comms Link"}
-                            speakerAvatar={isOnNPCTile ? getAssetUrl('tily_footloose.png') : undefined}
-                            text={lastMsg}
-                            options={isOnNPCTile ? [
-                                { label: "RESCUE SURVIVOR", action: () => { actions.rescueMercenary('tilly_footloose'); actions.showToast("Tilly Footloose has been secured!"); }, variant: 'primary' },
-                                { label: "LEAVE FOR NOW", action: () => setLastMsg("Sector marked for later extraction. Resuming scan."), variant: 'neutral' }
-                            ] : isEncountered ? [
-                                { label: "ENGAGE TARGET", action: () => actions.startCombatManual(), variant: 'primary' },
-                                { label: "RETREAT", action: () => setShowRetreatConfirm(true), variant: 'neutral' }
-                            ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
-                                { label: "FINISH MISSION", action: () => actions.finishManualAssault(), variant: 'primary' }
-                            ] : []}
-                            className="w-full pointer-events-auto"
-                        />
+                        </div>
+                    )}
+
+                    {/* Bottom dialogue box container (z-50) */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[95vw] max-w-5xl z-50 pointer-events-none">
+                        <div className="flex flex-col items-end gap-4 relative">
+                            <DialogueBox 
+                                speaker={isOnNPCTile ? "Tilly Footloose" : isEncountered ? "Tactical AI" : "Comms Link"}
+                                speakerAvatar={isOnNPCTile ? getAssetUrl(TILLY_FOOTLOOSE.profileImage || 'tilly_footloose.png') : undefined}
+                                text={lastMsg}
+                                options={isOnNPCTile ? [
+                                    { label: "RESCUE SURVIVOR", action: () => { actions.rescueMercenary('tilly_footloose'); actions.showToast("Tilly Footloose has been secured!"); }, variant: 'primary' },
+                                    { label: "LEAVE FOR NOW", action: () => setLastMsg("Sector marked for later extraction. Resuming scan."), variant: 'neutral' }
+                                ] : isEncountered ? [
+                                    { label: "ENGAGE TARGET", action: () => actions.startCombatManual(), variant: 'primary' },
+                                    { label: "RETREAT", action: () => setShowRetreatConfirm(true), variant: 'neutral' }
+                                ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
+                                    { label: "FINISH MISSION", action: () => actions.finishManualAssault(), variant: 'primary' }
+                                ] : []}
+                                className="w-full pointer-events-auto"
+                            />
+                        </div>
                     </div>
-                </div>
+                </>
             )}
 
             <ConfirmationModal isOpen={showRetreatConfirm} title="Abort Mission?" message="Extraction will return the squad to safety. No rewards will be collected." onConfirm={() => actions.retreatFromManualDungeon()} onCancel={() => setShowRetreatConfirm(false)} isDanger={true} />

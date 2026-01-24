@@ -6,6 +6,7 @@ import { Equipment } from '../../../models/Equipment';
 import { DerivedStats, PrimaryStats } from '../../../models/Stats';
 import { Sword, Shield, Activity, User, Play, RefreshCw, ScrollText, Crosshair, Target, Wind, FastForward, Brain, X, ChevronUp, ChevronDown, Package, Plus, Trash2, Trophy, Loader2, Zap, Crown, Skull } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
+import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 
 const ACTION_THRESHOLD = 1000;
 
@@ -117,7 +118,9 @@ const CombatantSlot: React.FC<CombatantSlotProps> = ({
                 {mercenary && derived ? (
                     <div className="flex flex-col gap-1 md:gap-1.5 h-full">
                         <div className="flex items-center gap-1 min-w-0 pr-5">
-                            <div onClick={onSelect} className="w-7 h-7 md:w-9 md:h-9 bg-stone-800 rounded-lg border border-stone-700 flex items-center justify-center text-sm md:text-lg shadow-inner shrink-0 cursor-pointer hover:border-amber-500 transition-colors">{mercenary.icon}</div>
+                            <div onClick={onSelect} className="w-7 h-7 md:w-9 md:h-9 bg-stone-800 rounded-lg border border-stone-700 flex items-center justify-center shadow-inner shrink-0 cursor-pointer hover:border-amber-500 transition-colors overflow-hidden">
+                                <MercenaryPortrait mercenary={mercenary} className="w-full h-full" />
+                            </div>
                             <div className="min-w-0 flex flex-col justify-center text-left">
                                 <div className="flex items-center gap-1 truncate text-left">
                                     <h3 className="text-[8px] md:text-[10px] font-black text-stone-200 truncate leading-none uppercase">{mercenary.name.split(' ')[0]}</h3>
@@ -404,7 +407,9 @@ const SimulationTab = () => {
                         <div className="p-4 overflow-y-auto flex-1 space-y-2 custom-scrollbar">
                             {hiredMercs.map(merc => (
                                 <button key={merc.id} onClick={() => { sim.updateSlot(showPicker.side, showPicker.id, { mercenaryId: merc.id }); setShowPicker(null); }} className="w-full flex items-center gap-4 p-3 bg-stone-800 hover:bg-stone-750 border border-stone-700 rounded-2xl transition-all group">
-                                    <div className="w-12 h-12 md:w-14 md:h-14 bg-stone-900 rounded-2xl flex items-center justify-center text-2xl md:text-3xl group-hover:scale-110 transition-transform shadow-inner">{merc.icon}</div>
+                                    <div className="w-12 h-12 md:w-14 md:h-14 bg-stone-900 rounded-2xl flex items-center justify-center text-2xl md:text-3xl group-hover:scale-110 transition-transform shadow-inner overflow-hidden">
+                                        <MercenaryPortrait mercenary={merc} className="w-full h-full" />
+                                    </div>
                                     <div className="text-left flex-1 min-w-0">
                                         <div className="font-black text-stone-200 truncate text-xs md:text-sm">{merc.name}</div>
                                         <div className="text-[10px] text-stone-500 font-bold uppercase tracking-wider">{merc.job} • LV {merc.level}</div>

@@ -1,4 +1,3 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { ManualDungeonSession, RoomType } from '../types/game-state';
@@ -11,6 +10,7 @@ export interface DungeonSceneData {
     bossEnergy: number;
     onMove: (dx: number, dy: number) => void;
     cameraMode: CameraMode;
+    initialZoom?: number;
 }
 
 export default class DungeonScene extends Phaser.Scene {
@@ -28,6 +28,7 @@ export default class DungeonScene extends Phaser.Scene {
     private session!: ManualDungeonSession;
     private onMoveCallback!: (dx: number, dy: number) => void;
     private cameraMode: CameraMode = 'LOCKED';
+    private zoom: number = 1.0;
     
     private root!: Phaser.GameObjects.Container;
     private mapLayer!: Phaser.GameObjects.Container;
@@ -43,6 +44,8 @@ export default class DungeonScene extends Phaser.Scene {
     private vignette!: Phaser.GameObjects.Graphics;
     private redFocusOverlay!: Phaser.GameObjects.Graphics;
     
+    private uiCamera!: Phaser.Cameras.Scene2D.Camera;
+    
     private tileWidth = 84;
     private tileGap = 8;
     private isMoving = false;
@@ -51,7 +54,6 @@ export default class DungeonScene extends Phaser.Scene {
     private dragStartX = 0;
     private dragStartY = 0;
 
-    private cameraTrackTimer: Phaser.Time.TimerEvent | null = null;
     private cameraTrackTween: Phaser.Tweens.Tween | null = null;
 
     constructor() {
@@ -62,6 +64,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.session = data.session;
         this.onMoveCallback = data.onMove;
         this.cameraMode = data.cameraMode ?? 'LOCKED';
+        this.zoom = data.initialZoom ?? 1.0;
     }
 
     preload() {
@@ -70,10 +73,16 @@ export default class DungeonScene extends Phaser.Scene {
     }
 
     create() {
+        const { width, height } = this.scale;
+        
         this.cameras.main.setBackgroundColor(0x000000);
+        this.cameras.main.setZoom(this.zoom);
+
+        this.uiCamera = this.cameras.add(0, 0, width, height).setName('HUD');
+        this.uiCamera.setScroll(0, 0);
+        this.uiCamera.setZoom(1);
 
         this.root = this.add.container(0, 0);
-
         this.mapLayer = this.add.container(0, 0);
         this.contentLayer = this.add.container(0, 0);
         this.playerLayer = this.add.container(0, 0);
@@ -84,6 +93,9 @@ export default class DungeonScene extends Phaser.Scene {
         this.vignette = this.add.graphics().setDepth(200).setScrollFactor(0);
         this.redFocusOverlay = this.add.graphics().setDepth(210).setScrollFactor(0);
         
+        this.cameras.main.ignore([this.vignette, this.redFocusOverlay]);
+        this.uiCamera.ignore(this.root);
+
         this.sprayEmitter = this.add.particles(0, 0, 'sparkle', {
             speed: { min: 60, max: 140 },
             scale: { start: 0.6, end: 0 },
@@ -99,13 +111,20 @@ export default class DungeonScene extends Phaser.Scene {
         this.createPlayer();
         this.alignViewToPlayer(); 
         
-        this.scale.on('resize', () => {
+        this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+            this.uiCamera.setSize(gameSize.width, gameSize.height);
             this.alignViewToPlayer();
             this.drawRedFocus();
         }, this);
         this.setupDragControls();
 
         this.drawRedFocus();
+    }
+
+    public updateZoom(newZoom: number) {
+        this.zoom = newZoom;
+        this.cameras.main.setZoom(newZoom);
+        this.alignViewToPlayer();
     }
 
     public setCameraMode(mode: CameraMode) {
@@ -122,34 +141,28 @@ export default class DungeonScene extends Phaser.Scene {
         const isFocusNeeded = this.session.encounterStatus === 'ENCOUNTERED' || this.session.encounterStatus === 'BATTLE';
         if (!isFocusNeeded) return;
 
-        // 붉은계열 스프레이/비네트 효과
-        const thickness = 60;
-        this.redFocusOverlay.fillStyle(0x7f1d1d, 0.4);
-        
-        // 상단
-        this.redFocusOverlay.fillRect(0, 0, width, thickness);
-        // 하단
-        this.redFocusOverlay.fillRect(0, height - thickness, width, thickness);
-        // 좌측
-        this.redFocusOverlay.fillRect(0, thickness, thickness, height - thickness * 2);
-        // 우측
-        this.redFocusOverlay.fillRect(width - thickness, thickness, thickness, height - thickness * 2);
+        this.redFocusOverlay.setScale(1);
 
-        // 연무 입자 효과 (랜덤)
-        if (Math.random() > 0.7) {
-            const rx = Math.random() * width;
-            const ry = Math.random() * height;
-            if (rx < thickness || rx > width - thickness || ry < thickness || ry > height - thickness) {
-                this.add.particles(rx, ry, 'red_mist', {
-                    speed: { min: 10, max: 30 },
-                    scale: { start: 0.8, end: 0 },
-                    alpha: { start: 0.4, end: 0 },
-                    lifespan: 2000,
-                    tint: 0xef4444,
-                    blendMode: 'ADD'
-                }).explode(3);
-            }
-        }
+        const thickness = 140; // 그라데이션 가청 범위를 충분히 확보
+        const color = 0x7f1d1d;
+        const outerAlpha = 0.75;
+        const innerAlpha = 0;
+
+        // 상단 그라데이션 (위 -> 아래로 투명)
+        this.redFocusOverlay.fillGradientStyle(color, color, color, color, outerAlpha, outerAlpha, innerAlpha, innerAlpha);
+        this.redFocusOverlay.fillRect(0, 0, width, thickness);
+
+        // 하단 그라데이션 (아래 -> 위로 투명)
+        this.redFocusOverlay.fillGradientStyle(color, color, color, color, innerAlpha, innerAlpha, outerAlpha, outerAlpha);
+        this.redFocusOverlay.fillRect(0, height - thickness, width, thickness);
+
+        // 좌측 그라데이션 (왼쪽 -> 오른쪽으로 투명)
+        this.redFocusOverlay.fillGradientStyle(color, color, color, color, outerAlpha, innerAlpha, outerAlpha, innerAlpha);
+        this.redFocusOverlay.fillRect(0, 0, thickness, height);
+
+        // 우측 그라데이션 (오른쪽 -> 왼쪽으로 투명)
+        this.redFocusOverlay.fillGradientStyle(color, color, color, color, innerAlpha, outerAlpha, innerAlpha, outerAlpha);
+        this.redFocusOverlay.fillRect(width - thickness, 0, thickness, height);
     }
 
     private setupDragControls() {
@@ -256,10 +269,9 @@ export default class DungeonScene extends Phaser.Scene {
     private alignViewToPlayer() {
         const { width, height } = this.scale;
         const { x, y } = this.session.playerPos;
-        const currentScale = 1.0;
         const targetX = x * (this.tileWidth + this.tileGap);
         const targetY = y * (this.tileWidth + this.tileGap);
-        this.root.setPosition((width / 2) - (targetX * currentScale), (height / 2) - (targetY * currentScale));
+        this.root.setPosition((width / 2) - (targetX), (height / 2) - (targetY));
     }
 
     public updateSession(newSession: ManualDungeonSession) {
