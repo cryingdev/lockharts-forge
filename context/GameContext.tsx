@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -137,11 +136,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     dismissDungeonResult: () => dispatch({ type: 'DISMISS_DUNGEON_RESULT' }),
     equipItem: (mercenaryId: string, inventoryItemId: string) => dispatch({ type: 'EQUIP_ITEM', payload: { mercenaryId, inventoryItemId } }),
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => dispatch({ type: 'UNEQUIP_ITEM', payload: { mercenaryId, slot } }),
-    useItem: (itemId: string) => dispatch({ type: 'USE_ITEM', payload: { itemId } }),
+    useItem: (itemId: string, mercenaryId?: string) => dispatch({ type: 'USE_ITEM', payload: { itemId, mercenaryId } }),
     toggleLockItem: (itemId: string) => dispatch({ type: 'TOGGLE_LOCK_ITEM', payload: { itemId } }),
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
-    startManualAssault: (dungeonId: string, partyIds: string[]) => 
-        dispatch({ type: 'START_MANUAL_DUNGEON', payload: { dungeonId, partyIds } }),
+    startManualAssault: (dungeonId: string, partyIds: string[], startFloor?: number) => 
+        dispatch({ type: 'START_MANUAL_DUNGEON', payload: { dungeonId, partyIds, startFloor } }),
     moveInManualDungeon: (dx: number, dy: number) => 
         dispatch({ type: 'MOVE_MANUAL_DUNGEON', payload: { x: dx, y: dy } }),
     finishManualAssault: () => dispatch({ type: 'FINISH_MANUAL_DUNGEON' }),
@@ -151,6 +150,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     startCombatManual: () => dispatch({ type: 'START_COMBAT_MANUAL' }),
     resolveCombatManual: (win: boolean, flee: boolean, finalParty: any[]) => 
         dispatch({ type: 'RESOLVE_COMBAT_MANUAL', payload: { win, flee, finalParty } }),
+    proceedToNextFloorManual: () => dispatch({ type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' }),
     triggerEnergyHighlight,
     showToast,
     hideToast: () => dispatch({ type: 'HIDE_TOAST' }),

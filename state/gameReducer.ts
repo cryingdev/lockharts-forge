@@ -1,4 +1,3 @@
-
 import { GameState } from '../types/index';
 import { GameAction } from './actions';
 
@@ -12,7 +11,7 @@ import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDism
 import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
-import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual } from './reducer/manualDungeon';
+import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -92,6 +91,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'RESCUE_NPC': return handleRescueNPC(state, action.payload);
     case 'START_COMBAT_MANUAL': return handleStartCombatManual(state);
     case 'RESOLVE_COMBAT_MANUAL': return handleResolveCombatManual(state, action.payload);
+    case 'PROCEED_TO_NEXT_FLOOR_MANUAL': return handleProceedToNextFloorManual(state);
 
     // Tutorial & Prologue
     case 'SET_TUTORIAL_STEP': return { ...state, tutorialStep: action.payload };

@@ -190,6 +190,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
   ],
   haunted_armor: [
     { itemId: 'cursed_iron_fragment', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
+    { itemId: 'haunted_iron_fragment', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
     { itemId: 'iron_ore', minQuantity: 1, maxQuantity: 3, chance: 0.30 },
   ],
   lich_apprentice: [
@@ -282,5 +283,6 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'dragon_heart', minQuantity: 1, maxQuantity: 1, chance: 0.35 },
     { itemId: 'ancient_flame_gland', minQuantity: 1, maxQuantity: 1, chance: 0.30 },
     { itemId: 'phoenix_ash', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
+    { itemId: 'ancient_heartwood_core', minQuantity: 1, maxQuantity: 1, chance: 0.15 },
   ],
 };

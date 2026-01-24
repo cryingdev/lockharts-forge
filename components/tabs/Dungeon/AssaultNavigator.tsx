@@ -7,7 +7,7 @@ import DialogueBox from '../../DialogueBox';
 import { 
     Key, Zap, LogOut, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, 
     Skull, Shield, Sword, Sparkles, Users, Activity, Heart, 
-    Maximize, Minimize, Plus, Minus, Move, Ghost, Settings
+    Maximize, Minimize, Plus, Minus, Move, Ghost, Settings, Layers, Wrench
 } from 'lucide-react';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 import { calculateCombatPower, calculateMercenaryPower } from '../../../utils/combatLogic';
@@ -16,9 +16,11 @@ import { getAssetUrl } from '../../../utils';
 import { AnimatedMercenary } from '../../common/ui/AnimatedMercenary';
 import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 import { TILLY_FOOTLOOSE } from '../../../data/mercenaries';
+import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
+import { EquipmentSlotType } from '../../../types/inventory';
 
 // Memoized to prevent re-renders during D-pad dragging
-const SquadPanel = React.memo(({ party }: { party: any[] }) => {
+const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onSelectMercenary: (id: string) => void }) => {
     const [isExpanded, setIsExpanded] = useState(true);
 
     return (
@@ -38,14 +40,24 @@ const SquadPanel = React.memo(({ party }: { party: any[] }) => {
                     const mpPer = (merc.currentMp / (merc.maxMp || 1)) * 100;
                     const enPer = (merc.expeditionEnergy || 0);
                     const isLowHp = hpPer < 30;
+                    const hasPoints = (merc.bonusStatPoints || 0) > 0;
 
                     return (
-                        <div key={merc.id} className="bg-stone-900/90 backdrop-blur-xl border border-white/5 p-2 rounded-xl shadow-xl flex flex-col gap-1.5">
+                        <div 
+                            key={merc.id} 
+                            onClick={() => onSelectMercenary(merc.id)}
+                            className="bg-stone-900/90 backdrop-blur-xl border border-white/5 p-2 rounded-xl shadow-xl flex flex-col gap-1.5 cursor-pointer hover:bg-stone-800 hover:border-amber-500/30 transition-all group active:scale-[0.98] ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}"
+                        >
                             {/* Header: Portrait, Name, Energy */}
                             <div className="flex justify-between items-center px-0.5 border-b border-white/5 pb-1 mb-0.5">
                                 <div className="flex items-center gap-1.5 min-w-0">
-                                    <MercenaryPortrait mercenary={merc} className="w-5 h-5 rounded-md border border-white/10 shrink-0" />
-                                    <span className={`text-[10px] font-black text-stone-200 truncate uppercase tracking-tighter ${isLowHp ? 'text-red-400 animate-pulse' : ''}`}>{merc.name.split(' ')[0]}</span>
+                                    <div className="relative">
+                                        <MercenaryPortrait mercenary={merc} className="w-5 h-5 rounded-md border border-white/10 shrink-0" />
+                                        {hasPoints && (
+                                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full border border-stone-900 animate-pulse" />
+                                        )}
+                                    </div>
+                                    <span className={`text-[10px] font-black text-stone-200 truncate uppercase tracking-tighter group-hover:text-amber-400 transition-colors ${isLowHp ? 'text-red-400 animate-pulse' : ''}`}>{merc.name.split(' ')[0]}</span>
                                 </div>
                                 <div className="flex items-center gap-1 bg-black/40 px-1 rounded border border-white/5 shrink-0">
                                     <Zap className={`w-2 h-2 ${enPer < 20 ? 'text-red-500 animate-pulse' : 'text-blue-400'}`} />
@@ -68,7 +80,7 @@ const SquadPanel = React.memo(({ party }: { party: any[] }) => {
                             </div>
 
                             {/* Vitals: MP */}
-                            <div className="space-y-0.5">
+                            <div className="space-y-0.5 relative">
                                 <div className="flex justify-between items-center text-[7px] font-mono text-stone-500 px-0.5 leading-none">
                                     <span>MP</span>
                                     <span className="font-black text-stone-300">{Math.floor(merc.currentMp)}</span>
@@ -76,6 +88,7 @@ const SquadPanel = React.memo(({ party }: { party: any[] }) => {
                                 <div className="h-1 w-full bg-stone-950 rounded-full overflow-hidden border border-white/5">
                                     <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${mpPer}%` }} />
                                 </div>
+                                <Wrench className="absolute -bottom-1 -right-1 w-2 h-2 text-stone-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                         </div>
                     );
@@ -93,10 +106,11 @@ const AssaultNavigator = () => {
     const [isReady, setIsReady] = useState(false);
     const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
     const [lastMsg, setLastMsg] = useState("");
+    const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
 
     // --- D-pad & Camera Zoom State ---
     const [dpadTransform, setDpadTransform] = useState(() => {
-        const saved = localStorage.getItem('dpad_transform_v2'); // 버전을 올려서 강제 리셋 (기준점이 바뀌었으므로)
+        const saved = localStorage.getItem('dpad_transform_v2'); 
         let parsed = saved ? JSON.parse(saved) : { x: 0, y: 0, scale: 0.8, opacity: 1.0 };
         if (parsed.scale > 1.2) parsed.scale = 1.2;
         if (parsed.scale < 0.4) parsed.scale = 0.4;
@@ -108,7 +122,6 @@ const AssaultNavigator = () => {
     const [mapZoom, setMapZoom] = useState(1.0);
     const [showDpadMenu, setShowDpadMenu] = useState(false);
 
-    // Performance Optimization: Throttle drag updates
     const rafRef = useRef<number | null>(null);
 
     const dungeon = session ? DUNGEONS.find(d => d.id === session.dungeonId) : null;
@@ -119,6 +132,7 @@ const AssaultNavigator = () => {
     
     const isEncountered = session?.encounterStatus === 'ENCOUNTERED';
     const isBattle = session?.encounterStatus === 'BATTLE';
+    const isStairs = session?.encounterStatus === 'STAIRS';
     const currentRoom = session ? session.grid[session.playerPos.y][session.playerPos.x] : null;
 
     useEffect(() => {
@@ -135,12 +149,11 @@ const AssaultNavigator = () => {
     }, [currentRoom, session?.npcFound]);
 
     const handleDpadMove = (dx: number, dy: number) => {
-        if (isEncountered || isBattle) return;
+        if (isEncountered || isBattle || isStairs) return;
         const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
         if (scene) scene.move(dx, dy);
     };
 
-    // --- Optimized Drag Logic ---
     const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
         setIsDraggingDpad(true);
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -150,13 +163,10 @@ const AssaultNavigator = () => {
 
     const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
         if (!isDraggingDpad) return;
-
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
         rafRef.current = requestAnimationFrame(() => {
             const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
             const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-            
             setDpadTransform((prev: any) => {
                 const nextX = clientX - dragStart.x;
                 const nextY = clientY - dragStart.y;
@@ -246,12 +256,23 @@ const AssaultNavigator = () => {
     if (!session || !dungeon) return null;
 
     const isOnNPCTile = currentRoom === 'NPC' && !session.npcFound;
+    const inspectedMercenary = state.knownMercenaries.find(m => m.id === inspectedMercId) || null;
 
     return (
         <div className="absolute inset-0 z-[100] bg-stone-950 flex flex-col animate-in fade-in duration-500 overflow-hidden">
             <div ref={containerRef} className={`absolute inset-0 z-0 transition-opacity ${isBattle ? 'opacity-20 blur-md' : 'opacity-100'}`} />
             
-            {!isBattle && <SquadPanel party={party} />}
+            {!isBattle && <SquadPanel party={party} onSelectMercenary={(id) => setInspectedMercId(id)} />}
+
+            {/* Top Center: Floor Display */}
+            {!isBattle && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-3 px-4 py-2 bg-stone-900/90 backdrop-blur-md border border-amber-500/30 rounded-2xl shadow-2xl">
+                    <Layers className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs md:text-sm font-black text-amber-50 uppercase tracking-widest font-mono">
+                        Floor {session.currentFloor} / {session.maxFloors}
+                    </span>
+                </div>
+            )}
 
             {/* Top Right: Zoom & Key Controls */}
             <div className="absolute top-4 right-4 z-[110] flex flex-col items-end gap-2 pointer-events-auto">
@@ -296,7 +317,7 @@ const AssaultNavigator = () => {
 
             {isBattle && (
                 <DungeonCombatView 
-                    session={session} party={party} boss={session.bossEntity!} fleeChance={50}
+                    session={session} party={party} enemies={session.enemies || []} fleeChance={50}
                     onFinish={(win, final) => actions.resolveCombatManual(win, false, final)}
                     onFlee={(final) => actions.resolveCombatManual(false, true, final)}
                 />
@@ -304,13 +325,12 @@ const AssaultNavigator = () => {
 
             {!isBattle && (
                 <>
-                    {/* Draggable D-pad Container - 기준점을 DialogBox 위로 변경 (22dvh + 32px) */}
+                    {/* Draggable D-pad Container */}
                     {!isOnNPCTile && (
                         <div 
                             className={`pointer-events-auto transition-all z-[200] select-none ${isDraggingDpad ? 'shadow-glow-amber cursor-grabbing' : 'cursor-default'}`}
                             style={{
                                 position: 'absolute',
-                                // 대화창 높이(22dvh) + 약간의 여백(32px)을 기준점으로 잡습니다.
                                 bottom: 'calc(22dvh + 32px)',
                                 right: 16,
                                 transform: `translate3d(${dpadTransform.x}px, ${dpadTransform.y}px, 0) scale(${dpadTransform.scale})`,
@@ -376,11 +396,11 @@ const AssaultNavigator = () => {
                         </div>
                     )}
 
-                    {/* Bottom dialogue box container (z-50) */}
+                    {/* Bottom dialogue box container */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[95vw] max-w-5xl z-50 pointer-events-none">
                         <div className="flex flex-col items-end gap-4 relative">
                             <DialogueBox 
-                                speaker={isOnNPCTile ? "Tilly Footloose" : isEncountered ? "Tactical AI" : "Comms Link"}
+                                speaker={isOnNPCTile ? "Tilly Footloose" : isEncountered ? "Tactical AI" : isStairs ? "Navigation System" : "Comms Link"}
                                 speakerAvatar={isOnNPCTile ? getAssetUrl(TILLY_FOOTLOOSE.profileImage || 'tilly_footloose.png') : undefined}
                                 text={lastMsg}
                                 options={isOnNPCTile ? [
@@ -389,6 +409,10 @@ const AssaultNavigator = () => {
                                 ] : isEncountered ? [
                                     { label: "ENGAGE TARGET", action: () => actions.startCombatManual(), variant: 'primary' },
                                     { label: "RETREAT", action: () => setShowRetreatConfirm(true), variant: 'neutral' }
+                                ] : isStairs ? [
+                                    { label: `DESCEND TO FLOOR ${session.currentFloor + 1}`, action: () => actions.proceedToNextFloorManual(), variant: 'primary' },
+                                    { label: "FINISH & EXTRACT", action: () => actions.finishManualAssault(), variant: 'primary' },
+                                    { label: "STAY HERE", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' }
                                 ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
                                     { label: "FINISH MISSION", action: () => actions.finishManualAssault(), variant: 'primary' }
                                 ] : []}
@@ -399,6 +423,16 @@ const AssaultNavigator = () => {
                 </>
             )}
 
+            {inspectedMercenary && (
+                <MercenaryDetailModal 
+                    mercenary={inspectedMercenary}
+                    onClose={() => setInspectedMercId(null)}
+                    onUnequip={(mercId, slot) => actions.unequipItem(mercId, slot)}
+                    isReadOnly={false} 
+                />
+            )}
+
+            {/* Comment: Replaced undefined showRecallConfirm with showRetreatConfirm as defined on line 132 */}
             <ConfirmationModal isOpen={showRetreatConfirm} title="Abort Mission?" message="Extraction will return the squad to safety. No rewards will be collected." onConfirm={() => actions.retreatFromManualDungeon()} onCancel={() => setShowRetreatConfirm(false)} isDanger={true} />
         </div>
     );

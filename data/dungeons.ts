@@ -1,28 +1,31 @@
-
 import { DungeonDefinition } from '../models/Dungeon';
 
 export const DUNGEONS: DungeonDefinition[] = [
     // --- TIER 1 ---
     {
-        id: 'dungeon_t1_rats',
-        name: 'Rat Cellar',
+        id: 'dungeon_t1_sewers',
+        name: 'The Sewer Cellars',
         tier: 1,
-        description: 'The damp basement of an abandoned inn. Overrun by giant rats.',
+        description: 'Dark, humid passages beneath the village. Overrun by plague-ridden vermin.',
         durationMinutes: 1,
-        requiredPower: 35,
+        requiredPower: 45,
         energyCost: 20,
-        baseXp: 50,
-        gridWidth: 3,
-        gridHeight: 3,
+        baseXp: 120,
+        maxFloors: 5,
+        gridWidth: 5,
+        gridHeight: 5,
         moveEnergy: 3,
-        bossEnergy: 5,
-        isBossLocked: false,
-        goldReward: 100,
-        maxPartySize: 1,
+        bossEnergy: 10,
+        isBossLocked: true,
+        goldReward: 250,
+        maxPartySize: 4,
+        bossUnlockReq: 1,
+        bossVariantId: 'plague_rat_king',
         rewards: [
-             { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 3, chance: 1.0 },
-             { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 2, chance: 0.4 },
-             { itemId: 'oak_log', minQuantity: 1, maxQuantity: 2, chance: 0.3 }
+             { itemId: 'leather_strips', minQuantity: 2, maxQuantity: 4, chance: 1.0 },
+             { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.6 },
+             { itemId: 'tin_ore', minQuantity: 1, maxQuantity: 2, chance: 0.4 },
+             { itemId: 'rat_hide_patch', minQuantity: 1, maxQuantity: 2, chance: 0.3 }
         ]
     },
     {
@@ -34,6 +37,7 @@ export const DUNGEONS: DungeonDefinition[] = [
         requiredPower: 105,
         energyCost: 25,
         baseXp: 80,
+        maxFloors: 1,
         gridWidth: 4,
         gridHeight: 4,
         moveEnergy: 4,
@@ -45,7 +49,7 @@ export const DUNGEONS: DungeonDefinition[] = [
              { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.5 }
         ],
         bossUnlockReq: 10,
-        bossVariantId: 'dungeon_t1_goblin_king'
+        bossVariantId: 'goblin_king'
     },
     
     // --- TIER 2 ---
@@ -58,6 +62,7 @@ export const DUNGEONS: DungeonDefinition[] = [
         requiredPower: 150,
         energyCost: 35,
         baseXp: 150,
+        maxFloors: 3,
         gridWidth: 4,
         gridHeight: 5,
         moveEnergy: 5,
@@ -78,6 +83,7 @@ export const DUNGEONS: DungeonDefinition[] = [
         requiredPower: 220,
         energyCost: 40,
         baseXp: 250,
+        maxFloors: 2,
         gridWidth: 5,
         gridHeight: 5,
         moveEnergy: 6,
@@ -89,6 +95,6 @@ export const DUNGEONS: DungeonDefinition[] = [
              { itemId: 'gold_ore', minQuantity: 1, maxQuantity: 1, chance: 0.1 }
         ],
         bossUnlockReq: 20,
-        bossVariantId: 'dungeon_t2_bandit_leader'
+        bossVariantId: 'werewolf'
     }
 ];
