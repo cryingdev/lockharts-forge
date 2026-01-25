@@ -86,6 +86,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   private isFinished = false;
   private isTransitioning = false; 
   private currentPhase = 1;
+  private masteryCount = 0;
 
   private onComplete?: (score: number, enhancementCount: number) => void;
   private itemImage: string = '';
@@ -102,8 +103,9 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   constructor() { super('WorkbenchScene'); }
 
-  init(data: { onComplete: (score: number, enhancementCount: number) => void; difficulty: number; subCategoryId?: string; itemImage?: string }) {
+  init(data: { onComplete: (score: number, enhancementCount: number) => void; difficulty: number; masteryCount?: number; subCategoryId?: string; itemImage?: string }) {
     this.onComplete = data.onComplete; this.difficulty = data.difficulty;
+    this.masteryCount = data.masteryCount || 0;
     this.itemImage = data.itemImage || ''; this.subCategoryId = data.subCategoryId || '';
     const leatherCategories = ['CHESTPLATE', 'GLOVES', 'BOOTS'];
     this.isLeatherWork = leatherCategories.includes(this.subCategoryId.toUpperCase());
@@ -159,7 +161,10 @@ export default class WorkbenchScene extends Phaser.Scene {
                 obj.startHitPerfect = diff < perfectThreshold; obj.tracedSegments = [{ start: obj.p, end: this.cursorProgress }];
                 const label = obj.startHitPerfect ? 'PERFECT!' : 'GOOD'; const color = obj.startHitPerfect ? 0xfbbf24 : this.getRingColor(obj.ringType);
                 this.showFeedback(label, color, nodePos.x, nodePos.y); this.createSparks(nodePos.x, nodePos.y, color, obj.startHitPerfect ? 10 : 5);
-                if (obj.startHitPerfect) { this.combo++; if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(nodePos.x, nodePos.y); } else { this.combo = 0; }
+                if (obj.startHitPerfect) { 
+                    this.combo++; 
+                    if (this.combo >= 8) this.handleEnhancement(nodePos.x, nodePos.y); 
+                } else { this.combo = 0; }
                 break;
             }
         }
@@ -219,9 +224,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   private startPhase(phase: number) {
     this.currentPhase = phase; this.cursorProgress = 0; this.updateCursorTool(); this.spawnInteractablesForPhase();
     const pos = this.getPathPosition(0); this.cursor.setPosition(pos.x, pos.y);
-    // 즉시 시작 대신 카운트다운 실행
     this.runCountdown(() => {
-        // 카운트다운 종료 시 실제 게임 로직 시작
     });
   }
 
@@ -333,10 +336,32 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   private spawnInteractablesForPhase() {
     this.interactables.forEach(obj => { obj.graphic?.destroy(); obj.nailHead?.destroy(); }); this.interactables = [];
+    const isNovice = this.masteryCount < 10;
+
     if (this.currentPhase === 1 || this.currentPhase === 3) {
-        const count = this.currentPhase === 1 ? 4 : 8;
+        let count = 4;
+        if (this.currentPhase === 3) {
+            if (this.masteryCount >= 30) count = 8;
+            else if (this.masteryCount >= 10) count = 6;
+            else count = 4;
+        }
         for (let i = 0; i < count; i++) { const sectorWidth = 1.0 / count; this.addTap(((i * sectorWidth) + Phaser.Math.FloatBetween(sectorWidth * 0.2, sectorWidth * 0.8)) % 1.0); }
-    } else { const start = Phaser.Math.FloatBetween(0.02, 0.15); this.addDrag(start, start + Phaser.Math.FloatBetween(0.75, 0.85)); }
+    } else {
+        // Phase 2 or 4 (Dragging)
+        if (isNovice) {
+            // Novice: 1 line with length 0.4 for both Phase 2 and 4
+            const start = Phaser.Math.FloatBetween(0.2, 0.3);
+            this.addDrag(start, start + 0.4);
+        } else if (this.currentPhase === 4) {
+            // Adept/Artisan Phase 4: Split into 2 lines
+            this.addDrag(0.05, 0.45);
+            this.addDrag(0.55, 0.95);
+        } else {
+            // Adept/Artisan Phase 2: Standard long line (length 0.8)
+            const start = Phaser.Math.FloatBetween(0.05, 0.1);
+            this.addDrag(start, start + 0.8);
+        }
+    }
     this.updateInteractablesVisuals(); this.drawGuidePath();
   }
 
@@ -363,11 +388,10 @@ export default class WorkbenchScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.isFinished || this.isTransitioning || this.worldPoints.length < 2) return;
     
-    // 진행도가 커질수록 가속도 적용 (최대 1.5배 가속)
     const acceleration = 1 + (this.cursorProgress * 0.5);
     this.cursorProgress += (this.cursorSpeed * acceleration) * delta;
 
-    this.interactables.forEach((obj) => { if (!obj.hit && !obj.missed) { if (this.cursorProgress > obj.p + 0.1) { if (obj.type === 'TAP') { obj.missed = true; const pos = this.getPathPosition(obj.p); this.handleMiss(pos.x, pos.y, obj); } else if (obj.type === 'DRAG' && !obj.startHit && !obj.missedStart) obj.missedStart = true; } } });
+    this.interactables.forEach((obj) => { if (!obj.hit && !obj.missed) { if (this.cursorProgress > (obj.endP ?? obj.p) + 0.1) { if (obj.type === 'TAP') { obj.missed = true; const pos = this.getPathPosition(obj.p); this.handleMiss(pos.x, pos.y, obj); } else if (obj.type === 'DRAG' && !obj.startHit && !obj.missedStart) obj.missedStart = true; } } });
     this.handleDragLogic(time, delta); if (this.cursorProgress >= 1.0) this.finishPhase();
     const pos = this.getPathPosition(this.cursorProgress); this.cursor.setPosition(pos.x, pos.y);
     const rotationOffset = (!this.isLeatherWork && (this.currentPhase === 2 || this.currentPhase === 4)) ? 0 : -Math.PI / 2;
@@ -394,8 +418,17 @@ export default class WorkbenchScene extends Phaser.Scene {
         }
         if (p > obj.endP! + 0.02 && obj.totalTicksInRange > 50) {
             const ratio = obj.dragSuccessTicks / obj.totalTicksInRange;
-            if (ratio > 0.92 && obj.startHitPerfect && !obj.missedStart) { obj.hit = true; this.currentQuality = Math.min(120, this.currentQuality + 3.0); this.showFeedback('PERFECT!', 0xfbbf24, this.cursor.x, this.cursor.y); this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 15); }
-            else if (ratio > 0.60) { obj.hit = true; this.currentQuality = Math.min(120, this.currentQuality + 1.0); this.showFeedback('GOOD', 0xe5e5e5, this.cursor.x, this.cursor.y); }
+            if (ratio > 0.92 && obj.startHitPerfect && !obj.missedStart) { 
+                obj.hit = true; 
+                this.currentQuality = Math.min(120, this.currentQuality + 1.0); // Changed: Only +1 for PERFECT
+                this.showFeedback('PERFECT!', 0xfbbf24, this.cursor.x, this.cursor.y); 
+                this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 15); 
+            }
+            else if (ratio > 0.60) { 
+                obj.hit = true; 
+                // Changed: No quality increase for GOOD
+                this.showFeedback('GOOD', 0xe5e5e5, this.cursor.x, this.cursor.y); 
+            }
             else { obj.missed = true; this.handleMiss(this.cursor.x, this.cursor.y); }
         }
       }
@@ -409,8 +442,20 @@ export default class WorkbenchScene extends Phaser.Scene {
       obj.hit = true; const isPerfect = diff < 0.03; const ringColor = this.getRingColor(obj.ringType);
       if (!this.isLeatherWork) { this.hammerSprite.setAlpha(1).setPosition(targetX + 40, targetY - 120).setAngle(5); this.tweens.add({ targets: this.hammerSprite, x: targetX, y: targetY + 20, angle: -30, duration: 100, ease: 'Cubic.in', onComplete: () => { this.tweens.add({ targets: this.hammerSprite, angle: -10, y: targetY + 10, alpha: 0, duration: 250, ease: 'Cubic.out' }); } }); }
       if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, displayWidth: obj.nailHead.displayWidth * 0.8, displayHeight: obj.nailHead.displayHeight * 0.8, duration: 100, ease: 'Back.easeOut' });
-      if (isPerfect) { this.combo++; this.currentQuality = Math.min(120, this.currentQuality + 2); this.showFeedback('PERFECT!', 0xfbbf24, pos.x, pos.y); this.createSparks(pos.x, pos.y, 0xfbbf24, 15); if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(pos.x, pos.y); }
-      else { this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 1.5); this.showFeedback('GOOD', ringColor, pos.x, pos.y); this.createSparks(pos.x, pos.y, ringColor, 8); }
+      if (isPerfect) { 
+          this.combo++; 
+          this.currentQuality = Math.min(120, this.currentQuality + 1.0); // Changed: Only +1 for PERFECT
+          this.showFeedback('PERFECT!', 0xfbbf24, pos.x, pos.y); 
+          this.createSparks(pos.x, pos.y, 0xfbbf24, 15); 
+          // Changed: Starting from combo 8, every perfect hit adds enhancement point
+          if (this.combo >= 8) this.handleEnhancement(pos.x, pos.y); 
+      }
+      else { 
+          this.combo = 0; 
+          // Changed: No quality increase for GOOD (removing previous -1.5 penalty to align with "Doesn't increase on GOOD")
+          this.showFeedback('GOOD', ringColor, pos.x, pos.y); 
+          this.createSparks(pos.x, pos.y, ringColor, 8); 
+      }
       if (obj.graphic) { const target = obj.graphic; this.tweens.add({ targets: target, scale: this.uiScale * 2, alpha: 0, duration: 300, ease: 'Cubic.out', onComplete: () => target.destroy() }); }
     }
   }
@@ -424,7 +469,6 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.interactables.forEach(obj => { if (obj.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 400 }); if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 400 }); });
     const isLastPhase = this.currentPhase >= 4;
     
-    // 안내 문구 대신 즉시 트랜지션 처리 (마지막 페이즈는 승리 연출)
     if (isLastPhase) {
         this.win();
     } else {

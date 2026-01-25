@@ -9,6 +9,7 @@ interface WorkbenchMinigameProps {
   onComplete: (score: number, bonus?: number) => void;
   onClose: () => void;
   difficulty?: number;
+  masteryCount?: number;
   subCategoryId?: string;
   itemImage?: string;
 }
@@ -19,7 +20,7 @@ function getViewport() {
   return { vw: Math.floor(vw), vh: Math.floor(vh) };
 }
 
-const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClose, difficulty = 1, subCategoryId, itemImage }) => {
+const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClose, difficulty = 1, masteryCount = 0, subCategoryId, itemImage }) => {
   const { state } = useGame();
   const gameRef = useRef<Phaser.Game | null>(null);
 
@@ -82,7 +83,6 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
         height: Math.floor(el.clientHeight) || 1,
         backgroundColor: '#0c0a09',
         scene: [WorkbenchScene],
-        // Fix: Removed 'pauseOnBlur' as it is not a recognized property in some GameConfig type definitions
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -101,6 +101,7 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
       game.scene.start('WorkbenchScene', {
         onComplete: (score: number, bonus?: number) => onCompleteRef.current(score, bonus),
         difficulty,
+        masteryCount,
         subCategoryId,
         itemImage,
       });
@@ -133,7 +134,7 @@ const WorkbenchMinigame: React.FC<WorkbenchMinigameProps> = ({ onComplete, onClo
       window.removeEventListener('resize', sync);
       window.removeEventListener('orientationchange', onOrientationChange);
     };
-  }, [isReady, difficulty, subCategoryId, itemImage]);
+  }, [isReady, difficulty, masteryCount, subCategoryId, itemImage]);
 
   useEffect(() => {
     return () => {

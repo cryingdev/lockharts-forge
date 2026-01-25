@@ -54,6 +54,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                         onComplete={handlers.handleMinigameComplete}
                         onClose={() => actions.cancelCrafting(selectedItem)}
                         difficulty={selectedItem.tier}
+                        masteryCount={masteryInfo?.count || 0}
                         subCategoryId={selectedItem.subCategoryId}
                         itemImage={selectedItem.image}
                     />
