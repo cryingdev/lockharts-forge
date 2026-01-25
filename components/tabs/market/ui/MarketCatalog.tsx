@@ -12,6 +12,7 @@ interface MarketCatalogProps {
     inventory: any[];
     multipliers: Record<string, number>;
     affinity: number;
+    gold: number;
     onAdd: (id: string, count: number) => void;
     onSetMultiplier: (id: string, val: number) => void;
 }
@@ -21,7 +22,7 @@ const ICONS: Record<string, any> = {
     sup: <Zap className="w-3 h-3"/>, tech: <BookOpen className="w-3 h-3"/>, fac: <Wrench className="w-3 h-3"/>
 };
 
-export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed, onToggle, stock, cart, inventory, multipliers, affinity, onAdd, onSetMultiplier }) => {
+export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed, onToggle, stock, cart, inventory, multipliers, affinity, gold, onAdd, onSetMultiplier }) => {
     return (
         <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar pb-24">
             <div className="grid gap-4 content-start grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
@@ -36,7 +37,17 @@ export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed,
                                 {isCollapsed ? <ChevronDown className="w-3 h-3 text-stone-600" /> : <ChevronUp className="w-3 h-3 text-stone-600" />}
                             </button>
                             {!isCollapsed && group.items.map((item: any) => (
-                                <MarketItemCard key={item.id} item={item} stock={(stock[item.id] || 0) - (cart[item.id] || 0)} inventoryCount={inventory.find(i => i.id === item.id)?.quantity || 0} multiplier={multipliers[item.id] || 1} isLocked={(item.id === 'scroll_t2' && affinity < 20) || (item.id === 'scroll_t3' && affinity < 40)} onAdd={onAdd} onSetMultiplier={onSetMultiplier} />
+                                <MarketItemCard 
+                                    key={item.id} 
+                                    item={item} 
+                                    stock={(stock[item.id] || 0) - (cart[item.id] || 0)} 
+                                    inventoryCount={inventory.find(i => i.id === item.id)?.quantity || 0} 
+                                    multiplier={multipliers[item.id] || 1} 
+                                    isLocked={(item.id === 'scroll_t2' && affinity < 20) || (item.id === 'scroll_t3' && affinity < 40)} 
+                                    gold={gold}
+                                    onAdd={onAdd} 
+                                    onSetMultiplier={onSetMultiplier} 
+                                />
                             ))}
                         </React.Fragment>
                     );

@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { materials } from '../../../../data/materials';
@@ -138,6 +139,18 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         setIsCartOpen(false);
     };
 
+    const handleBackToForge = useCallback(() => {
+        if (state.tutorialStep === 'LEAVE_MARKET_GUIDE') {
+            actions.setTutorialScene('FURNACE_RESTORED');
+            actions.setTutorialStep(null);
+        }
+        // Reset market view states before leaving
+        setViewMode('INTERACTION');
+        setIsCartOpen(false);
+        setCart({});
+        onNavigate('FORGE');
+    }, [state.tutorialStep, actions, onNavigate]);
+
     return {
         state, actions, viewMode, setViewMode, dialogue, setDialogue, cart, isCartOpen, setIsCartOpen,
         itemMultipliers, setItemMultipliers, floatingHearts, showGiftModal, setShowGiftModal,
@@ -160,13 +173,8 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
                 setPendingGiftItem(null); setDialogue("For me? Hah, you're a thoughtful one.");
             },
             addToCart, removeFromCart, deleteFromCart: (id: string) => setCart(prev => { const n = {...prev}; delete n[id]; return n; }),
-            handleBuy, handleBackToForge: () => {
-                if (state.tutorialStep === 'LEAVE_MARKET_GUIDE') {
-                    actions.setTutorialScene('FURNACE_RESTORED');
-                    actions.setTutorialStep(null);
-                }
-                onNavigate('FORGE');
-            }
+            handleBuy, 
+            handleBackToForge
         }
     };
 };

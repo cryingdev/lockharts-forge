@@ -22,7 +22,6 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     const isLocalTutorial = state.activeTutorialScene === 'MARKET';
     
     // 현재 단계가 마켓 튜토리얼 단계에 포함되는지 확인 (Type Guard)
-    // Fix: Updated 'TALK_TO_GARRICK_AFTER_PURCHASE' to 'GARRICK_AFTER_PURCHASE_DIALOG' to match type definition
     const marketSteps: SequenceStep[] = [
         'BROWSE_GOODS_GUIDE', 'FURNACE_GUIDE', 'OPEN_SHOPPING_CART', 
         'CLOSE_SHOPPING_CART', 'PAY_NOW', 'GARRICK_AFTER_PURCHASE_DIALOG', 'LEAVE_MARKET_GUIDE'
@@ -31,6 +30,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     const currentMarketStep = state.tutorialStep && marketSteps.includes(state.tutorialStep as any) 
         ? (state.tutorialStep as SequenceStep) 
         : null;
+
+    const isOverBudget = totalCost > state.stats.gold;
 
     return (
         <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center px-safe">
@@ -72,13 +73,13 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             </div>
 
             {viewMode === 'INTERACTION' && (
-                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center pointer-events-none">
+                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-end pointer-events-none">
                     {!isLocalTutorial && (
                         <div className={`flex flex-col items-end gap-2 w-full px-4 py-2 pointer-events-auto transition-opacity ${pendingGiftItem ? 'opacity-30 grayscale pointer-events-none' : ''}`}>
                             <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3 w-full">
-                                <button onClick={handlers.handleTalk} data-tutorial-id="GARRICK_TALK_BUTTON" className="flex items-center gap-2 px-6 py-2.5 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-amber-500 transition-all shadow-xl active:scale-95"><MessageSquare className="w-4 h-4 text-amber-500" /><span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Talk</span></button>
-                                <button onClick={() => market.setShowGiftModal(true)} className="flex items-center gap-2 px-6 py-2.5 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-pink-500 transition-all shadow-xl active:scale-95"><Gift className="w-4 h-4 text-pink-500" /><span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Gift</span></button>
-                                <button onClick={() => market.setViewMode('CATALOG')} data-tutorial-id="BROWSE_GOODS_BUTTON" className="flex items-center gap-2 px-8 py-2.5 bg-amber-700/90 border border-amber-500 rounded-xl shadow-xl active:scale-95"><ShoppingBag className="w-4 h-4 text-white" /><span className="font-black text-[9px] text-white uppercase tracking-widest">Browse Goods</span></button>
+                                <button onClick={handlers.handleTalk} data-tutorial-id="GARRICK_TALK_BUTTON" className="flex items-center gap-2 px-4 py-2 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-amber-500 transition-all shadow-xl active:scale-95"><MessageSquare className="w-4 h-4 text-amber-500" /><span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Talk</span></button>
+                                <button onClick={() => market.setShowGiftModal(true)} className="flex items-center gap-2 px-4 py-2 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-pink-500 transition-all shadow-xl active:scale-95"><Gift className="w-4 h-4 text-pink-500" /><span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Gift</span></button>
+                                <button onClick={() => market.setViewMode('CATALOG')} data-tutorial-id="BROWSE_GOODS_BUTTON" className="flex items-center gap-2 px-6 py-2 bg-amber-700/90 border border-amber-500 rounded-xl shadow-xl active:scale-95"><ShoppingBag className="w-4 h-4 text-white" /><span className="font-black text-[9px] text-white uppercase tracking-widest">Browse Goods</span></button>
                             </div>
                         </div>
                     )}
@@ -99,10 +100,43 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                     <div className="flex items-center gap-2 bg-stone-950 px-2 py-0.5 rounded border border-white/5 mt-1"><Coins className="w-3 h-3 text-amber-500" /><span className="text-[10px] font-mono font-black text-stone-300">{state.stats.gold.toLocaleString()} G</span></div>
                                 </div>
                             </div>
-                            {!isCartOpen && <button onClick={handlers.handleBuy} data-tutorial-id="PAY_NOW_BUTTON" className={`relative flex items-center gap-3 px-6 py-2.5 rounded-xl border transition-all ${market.cartItemCount === 0 ? 'opacity-50 grayscale' : 'bg-amber-600 border-amber-400 text-white shadow-xl'}`}><ShoppingCart className="w-4 h-4"/><div className="flex flex-col items-start leading-none"><span className="text-[8px] font-black uppercase">Checkout</span><span className="text-xs font-mono font-black">{totalCost} G</span></div></button>}
+                            {!isCartOpen && (
+                                <button 
+                                    onClick={() => !isOverBudget && handlers.handleBuy()} 
+                                    disabled={market.cartItemCount === 0 || isOverBudget}
+                                    data-tutorial-id="PAY_NOW_BUTTON" 
+                                    className={`relative flex items-center gap-2 md:gap-3 px-3 md:px-5 py-1.5 md:py-2 rounded-xl border transition-all ${
+                                        market.cartItemCount === 0 
+                                            ? 'opacity-50 grayscale' 
+                                            : isOverBudget
+                                                ? 'bg-red-900 border-red-500 text-red-100 shadow-lg cursor-not-allowed'
+                                                : 'bg-amber-600 border-amber-400 text-white shadow-xl active:scale-95'
+                                    }`}
+                                >
+                                    <ShoppingCart className="w-4 h-4"/>
+                                    <div className="flex flex-col items-start leading-none min-w-0">
+                                        <span className="text-[8px] font-black uppercase truncate w-full">
+                                            {isOverBudget ? 'Shortage' : 'Checkout'}
+                                        </span>
+                                        <span className="text-xs font-mono font-black whitespace-nowrap">{totalCost.toLocaleString()}G</span>
+                                    </div>
+                                </button>
+                            )}
                         </div>
                         <div className="flex-1 flex overflow-hidden">
-                            <MarketCatalog groups={categorizedMarketItems} collapsed={collapsedSections} onToggle={(id) => market.setCollapsedSections(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id])} stock={state.marketStock} cart={cart} inventory={state.inventory} multipliers={market.itemMultipliers} affinity={state.garrickAffinity} onAdd={handlers.addToCart} onSetMultiplier={(id, v) => market.setItemMultipliers(p => ({ ...p, [id]: v }))} />
+                            <MarketCatalog 
+                                groups={categorizedMarketItems} 
+                                collapsed={collapsedSections} 
+                                onToggle={(id) => market.setCollapsedSections(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id])} 
+                                stock={state.marketStock} 
+                                cart={cart} 
+                                inventory={state.inventory} 
+                                multipliers={market.itemMultipliers} 
+                                affinity={state.garrickAffinity} 
+                                gold={state.stats.gold}
+                                onAdd={handlers.addToCart} 
+                                onSetMultiplier={(id, v) => market.setItemMultipliers(p => ({ ...p, [id]: v }))} 
+                            />
                             <ShoppingCartDrawer isOpen={isCartOpen} cart={cart} total={totalCost} gold={state.stats.gold} onRemove={handlers.removeFromCart} onAdd={handlers.addToCart} onDelete={handlers.deleteFromCart} onBuy={handlers.handleBuy} />
                         </div>
                         <button onClick={() => { if (!isCartOpen && state.tutorialStep === 'OPEN_SHOPPING_CART') actions.setTutorialStep('CLOSE_SHOPPING_CART'); else if (isCartOpen && state.tutorialStep === 'CLOSE_SHOPPING_CART') actions.setTutorialStep('PAY_NOW'); market.setIsCartOpen(!isCartOpen); }} data-tutorial-id="CART_TOGGLE" className={`absolute top-1/2 right-0 w-8 h-20 -translate-y-1/2 border-y border-l transition-all z-[2100] rounded-l-xl flex flex-col items-center justify-center ${isCartOpen ? 'translate-x-[-192px] md:translate-x-[-288px]' : ''} ${market.cartItemCount > 0 || ['OPEN_SHOPPING_CART', 'CLOSE_SHOPPING_CART'].includes(state.tutorialStep || '') ? 'bg-amber-600 text-white border-amber-400 animate-pulse' : 'bg-stone-800 text-stone-400 border-stone-600'}`}>{isCartOpen ? <ChevronRight className="w-4 h-4"/> : <ChevronLeft className="w-4 h-4"/>}<ShoppingCart className="w-3 h-3 mt-1"/></button>
