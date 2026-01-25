@@ -118,7 +118,7 @@ export default class IntroScene extends Phaser.Scene {
     this.root.add(this.dragonGlow);
 
     this.devText = this.add
-      .text(0, 0, 'CRYINGDEV STUDIO\nPRESENTS', {
+      .text(0, 0, '', { //CRYINGDEV STUDIO\nPRESENTS
         fontFamily: '"Grenze Gotisch"',
         fontSize: '48px',
         color: '#f5f5f4',
@@ -354,9 +354,9 @@ export default class IntroScene extends Phaser.Scene {
     
     this.tweens.chain({
       tweens: [
-        { targets: this.devText, alpha: 1, duration: 2500, ease: 'Power2' },
-        { targets: this.devText, alpha: 1, duration: 2000, onStart: () => this.cameras.main.shake(6000, 0.005) },
-        { targets: this.devText, alpha: 0, duration: 2000, ease: 'Power2' },
+        { targets: this.devText, alpha: 1, duration: 0, ease: 'Power2' },
+        { targets: this.devText, alpha: 1, duration: 0, onStart: () => this.cameras.main.shake(6000, 0.005) },
+        { targets: this.devText, alpha: 0, duration: 0, ease: 'Power2' },
         { targets: this.bgs[0], alpha: 1, duration: 1500, ease: 'Linear' },
         {
           targets: this.dragon,
