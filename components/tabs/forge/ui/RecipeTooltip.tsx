@@ -13,7 +13,11 @@ const RecipeTooltip: React.FC<RecipeTooltipProps> = ({ item, pos, getInventoryCo
     return (
         <div 
             className="fixed z-[3000] pointer-events-none p-3 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl w-40 md:w-64 animate-in fade-in zoom-in-95 duration-200"
-            style={{ left: pos.x, top: pos.y }}
+            style={{ 
+                left: `${pos.x}px`, 
+                top: `${pos.y}px`,
+                transform: 'none' // Explicitly disable any default centering or translation
+            }}
         >
             <h4 className="text-[10px] md:text-sm font-black text-amber-50 uppercase font-serif mb-2">{item.name}</h4>
             <div className="space-y-2">

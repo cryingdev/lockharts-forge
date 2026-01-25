@@ -53,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
         {/* Left: Day info */}
         <div className="flex items-center space-x-1 md:space-x-2 bg-stone-900 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-stone-800 shrink-0 shadow-inner group">
             <Calendar className="w-3 h-3 md:w-4 md:h-4 text-stone-500 group-hover:text-amber-500 transition-colors" />
-            <span className="font-black text-[10px] md:text-sm tracking-widest uppercase font-serif">D{day}</span>
+            <span className="font-black text-[10px] md:text-sm tracking-widest uppercase font-serif">Day {day}</span>
         </div>
 
         {/* Right: Stats & System */}

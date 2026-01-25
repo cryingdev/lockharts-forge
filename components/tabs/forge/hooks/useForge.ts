@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EquipmentCategory, EquipmentItem } from '../../../../types';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../../data/equipment';
@@ -23,6 +23,9 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [quickCraftProgress, setQuickCraftProgress] = useState<number | null>(null);
 
+  // Timer ref for auto-hiding the tooltip
+  const tooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const smithingLevel = getSmithingLevel(stats.smithingExp);
   const workbenchLevel = getSmithingLevel(stats.workbenchExp);
   const unlockedSmithingTier = getUnlockedTier(smithingLevel);
@@ -37,6 +40,14 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     const timeDiffSec = (Date.now() - (lastForgeTime || 0)) / 1000;
     return Math.max(0, (forgeTemperature || 0) - (timeDiffSec * GLOBAL_COOLING_RATE_PER_SEC));
   }, [forgeTemperature, lastForgeTime]);
+
+  const isFuelShortage = useMemo(() => {
+    if (!selectedItem || selectedItem.craftingType !== 'FORGE') return false;
+    const hasHeat = currentResidualTemp > 0;
+    const hasFuel = getInventoryCount('charcoal') > 0;
+    const isTutorialForging = tutorialStep === 'START_FORGING_GUIDE';
+    return !isTutorialForging && !hasHeat && !hasFuel;
+  }, [selectedItem, currentResidualTemp, getInventoryCount, tutorialStep]);
 
   const canEnterForge = useMemo(() => {
     if (!selectedItem) return false;
@@ -54,6 +65,16 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     const count = craftingMastery[selectedItem.id] || 0;
     return getEnergyCost(selectedItem, count);
   }, [selectedItem, craftingMastery]);
+
+  const extraQuickFuel = useMemo(() => {
+    if (!selectedItem) return 0;
+    return selectedItem.tier === 1 ? 3 : selectedItem.tier === 2 ? 5 : 8;
+  }, [selectedItem]);
+
+  const isQuickFuelShortage = useMemo(() => {
+    if (!selectedItem || selectedItem.craftingType !== 'FORGE') return false;
+    return getInventoryCount('charcoal') < extraQuickFuel;
+  }, [selectedItem, getInventoryCount, extraQuickFuel]);
 
   const visibleItems = useMemo(() => {
     return EQUIPMENT_ITEMS.filter(item => {
@@ -115,13 +136,42 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     return { label, colorClass, glowClass, progress, circumference, offset, count };
   }, [selectedItem, craftingMastery]);
 
-  const handleCategoryChange = useCallback((cat: EquipmentCategory) => {
-    setActiveCategory(cat);
-    setSelectedItem(null);
-    setExpandedSubCat(cat === 'WEAPON' ? 'SWORD' : 'HELMET');
+  const updateTooltipPosition = useCallback((x: number, y: number) => {
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+    
+    const tooltipWidth = window.innerWidth < 768 ? 160 : 256;
+    const tooltipHeight = 180;
+    
+    let finalX = x + 15;
+    let finalY = y + 15;
+
+    if (finalX + tooltipWidth > viewportW - 10) {
+      finalX = x - tooltipWidth - 15;
+    }
+    
+    if (finalY + tooltipHeight > viewportH - 10) {
+      finalY = y - tooltipHeight - 15;
+    }
+
+    finalX = Math.max(10, Math.min(finalX, viewportW - tooltipWidth - 10));
+    finalY = Math.max(10, Math.min(finalY, viewportH - tooltipHeight - 10));
+
+    setTooltipPos({ x: finalX, y: finalY });
   }, []);
 
-  const startCrafting = useCallback(() => {
+  const handleCategoryChange = useCallback((cat: EquipmentCategory) => {
+      setActiveCategory(cat);
+  }, []);
+
+  const clearTooltipTimer = useCallback(() => {
+    if (tooltipTimerRef.current) {
+      clearTimeout(tooltipTimerRef.current);
+      tooltipTimerRef.current = null;
+    }
+  }, []);
+
+  const startCrafting = useCallback((e?: React.MouseEvent) => {
     if (!selectedItem) return;
     const isRequirementMet = selectedItem.craftingType === 'FORGE' ? hasFurnace : hasWorkbench;
     
@@ -136,8 +186,16 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     }
     
     const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
-    if (missing.length > 0) {
-      actions.showToast("Insufficient materials.");
+    if (missing.length > 0 || isFuelShortage) {
+      if (e) updateTooltipPosition(e.clientX, e.clientY);
+      setHoveredItem(selectedItem);
+      
+      // Auto hide tooltip after 1 second when triggered by click
+      clearTooltipTimer();
+      tooltipTimerRef.current = setTimeout(() => {
+        setHoveredItem(null);
+        tooltipTimerRef.current = null;
+      }, 1000);
       return;
     }
 
@@ -149,7 +207,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
 
     actions.startCrafting(selectedItem);
     setIsPanelOpen(false);
-  }, [selectedItem, hasFurnace, hasWorkbench, getInventoryCount, stats.energy, craftingMastery, actions, onNavigate]);
+  }, [selectedItem, hasFurnace, hasWorkbench, getInventoryCount, stats.energy, craftingMastery, actions, onNavigate, isFuelShortage, updateTooltipPosition, clearTooltipTimer]);
 
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
@@ -161,17 +219,21 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     setIsPanelOpen(true);
   }, [selectedItem, actions, tutorialStep]);
 
-  const handleQuickCraft = useCallback(() => {
+  const handleQuickCraft = useCallback((e?: React.MouseEvent) => {
     if (!selectedItem) return;
 
-    // 단계적 연료 소모치 계산 (티어 및 내구도 비례 패널티 시뮬레이션)
-    // 티어 1: 3개, 티어 2: 5개, 티어 3 이상: 8개
-    const extraFuel = selectedItem.tier === 1 ? 3 : selectedItem.tier === 2 ? 5 : 8;
-    const charcoalCount = getInventoryCount('charcoal');
+    const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
+    if (missing.length > 0 || isQuickFuelShortage) {
+      if (e) updateTooltipPosition(e.clientX, e.clientY);
+      setHoveredItem(selectedItem);
 
-    if (charcoalCount < extraFuel) {
-        actions.showToast(`Quick Craft requires ${extraFuel} Charcoal.`);
-        return;
+      // Auto hide tooltip after 1 second when triggered by click
+      clearTooltipTimer();
+      tooltipTimerRef.current = setTimeout(() => {
+        setHoveredItem(null);
+        tooltipTimerRef.current = null;
+      }, 1000);
+      return;
     }
 
     const energyCost = getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0);
@@ -180,15 +242,8 @@ export const useForge = (onNavigate: (tab: any) => void) => {
         return;
     }
 
-    const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
-    if (missing.length > 0) {
-      actions.showToast("Insufficient base materials.");
-      return;
-    }
-
-    // 퀵 크래프트 시뮬레이션 프로세스
     setQuickCraftProgress(0);
-    const duration = 1500; // 1.5초 고정 연출
+    const duration = 1500;
     const interval = 30;
     const step = (100 / (duration / interval));
 
@@ -196,28 +251,15 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       setQuickCraftProgress(prev => {
         if (prev === null || prev >= 100) {
           clearInterval(timer);
-          
-          // 연료 소모 및 제작 완료 (품질 80 고정 = 내구도 80% 패널티 효과)
-          actions.consumeItem('charcoal', extraFuel);
-          actions.startCrafting(selectedItem); // 기본 재료 및 에너지 소모
-          actions.finishCrafting(selectedItem, 80, 0, 0.7); // 숙련도 게인 0.7 패널티
-          
+          actions.consumeItem('charcoal', extraQuickFuel);
+          actions.startCrafting(selectedItem);
+          actions.finishCrafting(selectedItem, 80, 0, 0.7);
           return null;
         }
         return prev + step;
       });
     }, interval);
-  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery]);
-
-  const updateTooltipPosition = (x: number, y: number) => {
-    const viewportW = window.innerWidth;
-    const viewportH = window.innerHeight;
-    let finalX = x + 20;
-    let finalY = y + 20;
-    if (finalX + 240 > viewportW) finalX = x - 260;
-    if (finalY + 160 > viewportH) finalY = y - 180;
-    setTooltipPos({ x: finalX, y: finalY });
-  };
+  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery, isQuickFuelShortage, extraQuickFuel, updateTooltipPosition, clearTooltipTimer]);
 
   const handleSelectItem = useCallback((item: EquipmentItem) => {
       setSelectedItem(item);
@@ -227,15 +269,19 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   }, [tutorialStep, actions]);
 
   const handleMouseEnter = useCallback((item: EquipmentItem, e: React.MouseEvent) => {
+      clearTooltipTimer(); // Manual hover overrides auto-hide
       setHoveredItem(item);
       updateTooltipPosition(e.clientX, e.clientY);
-  }, []);
+  }, [updateTooltipPosition, clearTooltipTimer]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
       if (hoveredItem) updateTooltipPosition(e.clientX, e.clientY);
-  }, [hoveredItem]);
+  }, [hoveredItem, updateTooltipPosition]);
 
-  const handleMouseLeave = useCallback(() => setHoveredItem(null), []);
+  const handleMouseLeave = useCallback(() => {
+    clearTooltipTimer();
+    setHoveredItem(null);
+  }, [clearTooltipTimer]);
 
   return {
     state,
@@ -259,6 +305,8 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     groupedItems,
     favoriteItems,
     canEnterForge,
+    isFuelShortage,
+    isQuickFuelShortage,
     requiredEnergy: selectedItem ? getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0) : 20,
     getInventoryCount,
     masteryInfo,
