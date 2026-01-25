@@ -2,7 +2,7 @@
 import { GameState } from '../types/game-state';
 
 const SAVE_PREFIX = 'lockharts_forge_slot_';
-const META_KEY = 'lockharts_forge_meta';
+const META_KEY = 'lockharts_forge_save_metadata';
 const APP_VERSION = '0.1.40';
 
 export interface SaveMetadata {
@@ -16,8 +16,11 @@ export interface SaveMetadata {
 
 export const getSaveMetadataList = (): SaveMetadata[] => {
     try {
-        const meta = localStorage.getItem(META_KEY);
-        return meta ? JSON.parse(meta) : [];
+        const metaData = localStorage.getItem(META_KEY);
+        if (!metaData) return [];
+        const parsed = JSON.parse(metaData);
+        // CRITICAL: metaList.map is not a function 에러 방지를 위해 배열인지 확인
+        return Array.isArray(parsed) ? parsed : [];
     } catch {
         return [];
     }

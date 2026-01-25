@@ -1,6 +1,8 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { initializeWebCache } from './utils/cacheManager';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -10,15 +12,24 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 
 /**
- * document.fonts.ready를 사용하여 모든 외부 폰트(Google Fonts 등)가 
- * 완전히 로드된 것을 보장한 뒤 React 앱을 마운트합니다.
- * 이를 통해 인트로 화면의 'CryingDev Studio' 텍스트가 
- * 기본 폰트로 먼저 그려지는 현상을 방지할 수 있습니다.
+ * 폰트 로드와 웹 캐시 정리가 모두 완료된 후 앱을 렌더링합니다.
+ * 버전 불일치로 인한 오작동을 방지하고 최신 리소스를 보장합니다.
  */
-document.fonts.ready.then(() => {
+Promise.all([
+  document.fonts.ready,
+  initializeWebCache()
+]).then(() => {
   root.render(
     <React.StrictMode>
       <App />
     </React.StrictMode>
   );
+}).catch(err => {
+    console.error("Critical: Initialization failed", err);
+    // 초기화에 실패하더라도 일단 렌더링을 시도합니다.
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
 });
