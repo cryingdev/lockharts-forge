@@ -7,7 +7,7 @@ interface Point {
   y: number;
 }
 
-type RingType = 'NARROW' | 'MEDIUM' | 'WIDE';
+type RingType = 'VERY_SMALL' | 'SMALL' | 'MEDIUM';
 
 interface Interactable {
   type: 'TAP' | 'DRAG';
@@ -23,7 +23,7 @@ interface Interactable {
   startHit?: boolean; 
   startHitPerfect?: boolean; 
   missedStart?: boolean; 
-  ringType?: RingType;   
+  ringType: RingType;   
 }
 
 function findPerpendicularDistance(p: Point, p1: Point, p2: Point) {
@@ -86,6 +86,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   private isFinished = false;
   private isTransitioning = false; 
   private currentPhase = 1;
+  private masteryCount = 0;
 
   private onComplete?: (score: number, enhancementCount: number) => void;
   private itemImage: string = '';
@@ -102,8 +103,9 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   constructor() { super('WorkbenchScene'); }
 
-  init(data: { onComplete: (score: number, enhancementCount: number) => void; difficulty: number; subCategoryId?: string; itemImage?: string }) {
+  init(data: { onComplete: (score: number, enhancementCount: number) => void; difficulty: number; masteryCount?: number; subCategoryId?: string; itemImage?: string }) {
     this.onComplete = data.onComplete; this.difficulty = data.difficulty;
+    this.masteryCount = data.masteryCount || 0;
     this.itemImage = data.itemImage || ''; this.subCategoryId = data.subCategoryId || '';
     const leatherCategories = ['CHESTPLATE', 'GLOVES', 'BOOTS'];
     this.isLeatherWork = leatherCategories.includes(this.subCategoryId.toUpperCase());
@@ -122,8 +124,22 @@ export default class WorkbenchScene extends Phaser.Scene {
     if (this.itemImage) this.load.image('item_source', getAssetUrl(this.itemImage));
   }
 
-  private getRingColor(type?: RingType): number {
-    if (type === 'NARROW') return 0x22d3ee; if (type === 'WIDE') return 0xa855f7; return 0x10b981;
+  private getRingColor(type: RingType): number {
+    if (type === 'VERY_SMALL') return 0xef4444; 
+    if (type === 'SMALL') return 0xfbbf24;      
+    return 0x10b981;                            
+  }
+
+  private getRingRadius(type: RingType): number {
+    if (type === 'VERY_SMALL') return 8;
+    if (type === 'SMALL') return 14;
+    return 22;
+  }
+
+  private getRingSpeedMultiplier(type: RingType): number {
+    if (type === 'VERY_SMALL') return 2.2;
+    if (type === 'SMALL') return 1.5;
+    return 1.0;
   }
 
   create() {
@@ -149,17 +165,23 @@ export default class WorkbenchScene extends Phaser.Scene {
         const obj = this.interactables[i]; const nodePos = this.getPathPosition(obj.p);
         const d = Phaser.Math.Distance.Between(p.x, p.y, nodePos.x, nodePos.y); const diff = Math.abs(this.cursorProgress - obj.p);
         if (obj.type === 'TAP' && !obj.hit && !obj.missed) {
-          let tapHitRadius = obj.ringType === 'NARROW' ? 26 : obj.ringType === 'WIDE' ? 62 : 42;
+          let tapHitRadius = this.getRingRadius(obj.ringType) * 2; 
           if (d < tapHitRadius * this.uiScale) { this.handleTapHit(i, nodePos.x, nodePos.y); break; }
         }
         if (obj.type === 'DRAG' && !obj.hit && !obj.missed && !obj.startHit) {
-            let hitRadius = obj.ringType === 'NARROW' ? 26 : obj.ringType === 'WIDE' ? 62 : 42;
+            let hitRadius = 42;
             if (d < hitRadius * this.uiScale && diff < 0.08) {
-                obj.startHit = true; obj.missedStart = false; const perfectThreshold = obj.ringType === 'NARROW' ? 0.025 : 0.035;
+                obj.startHit = true; obj.missedStart = false; const perfectThreshold = 0.035;
                 obj.startHitPerfect = diff < perfectThreshold; obj.tracedSegments = [{ start: obj.p, end: this.cursorProgress }];
                 const label = obj.startHitPerfect ? 'PERFECT!' : 'GOOD'; const color = obj.startHitPerfect ? 0xfbbf24 : this.getRingColor(obj.ringType);
                 this.showFeedback(label, color, nodePos.x, nodePos.y); this.createSparks(nodePos.x, nodePos.y, color, obj.startHitPerfect ? 10 : 5);
-                if (obj.startHitPerfect) { this.combo++; if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(nodePos.x, nodePos.y); } else { this.combo = 0; }
+                if (obj.startHitPerfect) { 
+                    this.combo++; 
+                    if (this.combo >= 8) this.handleEnhancement(nodePos.x, nodePos.y); 
+                } else { 
+                    this.combo = 0;
+                    this.syncFutureRingsToCombo();
+                }
                 break;
             }
         }
@@ -219,9 +241,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   private startPhase(phase: number) {
     this.currentPhase = phase; this.cursorProgress = 0; this.updateCursorTool(); this.spawnInteractablesForPhase();
     const pos = this.getPathPosition(0); this.cursor.setPosition(pos.x, pos.y);
-    // 즉시 시작 대신 카운트다운 실행
     this.runCountdown(() => {
-        // 카운트다운 종료 시 실제 게임 로직 시작
     });
   }
 
@@ -308,7 +328,7 @@ export default class WorkbenchScene extends Phaser.Scene {
             if (obj.tracedSegments) obj.tracedSegments.forEach(seg => this.drawPathSegment(seg.start, seg.end, this.dragPathGraphics, 0xfbbf24, 1.0, 8));
             if (!obj.startHit && !obj.hit) {
                 const startPos = this.getPathPosition(obj.p); const ringColor = this.getRingColor(obj.ringType);
-                let ringRadius = obj.ringType === 'NARROW' ? 12 : obj.ringType === 'WIDE' ? 30 : 20;
+                let ringRadius = this.getRingRadius(obj.ringType);
                 this.dragPathGraphics.lineStyle(4, ringColor, 1.0).strokeCircle(startPos.x, startPos.y, ringRadius * this.uiScale);
                 this.dragPathGraphics.fillStyle(ringColor, 0.4).fillCircle(startPos.x, startPos.y, (ringRadius - 6) * this.uiScale);
             }
@@ -332,30 +352,106 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   private spawnInteractablesForPhase() {
-    this.interactables.forEach(obj => { obj.graphic?.destroy(); obj.nailHead?.destroy(); }); this.interactables = [];
+    this.interactables.forEach(obj => { this.destroyTapGraphics(obj); }); this.interactables = [];
+    const isNovice = this.masteryCount < 10;
+
     if (this.currentPhase === 1 || this.currentPhase === 3) {
-        const count = this.currentPhase === 1 ? 4 : 8;
+        let count = 4;
+        if (this.currentPhase === 3) {
+            if (this.masteryCount >= 30) count = 8;
+            else if (this.masteryCount >= 10) count = 6;
+            else count = 4;
+        }
         for (let i = 0; i < count; i++) { const sectorWidth = 1.0 / count; this.addTap(((i * sectorWidth) + Phaser.Math.FloatBetween(sectorWidth * 0.2, sectorWidth * 0.8)) % 1.0); }
-    } else { const start = Phaser.Math.FloatBetween(0.02, 0.15); this.addDrag(start, start + Phaser.Math.FloatBetween(0.75, 0.85)); }
+    } else {
+        if (isNovice) {
+            const start = Phaser.Math.FloatBetween(0.2, 0.3);
+            this.addDrag(start, start + 0.4);
+        } else if (this.currentPhase === 4) {
+            this.addDrag(0.05, 0.45);
+            this.addDrag(0.55, 0.95);
+        } else {
+            const start = Phaser.Math.FloatBetween(0.05, 0.1);
+            this.addDrag(start, start + 0.8);
+        }
+    }
     this.updateInteractablesVisuals(); this.drawGuidePath();
   }
 
   private addTap(p: number) {
-    const types: RingType[] = ['NARROW', 'MEDIUM', 'WIDE']; const ringType = types[Math.floor(Math.random() * types.length)];
-    const ringColor = this.getRingColor(ringType); let ringRadius = ringType === 'NARROW' ? 12 : ringType === 'WIDE' ? 30 : 20;
-    const pos = this.getPathPosition(p); const node = this.add.circle(pos.x, pos.y, ringRadius * this.uiScale, ringColor, 0.3).setStrokeStyle(3, ringColor).setDepth(8);
-    let nailHead: Phaser.GameObjects.Image | undefined; if (!this.isLeatherWork) { const targetSize = ringRadius * 2 * this.uiScale; nailHead = this.add.image(pos.x, pos.y, 'nail_head').setDepth(7).setDisplaySize(targetSize, targetSize); this.root.add(nailHead); }
-    this.interactables.push({ type: 'TAP', p, hit: false, missed: false, dragSuccessTicks: 0, totalTicksInRange: 0, graphic: node, nailHead, ringType }); this.root.add(node);
+    const ringType = this.getCurrentRingTypeByCombo(); 
+    const obj: Interactable = { type: 'TAP', p, hit: false, missed: false, dragSuccessTicks: 0, totalTicksInRange: 0, ringType };
+    this.createTapGraphics(obj);
+    this.interactables.push(obj);
+  }
+
+  private getCurrentRingTypeByCombo(): RingType {
+    if (this.combo >= 6) return 'VERY_SMALL';
+    if (this.combo >= 3) return 'SMALL';
+    return 'MEDIUM';
+  }
+
+  private createTapGraphics(obj: Interactable) {
+    const pos = this.getPathPosition(obj.p);
+    const ringRadius = this.getRingRadius(obj.ringType);
+    const ringColor = this.getRingColor(obj.ringType);
+
+    const node = this.add.circle(pos.x, pos.y, ringRadius * this.uiScale, ringColor, 0.3).setStrokeStyle(3, ringColor).setDepth(8);
+    this.root.add(node);
+    obj.graphic = node;
+
+    if (!this.isLeatherWork) {
+        const targetSize = ringRadius * 2 * this.uiScale;
+        const nailHead = this.add.image(pos.x, pos.y, 'nail_head').setDepth(7).setDisplaySize(targetSize, targetSize);
+        this.root.add(nailHead);
+        obj.nailHead = nailHead;
+    }
+  }
+
+  private destroyTapGraphics(obj: Interactable) {
+    if (obj.graphic) {
+        obj.graphic.destroy();
+        obj.graphic = undefined;
+    }
+    if (obj.nailHead) {
+        obj.nailHead.destroy();
+        obj.nailHead = undefined;
+    }
+  }
+
+  private rebuildTapGraphics(obj: Interactable) {
+    this.destroyTapGraphics(obj);
+    this.createTapGraphics(obj);
+  }
+
+  private syncFutureRingsToCombo() {
+      const targetType = this.getCurrentRingTypeByCombo();
+      const futureRings = this.interactables.filter(o => o.type === 'TAP' && !o.hit && !o.missed && o.p > this.cursorProgress);
+      futureRings.forEach(nextRing => {
+          if (nextRing.ringType !== targetType) {
+              nextRing.ringType = targetType;
+              this.rebuildTapGraphics(nextRing);
+          }
+      });
   }
 
   private addDrag(start: number, end: number) { this.interactables.push({ type: 'DRAG', p: start, endP: end, hit: false, missed: false, dragSuccessTicks: 0, totalTicksInRange: 0, tracedSegments: [], startHit: false, startHitPerfect: false, missedStart: false, ringType: 'MEDIUM' }); }
 
   private updateInteractablesVisuals() {
     this.interactables.forEach((obj) => {
-      const pos = this.getPathPosition(obj.p); if (obj.type === 'TAP' && !obj.missed) {
-        let ringRadius = obj.ringType === 'NARROW' ? 12 : obj.ringType === 'WIDE' ? 30 : 20;
-        if (obj.graphic) obj.graphic.setPosition(pos.x, pos.y).setRadius(ringRadius * this.uiScale);
-        if (obj.nailHead) obj.nailHead.setPosition(pos.x, pos.y).setDisplaySize(ringRadius * 2 * this.uiScale * (obj.hit ? 0.8 : 1), ringRadius * 2 * this.uiScale * (obj.hit ? 0.8 : 1));
+      // FIX: Ensure obj.graphic is not hitting null while it's being hit or being destroyed
+      if (obj.type === 'TAP' && !obj.hit && !obj.missed && obj.graphic) {
+        const pos = this.getPathPosition(obj.p);
+        const ringRadius = this.getRingRadius(obj.ringType);
+        const ringColor = this.getRingColor(obj.ringType);
+        
+        obj.graphic.setPosition(pos.x, pos.y).setRadius(ringRadius * this.uiScale);
+        obj.graphic.setStrokeStyle(3, ringColor);
+        obj.graphic.setFillStyle(ringColor, 0.3);
+        
+        if (obj.nailHead) {
+            obj.nailHead.setPosition(pos.x, pos.y).setDisplaySize(ringRadius * 2 * this.uiScale, ringRadius * 2 * this.uiScale);
+        }
       }
     });
   }
@@ -363,11 +459,20 @@ export default class WorkbenchScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.isFinished || this.isTransitioning || this.worldPoints.length < 2) return;
     
-    // 진행도가 커질수록 가속도 적용 (최대 1.5배 가속)
     const acceleration = 1 + (this.cursorProgress * 0.5);
-    this.cursorProgress += (this.cursorSpeed * acceleration) * delta;
+    let currentTickSpeed = this.cursorSpeed * acceleration;
 
-    this.interactables.forEach((obj) => { if (!obj.hit && !obj.missed) { if (this.cursorProgress > obj.p + 0.1) { if (obj.type === 'TAP') { obj.missed = true; const pos = this.getPathPosition(obj.p); this.handleMiss(pos.x, pos.y, obj); } else if (obj.type === 'DRAG' && !obj.startHit && !obj.missedStart) obj.missedStart = true; } } });
+    const activeTap = this.interactables.find(obj => 
+        obj.type === 'TAP' && !obj.hit && !obj.missed && 
+        Math.abs(this.cursorProgress - obj.p) < 0.05
+    );
+    if (activeTap) {
+        currentTickSpeed *= this.getRingSpeedMultiplier(activeTap.ringType);
+    }
+
+    this.cursorProgress += currentTickSpeed * delta;
+
+    this.interactables.forEach((obj) => { if (!obj.hit && !obj.missed) { if (this.cursorProgress > (obj.endP ?? obj.p) + 0.1) { if (obj.type === 'TAP') { obj.missed = true; const pos = this.getPathPosition(obj.p); this.handleMiss(pos.x, pos.y, obj); } else if (obj.type === 'DRAG' && !obj.startHit && !obj.missedStart) obj.missedStart = true; } } });
     this.handleDragLogic(time, delta); if (this.cursorProgress >= 1.0) this.finishPhase();
     const pos = this.getPathPosition(this.cursorProgress); this.cursor.setPosition(pos.x, pos.y);
     const rotationOffset = (!this.isLeatherWork && (this.currentPhase === 2 || this.currentPhase === 4)) ? 0 : -Math.PI / 2;
@@ -389,13 +494,29 @@ export default class WorkbenchScene extends Phaser.Scene {
                 if (time % 100 < 20) this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 1);
                 const lastSeg = obj.tracedSegments![obj.tracedSegments!.length - 1]; if (lastSeg && Math.abs(lastSeg.end - p) < 0.05) lastSeg.end = p; else obj.tracedSegments!.push({ start: p, end: p });
             } else if (obj.startHit) {
-                this.dragPenaltyTimer += delta; if (this.dragPenaltyTimer > 150) { this.dragPenaltyTimer = 0; this.currentQuality = Math.max(0, this.currentQuality - 1.2); this.combo = 0; this.createSparks(this.cursor.x, this.cursor.y, 0xef4444, 2); this.cameras.main.shake(40, 0.001); }
+                this.dragPenaltyTimer += delta; if (this.dragPenaltyTimer > 150) { 
+                    this.dragPenaltyTimer = 0; 
+                    this.currentQuality = Math.max(0, this.currentQuality - 1.2); 
+                    if (this.combo > 0) {
+                        this.combo = 0;
+                        this.syncFutureRingsToCombo();
+                    }
+                    this.createSparks(this.cursor.x, this.cursor.y, 0xef4444, 2); this.cameras.main.shake(40, 0.001); 
+                }
             }
         }
         if (p > obj.endP! + 0.02 && obj.totalTicksInRange > 50) {
             const ratio = obj.dragSuccessTicks / obj.totalTicksInRange;
-            if (ratio > 0.92 && obj.startHitPerfect && !obj.missedStart) { obj.hit = true; this.currentQuality = Math.min(120, this.currentQuality + 3.0); this.showFeedback('PERFECT!', 0xfbbf24, this.cursor.x, this.cursor.y); this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 15); }
-            else if (ratio > 0.60) { obj.hit = true; this.currentQuality = Math.min(120, this.currentQuality + 1.0); this.showFeedback('GOOD', 0xe5e5e5, this.cursor.x, this.cursor.y); }
+            if (ratio > 0.92 && obj.startHitPerfect && !obj.missedStart) { 
+                obj.hit = true; 
+                this.currentQuality = Math.min(120, this.currentQuality + 1.0); 
+                this.showFeedback('PERFECT!', 0xfbbf24, this.cursor.x, this.cursor.y); 
+                this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 15); 
+            }
+            else if (ratio > 0.60) { 
+                obj.hit = true; 
+                this.showFeedback('GOOD', 0xe5e5e5, this.cursor.x, this.cursor.y); 
+            }
             else { obj.missed = true; this.handleMiss(this.cursor.x, this.cursor.y); }
         }
       }
@@ -409,22 +530,48 @@ export default class WorkbenchScene extends Phaser.Scene {
       obj.hit = true; const isPerfect = diff < 0.03; const ringColor = this.getRingColor(obj.ringType);
       if (!this.isLeatherWork) { this.hammerSprite.setAlpha(1).setPosition(targetX + 40, targetY - 120).setAngle(5); this.tweens.add({ targets: this.hammerSprite, x: targetX, y: targetY + 20, angle: -30, duration: 100, ease: 'Cubic.in', onComplete: () => { this.tweens.add({ targets: this.hammerSprite, angle: -10, y: targetY + 10, alpha: 0, duration: 250, ease: 'Cubic.out' }); } }); }
       if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, displayWidth: obj.nailHead.displayWidth * 0.8, displayHeight: obj.nailHead.displayHeight * 0.8, duration: 100, ease: 'Back.easeOut' });
-      if (isPerfect) { this.combo++; this.currentQuality = Math.min(120, this.currentQuality + 2); this.showFeedback('PERFECT!', 0xfbbf24, pos.x, pos.y); this.createSparks(pos.x, pos.y, 0xfbbf24, 15); if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(pos.x, pos.y); }
-      else { this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 1.5); this.showFeedback('GOOD', ringColor, pos.x, pos.y); this.createSparks(pos.x, pos.y, ringColor, 8); }
-      if (obj.graphic) { const target = obj.graphic; this.tweens.add({ targets: target, scale: this.uiScale * 2, alpha: 0, duration: 300, ease: 'Cubic.out', onComplete: () => target.destroy() }); }
+      
+      if (isPerfect) { 
+          this.combo++; 
+          this.currentQuality = Math.min(120, this.currentQuality + 1.0); 
+          this.showFeedback('PERFECT!', 0xfbbf24, pos.x, pos.y); 
+          this.createSparks(pos.x, pos.y, 0xfbbf24, 15); 
+          if (this.combo >= 8) this.handleEnhancement(pos.x, pos.y); 
+
+          this.syncFutureRingsToCombo();
+      }
+      else { 
+          this.combo = 0; 
+          this.showFeedback('GOOD', ringColor, pos.x, pos.y); 
+          this.createSparks(pos.x, pos.y, ringColor, 8); 
+          
+          this.syncFutureRingsToCombo();
+      }
+      
+      if (obj.graphic) { 
+          const target = obj.graphic; 
+          this.tweens.add({ targets: target, scale: this.uiScale * 2, alpha: 0, duration: 300, ease: 'Cubic.out', onComplete: () => target.destroy() }); 
+      }
     }
   }
 
   private handleEnhancement(x: number, y: number) { this.enhancementCount++; const pinnedText = this.add.text(x, y, '+1', { fontFamily: 'Grenze Gotisch', fontSize: '48px', color: '#fbbf24', fontStyle: 'bold', stroke: '#000', strokeThickness: 6, shadow: { color: '#000', fill: true, blur: 10 } }).setOrigin(0.5).setDepth(15).setAlpha(0).setScale(0.5); this.root.add(pinnedText); this.tweens.add({ targets: pinnedText, alpha: 1, scale: 1, y: y - 20, duration: 400, ease: 'Back.out' }); }
 
-  private handleMiss(x: number, y: number, obj?: Interactable) { this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 6); this.showFeedback('MISS', 0xef4444, x, y); this.createSparks(x, y, 0xef4444, 8); this.cameras.main.shake(120, 0.005); if (obj?.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 200, onComplete: () => obj.graphic?.destroy() }); if (obj?.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 200, onComplete: () => obj.nailHead?.destroy() }); }
+  private handleMiss(x: number, y: number, obj?: Interactable) { 
+      this.combo = 0; 
+      this.syncFutureRingsToCombo();
+      this.currentQuality = Math.max(0, this.currentQuality - 6); 
+      this.showFeedback('MISS', 0xef4444, x, y); 
+      this.createSparks(x, y, 0xef4444, 8); 
+      this.cameras.main.shake(120, 0.005); 
+      if (obj?.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 200, onComplete: () => this.destroyTapGraphics(obj) }); 
+  }
 
   private finishPhase() {
     this.isTransitioning = true; this.confirmedProgress = Math.min(100, this.confirmedProgress + 25); this.updateProgressBar();
     this.interactables.forEach(obj => { if (obj.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 400 }); if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 400 }); });
     const isLastPhase = this.currentPhase >= 4;
     
-    // 안내 문구 대신 즉시 트랜지션 처리 (마지막 페이즈는 승리 연출)
     if (isLastPhase) {
         this.win();
     } else {
