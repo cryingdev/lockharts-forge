@@ -170,7 +170,10 @@ const DungeonTab = () => {
                     {DUNGEONS.map(d => {
                         const isLocked = d.tier > state.stats.tierLevel + 1;
                         const maxReached = maxFloorReached[d.id] || 1;
-                        const progressPercent = (maxReached / d.maxFloors) * 100;
+                        // progression logic: current completed floors
+                        const completedFloors = (dungeonClearCounts[d.id] || 0) > 0 ? d.maxFloors : Math.max(0, maxReached - 1);
+                        const progressPercent = (completedFloors / d.maxFloors) * 100;
+                        
                         return (
                             <button key={d.id} onClick={() => handleDungeonSelect(d.id)} className={`w-full group relative flex flex-col md:flex-row items-center gap-4 p-4 md:p-6 rounded-2xl border-2 transition-all overflow-hidden ${isLocked ? 'bg-stone-900 border-stone-800 opacity-50 grayscale' : 'bg-stone-900/40 border-stone-800 hover:border-amber-500 hover:bg-stone-800 shadow-xl active:scale-[0.99]'}`}>
                                 <div className="w-20 h-20 md:w-32 md:h-32 bg-stone-950 rounded-xl border-2 border-stone-800 flex items-center justify-center text-4xl md:text-6xl shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
@@ -183,7 +186,7 @@ const DungeonTab = () => {
                                     </div>
                                     <p className="text-stone-500 text-[10px] md:text-sm line-clamp-2 italic mb-3">"{d.description}"</p>
                                     <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                        <div className="flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">Progression: <span className="text-amber-500">{maxReached}/{d.maxFloors} Floors</span></span></div>
+                                        <div className="flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">Progression: <span className="text-amber-500">{completedFloors}/{d.maxFloors} Cleared</span></span></div>
                                         <div className="flex items-center gap-2"><Skull className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">Threat: <span className="text-red-500">POW {d.requiredPower}</span></span></div>
                                     </div>
                                     <div className="mt-3 w-full h-1.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800 shadow-inner"><div className="h-full bg-gradient-to-r from-amber-900 to-amber-500 transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div></div>
@@ -330,7 +333,7 @@ const DungeonTab = () => {
             {/* UNIT PICKER MODAL */}
             {isPickerOpen && (
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
-                    <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
+                    <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-4 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="bg-amber-900/30 p-2 rounded-xl border border-amber-700/50"><User className="w-5 h-5 text-amber-500" /></div>
