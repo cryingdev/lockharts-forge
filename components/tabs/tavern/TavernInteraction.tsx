@@ -164,7 +164,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
 
     // Filter restricted to Mercenary's interests
     const giftableItems = state.inventory.filter(i => 
-        ['EQUIPMENT', 'PRODUCT', 'CONSUMABLE'].includes(i.type)
+        ['EQUIPMENT', 'PRODUCT', 'CONSUMABLE', 'GIFT'].includes(i.type)
     );
 
     return (

@@ -454,7 +454,7 @@ export const materials: Record<string, MaterialDefinition> = {
         description: 'An ancient parchment detailing techniques for a Bronze Longsword.', baseValue: 0
     },
     affinity_debug_gift: {
-        id: 'affinity_debug_gift', name: 'Sparkling Heart', type: 'RESOURCE', category: 'GEM', tier: 1,
+        id: 'affinity_debug_gift', name: 'Sparkling Heart', type: 'GIFT', category: 'GEM', tier: 1,
         description: 'A magical debug item that increases affinity by 50.', baseValue: 500
     },
     emergency_gold: {
