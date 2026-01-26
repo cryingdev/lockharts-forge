@@ -1,9 +1,8 @@
-
 import { GameState } from '../types/game-state';
 
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 const META_KEY = 'lockharts_forge_save_metadata';
-const APP_VERSION = '0.1.41a';
+const APP_VERSION = '0.1.41b';
 
 export interface SaveMetadata {
     index: number;

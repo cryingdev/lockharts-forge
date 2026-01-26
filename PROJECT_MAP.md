@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.41a)
+# Project Map – Lockhart’s Forge (v0.1.41b)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -28,7 +28,14 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ### Core State Engine
 - `state/gameReducer.ts`: Primary state machine.
-- `state/reducer/`: Modularized handlers (repair, crafting, mercenary, expedition, shop, etc.).
+- `state/reducer/`: Modularized handlers.
+    - `repair.ts`: Forge repair logic.
+    - `sleep.ts`: Day transition and recovery.
+    - `crafting.ts`: Item generation and mastery.
+    - `inventory.ts`: Item acquisition and storage.
+    - `mercenary.ts`: Recruitment and stats.
+    - `shop.ts`: Customer queue management.
+    - `research.ts`: Material combination and blueprint discovery.
 - `state/actions.ts`: Dispatchable action type definitions.
 - `state/initial-game-state.ts`: Initial data structure for new saves.
 
@@ -67,6 +74,9 @@ Functional pages following the Hooks/UI separation pattern.
 - `tabs/shop/`: Customer counter.
     - `hooks/useShop.ts`: Sales queue and pricing logic.
     - `ui/`: Counter interface and customer HUD.
+- `tabs/research/`: The Scholars Desk.
+    - `hooks/useResearch.ts`: Alchemical combination logic and recipe discovery.
+    - `ui/`: Magical slots and dedicated inventory selection.
 
 ### Mercenary Management (`components/mercenary/`)
 - `MercenaryPaperDoll.tsx`: Visual equipment management.
@@ -102,7 +112,11 @@ Functional pages following the Hooks/UI separation pattern.
 
 ---
 
-## 🔄 Recent Updates (v0.1.41a)
-*   **Project Mapping**: Fully synchronized structural map with versioned modularity.
-*   **Shared UI**: Standardized character rendering via `common/ui/`.
-*   **System Integrity**: Version alignment across all configuration and persistent storage modules.
+## 🔄 Recent Updates (v0.1.41b)
+*   **Research System Implementation**:
+    *   Introduced "Scholars Desk" (`tabs/research/`) for discovering lost blueprints through material extraction.
+    *   Magical synthesis animations and specialized inventory UI.
+*   **Version Synchronization**:
+    *   Bumping version to `0.1.41b` across all systems.
+*   **Modular State Refinement**:
+    *   Separated `state/reducer/research.ts` for clean combination logic.

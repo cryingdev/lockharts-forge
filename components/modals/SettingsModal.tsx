@@ -22,7 +22,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         index: null
     });
 
-    const APP_VERSION = "0.1.41a";
+    const APP_VERSION = "0.1.41b";
 
     if (!isOpen) return null;
 
@@ -140,6 +140,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                 message="Loading this file will discard any unsaved progress in your current session. Do you wish to continue?"
                 confirmLabel="Confirm Load"
                 onConfirm={handleConfirmLoad}
+                // Comment: Removed non-existent onDelete prop to fix TS error
                 onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })}
             />
         </>
