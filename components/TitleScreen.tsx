@@ -14,7 +14,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showCredits, setShowCredits] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
-    const VERSION = "0.1.40";
+    const VERSION = "0.1.41a";
 
     // 세이브 파일 존재 여부를 체크하는 함수
     const checkSaves = useCallback(() => {
@@ -81,7 +81,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                     {/* Logo Area */}
                     <div className="mb-[2dvh] md:mb-12 text-center shrink-0">
                         <div className="w-[clamp(60px,15dvh,120px)] h-[clamp(60px,15dvh,120px)] md:w-32 md:h-32 bg-amber-900/20 rounded-full flex items-center justify-center border-2 md:border-4 border-amber-700/50 mb-[1.5dvh] md:mb-6 mx-auto shadow-[0_0_50px_rgba(180,83,9,0.3)]">
-                            <Anvil className="w-[50%] h-[50%] text-amber-500 drop-shadow-lg" />
+                            <Anvil className="w-[50%] h-[50%] text-amber-50 drop-shadow-lg" />
                         </div>
                         <h1 className="text-[clamp(24px,6dvh,64px)] md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-400 to-amber-700 font-serif tracking-tighter drop-shadow-sm leading-[1.1]">
                             LOCKHART'S<br/>FORGE
@@ -147,7 +147,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in">
                         <div className="max-w-md w-full bg-stone-900 border border-stone-700 p-6 md:p-8 rounded-xl text-center relative shadow-2xl">
                             <button onClick={() => setShowCredits(false)} className="absolute top-4 right-4 text-stone-500 hover:text-stone-300">✕</button>
-                            <h2 className="text-xl md:text-2xl font-bold text-amber-500 mb-6 font-serif">Credits</h2>
+                            <h2 className="text-xl md:text-2xl font-bold text-amber-50 mb-6 font-serif">Credits</h2>
                             <div className="space-y-4 text-stone-300">
                                 <div><h3 className="text-[10px] md:text-xs text-stone-500 uppercase font-black tracking-widest mb-1 font-sans">Created By</h3><p className="font-serif font-bold text-sm md:text-lg">CryingDev</p></div>
                                 <div><h3 className="text-[10px] md:text-xs text-stone-500 uppercase font-black tracking-widest mb-1 font-sans">Assets</h3><p className="font-serif font-bold text-xs md:text-base">Pixel Art & Icons via AI/Open Source</p></div>

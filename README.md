@@ -1,10 +1,20 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.40
+> **Version**: 0.1.41a
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
+
+## 🔄 Recent Updates (v0.1.41a)
+
+*   **Architectural Synchronization**:
+    *   Updated `PROJECT_MAP.md` to reflect the latest modular directory structure.
+    *   Standardized versioning across all configuration files and system constants.
+*   **Shared UI Componentization**:
+    *   Established `components/common/ui/` for shared visual elements like `AnimatedMercenary` and `MercenaryPortrait`.
+*   **Modularity Refinement**:
+    *   Documented the internal structure of Forge, Market, and Shop tabs (Hooks vs UI separation).
 
 ## 🔄 Recent Updates (v0.1.40)
 
@@ -16,18 +26,6 @@
 *   **Mercenary System Refinement**:
     *   Organized mercenary-specific UI (PaperDoll, Stats, Inventory) into dedicated sub-directories.
     *   Enhanced combat calculations with improved primary stat integration.
-*   **Documentation Update**:
-    *   Synchronized `PROJECT_MAP.md` to reflect the current codebase hierarchy and modular design patterns.
-
-## 🔄 Recent Updates (v0.1.39)
-
-*   **Market Catalog Optimization**:
-    *   Reorganized sections to prioritize Tier Resources, followed by Potions & Supplies, and Facilities at the bottom.
-*   **Tutorial Revamp (Furnace Restoration)**:
-    *   The furnace acquisition step is now free! Garrick will support your first equipment purchase as an investment in the village's future.
-*   **UX Improvements (Shop & Inventory)**:
-    *   **Persistent View Mode**: Grid/List view settings are now saved globally and persist across game tabs.
-    *   **Explicit Confirmation**: Added "Select & Confirm" and "Cancel" buttons to the item selection popup in the Shop to improve clarity and prevent accidental sales.
 
 ## 🌟 Key Features
 
