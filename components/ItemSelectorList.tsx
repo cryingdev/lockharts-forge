@@ -21,7 +21,6 @@ const AdaptiveItemImage = ({ item, className }: { item: InventoryItem, className
     
     const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`));
 
-    // 아이템이 변경되면 이미지 소스 초기화
     useEffect(() => {
         setImgSrc(getAssetUrl(`${baseId}.png`));
     }, [baseId]);
@@ -54,10 +53,26 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
     emptyMessage = "No items available."
 }) => {
     const { state, actions } = useGame();
-    const viewMode = state.settings.inventoryViewMode || 'LIST';
+    
+    // Debug Logging
+    useEffect(() => {
+        console.group('[ItemSelectorList] Render Debug');
+        console.log('Item count:', items.length);
+        if (items.length > 0) {
+            console.table(items.map(i => ({ name: i.name, type: i.type, id: i.id })));
+        } else {
+            console.warn('List is empty. Filter might be too restrictive.');
+        }
+        console.groupEnd();
+    }, [items]);
+
+    // Safety check for older save data without settings
+    const viewMode = state.settings?.inventoryViewMode || 'LIST';
 
     const setViewMode = (mode: 'GRID' | 'LIST') => {
-        actions.updateSettings({ inventoryViewMode: mode });
+        if (actions.updateSettings) {
+            actions.updateSettings({ inventoryViewMode: mode });
+        }
     };
 
     const getQualityLabel = (q: number): string => {
@@ -82,7 +97,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
 
     if (items.length === 0) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center text-stone-700 italic p-12 text-center bg-stone-950/40 rounded-2xl border border-stone-900 border-dashed m-4">
+            <div className="flex-1 flex flex-col items-center justify-center text-stone-700 italic p-12 text-center bg-stone-950/40 rounded-2xl border border-stone-900 border-dashed m-4 min-h-[200px]">
                 <Package className="w-12 h-12 opacity-10 mb-2" />
                 <p className="text-sm">{emptyMessage}</p>
             </div>
@@ -90,8 +105,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
     }
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-stone-900/50 w-full overflow-hidden">
-            {/* View Mode Toggle */}
+        <div className="flex-1 flex flex-col min-h-[300px] bg-stone-900/50 w-full overflow-hidden">
             <div className="flex justify-end p-2 px-4 gap-2 bg-stone-900 border-b border-white/5 shrink-0">
                 <button 
                     onClick={() => setViewMode('GRID')}
@@ -109,20 +123,19 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                 </button>
             </div>
 
-            {/* Scrollable Container */}
-            <div className="flex-1 overflow-hidden relative">
-                <div className={`absolute inset-0 overflow-y-auto custom-scrollbar p-3 md:p-4 bg-stone-950 shadow-[inset_0_4px_20px_rgba(0,0,0,0.8)] ${viewMode === 'GRID' ? 'grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3' : 'flex flex-col gap-2'}`}>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 bg-stone-950 shadow-[inset_0_4px_20px_rgba(0,0,0,0.8)]">
+                <div className={viewMode === 'GRID' ? 'grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pb-8' : 'flex flex-col gap-2 pb-8'}>
                     {items.map(item => {
                         const isLocked = item.isLocked;
                         const isSelected = selectedItemId === item.id || item.isSelected;
                         const isEquip = item.type === 'EQUIPMENT' && item.equipmentData;
-                        const finalPrice = Math.ceil(item.baseValue * customerMarkup);
+                        const finalPrice = Math.ceil((item.baseValue || 0) * customerMarkup);
                         
                         if (viewMode === 'GRID') {
                             const rarityClasses = getRarityColor(item.equipmentData?.rarity);
                             const stats = item.equipmentData?.stats;
-                            const mainAtk = stats ? Math.max(stats.physicalAttack, stats.magicalAttack) : 0;
-                            const mainDef = stats ? Math.max(stats.physicalDefense, stats.magicalDefense) : 0;
+                            const mainAtk = stats ? Math.max(stats.physicalAttack || 0, stats.magicalAttack || 0) : 0;
+                            const mainDef = stats ? Math.max(stats.physicalDefense || 0, stats.magicalDefense || 0) : 0;
                             const qualityLabel = isEquip ? getQualityLabel(item.equipmentData!.quality) : '';
 
                             return (
@@ -142,7 +155,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                             <RomanTierOverlay id={item.id} />
                                         </div>
                                         
-                                        {/* Grid Top Info: Rarity Badge & Quantity */}
                                         <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 pointer-events-none items-start max-w-[85%] z-20">
                                             {isEquip && (
                                                 <div className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase border shadow-md leading-none ${rarityClasses}`}>
@@ -156,14 +168,12 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                             )}
                                         </div>
 
-                                        {/* Selection/Alchemy Indicator */}
                                         {isSelected && (
                                             <div className="absolute top-1 right-1 bg-indigo-600 rounded-full p-0.5 shadow-lg z-30 animate-pulse">
                                                 <Check className="w-3 h-3 text-white" />
                                             </div>
                                         )}
 
-                                        {/* Quality Label Sparkle Overlay */}
                                         {isEquip && (
                                             <div className="absolute top-[60%] left-1/2 -translate-x-1/2 pointer-events-none z-20">
                                                 <div className="bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/10 shadow-lg">
@@ -173,7 +183,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                             </div>
                                         )}
 
-                                        {/* Grid Bottom Info: Stats & Price */}
                                         <div className="absolute bottom-1 inset-x-1.5 flex justify-between items-end pointer-events-none z-20">
                                             {isEquip ? (
                                                 <div className="flex flex-col gap-0.5">
@@ -199,7 +208,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                         </div>
                                     </button>
 
-                                    {/* Floating Lock for Grid */}
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); onToggleLock(item.id); }}
                                         className={`absolute top-1.5 right-1.5 p-1.5 rounded-lg border transition-all z-30 shadow-xl ${isLocked ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-900/80 border-stone-700 text-stone-500 opacity-0 group-hover:opacity-100 hover:text-stone-200 hover:bg-stone-800'}`}
@@ -210,7 +218,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                             );
                         }
 
-                        // --- LIST MODE ---
                         return (
                             <div key={item.id} className="relative group shrink-0">
                                 <button
@@ -233,7 +240,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                         <div className="flex items-center gap-2">
                                             <span className={`text-[11px] md:text-sm font-black truncate ${isSelected ? 'text-indigo-200' : isLocked ? 'text-stone-500' : 'text-stone-100'}`}>{item.name}</span>
                                             {isEquip && (
-                                                <div className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase border shadow-sm leading-none ${getRarityColor(item.equipmentData!.rarity)}`}>
+                                                <div className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase border shadow-sm leading-none ${getRarityColor(item.equipmentData?.rarity)}`}>
                                                     {item.equipmentData!.rarity}
                                                 </div>
                                             )}
@@ -271,7 +278,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                     </div>
                                 </button>
 
-                                {/* Lock Toggle Button for List */}
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); onToggleLock(item.id); }}
                                     className={`absolute top-3 right-3 p-1.5 rounded-lg border transition-all z-30 ${isLocked ? 'bg-amber-600 border-amber-400 text-white shadow-lg' : 'bg-stone-900 border-stone-700 text-stone-500 opacity-0 group-hover:opacity-100 hover:text-stone-200'}`}
