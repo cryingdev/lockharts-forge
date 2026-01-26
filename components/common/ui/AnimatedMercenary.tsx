@@ -34,6 +34,7 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
             img.onload = () => {
                 const singleFrameWidth = img.naturalWidth / 3;
                 const ratio = singleFrameWidth / img.naturalHeight;
+                console.log(img.naturalWidth, singleFrameWidth)
                 if (!isNaN(ratio) && ratio > 0) {
                     setAspectRatio(ratio);
                 }
