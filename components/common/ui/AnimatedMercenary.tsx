@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { getAssetUrl } from '../../../utils';
 
@@ -18,7 +19,7 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
     height 
 }) => {
     const [frame, setFrame] = useState(0);
-    const [aspectRatio, setAspectRatio] = useState<number>(1 / 2.15); // 초기 기본값 (Tilly 등 기준)
+    const [aspectRatio, setAspectRatio] = useState<number>(1 / 2.15); // 초기 기본값
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const isSpriteSheet = mercenary?.sprite?.includes('_sprite');
@@ -34,7 +35,6 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
             img.onload = () => {
                 const singleFrameWidth = img.naturalWidth / 3;
                 const ratio = singleFrameWidth / img.naturalHeight;
-                console.log(img.naturalWidth, singleFrameWidth)
                 if (!isNaN(ratio) && ratio > 0) {
                     setAspectRatio(ratio);
                 }
@@ -73,7 +73,7 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
             <div 
                 className={className} 
                 style={{ 
-                    height: height || undefined, // height prop이 있으면 스타일로 적용, 없으면 className에 맡김
+                    height: height || '100%',
                     aspectRatio: `${aspectRatio}`, 
                     overflow: 'hidden',
                     display: 'flex',
@@ -97,7 +97,7 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
         <img 
             src={spriteUrl} 
             className={className}
-            style={{ height: height || 'auto', objectFit: 'contain' }}
+            style={{ height: height || '100%', objectFit: 'contain' }}
             alt={mercenary.name}
         />
     );

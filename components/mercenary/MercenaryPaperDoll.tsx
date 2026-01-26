@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { 
   X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Star, 
   Package, ChevronLeft, ChevronDown, Anchor, GripVertical 
@@ -36,6 +37,22 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
   onToggleInventory,
   isHired,
 }) => {
+  const [spriteRatio, setSpriteRatio] = useState<number>(1 / 2.15);
+  const isSpriteSheet = mercenary.sprite?.includes('_sprite');
+
+  useEffect(() => {
+    if (isSpriteSheet && mercenary.sprite) {
+      const img = new Image();
+      img.src = getAssetUrl(mercenary.sprite);
+      img.onload = () => {
+        const ratio = (img.naturalWidth / 3) / img.naturalHeight;
+        if (!isNaN(ratio) && ratio > 0) {
+          setSpriteRatio(ratio);
+        }
+      };
+    }
+  }, [mercenary.sprite, isSpriteSheet]);
+
   const renderSlot = ({
     slot,
     icon,
@@ -106,7 +123,6 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
   };
 
   const hasPowerDiff = nextCombatPower !== currentCombatPower;
-  const isSpriteSheet = mercenary.sprite?.includes('_sprite');
 
   return (
     <div className="w-full flex flex-col shrink-0">
@@ -157,12 +173,13 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
       </div>
 
       <div className="relative w-full aspect-[4/3] md:aspect-square flex items-center justify-center overflow-hidden min-h-[180px] md:min-h-[280px]">
-        <div className="relative h-[90%] w-full flex items-center justify-center pointer-events-none opacity-80">
+        {/* 캐릭터 이미지를 왼쪽으로 고정 */}
+        <div className="absolute inset-y-0 left-0 w-full flex items-center justify-start pointer-events-none opacity-90 pl-[8%] md:pl-[12%]">
           {isSpriteSheet ? (
             <div 
-              className="h-full" 
+              className="h-[90%]" 
               style={{ 
-                aspectRatio: '1 / 2.15',
+                aspectRatio: `${spriteRatio}`,
                 backgroundImage: `url(${getAssetUrl(mercenary.sprite!)})`,
                 backgroundSize: '300% 100%',
                 backgroundPosition: '0% 0%',
@@ -174,25 +191,24 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
           ) : (
             <img
               src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')}
-              className="h-full object-contain filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+              className="h-[90%] object-contain filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]"
               alt={mercenary.name}
             />
           )}
         </div>
-        {renderSlot({ slot: 'HEAD', icon: <Crown className="w-5 h-5" />, style: 'top-[6%] left-1/2 -translate-x-1/2' })}
-        {renderSlot({ slot: 'BODY', icon: <Shirt className="w-5 h-5" />, style: 'top-[26%] left-1/2 -translate-x-1/2' })}
-        {renderSlot({ slot: 'WAIST', icon: <GripVertical className="w-5 h-5" />, style: 'top-[42%] left-1/2 -translate-x-1/2' })}
-        {renderSlot({ slot: 'LEGS', icon: <Anchor className="w-5 h-5" />, style: 'top-[60%] left-1/2 -translate-x-1/2' })}
+
+        {/* 장비 슬롯 - 오른쪽(58%) 기준으로 재배치 */}
+        {renderSlot({ slot: 'HEAD', icon: <Crown className="w-5 h-5" />, style: 'top-[6%] left-[58%] -translate-x-1/2' })}
+        {renderSlot({ slot: 'BODY', icon: <Shirt className="w-5 h-5" />, style: 'top-[26%] left-[58%] -translate-x-1/2' })}
+        {renderSlot({ slot: 'WAIST', icon: <GripVertical className="w-5 h-5" />, style: 'top-[43%] left-[58%] -translate-x-1/2' })}
+        {renderSlot({ slot: 'LEGS', icon: <Anchor className="w-5 h-5" />, style: 'top-[61%] left-[58%] -translate-x-1/2' })}
+        {renderSlot({ slot: 'FEET', icon: <Footprints className="w-5 h-5" />, style: 'bottom-[6%] left-[58%] -translate-x-1/2' })}
         
-        {renderSlot({ slot: 'HANDS', icon: <Hand className="w-5 h-5" />, style: 'top-[26%] left-[10%]' })}
-        {renderSlot({ slot: 'ACCESSORY', icon: <Sparkles className="w-5 h-5" />, style: 'top-[26%] right-[10%]' })}
-        {renderSlot({ slot: 'MAIN_HAND', icon: <Sword className="w-5 h-5" />, style: 'top-[50%] left-[4%]' })}
-        {renderSlot({ slot: 'OFF_HAND', icon: <Shield className="w-5 h-5" />, style: 'top-[50%] right-[4%]' })}
-        {renderSlot({
-          slot: 'FEET',
-          icon: <Footprints className="w-5 h-5" />,
-          style: 'bottom-[4%] left-1/2 -translate-x-1/2',
-        })}
+        {/* 사이드 슬롯들 */}
+        {renderSlot({ slot: 'HANDS', icon: <Hand className="w-5 h-5" />, style: 'top-[26%] left-[38%] -translate-x-1/2' })}
+        {renderSlot({ slot: 'ACCESSORY', icon: <Sparkles className="w-5 h-5" />, style: 'top-[26%] left-[78%] -translate-x-1/2' })}
+        {renderSlot({ slot: 'MAIN_HAND', icon: <Sword className="w-5 h-5" />, style: 'top-[50%] left-[32%] -translate-x-1/2' })}
+        {renderSlot({ slot: 'OFF_HAND', icon: <Shield className="w-5 h-5" />, style: 'top-[50%] left-[84%] -translate-x-1/2' })}
       </div>
     </div>
   );
