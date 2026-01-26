@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useMarket } from './hooks/useMarket';
 import { GarrickSprite } from './ui/GarrickSprite';
 import { MarketCatalog } from './ui/MarketCatalog';
@@ -17,6 +16,18 @@ interface MarketTabProps {
 const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     const market = useMarket(onNavigate);
     const { state, actions, handlers, viewMode, dialogue, cart, isCartOpen, totalCost, categorizedMarketItems, floatingHearts, showGiftModal, pendingGiftItem, collapsedSections } = market;
+
+    // Debugging Garrick Gift Modal
+    useEffect(() => {
+        if (showGiftModal) {
+            console.group('[MarketTab] Garrick Gift Selection Debug');
+            console.log('Total Inventory Size:', state.inventory.length);
+            const equipmentItems = state.inventory.filter(i => i.type === 'EQUIPMENT');
+            console.log('Equipment Items Count:', equipmentItems.length);
+            console.table(state.inventory.map(i => ({ name: i.name, type: i.type, quantity: i.quantity })));
+            console.groupEnd();
+        }
+    }, [showGiftModal, state.inventory]);
 
     // 마켓 튜토리얼 씬인지 확인
     const isLocalTutorial = state.activeTutorialScene === 'MARKET';
@@ -97,7 +108,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                 {!isLocalTutorial && <button onClick={() => market.setViewMode('INTERACTION')} className="bg-stone-800 p-2 rounded-xl border border-stone-700 active:scale-90"><ArrowLeft className="w-5 h-5 text-stone-300" /></button>}
                                 <div>
                                     <h2 className="text-xl font-black text-stone-100 font-serif uppercase tracking-tight">Garrick's Wares</h2>
-                                    <div className="flex items-center gap-2 bg-stone-950 px-2 py-0.5 rounded border border-white/5 mt-1"><Coins className="w-3 h-3 text-amber-500" /><span className="text-[10px] font-mono font-black text-stone-300">{state.stats.gold.toLocaleString()} G</span></div>
+                                    <div className="flex items-center gap-2 bg-stone-950 px-2 py-0.5 rounded border border-white/5 mt-1"><Coins className="w-3 h-3 text-amber-50" /><span className="text-[10px] font-mono font-black text-stone-300">{state.stats.gold.toLocaleString()} G</span></div>
                                 </div>
                             </div>
                             {!isCartOpen && (
@@ -145,7 +156,30 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             )}
 
             {showGiftModal && (
-                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"><div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95"><div className="p-3 border-b border-stone-800 bg-stone-850 flex justify-between items-center"><div className="flex items-center gap-2"><div className="bg-pink-900/30 p-1.5 rounded-lg border border-pink-700/50"><Gift className="w-4 h-4 text-pink-500" /></div><h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">Select Gift for Garrick</h3></div><button onClick={() => market.setShowGiftModal(false)} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500"><X className="w-4 h-4" /></button></div><ItemSelectorList items={state.inventory.filter(i => (i.type === 'RESOURCE' || i.type === 'CONSUMABLE' || i.type === 'EQUIPMENT' || i.type === 'SCROLL'))} onSelect={handlers.handleGiftInit} onToggleLock={(id) => actions.toggleLockItem(id)} customerMarkup={1.0} emptyMessage="No giftable items." /></div></div>
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl h-[60vh] min-h-[400px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95">
+                        <div className="p-3 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-pink-900/30 p-1.5 rounded-lg border border-pink-700/50">
+                                    <Gift className="w-4 h-4 text-pink-500" />
+                                </div>
+                                <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">Select Gift for Garrick</h3>
+                            </div>
+                            <button onClick={() => market.setShowGiftModal(false)} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-hidden flex flex-col">
+                            <ItemSelectorList 
+                                items={state.inventory.filter(i => i.type === 'EQUIPMENT')} 
+                                onSelect={handlers.handleGiftInit} 
+                                onToggleLock={(id) => actions.toggleLockItem(id)} 
+                                customerMarkup={1.0} 
+                                emptyMessage="Only Equipment can be gifted to Garrick. Craft some gear first!" 
+                            />
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

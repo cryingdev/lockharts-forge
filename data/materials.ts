@@ -142,7 +142,7 @@ export const materials: Record<string, MaterialDefinition> = {
     },
     acidic_slime_core: {
         id: 'acidic_slime_core', name: 'Acidic Slime Core', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A pulsing core that corrodes metal. Used for edge coating and poisons.', baseValue: 240, icon: '🧪'
+        description: 'A pulsing core that correodes metal. Used for edge coating and poisons.', baseValue: 240, icon: '🧪'
     },
     wolf_fang_shard: {
         id: 'wolf_fang_shard', name: 'Wolf Fang Shard', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
@@ -168,7 +168,7 @@ export const materials: Record<string, MaterialDefinition> = {
     // --- TIER 2 SPECIAL & DROPS ---
     goblin_sling_pouch: {
         id: 'goblin_sling_pouch', name: 'Goblin Sling Pouch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
-        description: 'A leather pouch used by slingers. Handy for belt accessory slots.', baseValue: 340, icon: '👝'
+        description: 'A leather pouch used by slingers. Handy for belt accessory slots.', baseValue: 340, icon: '👑'
     },
     fetish_totem_shard: {
         id: 'fetish_totem_shard', name: 'Totem Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
@@ -240,7 +240,7 @@ export const materials: Record<string, MaterialDefinition> = {
     },
     queen_thread_spool: {
         id: 'queen_thread_spool', name: 'Queen\'s Thread', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
-        description: 'Luminous thread from the Brood Mother. Increases rarity outcomes.', baseValue: 580, icon: '🧶'
+        description: 'Luminous thread from the Brood Mother. Increases rarity chances.', baseValue: 580, icon: '🧶'
     },
 
     // --- TIER 3 SPECIAL & DROPS ---
@@ -443,6 +443,7 @@ export const materials: Record<string, MaterialDefinition> = {
     // Facilities & Key Items
     furnace: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for smelting metal ores.', baseValue: 0 },
     workbench: { id: 'workbench', name: 'Workbench', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for leatherworking and woodworking.', baseValue: 300 },
+    research_table: { id: 'research_table', name: 'Research Table', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Experiment with materials to rediscover lost techniques.', baseValue: 800, image: 'research_table.png' },
     scroll_t2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', category: 'SCROLL', tier: 1, description: 'Enhances equipment quality techniques.', baseValue: 1200, image: 'scroll_contract.png' },
     scroll_t3: { id: 'scroll_t3', name: 'Upgrade Scroll (Tier 3)', type: 'SCROLL', category: 'SCROLL', tier: 2, description: 'Unlock expert craftsmanship techniques.', baseValue: 3000, image: 'scroll_contract.png' },
     
@@ -453,7 +454,7 @@ export const materials: Record<string, MaterialDefinition> = {
         description: 'An ancient parchment detailing techniques for a Bronze Longsword.', baseValue: 0
     },
     affinity_debug_gift: {
-        id: 'affinity_debug_gift', name: 'Sparkling Heart', type: 'RESOURCE', category: 'GEM', tier: 1,
+        id: 'affinity_debug_gift', name: 'Sparkling Heart', type: 'GIFT', category: 'GEM', tier: 1,
         description: 'A magical debug item that increases affinity by 50.', baseValue: 500
     },
     emergency_gold: {

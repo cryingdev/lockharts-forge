@@ -39,6 +39,8 @@ export interface GameContextType {
     refuseCustomer: (mercenaryId: string, affinityLoss: number) => void;
 
     setCrafting: (isCrafting: boolean) => void;
+    // Added setResearchOpen to actions interface to resolve TS error in MainGameLayout.tsx and ForgeTab.tsx
+    setResearchOpen: (isOpen: boolean) => void;
     updateForgeStatus: (temp: number) => void;
     toggleJournal: () => void;
 
@@ -48,6 +50,8 @@ export interface GameContextType {
     talkMercenary: (mercenaryId: string) => void;
     talkGarrick: () => void;
     giftGarrick: (payload: { itemId: string }) => void;
+    // Added researchCombination to actions interface to fix TS error in useResearch.ts
+    researchCombination: (items: { id: string; count: number }[]) => void;
 
     startExpedition: (dungeonId: string, partyIds: string[]) => void;
     completeExpedition: (expeditionId: string) => void;

@@ -3,12 +3,14 @@ import { PrimaryStats } from '../models/Stats';
 
 export type { EquipmentSlotType };
 
-export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT' | 'SCROLL' | 'CONSUMABLE';
+export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT' | 'SCROLL' | 'CONSUMABLE' | 'GIFT';
 
 export interface ItemDefinition {
   id: string;
   name: string;
   type: ItemType;
+  // Added category property to support research filtering and fix TS error in useResearch.ts
+  category?: string;
   description: string;
   baseValue: number;
   icon?: string; 

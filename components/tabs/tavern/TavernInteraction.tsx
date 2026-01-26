@@ -6,7 +6,6 @@ import { getAssetUrl } from '../../../utils';
 import { Mercenary } from '../../../models/Mercenary';
 import { CONTRACT_CONFIG, calculateHiringCost } from '../../../config/contract-config';
 import { InventoryItem, EquipmentSlotType } from '../../../types/inventory';
-// Fix: Changed default import to named import as MercenaryDetailModal has no default export
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { ItemSelectorList } from '../../ItemSelectorList';
 import { AnimatedMercenary } from '../../common/ui/AnimatedMercenary';
@@ -34,15 +33,26 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     
-    // Step-based interaction state
     const [step, setStep] = useState<InteractionStep>('IDLE');
+
+    // Debugging Mercenary Gift Menu
+    useEffect(() => {
+        if (showGiftMenu) {
+            console.group(`[TavernInteraction] Gift Menu Debug for ${mercenary.name}`);
+            console.log('Total Inventory Size:', state.inventory.length);
+            const validTypes = ['EQUIPMENT', 'PRODUCT', 'CONSUMABLE'];
+            const filtered = state.inventory.filter(i => validTypes.includes(i.type));
+            console.log('Filtered Count (EQUIPMENT/PRODUCT/CONSUMABLE):', filtered.length);
+            console.table(state.inventory.map(i => ({ name: i.name, type: i.type, quantity: i.quantity })));
+            console.groupEnd();
+        }
+    }, [showGiftMenu, state.inventory, mercenary.name]);
 
     const isHired = mercenary.status === 'HIRED' || mercenary.status === 'ON_EXPEDITION' || mercenary.status === 'INJURED';
     const isOnExpedition = mercenary.status === 'ON_EXPEDITION';
     const hiringCost = calculateHiringCost(mercenary.level, mercenary.job);
     const canAfford = state.stats.gold >= hiringCost;
     const hasAffinity = mercenary.affinity >= CONTRACT_CONFIG.HIRE_AFFINITY_THRESHOLD;
-    // Fixed: Changed 'merc' to 'mercenary' to resolve name error on line 107.
     const hasUnallocated = isHired && (mercenary.bonusStatPoints || 0) > 0;
 
     const handleTalk = () => {
@@ -72,7 +82,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
         setDialogue(lines[Math.floor(Math.random() * lines.length)]);
     };
 
-    // --- Hiring Flow ---
     const handleRecruitInit = () => {
         if (!hasAffinity) {
             setDialogue("I don't know you well enough to pledge my blade to your forge yet.");
@@ -92,7 +101,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
         setDialogue("A fair contract. My strength is yours, Lockhart.");
     };
 
-    // --- Termination Flow ---
     const handleTerminateInit = () => {
         setStep('CONFIRM_FIRE');
         setDialogue(`(Surprised) "Terminate the contract? Did I fail you in some way? If you let me go now, I might not return for some time."`);
@@ -154,23 +162,10 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
         setDialogue(`(You pull your hand back.) "Actually, never mind."`);
     };
 
+    // Filter restricted to Mercenary's interests
     const giftableItems = state.inventory.filter(i => 
-        i.type === 'RESOURCE' || 
-        i.type === 'CONSUMABLE' || 
-        i.type === 'EQUIPMENT' ||
-        i.type === 'SCROLL'
+        ['EQUIPMENT', 'PRODUCT', 'CONSUMABLE', 'GIFT'].includes(i.type)
     );
-
-    const getItemImageUrl = (item: InventoryItem) => {
-        if (item.type === 'EQUIPMENT' && item.equipmentData) {
-            if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
-            return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
-        }
-        if (item.image) return getAssetUrl(item.image);
-        if (item.type === 'SCROLL') return getAssetUrl('scroll_contract.png');
-        if (item.id.startsWith('scroll_') || item.id.startsWith('recipe_scroll_')) return getAssetUrl('scroll_contract.png');
-        return getAssetUrl(`${item.id}.png`);
-    };
 
     return (
         <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center">
@@ -193,15 +188,10 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                     src={getAssetUrl('tavern_bg.jpeg')} 
                     alt="Tavern Interior" 
                     className="absolute inset-0 w-full h-full object-cover opacity-50"
-                    onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #1c1917, #0c0a09)';
-                    }}
                 />
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            {/* EXIT BUTTON - Top Left */}
             <button 
                 onClick={onBack}
                 className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 hover:text-red-100 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
@@ -211,7 +201,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 <span className="text-xs font-black uppercase tracking-widest">Back</span>
             </button>
 
-            {/* Mercenary Info HUD */}
             <div className="absolute top-20 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
@@ -262,14 +251,11 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* Character Stage - Stick to bottom of screen */}
             <div className="absolute inset-0 z-10 w-full h-full pointer-events-none flex items-end justify-center">
                 <div className="relative w-full h-full flex items-end justify-center animate-in fade-in zoom-in-95 duration-700 ease-out">
-                    {/* 캐릭터 박스: 바닥 정렬 기준 */}
                     <div className="relative h-[90dvh] max-h-[110dvh] flex items-end justify-center">
                     <AnimatedMercenary
                         mercenary={mercenary}
-                        // height prop 제거: 부모 박스 높이로 제어
                         className="h-full w-auto filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]"
                     />
 
@@ -300,13 +286,8 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                 </div>
             </div>
 
-            {/* Bottom UI Unit */}
             <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center gap-[10px] pb-[env(safe-area-inset-bottom)] pointer-events-none">
-                
-                {/* Interaction Action Bars */}
                 <div className={`flex flex-col items-end gap-2 w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
-                    
-                    {/* Action Buttons (Right Aligned) */}
                     <div className="flex wrap items-center justify-end gap-1.5 md:gap-3 w-full">
                         <button 
                             onClick={handleTalk}
@@ -324,7 +305,6 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                             <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
                         </button>
 
-                        {/* Recruit or Terminate Button */}
                         {isHired ? (
                             <button 
                                 onClick={handleTerminateInit}
@@ -391,8 +371,8 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
             </div>
 
             {showGiftMenu && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-                    <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[85vh]">
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+                    <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl h-[60vh] min-h-[400px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
                         <div className="p-3 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="bg-pink-900/30 p-1.5 rounded-lg border border-pink-700/50">
@@ -405,13 +385,15 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                             </button>
                         </div>
                         
-                        <ItemSelectorList 
-                            items={giftableItems}
-                            onSelect={(item) => handleSelectItemForGift(item)}
-                            onToggleLock={(id) => actions.toggleLockItem(id)}
-                            customerMarkup={1.0}
-                            emptyMessage="Your storage is empty."
-                        />
+                        <div className="flex-1 overflow-hidden flex flex-col">
+                            <ItemSelectorList 
+                                items={giftableItems}
+                                onSelect={(item) => handleSelectItemForGift(item)}
+                                onToggleLock={(id) => actions.toggleLockItem(id)}
+                                customerMarkup={1.0}
+                                emptyMessage="No suitable gear or items in storage. Craft some equipment or buy potions!"
+                            />
+                        </div>
                     </div>
                 </div>
             )}

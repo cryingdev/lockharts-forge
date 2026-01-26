@@ -161,8 +161,10 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       }}
     >
       <div className="flex items-center gap-3 mb-2 md:mb-3 pb-2 md:pb-3 border-b border-white/10">
-        <div className="w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-xl border-2 border-stone-800 flex items-center justify-center shadow-inner shrink-0 overflow-hidden">
-          {itemDetail.imageUrl ? (
+        <div className={`w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-xl border-2 flex items-center justify-center shadow-inner shrink-0 overflow-hidden ${!itemDetail.isUnlocked ? 'border-amber-600/50' : 'border-stone-800'}`}>
+          {!itemDetail.isUnlocked ? (
+            <span className="text-2xl md:text-4xl font-serif text-amber-500 font-black animate-pulse">?</span>
+          ) : itemDetail.imageUrl ? (
             <img src={itemDetail.imageUrl} className="w-7 h-7 md:w-11 md:h-11 object-contain" alt="item" />
           ) : (
             <span className="text-xl md:text-3xl">{itemDetail.icon}</span>
@@ -170,9 +172,9 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
         </div>
         <div className="flex flex-col leading-none">
           <span className="text-[7px] md:text-[10px] text-stone-500 font-black uppercase tracking-widest mb-1">Price</span>
-          <div className="flex items-center gap-1 text-emerald-400 font-mono font-black text-xs md:text-xl">
+          <div className={`flex items-center gap-1 font-mono font-black text-xs md:text-xl ${!itemDetail.isUnlocked ? 'text-stone-600' : 'text-emerald-400'}`}>
             <Coins className="w-3 h-3 md:w-5 md:h-5" />
-            {itemDetail.price.toLocaleString()} G
+            {!itemDetail.isUnlocked ? '???,???' : itemDetail.price.toLocaleString()} G
           </div>
         </div>
       </div>
@@ -182,38 +184,52 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
           <Package className="w-2 h-2 md:w-3 md:h-3" /> Required Materials
         </h5>
         
-        {itemDetail.isUnlocked ? (
-          <div className="grid gap-1">
-            {itemDetail.requirements?.map(req => {
-              const hasCount = getInventoryCount(req.id);
-              const isEnough = hasCount >= req.count;
-              const mat = Object.values(materials).find(m => m.id === req.id);
+        <div className="grid gap-1">
+          {itemDetail.requirements?.map((req, idx) => {
+            const isClue = idx === 0; // 첫 번째 재료만 단서로 노출
+            const shouldShow = itemDetail.isUnlocked || isClue;
+            
+            if (!shouldShow) {
               return (
-                <div key={req.id} className="flex justify-between items-center text-[8px] md:text-xs">
-                  <span className={`truncate mr-2 font-bold tracking-tight ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>
-                    {mat?.name || req.id}
+                <div key={req.id} className="flex justify-between items-center text-[8px] md:text-xs opacity-40">
+                  <span className="truncate mr-2 font-bold tracking-tight text-stone-600">
+                    ???
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className={`font-mono font-black ${isEnough ? 'text-stone-500' : 'text-red-500'}`}>
-                      {hasCount}/{req.count}
+                    <span className="font-mono font-black text-stone-700">
+                      ? / ?
                     </span>
-                    <div className={`w-1 h-1 rounded-full ${isEnough ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`} />
+                    <div className="w-1 h-1 rounded-full bg-stone-800" />
                   </div>
                 </div>
               );
-            })}
-          </div>
-        ) : (
-          <div className="py-4 md:py-6 flex flex-col items-center justify-center bg-black/40 rounded-xl border-2 border-dashed border-stone-800 animate-in fade-in duration-500">
-            <div className="relative">
-                <span className="text-4xl md:text-7xl font-serif text-stone-800 font-black animate-pulse">?</span>
-                <Lock className="absolute -top-0.5 -right-0.5 w-3 h-3 md:w-5 md:h-5 text-stone-700" />
-            </div>
-            <div className="mt-2 md:mt-4 flex flex-col items-center text-center px-2">
-              <span className="text-[7px] md:text-[10px] text-stone-600 font-black uppercase tracking-widest italic leading-none">Unknown</span>
-              <p className="mt-1 text-[6px] md:text-[8px] text-stone-700 font-bold max-w-[120px] md:max-w-[160px] uppercase leading-relaxed tracking-tighter">
-                Requires Knowledge Scroll
-              </p>
+            }
+
+            const hasCount = getInventoryCount(req.id);
+            const isEnough = hasCount >= req.count;
+            const mat = Object.values(materials).find(m => m.id === req.id);
+            
+            return (
+              <div key={req.id} className="flex justify-between items-center text-[8px] md:text-xs">
+                <span className={`truncate mr-2 font-bold tracking-tight ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>
+                  {mat?.name || req.id}
+                </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className={`font-mono font-black ${isEnough ? 'text-stone-500' : 'text-red-500'}`}>
+                    {hasCount}/{req.count}
+                  </span>
+                  <div className={`w-1 h-1 rounded-full ${isEnough ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {!itemDetail.isUnlocked && (
+          <div className="mt-2 pt-2 border-t border-white/5 flex flex-col items-center text-center">
+            <div className="flex items-center gap-1.5 text-amber-600/80">
+              <Lock className="w-2.5 h-2.5 md:w-3 md:h-3" />
+              <span className="text-[6px] md:text-[8px] font-black uppercase tracking-widest">Locked Knowledge</span>
             </div>
           </div>
         )}

@@ -129,11 +129,12 @@ export const InventoryDisplay = () => {
                     </div>
                     <span className="text-[10px] text-slate-500 font-mono">{state.inventory.length}</span>
                 </div>
-                <div className="p-2 overflow-y-auto flex-1 custom-scrollbar">
+                {/* min-h-0 is essential for flex-1 scrolling in some browsers */}
+                <div className="p-2 overflow-y-auto flex-1 custom-scrollbar min-h-0 bg-stone-950/20">
                     {state.inventory.length === 0 ? (
                         <div className="text-slate-500 text-center py-12 italic text-xs">Empty</div>
                     ) : (
-                        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 pb-8">
                             {state.inventory.map(item => {
                                 const isSelected = currentSelectedItem?.id === item.id;
                                 return (
@@ -175,7 +176,7 @@ export const InventoryDisplay = () => {
                     )}
                 </div>
                 {currentSelectedItem ? (
-                    <div className="flex-1 p-3 md:p-5 flex flex-col animate-in fade-in duration-300 overflow-y-auto custom-scrollbar">
+                    <div className="flex-1 p-3 md:p-5 flex flex-col animate-in fade-in duration-300 overflow-y-auto custom-scrollbar min-h-0">
                         <div className="flex flex-col items-center text-center mb-4 shrink-0">
                             <div className={`w-12 h-12 md:w-20 md:h-20 bg-stone-900 rounded-full border-2 flex items-center justify-center mb-2 shadow-lg relative ${currentSelectedItem.equipmentData ? getRarityClasses(currentSelectedItem.equipmentData.rarity) : 'border-stone-700'}`}>
                                 <AdaptiveInventoryImage item={currentSelectedItem} className="w-8 h-8 md:w-12 md:h-12 object-contain" />
@@ -197,11 +198,13 @@ export const InventoryDisplay = () => {
                             </div>
                         </div>
 
-                        <p className="text-stone-400 text-[10px] md:text-xs italic leading-tight text-center mb-4 px-1">"{currentSelectedItem.description}"</p>
+                        <p className="text-stone-400 text-[10px] md:text-xs italic leading-tight text-center mb-4 px-1 shrink-0">"{currentSelectedItem.description}"</p>
                         
-                        {renderEquipmentStats(currentSelectedItem)}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 pr-1">
+                            {renderEquipmentStats(currentSelectedItem)}
+                        </div>
 
-                        <div className="mt-auto space-y-2 pt-2">
+                        <div className="mt-4 space-y-2 pt-2 shrink-0">
                             {(currentSelectedItem.type === 'CONSUMABLE' || currentSelectedItem.type === 'SCROLL') && (
                                 <button onClick={handleConsume} className="w-full py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 rounded text-[10px] md:text-sm font-bold transition-all">
                                     {currentSelectedItem.type === 'SCROLL' ? 'Study Scroll' : 'Use Item'}

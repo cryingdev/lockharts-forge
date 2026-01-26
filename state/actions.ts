@@ -31,6 +31,7 @@ export type GameAction =
   | { type: 'DISMISS_CUSTOMER' }
   | { type: 'REFUSE_CUSTOMER'; payload: { mercenaryId: string; affinityLoss: number } }
   | { type: 'SET_CRAFTING'; payload: boolean }
+  | { type: 'SET_RESEARCH_OPEN'; payload: boolean }
   | { type: 'UPDATE_FORGE_STATUS'; payload: { temp: number } }
   | { type: 'TOGGLE_JOURNAL' }
   | { type: 'HIRE_MERCENARY'; payload: { mercenaryId: string; cost: number } }
@@ -69,4 +70,5 @@ export type GameAction =
   | { type: 'RESCUE_NPC'; payload: { npcId: string } }
   | { type: 'START_COMBAT_MANUAL' }
   | { type: 'RESOLVE_COMBAT_MANUAL'; payload: { win: boolean; flee: boolean; finalParty: any[] } }
-  | { type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' };
+  | { type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' }
+  | { type: 'RESEARCH_COMBINATION'; payload: { items: { id: string; count: number }[] } };
