@@ -44,6 +44,7 @@ export const createInitialGameState = (): GameState => ({
     forge: {
         hasFurnace: false,
         hasWorkbench: false,
+        hasResearchTable: false,
         anvilLevel: 1,
         isShopOpen: false,
     },
@@ -71,6 +72,7 @@ export const createInitialGameState = (): GameState => ({
 
     // Game Logic State
     isCrafting: false,
+    isResearchOpen: false,
     showSleepModal: false,
     showJournal: false,
     showTutorialCompleteModal: false,

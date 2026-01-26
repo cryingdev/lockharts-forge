@@ -9,6 +9,8 @@ export interface ItemDefinition {
   id: string;
   name: string;
   type: ItemType;
+  // Added category property to support research filtering and fix TS error in useResearch.ts
+  category?: string;
   description: string;
   baseValue: number;
   icon?: string; 

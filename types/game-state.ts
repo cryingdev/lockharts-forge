@@ -52,6 +52,7 @@ export interface PlayerStats {
 export interface ForgeStatus {
   hasFurnace: boolean;
   hasWorkbench: boolean;
+  hasResearchTable: boolean;
   anvilLevel: number;
   isShopOpen: boolean;
 }
@@ -105,6 +106,7 @@ export interface GameState {
   talkedToGarrickToday: boolean;
 
   isCrafting: boolean; 
+  isResearchOpen: boolean;
   showSleepModal: boolean; 
   showJournal: boolean; 
   showTutorialCompleteModal: boolean; 
@@ -135,7 +137,7 @@ export interface GameState {
     | 'PRE_IGNITE_INDICATE'
     | 'SMITHING_MINIGAME_IGNITE' 
     | 'PRE_PUMP_DIALOG' 
-    | 'PRE_PUMP_INDICATE'
+    | 'PRE_PUMP_INDICATE' 
     | 'SMITHING_MINIGAME_PUMP' 
     | 'POST_PUMP_DIALOG'
     | 'SMITHING_MINIGAME_HIT'

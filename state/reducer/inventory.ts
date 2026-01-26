@@ -86,6 +86,14 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
                 logUpdates.unshift('Workbench installed! You can now craft leather and wood equipment.');
                 return;
             }
+            if (buyItem.id === 'research_table') {
+                newForgeState.hasResearchTable = true;
+                if (!newUnlockedTabs.includes('RESEARCH')) {
+                    newUnlockedTabs.push('RESEARCH');
+                }
+                logUpdates.unshift('Research Table installed! You can now experiment with materials to find lost blueprints.');
+                return;
+            }
             const itemDef = materials[buyItem.id];
             if (itemDef) {
                 const existingItem = newInventory.find(i => i.id === buyItem.id);

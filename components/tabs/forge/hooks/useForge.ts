@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EquipmentCategory, EquipmentItem } from '../../../../types';
@@ -10,7 +9,7 @@ import { getSmithingLevel, getUnlockedTier, getEnergyCost } from '../../../../ut
 export const useForge = (onNavigate: (tab: any) => void) => {
   const { state, actions } = useGame();
   const { inventory, stats, isCrafting, craftingMastery, unlockedRecipes, tutorialStep, forgeTemperature, lastForgeTime } = state;
-  const { hasFurnace, hasWorkbench } = state.forge;
+  const { hasFurnace, hasWorkbench, hasResearchTable } = state.forge;
 
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
@@ -164,7 +163,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       setActiveCategory(cat);
   }, []);
 
-  const clearTooltipTimer = useCallback(() => {
+  const clearTooltipRef = useCallback(() => {
     if (tooltipTimerRef.current) {
       clearTimeout(tooltipTimerRef.current);
       tooltipTimerRef.current = null;
@@ -191,7 +190,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       setHoveredItem(selectedItem);
       
       // Auto hide tooltip after 1 second when triggered by click
-      clearTooltipTimer();
+      clearTooltipRef();
       tooltipTimerRef.current = setTimeout(() => {
         setHoveredItem(null);
         tooltipTimerRef.current = null;
@@ -207,7 +206,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
 
     actions.startCrafting(selectedItem);
     setIsPanelOpen(false);
-  }, [selectedItem, hasFurnace, hasWorkbench, getInventoryCount, stats.energy, craftingMastery, actions, onNavigate, isFuelShortage, updateTooltipPosition, clearTooltipTimer]);
+  }, [selectedItem, hasFurnace, hasWorkbench, getInventoryCount, stats.energy, craftingMastery, actions, onNavigate, isFuelShortage, updateTooltipPosition, clearTooltipRef]);
 
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
@@ -228,7 +227,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       setHoveredItem(selectedItem);
 
       // Auto hide tooltip after 1 second when triggered by click
-      clearTooltipTimer();
+      clearTooltipRef();
       tooltipTimerRef.current = setTimeout(() => {
         setHoveredItem(null);
         tooltipTimerRef.current = null;
@@ -259,7 +258,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
         return prev + step;
       });
     }, interval);
-  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery, isQuickFuelShortage, extraQuickFuel, updateTooltipPosition, clearTooltipTimer]);
+  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery, isQuickFuelShortage, extraQuickFuel, updateTooltipPosition, clearTooltipRef]);
 
   const handleSelectItem = useCallback((item: EquipmentItem) => {
       setSelectedItem(item);
@@ -269,19 +268,19 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   }, [tutorialStep, actions]);
 
   const handleMouseEnter = useCallback((item: EquipmentItem, e: React.MouseEvent) => {
-      clearTooltipTimer(); // Manual hover overrides auto-hide
+      clearTooltipRef(); // Manual hover overrides auto-hide
       setHoveredItem(item);
       updateTooltipPosition(e.clientX, e.clientY);
-  }, [updateTooltipPosition, clearTooltipTimer]);
+  }, [updateTooltipPosition, clearTooltipRef]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
       if (hoveredItem) updateTooltipPosition(e.clientX, e.clientY);
   }, [hoveredItem, updateTooltipPosition]);
 
   const handleMouseLeave = useCallback(() => {
-    clearTooltipTimer();
+    clearTooltipRef();
     setHoveredItem(null);
-  }, [clearTooltipTimer]);
+  }, [clearTooltipRef]);
 
   return {
     state,

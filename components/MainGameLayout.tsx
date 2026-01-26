@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
-import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, ChevronLeft, ChevronRight, Pointer, Lock as LockIcon, FastForward, AlertCircle } from 'lucide-react';
+import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, ChevronLeft, ChevronRight, Pointer, Lock as LockIcon, FastForward, AlertCircle, Library } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 
 // Import Background Services
@@ -16,6 +15,7 @@ import TavernTab from './tabs/tavern/TavernTab';
 import MarketTab from './tabs/market/MarketTab';
 import DungeonTab from './tabs/Dungeon/DungeonTab';
 import SimulationTab from './tabs/Simulation/SimulationTab';
+import ResearchTab from './tabs/research/ResearchTab';
 
 // Import Modals
 import EventModal from './modals/EventModal';
@@ -221,7 +221,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
   const completedExpeditionsCount = state.activeExpeditions.filter(exp => exp.status === 'COMPLETED').length;
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
-  const isFullscreenOverlay = state.isCrafting || (state.activeManualDungeon && state.showManualDungeonOverlay);
+  const isFullscreenOverlay = state.isCrafting || (state.activeManualDungeon && state.showManualDungeonOverlay) || state.isResearchOpen;
   const unallocatedPointsCount = useMemo(() => state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status) && (m.bonusStatPoints || 0) > 0).length, [state.knownMercenaries]);
 
   const allTabs = [
@@ -288,7 +288,23 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       )}
 
       <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : 'opacity-100'}`}><Header activeTab={activeTab} onTabChange={setActiveTab} onSettingsClick={() => setIsSettingsOpen(true)} /><div className="bg-stone-900 border-b border-stone-800 flex items-center relative z-10 overflow-hidden h-11 md:h-14"><div ref={scrollRef} onScroll={updateArrows} className="flex overflow-x-auto no-scrollbar flex-1 touch-pan-x snap-x scroll-smooth">{allTabs.map(tab => <button onClick={() => { if (!state.unlockedTabs.includes(tab.id) && !(tab.id === 'SHOP' && state.tutorialStep)) return actions.showToast("Facility locked."); if (state.tutorialStep === 'MARKET_GUIDE' && tab.id === 'MARKET') { actions.setTutorialStep('BROWSE_GOODS_GUIDE'); actions.setTutorialScene('MARKET'); } else if (state.tutorialStep === 'FORGE_TAB_GUIDE' && tab.id === 'FORGE') actions.setTutorialStep('SELECT_SWORD_GUIDE'); else if (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' && tab.id === 'SHOP') actions.setTutorialStep('OPEN_SHOP_SIGN_GUIDE'); setActiveTab(tab.id); }} key={tab.id} data-tutorial-id={tab.id === 'MARKET' ? 'MARKET_TAB' : tab.id === 'FORGE' ? 'FORGE_TAB' : tab.id === 'SHOP' ? 'SHOP_TAB' : undefined} className={`relative flex items-center gap-2 px-5 md:px-6 py-3 md:py-4 border-b-2 transition-all shrink-0 ${activeTab === tab.id ? 'border-amber-500 text-amber-500 bg-stone-800/60 z-[2100]' : 'border-transparent text-stone-500'} ${!state.unlockedTabs.includes(tab.id) && !(tab.id === 'SHOP' && state.tutorialStep) ? 'grayscale opacity-40' : ''}`}><tab.icon className="w-4 h-4 md:w-5 md:h-5" /><span className="font-bold text-[10px] md:text-sm uppercase">{tab.label}</span>{tab.badge ? <div className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-black text-white bg-red-600">{tab.badge}</div> : null}</button>)}</div></div></div>
-      <main className="flex-1 overflow-hidden relative bg-stone-925 flex flex-col min-h-0"><div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab onNavigate={setActiveTab} /></div><div className={`h-full w-full ${activeTab === 'SHOP' ? 'block' : 'hidden'}`}><ShopTab onNavigate={setActiveTab} /></div><div className={`h-full w-full ${activeTab === 'INVENTORY' ? 'block' : 'hidden'}`}><InventoryDisplay /></div><div className={`h-full w-full ${activeTab === 'MARKET' ? 'block' : 'hidden'}`}><MarketTab onNavigate={setActiveTab} /></div><div className={`h-full w-full ${activeTab === 'TAVERN' ? 'block' : 'hidden'}`}><TavernTab activeTab={activeTab} /></div><div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab /></div><div className={`h-full w-full ${activeTab === 'SIMULATION' ? 'block' : 'hidden'}`}><SimulationTab /></div></main>
+      <main className="flex-1 overflow-hidden relative bg-stone-925 flex flex-col min-h-0">
+        <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab onNavigate={setActiveTab} /></div>
+        <div className={`h-full w-full ${activeTab === 'SHOP' ? 'block' : 'hidden'}`}><ShopTab onNavigate={setActiveTab} /></div>
+        <div className={`h-full w-full ${activeTab === 'INVENTORY' ? 'block' : 'hidden'}`}><InventoryDisplay /></div>
+        <div className={`h-full w-full ${activeTab === 'MARKET' ? 'block' : 'hidden'}`}><MarketTab onNavigate={setActiveTab} /></div>
+        <div className={`h-full w-full ${activeTab === 'TAVERN' ? 'block' : 'hidden'}`}><TavernTab activeTab={activeTab} /></div>
+        <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab /></div>
+        <div className={`h-full w-full ${activeTab === 'SIMULATION' ? 'block' : 'hidden'}`}><SimulationTab /></div>
+      </main>
+
+      {/* Full-screen Research Scene Overlay */}
+      {state.isResearchOpen && (
+          <div className="fixed inset-0 z-[100] bg-stone-950 animate-in fade-in duration-500">
+              <ResearchTab onClose={() => actions.setResearchOpen(false)} />
+          </div>
+      )}
+
       {state.toast?.visible && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-bottom-4 pointer-events-none"><div onClick={actions.hideToast} className="bg-stone-900 border-2 border-amber-600/50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto cursor-pointer"><span className="text-stone-100 font-black text-xs md:text-sm uppercase tracking-widest">{state.toast.message}</span></div></div>}
       <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} /><TierUnlockModal /><TutorialCompleteModal /><ConfirmationModal isOpen={showSkipConfirm} title="Skip?" message="Unlock all systems immediately?" onConfirm={() => { actions.completeTutorial(); setShowSkipConfirm(false); }} onCancel={() => setShowSkipConfirm(false)} isDanger />
     </div>

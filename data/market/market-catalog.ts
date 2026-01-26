@@ -10,6 +10,7 @@ export const MARKET_CATALOG: MarketItemConfig[] = [
   // --- KEY ITEMS ---
   { id: 'furnace', maxStock: 1, type: 'FACILITY' }, 
   { id: 'workbench', maxStock: 1, type: 'FACILITY' },
+  { id: 'research_table', maxStock: 1, type: 'FACILITY' },
 
   // --- SUPPLIES: Potions & More ---
   { id: 'potion_health_small',  maxStock: 5, type: 'SUPPLY' },

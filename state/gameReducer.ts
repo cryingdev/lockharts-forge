@@ -13,6 +13,7 @@ import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition,
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
+import { handleResearchCombination } from './reducer/research';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -48,6 +49,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'DISMISS_CRAFTING_RESULT': return { ...state, lastCraftedItem: null };
     case 'DISMISS_TIER_UNLOCK': return { ...state, unlockedTierPopup: null };
     case 'SET_CRAFTING': return handleSetCrafting(state, action.payload);
+    case 'SET_RESEARCH_OPEN': return { ...state, isResearchOpen: action.payload };
     case 'UPDATE_FORGE_STATUS': return handleUpdateForgeStatus(state, action.payload);
 
     // Shop
@@ -71,6 +73,9 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'TALK_GARRICK': return handleTalkGarrick(state);
     case 'GIFT_GARRICK': return handleGiftGarrick(state, action.payload);
 
+    // Research
+    case 'RESEARCH_COMBINATION': return handleResearchCombination(state, action.payload);
+
     // Expedition
     case 'START_EXPEDITION': return handleStartExpedition(state, action.payload);
     case 'COMPLETE_EXPEDITION': return handleCompleteExpedition(state, action.payload);
@@ -86,9 +91,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'START_MANUAL_DUNGEON': return handleStartManualDungeon(state, action.payload);
     case 'MOVE_MANUAL_DUNGEON': return handleMoveManualDungeon(state, action.payload);
     case 'FINISH_MANUAL_DUNGEON': return handleFinishManualDungeon(state);
-    case 'RETREAT_MANUAL_DUNGEON': return handleRetreatManualDungeon(state);
-    case 'TOGGLE_MANUAL_DUNGEON_OVERLAY': return { ...state, showManualDungeonOverlay: action.payload };
     case 'RESCUE_NPC': return handleRescueNPC(state, action.payload);
+    case 'RETREAT_MANUAL_DUNGEON': return handleRetreatManualDungeon(state);
     case 'START_COMBAT_MANUAL': return handleStartCombatManual(state);
     case 'RESOLVE_COMBAT_MANUAL': return handleResolveCombatManual(state, action.payload);
     case 'PROCEED_TO_NEXT_FLOOR_MANUAL': return handleProceedToNextFloorManual(state);
