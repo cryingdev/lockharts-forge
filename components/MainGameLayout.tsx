@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
@@ -211,13 +212,20 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
       const canScroll = scrollWidth > clientWidth + 2;
-      setShowLeftArrow(canScroll && scrollLeft > 1);
-      setShowRightArrow(canScroll && Math.ceil(scrollLeft) < (scrollWidth - clientWidth - 2));
+      setShowLeftArrow(canScroll && scrollLeft > 10); // 좌측 여유 공간을 약간 줌
+      setShowRightArrow(canScroll && Math.ceil(scrollLeft) < (scrollWidth - clientWidth - 10));
     }
   }, []);
 
-  useLayoutEffect(() => { setTimeout(updateArrows, 100); }, [updateArrows, activeTab]);
+  useLayoutEffect(() => { setTimeout(updateArrows, 150); }, [updateArrows, activeTab, state.unlockedTabs]);
   useEffect(() => { window.addEventListener('resize', updateArrows); return () => window.removeEventListener('resize', updateArrows); }, [updateArrows]);
+
+  const handleScrollClick = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === 'left' ? -150 : 150;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   const completedExpeditionsCount = state.activeExpeditions.filter(exp => exp.status === 'COMPLETED').length;
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
@@ -287,7 +295,58 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         </div>
       )}
 
-      <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : 'opacity-100'}`}><Header activeTab={activeTab} onTabChange={setActiveTab} onSettingsClick={() => setIsSettingsOpen(true)} /><div className="bg-stone-900 border-b border-stone-800 flex items-center relative z-10 overflow-hidden h-11 md:h-14"><div ref={scrollRef} onScroll={updateArrows} className="flex overflow-x-auto no-scrollbar flex-1 touch-pan-x snap-x scroll-smooth">{allTabs.map(tab => <button onClick={() => { if (!state.unlockedTabs.includes(tab.id) && !(tab.id === 'SHOP' && state.tutorialStep)) return actions.showToast("Facility locked."); if (state.tutorialStep === 'MARKET_GUIDE' && tab.id === 'MARKET') { actions.setTutorialStep('BROWSE_GOODS_GUIDE'); actions.setTutorialScene('MARKET'); } else if (state.tutorialStep === 'FORGE_TAB_GUIDE' && tab.id === 'FORGE') actions.setTutorialStep('SELECT_SWORD_GUIDE'); else if (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' && tab.id === 'SHOP') actions.setTutorialStep('OPEN_SHOP_SIGN_GUIDE'); setActiveTab(tab.id); }} key={tab.id} data-tutorial-id={tab.id === 'MARKET' ? 'MARKET_TAB' : tab.id === 'FORGE' ? 'FORGE_TAB' : tab.id === 'SHOP' ? 'SHOP_TAB' : undefined} className={`relative flex items-center gap-2 px-5 md:px-6 py-3 md:py-4 border-b-2 transition-all shrink-0 ${activeTab === tab.id ? 'border-amber-500 text-amber-500 bg-stone-800/60 z-[2100]' : 'border-transparent text-stone-500'} ${!state.unlockedTabs.includes(tab.id) && !(tab.id === 'SHOP' && state.tutorialStep) ? 'grayscale opacity-40' : ''}`}><tab.icon className="w-4 h-4 md:w-5 md:h-5" /><span className="font-bold text-[10px] md:text-sm uppercase">{tab.label}</span>{tab.badge ? <div className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-black text-white bg-red-600">{tab.badge}</div> : null}</button>)}</div></div></div>
+      <div className={`flex flex-col shrink-0 z-30 transition-all duration-500 ${isFullscreenOverlay ? '-translate-y-full h-0 opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <Header activeTab={activeTab} onTabChange={setActiveTab} onSettingsClick={() => setIsSettingsOpen(true)} />
+        
+        {/* Tab Navigation Container */}
+        <div className="bg-stone-900 border-b border-stone-800 flex items-center relative z-10 overflow-hidden h-11 md:h-14">
+          {/* Left Arrow Indicator */}
+          {showLeftArrow && (
+            <div className="absolute left-0 top-0 bottom-0 z-20 flex items-center pointer-events-none">
+                <div className="h-full w-8 bg-gradient-to-r from-stone-900 to-transparent" />
+                <button 
+                  onClick={() => handleScrollClick('left')}
+                  className="absolute left-1 p-1 bg-stone-800/80 rounded-full text-amber-500 shadow-lg pointer-events-auto animate-pulse"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+            </div>
+          )}
+
+          <div ref={scrollRef} onScroll={updateArrows} className="flex overflow-x-auto no-scrollbar flex-1 touch-pan-x snap-x scroll-smooth">
+            {allTabs.map(tab => (
+              <button 
+                onClick={() => { 
+                  if (!state.unlockedTabs.includes(tab.id) && !(tab.id === 'SHOP' && state.tutorialStep)) return actions.showToast("Facility locked."); 
+                  if (state.tutorialStep === 'MARKET_GUIDE' && tab.id === 'MARKET') { actions.setTutorialStep('BROWSE_GOODS_GUIDE'); actions.setTutorialScene('MARKET'); } 
+                  else if (state.tutorialStep === 'FORGE_TAB_GUIDE' && tab.id === 'FORGE') actions.setTutorialStep('SELECT_SWORD_GUIDE'); 
+                  else if (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' && tab.id === 'SHOP') actions.setTutorialStep('OPEN_SHOP_SIGN_GUIDE'); 
+                  setActiveTab(tab.id); 
+                }} 
+                key={tab.id} 
+                data-tutorial-id={tab.id === 'MARKET' ? 'MARKET_TAB' : tab.id === 'FORGE' ? 'FORGE_TAB' : tab.id === 'SHOP' ? 'SHOP_TAB' : undefined} 
+                className={`relative flex items-center gap-2 px-5 md:px-6 py-3 md:py-4 border-b-2 transition-all shrink-0 ${activeTab === tab.id ? 'border-amber-500 text-amber-500 bg-stone-800/60 z-[2100]' : 'border-transparent text-stone-500'} ${!state.unlockedTabs.includes(tab.id) && !(tab.id === 'SHOP' && state.tutorialStep) ? 'grayscale opacity-40' : ''}`}
+              >
+                <tab.icon className="w-4 h-4 md:w-5 md:h-5" /><span className="font-bold text-[10px] md:text-sm uppercase">{tab.label}</span>{tab.badge ? <div className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-black text-white bg-red-600">{tab.badge}</div> : null}
+              </button>
+            ))}
+          </div>
+
+          {/* Right Arrow Indicator */}
+          {showRightArrow && (
+            <div className="absolute right-0 top-0 bottom-0 z-20 flex items-center pointer-events-none">
+                <div className="h-full w-8 bg-gradient-to-l from-stone-900 to-transparent" />
+                <button 
+                  onClick={() => handleScrollClick('right')}
+                  className="absolute right-1 p-1 bg-stone-800/80 rounded-full text-amber-500 shadow-lg pointer-events-auto animate-pulse"
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <main className="flex-1 overflow-hidden relative bg-stone-925 flex flex-col min-h-0">
         <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab onNavigate={setActiveTab} /></div>
         <div className={`h-full w-full ${activeTab === 'SHOP' ? 'block' : 'hidden'}`}><ShopTab onNavigate={setActiveTab} /></div>

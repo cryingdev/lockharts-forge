@@ -16,6 +16,7 @@ export interface DungeonDefinition {
   name: string;
   tier: number;
   image?: string; // New: visual assets for dungeon cards and backgrounds
+  tile?: string;  // New: full-screen combat background tile
   description: string;
   durationMinutes: number;
   requiredPower: number;

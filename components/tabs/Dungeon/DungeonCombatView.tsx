@@ -11,6 +11,7 @@ import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 import { getAssetUrl } from '../../../utils';
 import { InventoryItem, EquipmentSlotType } from '../../../types/inventory';
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
+import { DUNGEONS } from '../../../data/dungeons';
 
 const ACTION_THRESHOLD = 1000;
 
@@ -44,6 +45,8 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
         window.innerWidth > window.innerHeight ? 'LANDSCAPE' : 'PORTRAIT'
     );
     
+    const dungeonInfo = useMemo(() => DUNGEONS.find(d => d.id === session.dungeonId), [session.dungeonId]);
+
     const [partyState, setPartyState] = useState(party.map(m => {
         const primary = mergePrimaryStats(m.stats, m.allocatedStats);
         const derived = applyEquipmentBonuses(calculateDerivedStats(primary, m.level), (Object.values(m.equipment) as any[]).map(e=>e?.stats).filter(Boolean) as any);
@@ -330,8 +333,19 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 .animate-target { animation: target-pulse 1.5s infinite; }
             `}</style>
 
+            {/* Background Tile Layer */}
+            {dungeonInfo?.tile && (
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                    <img 
+                        src={getAssetUrl(dungeonInfo.tile, 'dungeons')} 
+                        className="w-full h-full object-cover opacity-60 brightness-[0.6]" 
+                        alt="Combat Background" 
+                    />
+                </div>
+            )}
+
             {/* Top Bar */}
-            <div className="p-3 bg-red-950/20 border-b border-red-900/30 flex justify-between items-center z-[200]">
+            <div className="p-3 bg-red-950/20 border-b border-red-900/30 flex justify-between items-center z-[200] backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                     <Skull className="w-4 h-4 text-red-50" />
                     <h2 className="text-white font-black uppercase text-[10px] md:text-sm tracking-widest font-mono">Combat Zone</h2>
@@ -342,7 +356,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                     </button>
                     <div className="flex items-center gap-1">
                         {[1, 2, 4].map(s => (
-                            <button key={s} onClick={() => setBattleSpeed(s as any)} className={`px-2 py-0.5 rounded font-mono text-[9px] font-black ${battleSpeed === s ? 'bg-indigo-600 text-white' : 'text-stone-600'}`}>{s}x</button>
+                            <button key={s} onClick={() => setBattleSpeed(s as any)} className={`px-2 py-0.5 rounded font-mono text-[8px] md:text-[10px] font-black ${battleSpeed === s ? 'bg-indigo-600 text-white' : 'text-stone-600'}`}>{s}x</button>
                         ))}
                     </div>
                 </div>
@@ -352,7 +366,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
             </div>
 
             {/* Combat Field */}
-            <div className={`flex-1 flex relative transition-all duration-700 ${orientation === 'PORTRAIT' ? 'flex-col' : 'flex-row'}`}>
+            <div className={`flex-1 flex relative transition-all duration-700 z-10 ${orientation === 'PORTRAIT' ? 'flex-col' : 'flex-row'}`}>
                 {/* Enemies Area */}
                 <div className={`flex flex-1 items-center justify-center p-4 gap-6 md:gap-12 ${orientation === 'PORTRAIT' ? 'order-1' : 'order-2'}`}>
                     {enemySquadState.map(e => (
@@ -450,16 +464,16 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
             </div>
 
             {/* Tactical Feed */}
-            <div className={`bg-stone-900 border-t border-stone-800 flex flex-col shrink-0 transition-all ${showLogs ? 'h-48' : 'h-10'}`}>
-                <button onClick={() => setShowLogs(!showLogs)} className="w-full h-10 flex items-center justify-between px-4 bg-black/20 hover:bg-black/40 transition-colors">
+            <div className={`bg-stone-900 border-t border-stone-800 flex flex-col shrink-0 transition-all z-10 ${showLogs ? 'h-48' : 'h-18'}`}>
+                <button onClick={() => setShowLogs(!showLogs)} className="w-full h-10 flex items-center justify-between px-4 bg-black/20 hover:bg-black/40 transition-colors shrink-0">
                     <div className="flex items-center gap-2">
                         <Activity className={`w-3.5 h-3.5 ${isPaused ? 'text-stone-600' : 'text-amber-500 animate-pulse'}`} />
                         <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest">Engagement Feed</span>
                     </div>
                     {showLogs ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                 </button>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1 font-mono text-[9px] custom-scrollbar">
-                    {logs.map((log, i) => (
+                <div className={`flex-1 ${showLogs ? 'overflow-y-auto' : 'overflow-hidden'} p-2 space-y-1 font-mono text-[9px] custom-scrollbar`}>
+                    {(showLogs ? logs : logs.slice(0, 1)).map((log, i) => (
                         <div key={i} className={`p-1.5 border-l-2 ${log.team === 'PLAYER' ? 'border-blue-500 text-blue-100' : log.team === 'ENEMY' ? 'border-red-500 text-red-100' : 'border-stone-700 text-stone-400'} ${log.isCrit ? 'bg-white/5 font-black' : ''}`}>
                             <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}]</span>
                             {log.msg}
