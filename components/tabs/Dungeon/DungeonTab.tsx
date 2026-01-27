@@ -6,6 +6,7 @@ import { Skull, Timer, Zap, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy
 import { getAssetUrl, formatDuration } from '../../../utils';
 import AssaultNavigator from './AssaultNavigator';
 import ConfirmationModal from '../../modals/ConfirmationModal';
+import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 
 const DungeonTab = () => {
     const { state, actions } = useGame();
@@ -299,7 +300,7 @@ const DungeonTab = () => {
                                             <div key={idx} className={`aspect-square bg-stone-900 border-2 rounded-xl md:rounded-2xl flex items-center justify-center relative shadow-2xl overflow-hidden group hover:bg-stone-850 transition-all ${hasError ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
                                                 {!!merc ? (
                                                     <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 md:p-2 relative animate-in zoom-in-95">
-                                                        <div className="text-3xl md:text-5xl group-hover:scale-110 transition-transform mb-0.5 md:mb-1">{merc.icon}</div>
+                                                        <MercenaryPortrait mercenary={merc} className="w-10 h-10 md:w-16 md:h-16 rounded-xl group-hover:scale-110 transition-transform mb-1" />
                                                         <div className="text-[7px] md:text-xs font-black text-stone-200 truncate w-full text-center">{merc.name.split(' ')[0]}</div>
                                                         <div className="absolute top-1 right-1 md:top-2 md:right-2 opacity-0 group-hover:opacity-100 transition-opacity"><XCircle className="w-4 md:w-5 text-red-600" /></div>
                                                         {hasError && <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[1px] flex items-center justify-center"><AlertCircle className="w-6 md:w-8 text-white" /></div>}
@@ -357,7 +358,7 @@ const DungeonTab = () => {
                                     return (
                                         <button key={merc.id} onClick={() => !isBusy && toggleMercenary(merc.id)} disabled={isBusy} className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isBusy ? 'bg-stone-950 border-stone-900 opacity-40 grayscale cursor-not-allowed' : 'bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750 shadow-lg'}`}>
                                             <div className="flex items-center gap-4 min-w-0">
-                                                <div className="text-4xl">{merc.icon}</div>
+                                                <MercenaryPortrait mercenary={merc} className="w-10 h-10 md:w-14 md:h-14 rounded-lg shrink-0" />
                                                 <div className="text-left">
                                                     <div className="font-black text-stone-100 text-sm md:text-base truncate">{merc.name}</div>
                                                     <div className="flex items-center gap-2 mt-0.5">

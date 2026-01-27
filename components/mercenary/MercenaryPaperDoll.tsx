@@ -38,20 +38,16 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
   isHired,
 }) => {
   const [spriteRatio, setSpriteRatio] = useState<number>(1 / 2.15);
-  const isSpriteSheet = mercenary.sprite?.includes('_sprite');
-
   useEffect(() => {
-    if (isSpriteSheet && mercenary.sprite) {
       const img = new Image();
-      img.src = getAssetUrl(mercenary.sprite);
+      img.src = getAssetUrl(mercenary.sprite, 'mercenaries');
       img.onload = () => {
         const ratio = (img.naturalWidth / 3) / img.naturalHeight;
         if (!isNaN(ratio) && ratio > 0) {
           setSpriteRatio(ratio);
         }
       };
-    }
-  }, [mercenary.sprite, isSpriteSheet]);
+  }, [mercenary.sprite]);
 
   const renderSlot = ({
     slot,
@@ -91,10 +87,10 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
     let imageUrl = '';
     if (equippedItem) {
       imageUrl = equippedItem.image
-        ? getAssetUrl(equippedItem.image)
+        ? getAssetUrl(equippedItem.image, 'equipments')
         : equippedItem.recipeId
-          ? getAssetUrl(`${equippedItem.recipeId}.png`)
-          : getAssetUrl(`${equippedItem.id.split('_')[0]}.png`);
+          ? getAssetUrl(`${equippedItem.recipeId}.png`, 'equipments')
+          : getAssetUrl(`${equippedItem.id.split('_')[0]}.png`, 'equipments');
     }
 
     return (
@@ -175,12 +171,11 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
       <div className="relative w-full aspect-[4/3] md:aspect-square flex items-center justify-center overflow-hidden min-h-[180px] md:min-h-[280px]">
         {/* 캐릭터 이미지를 왼쪽으로 고정 */}
         <div className="absolute inset-y-0 left-0 w-full flex items-center justify-start pointer-events-none opacity-90 pl-[8%] md:pl-[12%]">
-          {isSpriteSheet ? (
             <div 
               className="h-[90%]" 
               style={{ 
                 aspectRatio: `${spriteRatio}`,
-                backgroundImage: `url(${getAssetUrl(mercenary.sprite!)})`,
+                backgroundImage: `url(${getAssetUrl(mercenary.sprite!, 'mercenaries')})`,
                 backgroundSize: '300% 100%',
                 backgroundPosition: '0% 0%',
                 backgroundRepeat: 'no-repeat',
@@ -188,13 +183,6 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
                 filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.5))'
               }} 
             />
-          ) : (
-            <img
-              src={mercenary.sprite ? getAssetUrl(mercenary.sprite) : getAssetUrl('adventurer_wanderer_01.png')}
-              className="h-[90%] object-contain filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]"
-              alt={mercenary.name}
-            />
-          )}
         </div>
 
         {/* 장비 슬롯 - 오른쪽(58%) 기준으로 재배치 */}

@@ -42,7 +42,7 @@ export const MercenaryPortrait: React.FC<MercenaryPortraitProps> = ({
     const isSpriteSheet = sprite?.includes('_sprite');
     const spriteUrl = sprite 
         ? getAssetUrl(sprite, 'mercenaries') 
-        : getAssetUrl('adventurer_wanderer_01.png', 'mercenaries');
+        : getAssetUrl('default.png', 'mercenaries');
 
     return (
         <div className={`relative overflow-hidden rounded-lg ${showBg ? 'bg-stone-800' : ''} ${className}`}>
