@@ -7,6 +7,7 @@ import { getAssetUrl, formatDuration } from '../../../utils';
 import AssaultNavigator from './AssaultNavigator';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
+import { MONSTER_DROPS } from '../../../data/monster-drops';
 
 const DungeonTab = () => {
     const { state, actions } = useGame();
@@ -34,6 +35,36 @@ const DungeonTab = () => {
     const currentExpedition = activeExpeditions.find(e => e.dungeonId === selectedDungeon.id);
     const hasActiveMission = !!currentExpedition || isOngoingManual;
 
+    // Dynamically calculate potential rewards from monsters in the pool FOR THE CURRENT FLOOR
+    const potentialRewards = useMemo(() => {
+        if (!selectedDungeon) return [];
+        
+        // 1. Identify monsters appearing on the currently selected floor
+        const currentFloorMobs = selectedDungeon.monsterPools
+            .filter(p => selectedFloor >= p.minFloor && selectedFloor <= p.maxFloor)
+            .flatMap(p => p.monsterIds);
+            
+        const itemIds = new Set<string>();
+        
+        // 2. Add drops from these specific mobs
+        currentFloorMobs.forEach(mobId => {
+            const drops = MONSTER_DROPS[mobId];
+            if (drops) drops.forEach(d => itemIds.add(d.itemId));
+        });
+
+        // 3. Add boss drops and fixed rewards ONLY if looking at the final floor
+        if (selectedFloor === selectedDungeon.maxFloors) {
+            if (selectedDungeon.bossVariantId) {
+                const bossDrops = MONSTER_DROPS[selectedDungeon.bossVariantId];
+                if (bossDrops) bossDrops.forEach(d => itemIds.add(d.itemId));
+            }
+            // Clear rewards (fixed quest rewards / boss drops)
+            selectedDungeon.rewards.forEach(r => itemIds.add(r.itemId));
+        }
+
+        return Array.from(itemIds);
+    }, [selectedDungeon, selectedFloor]);
+
     const isFloorCleared = useMemo(() => {
         const maxReached = maxFloorReached[selectedDungeon.id] || 1;
         if (selectedFloor < maxReached) return true;
@@ -45,7 +76,6 @@ const DungeonTab = () => {
         knownMercenaries.filter(m => m.status === 'HIRED' || m.status === 'ON_EXPEDITION' || m.status === 'INJURED'), 
     [knownMercenaries]);
 
-    // Candidates for the picker (Not already in party)
     const availableCandidates = useMemo(() => 
         hiredMercs.filter(m => !party.includes(m.id)),
     [hiredMercs, party]);
@@ -171,7 +201,6 @@ const DungeonTab = () => {
                     {DUNGEONS.map(d => {
                         const isLocked = d.tier > state.stats.tierLevel + 1;
                         const maxReached = maxFloorReached[d.id] || 1;
-                        // progression logic: current completed floors
                         const completedFloors = (dungeonClearCounts[d.id] || 0) > 0 ? d.maxFloors : Math.max(0, maxReached - 1);
                         const progressPercent = (completedFloors / d.maxFloors) * 100;
                         
@@ -227,18 +256,23 @@ const DungeonTab = () => {
                                 </div>
                                 {selectedFloor === selectedDungeon.maxFloors && <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-600 border border-red-400 rounded-lg text-white font-black text-[8px] sm:text-[10px] shadow-2xl rotate-12 z-40">BOSS</div>}
                             </div>
-                            <button onClick={handleNextFloor} className={`absolute right-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${selectedFloor < selectedDungeon.maxFloors ? 'bg-stone-800 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`}><ChevronRight className="w-5 h-5 sm:w-10 sm:h-10" /></button>
+                            <button onClick={handleNextFloor} className={`absolute right-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${selectedFloor < selectedDungeon.maxFloors ? 'bg-stone-800 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`} desert-text-stone-800 opacity-20 cursor-not-allowed><ChevronRight className="w-5 h-5 sm:w-10 sm:h-10" /></button>
                         </div>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-1 sm:p-8 pt-0 z-10 flex flex-col items-center min-h-0 w-full space-y-4">
-                        {/* Potential Rewards Box */}
+                        {/* Potential Rewards Box - NOW FLOOR SPECIFIC */}
                         <div className="bg-stone-950/40 p-2 sm:p-4 rounded-xl border border-stone-800/50 w-full max-w-[280px]">
-                            <div className="flex items-center justify-center gap-1.5 mb-2"><Box className="w-3 h-3 text-stone-600" /><h4 className="text-[9px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">Potential Rewards</h4></div>
+                            <div className="flex items-center justify-center gap-1.5 mb-2">
+                                <Box className="w-3 h-3 text-stone-600" />
+                                <h4 className="text-[9px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">
+                                    {selectedFloor === selectedDungeon.maxFloors ? 'Final Rewards' : `Potential Floor ${selectedFloor} Loot`}
+                                </h4>
+                            </div>
                             <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-                                {selectedDungeon.rewards.map((reward, ridx) => (
-                                    <div key={`${reward.itemId}-${ridx}`} className="w-8 h-8 md:w-12 md:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center shadow-inner group">
-                                        <img src={getAssetUrl(`${reward.itemId}.png`, 'materials')} className="w-6 h-6 md:w-8 md:h-8 object-contain" onError={e=>e.currentTarget.style.display='none'} />
+                                {potentialRewards.map((itemId, ridx) => (
+                                    <div key={`${itemId}-${ridx}`} className="w-8 h-8 md:w-12 md:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center shadow-inner group">
+                                        <img src={getAssetUrl(`${itemId}.png`, 'materials')} className="w-6 h-6 md:w-8 md:h-8 object-contain" onError={e=>e.currentTarget.style.display='none'} />
                                     </div>
                                 ))}
                             </div>
@@ -301,7 +335,12 @@ const DungeonTab = () => {
                                                 {!!merc ? (
                                                     <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 md:p-2 relative animate-in zoom-in-95">
                                                         <MercenaryPortrait mercenary={merc} className="w-10 h-10 md:w-16 md:h-16 rounded-xl group-hover:scale-110 transition-transform mb-1" />
-                                                        <div className="text-[7px] md:text-xs font-black text-stone-200 truncate w-full text-center">{merc.name.split(' ')[0]}</div>
+                                                        <div className="flex flex-col items-center leading-tight w-full">
+                                                            <div className="text-[7px] md:text-xs font-black text-stone-200 truncate w-full text-center">{merc.name.split(' ')[0]}</div>
+                                                            <div className="text-[5px] md:text-[8px] font-bold text-stone-500 uppercase tracking-tighter">
+                                                                {merc.job} • Lv.{merc.level}
+                                                            </div>
+                                                        </div>
                                                         <div className="absolute top-1 right-1 md:top-2 md:right-2 opacity-0 group-hover:opacity-100 transition-opacity"><XCircle className="w-4 md:w-5 text-red-600" /></div>
                                                         {hasError && <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[1px] flex items-center justify-center"><AlertCircle className="w-6 md:w-8 text-white" /></div>}
                                                     </button>
@@ -322,7 +361,7 @@ const DungeonTab = () => {
                             <div className="grid grid-cols-2 gap-3 max-w-xl mx-auto">
                                 <button onClick={handleStartAutoExpedition} disabled={party.length === 0 || isOngoingManual || !isFloorCleared} className={`flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all shadow-xl ${party.length > 0 && !isOngoingManual && isFloorCleared ? 'bg-indigo-700 hover:bg-indigo-600 border-indigo-900 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 opacity-60'}`}>
                                     <div className="flex items-center gap-2">{!isFloorCleared ? <Lock className="w-3.5" /> : <Timer className="w-4" />}<span className="font-black uppercase text-[10px] sm:text-xs">Strategic Deploy</span></div>
-                                    <span className="text-[7px] sm:text-[8px] font-bold opacity-60 uppercase">{isFloorCleared ? "Auto Expedition" : "Requires Manual Clear"}</span>
+                                    <span className="text-[7px] sm:text-[8px] font-bold desert-text-[8px] font-bold opacity-60 uppercase">{isFloorCleared ? "Auto Expedition" : "Requires Manual Clear"}</span>
                                 </button>
                                 <button onClick={handleStartManualAssault} disabled={party.length === 0 && !isOngoingManual} className={`flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all shadow-xl ${party.length > 0 || isOngoingManual ? 'bg-amber-600 hover:bg-amber-500 border-amber-800 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 opacity-60'}`}><div className="flex items-center gap-2"><Gamepad2 className="w-4" /><span className="font-black uppercase text-[10px] sm:text-xs">{isOngoingManual ? 'Resume' : 'Direct Assault'}</span></div><span className="text-[7px] sm:text-[8px] font-bold opacity-60 uppercase">Manual Exploration</span></button>
                             </div>

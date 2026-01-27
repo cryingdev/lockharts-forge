@@ -22,7 +22,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'acidic_slime_core', minQuantity: 1, maxQuantity: 1, chance: 0.15 },
   ],
   cave_bat: [
-    { itemId: 'leather_strip', minQuantity: 1, maxQuantity: 1, chance: 0.28 },
+    { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 1, chance: 0.28 },
     { itemId: 'bat_sonar_gland', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
     { itemId: 'cave_moss_pad', minQuantity: 1, maxQuantity: 2, chance: 0.20 },
   ],

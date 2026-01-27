@@ -5,6 +5,7 @@ import { MONSTERS } from '../../data/monsters';
 import { materials } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
 import { Monster } from '../../models/Monster';
+import { MONSTER_DROPS } from '../../data/monster-drops';
 
 /**
  * 랜덤한 입구와 그에 따른 가장 먼 출구를 포함한 그리드를 생성합니다.
@@ -86,6 +87,34 @@ const generateManualGrid = (width: number, height: number, dungeonId: string, fl
     return { grid, startPos: { x: startX, y: startY } };
 };
 
+/**
+ * 몬스터 조우 시 적 풀을 생성하는 헬퍼 함수
+ */
+const generateEnemiesForSession = (dungeonId: string, currentFloor: number, isBoss: boolean): Monster[] => {
+    const dungeon = DUNGEONS.find(d => d.id === dungeonId);
+    if (!dungeon) return [];
+
+    let monsters: Monster[] = [];
+    if (isBoss) {
+        const monsterId = dungeon.bossVariantId || 'plague_rat_king';
+        const monsterBase = MONSTERS[monsterId] || MONSTERS['giant_rat'];
+        monsters = [{ ...monsterBase, currentHp: monsterBase.stats.maxHp }];
+    } else {
+        const pool = dungeon.monsterPools.find(p => currentFloor >= p.minFloor && currentFloor <= p.maxFloor);
+        const mobIds = pool ? pool.monsterIds : ['giant_rat'];
+        let monsterCount = Math.floor(Math.random() * dungeon.tier) + 1;
+        if (currentFloor > 3) monsterCount += 1;
+        monsterCount = Math.min(4, Math.max(1, monsterCount));
+
+        for (let i = 0; i < monsterCount; i++) {
+            const monsterId = mobIds[Math.floor(Math.random() * mobIds.length)];
+            const monsterBase = MONSTERS[monsterId] || MONSTERS['giant_rat'];
+            monsters.push({ ...monsterBase, currentHp: monsterBase.stats.maxHp });
+        }
+    }
+    return monsters;
+};
+
 export const handleStartManualDungeon = (state: GameState, payload: { dungeonId: string; partyIds: string[]; startFloor?: number }): GameState => {
     const dungeon = DUNGEONS.find(d => d.id === payload.dungeonId);
     if (!dungeon) return state;
@@ -97,8 +126,9 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         return { ...state, logs: [`Your squad is too exhausted to enter ${dungeon.name}.`, ...state.logs] };
     }
 
-    const isTillyRescued = state.knownMercenaries.some(m => m.id === 'tilly_footloose');
-    const shouldForceNPC = payload.dungeonId === 'dungeon_t1_sewers' && !isTillyRescued;
+    const rescueId = dungeon.rescueMercenaryId;
+    const isNpcAlreadyRescued = rescueId ? state.knownMercenaries.some(m => m.id === rescueId) : true;
+    const shouldForceNPC = !!rescueId && !isNpcAlreadyRescued;
 
     const updatedMercs = state.knownMercenaries.map(m => {
         if (payload.partyIds.includes(m.id)) {
@@ -126,6 +156,8 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         hasKey: false,
         isBossLocked: dungeon.isBossLocked ?? true,
         goldCollected: 0,
+        collectedLoot: [],
+        sessionXp: payload.partyIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {}),
         encounterStatus: 'NONE',
         lastActionMessage: `Scanning sector... Floor ${startFloor} initialized.`,
         currentFloor: startFloor,
@@ -162,22 +194,12 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     if (targetRoom === 'WALL') return state;
 
     const isAlreadyVisited = session.visited[newY][newX];
-    const cost = isAlreadyVisited ? -1 : (targetRoom === 'BOSS' || targetRoom === 'STAIRS' ? dungeon.bossEnergy : dungeon.moveEnergy);
-
-    const party = state.knownMercenaries.filter(m => session.partyIds.includes(m.id));
-    if (cost > 0 && party.some(m => (m.expeditionEnergy || 0) < cost)) {
-        return { 
-            ...state, 
-            activeManualDungeon: { ...session, lastActionMessage: "SQUAD ALERT: Energy critically low." }
-        };
-    }
 
     let updatedMercs = state.knownMercenaries.map(m => {
         if (session.partyIds.includes(m.id)) {
-            let nextEnergy = Math.max(0, (m.expeditionEnergy || 0) - cost);
             let nextHp = m.currentHp;
             if (targetRoom === 'TRAP' && !isAlreadyVisited) nextHp = Math.max(0, m.currentHp - 15);
-            return { ...m, expeditionEnergy: nextEnergy, currentHp: nextHp };
+            return { ...m, currentHp: nextHp };
         }
         return m;
     });
@@ -194,6 +216,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     let logMsg = '';
     let actionMsg = session.lastActionMessage;
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
+    let newMaxFloorReached = { ...state.maxFloorReached };
 
     if (targetRoom === 'GOLD' && !isAlreadyVisited) {
         extraGold = (dungeon.tier || 1) * 30;
@@ -222,20 +245,24 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
         actionMsg = `Sector key identified. Decrypting...`;
         newGrid[newY][newX] = 'EMPTY';
     } else if (targetRoom === 'ENEMY' && !isAlreadyVisited) {
+        // ENCOUNTERED 상태로 변경하여 UI에서 트랜지션 연출 유도
         encounterStatus = 'ENCOUNTERED';
         actionMsg = `Hostile lifeforms detected. Combat protocol engaged.`;
-    } else if (targetRoom === 'BOSS' && !session.isBossDefeated) {
+    } else if (targetRoom === 'BOSS') {
         encounterStatus = 'ENCOUNTERED';
-        actionMsg = `COMMANDER ALERT: Primary target identified.`;
+        actionMsg = session.isBossDefeated ? `The fallen titan's lair. Extraction ready.` : `COMMANDER ALERT: Primary target identified.`;
     } else if (targetRoom === 'STAIRS') {
         encounterStatus = 'STAIRS';
         actionMsg = `Downward passage identified. Scan for deeper sectors?`;
+        const nextFloor = session.currentFloor + 1;
+        newMaxFloorReached[session.dungeonId] = Math.max(newMaxFloorReached[session.dungeonId] || 1, nextFloor);
     }
 
     return {
         ...state,
         knownMercenaries: updatedMercs,
         inventory: newInventory,
+        maxFloorReached: newMaxFloorReached,
         activeManualDungeon: {
             ...session,
             grid: newGrid,
@@ -264,11 +291,8 @@ export const handleProceedToNextFloorManual = (state: GameState): GameState => {
     const nextVisited = Array.from({ length: dungeon.gridHeight }, () => Array(dungeon.gridWidth).fill(false));
     nextVisited[nextStartPos.y][nextStartPos.x] = true;
     
-    const nextMaxFloor = Math.max(state.maxFloorReached[session.dungeonId] || 1, nextFloor);
-
     return {
         ...state,
-        maxFloorReached: { ...state.maxFloorReached, [session.dungeonId]: nextMaxFloor },
         activeManualDungeon: {
             ...session,
             grid: nextGrid,
@@ -277,7 +301,7 @@ export const handleProceedToNextFloorManual = (state: GameState): GameState => {
             pathHistory: [nextStartPos],
             currentFloor: nextFloor,
             encounterStatus: 'NONE',
-            lastActionMessage: `Floor transition complete. Sector ${nextFloor} analysis in progress.`
+            lastActionMessage: `Floor transition complete. Sector ${nextFloor} initialized.`
         },
         logs: [`Proceeded to Floor ${nextFloor}.`, ...state.logs]
     };
@@ -288,34 +312,16 @@ export const handleStartCombatManual = (state: GameState): GameState => {
     if (!session || session.encounterStatus !== 'ENCOUNTERED') return state;
 
     const currentRoom = session.grid[session.playerPos.y][session.playerPos.x];
-    const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
-    const tier = dungeon?.tier || 1;
-    
-    let monsters: Monster[] = [];
+    if (currentRoom === 'BOSS' && session.isBossDefeated) return state;
 
-    if (currentRoom === 'BOSS') {
-        const monsterId = dungeon?.bossVariantId || 'plague_rat_king';
-        const monsterBase = MONSTERS[monsterId] || MONSTERS['giant_rat'];
-        monsters = [{ ...monsterBase, currentHp: monsterBase.stats.maxHp }];
-    } else {
-        const mobs = ['giant_rat', 'sewer_slime', 'mold_sporeling', 'carrion_beetle', 'sewer_thief', 'cave_bat', 'rat_man'];
-        let monsterCount = Math.floor(Math.random() * tier) + 1;
-        if (session.currentFloor > 3) monsterCount += 1;
-        monsterCount = Math.min(4, Math.max(1, monsterCount));
-
-        for (let i = 0; i < monsterCount; i++) {
-            const monsterId = mobs[Math.floor(Math.random() * mobs.length)];
-            const monsterBase = MONSTERS[monsterId] || MONSTERS['giant_rat'];
-            monsters.push({ ...monsterBase, currentHp: monsterBase.stats.maxHp });
-        }
-    }
+    const enemies = generateEnemiesForSession(session.dungeonId, session.currentFloor, currentRoom === 'BOSS');
 
     return {
         ...state,
         activeManualDungeon: {
             ...session,
             encounterStatus: 'BATTLE',
-            enemies: monsters
+            enemies: enemies
         }
     };
 };
@@ -325,22 +331,48 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
     if (!session) return state;
 
     const currentRoom = session.grid[session.playerPos.y][session.playerPos.x];
-    let logMsg = '';
+    const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
     
+    let logMsg = '';
     const livingMembers = payload.finalParty.filter(p => p.currentHp > 0);
     
     let totalXpGained = 0;
+    const gainedLootInCombat: { id: string; count: number; name: string }[] = [];
+
     if (payload.win && session.enemies) {
         totalXpGained = session.enemies.reduce((sum, e) => sum + e.rewardXp, 0);
+
+        session.enemies.forEach(enemy => {
+            const drops = MONSTER_DROPS[enemy.id];
+            if (drops) {
+                drops.forEach(drop => {
+                    if (Math.random() <= drop.chance) {
+                        const qty = Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) + drop.minQuantity;
+                        if (qty > 0) {
+                            const mat = materials[drop.itemId];
+                            if (mat) {
+                                gainedLootInCombat.push({ id: drop.itemId, count: qty, name: mat.name });
+                            }
+                        }
+                    }
+                });
+            }
+        });
     }
     
-    const xpPerMember = (payload.win && totalXpGained > 0 && livingMembers.length > 0) 
+    const xpPerMemberBase = (payload.win && totalXpGained > 0 && livingMembers.length > 0) 
         ? Math.floor(totalXpGained / livingMembers.length) 
         : 0;
+
+    const avgEnemyLevel = (session.enemies && session.enemies.length > 0)
+        ? session.enemies.reduce((acc, e) => acc + e.level, 0) / session.enemies.length
+        : 1;
 
     if (payload.win) {
         logMsg = `Engagement complete. Sector secured. XP awarded.`;
     }
+
+    const nextSessionXp = { ...session.sessionXp };
 
     const newKnownMercenaries = state.knownMercenaries.map(m => {
         const combatant = payload.finalParty.find(p => p.id === m.id);
@@ -353,7 +385,14 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             let bonusStatPoints = m.bonusStatPoints || 0;
 
             if (payload.win && combatant.currentHp > 0) {
-                nextXp += xpPerMember;
+                // Calculate level-based penalty
+                const levelDiff = Math.max(0, m.level - Math.floor(avgEnemyLevel));
+                const penaltyMult = Math.max(0.1, 1 - (levelDiff * 0.1));
+                const xpToAdd = Math.floor(xpPerMemberBase * penaltyMult);
+
+                nextXp += xpToAdd;
+                nextSessionXp[m.id] = (nextSessionXp[m.id] || 0) + xpToAdd;
+                
                 while (nextXp >= m.xpToNextLevel) {
                     nextXp -= m.xpToNextLevel;
                     nextLevel++;
@@ -380,10 +419,37 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
         return m;
     });
 
-    const isBossDefeated = (currentRoom === 'BOSS' && payload.win) || session.isBossDefeated;
+    const isBossDefeatedNow = currentRoom === 'BOSS' && payload.win;
+    const isBossDefeated = isBossDefeatedNow || session.isBossDefeated;
+    
+    if (isBossDefeatedNow && dungeon) {
+        // Only special boss items, fixed rewards removed from DUNGEONS
+    }
+
+    const nextCollectedLoot = [...session.collectedLoot];
+    gainedLootInCombat.forEach(item => {
+        const existing = nextCollectedLoot.find(l => l.id === item.id);
+        if (existing) existing.count += item.count;
+        else nextCollectedLoot.push(item);
+    });
+
     let nextGrid = [...session.grid.map(row => [...row])];
     if (payload.win && currentRoom === 'ENEMY') {
         nextGrid[session.playerPos.y][session.playerPos.x] = 'EMPTY';
+    }
+
+    const isDefeat = !payload.win && !payload.flee;
+    
+    if (isDefeat) {
+        return handleRetreatManualDungeon({
+            ...state,
+            knownMercenaries: newKnownMercenaries,
+            activeManualDungeon: {
+                ...session,
+                sessionXp: nextSessionXp,
+                encounterStatus: 'DEFEAT'
+            }
+        });
     }
 
     return {
@@ -392,6 +458,8 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
         activeManualDungeon: {
             ...session,
             grid: nextGrid,
+            collectedLoot: nextCollectedLoot,
+            sessionXp: nextSessionXp,
             encounterStatus: payload.win ? 'VICTORY' : (payload.flee ? 'NONE' : 'DEFEAT'),
             isBossDefeated,
             lastActionMessage: payload.win 
@@ -431,7 +499,8 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
 
             mercResults.push({
                 id: m.id, name: m.name, job: m.job, levelBefore: m.level, levelAfter: m.level,
-                xpGained: 0, currentXp: m.currentXp, xpToNext: m.xpToNextLevel, statusChange
+                xpGained: session.sessionXp[m.id] || 0, // 세션 동안 획득한 경험치 표시
+                currentXp: m.currentXp, xpToNext: m.xpToNextLevel, statusChange
             });
 
             return { ...m, status: nextStatus, assignedExpeditionId: undefined };
@@ -444,7 +513,8 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
         knownMercenaries: updatedMercs,
         dungeonResult: isDefeat ? {
             dungeonName: dungeon?.name || 'Unknown',
-            rewards: [],
+            rewards: session.collectedLoot,
+            goldGained: session.goldCollected,
             mercenaryResults: mercResults,
             isDefeat: true
         } : state.dungeonResult,
@@ -493,16 +563,33 @@ export const handleFinishManualDungeon = (state: GameState): GameState => {
         activeExpeditions: [...state.activeExpeditions, tempExp]
     };
 
-    const claimedState = handleClaimExpedition(stateWithTempExp, { 
+    let newInventory = [...state.inventory];
+    session.collectedLoot.forEach(loot => {
+        const existing = newInventory.find(i => i.id === loot.id);
+        if (existing) {
+            newInventory = newInventory.map(i => i.id === loot.id ? { ...i, quantity: i.quantity + loot.count } : i);
+        } else {
+            const mat = materials[loot.id];
+            if (mat) newInventory.push({ ...mat, quantity: loot.count } as InventoryItem);
+        }
+    });
+
+    const claimedState = handleClaimExpedition({ ...stateWithTempExp, inventory: newInventory }, { 
         expeditionId: tempExpId, 
         rescuedNpcId: session.rescuedNpcId 
     });
 
-    if (session.goldCollected > 0) {
-        claimedState.stats.gold += session.goldCollected;
-        if (claimedState.dungeonResult) {
+    if (claimedState.dungeonResult) {
+        claimedState.dungeonResult.rewards = session.collectedLoot;
+        if (session.goldCollected > 0) {
+            claimedState.stats.gold += session.goldCollected;
             claimedState.dungeonResult.goldGained = (claimedState.dungeonResult.goldGained || 0) + session.goldCollected;
         }
+        // 세션 누적 경험치 반영
+        claimedState.dungeonResult.mercenaryResults = claimedState.dungeonResult.mercenaryResults.map(res => ({
+            ...res,
+            xpGained: session.sessionXp[res.id] || res.xpGained
+        }));
     }
 
     return {

@@ -7,7 +7,8 @@ import DialogueBox from '../../DialogueBox';
 import { 
     Key, Zap, LogOut, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, 
     Skull, Shield, Sword, Sparkles, Users, Activity, Heart, 
-    Maximize, Minimize, Plus, Minus, Move, Ghost, Settings, Layers, Wrench
+    Maximize, Minimize, Plus, Minus, Move, Ghost, Settings, Layers, Wrench,
+    Package, Coins, X
 } from 'lucide-react';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 import { calculateCombatPower, calculateMercenaryPower } from '../../../utils/combatLogic';
@@ -15,7 +16,7 @@ import DungeonCombatView from './DungeonCombatView';
 import { getAssetUrl } from '../../../utils';
 import { AnimatedMercenary } from '../../common/ui/AnimatedMercenary';
 import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
-import { TILLY_FOOTLOOSE } from '../../../data/mercenaries';
+import { SPECIAL_RECRUITS_REGISTRY } from '../../../data/mercenaries';
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { EquipmentSlotType } from '../../../types/inventory';
 
@@ -46,18 +47,25 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                         <div 
                             key={merc.id} 
                             onClick={() => onSelectMercenary(merc.id)}
-                            className="bg-stone-900/90 backdrop-blur-xl border border-white/5 p-2 rounded-xl shadow-xl flex flex-col gap-1.5 cursor-pointer hover:bg-stone-800 hover:border-amber-500/30 transition-all group active:scale-[0.98] ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}"
+                            className={`bg-stone-900/90 backdrop-blur-xl border border-white/5 p-2 rounded-xl shadow-xl flex flex-col gap-1.5 cursor-pointer hover:bg-stone-800 hover:border-amber-500/30 transition-all group active:scale-[0.98] ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}
                         >
-                            {/* Header: Portrait, Name, Energy */}
+                            {/* Header: Portrait, Name & Job/Level, Energy */}
                             <div className="flex justify-between items-center px-0.5 border-b border-white/5 pb-1 mb-0.5">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <div className="relative">
-                                        <MercenaryPortrait mercenary={merc} className="w-5 h-5 rounded-md border border-white/10 shrink-0" />
+                                        <MercenaryPortrait mercenary={merc} className="w-6 h-6 rounded-md border border-white/10 shrink-0" />
                                         {hasPoints && (
                                             <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full border border-stone-900 animate-pulse" />
                                         )}
                                     </div>
-                                    <span className={`text-[10px] font-black text-stone-200 truncate uppercase tracking-tighter group-hover:text-amber-400 transition-colors ${isLowHp ? 'text-red-400 animate-pulse' : ''}`}>{merc.name.split(' ')[0]}</span>
+                                    <div className="flex flex-col min-w-0 leading-none">
+                                        <span className={`text-[9px] font-black text-stone-200 truncate uppercase tracking-tighter group-hover:text-amber-400 transition-colors ${isLowHp ? 'text-red-400 animate-pulse' : ''}`}>
+                                            {merc.name.split(' ')[0]}
+                                        </span>
+                                        <span className="text-[6px] font-bold text-stone-500 uppercase tracking-tighter mt-0.5">
+                                            {merc.job} • Lv.{merc.level}
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-1 bg-black/40 px-1 rounded border border-white/5 shrink-0">
                                     <Zap className={`w-2 h-2 ${enPer < 20 ? 'text-red-500 animate-pulse' : 'text-blue-400'}`} />
@@ -98,6 +106,54 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
     );
 });
 
+// New Component: Loot View Overlay
+const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClose: () => void }) => (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 pointer-events-auto">
+        <div className="w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            <div className="p-4 bg-stone-850 border-b border-stone-800 flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-amber-500" />
+                    <h3 className="font-black uppercase tracking-widest text-sm text-stone-200">Current Loot</h3>
+                </div>
+                <button onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 min-h-[200px] max-h-[60vh]">
+                <div className="flex items-center justify-between bg-stone-950/60 p-3 rounded-xl border border-amber-900/30">
+                    <div className="flex items-center gap-3">
+                        <Coins className="w-5 h-5 text-amber-500" />
+                        <span className="text-xs font-black text-stone-400 uppercase">Recovered Credits</span>
+                    </div>
+                    <span className="text-lg font-mono font-black text-amber-400">{gold.toLocaleString()} G</span>
+                </div>
+                
+                <div className="space-y-1.5">
+                    <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Materials Found</span>
+                    {loot.length === 0 ? (
+                        <div className="text-center py-10 text-stone-600 italic text-xs border border-dashed border-stone-800 rounded-xl">No items recovered yet.</div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-2">
+                            {loot.map((item, i) => (
+                                <div key={i} className="flex items-center justify-between bg-stone-800/40 p-2 rounded-xl border border-stone-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-stone-950 rounded-lg flex items-center justify-center border border-stone-800 shrink-0">
+                                            <img src={getAssetUrl(`${item.id}.png`, 'materials')} className="w-5 h-5 object-contain" onError={e=>e.currentTarget.style.display='none'} />
+                                        </div>
+                                        <span className="text-xs font-black text-stone-200 truncate max-w-[140px]">{item.name}</span>
+                                    </div>
+                                    <span className="text-xs font-mono font-black text-amber-500">x{item.count}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="p-4 bg-stone-950 text-center border-t border-stone-800">
+                <button onClick={onClose} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all">Close</button>
+            </div>
+        </div>
+    </div>
+);
+
 const AssaultNavigator = () => {
     const { state, actions } = useGame();
     const session = state.activeManualDungeon;
@@ -105,6 +161,7 @@ const AssaultNavigator = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isReady, setIsReady] = useState(false);
     const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
+    const [showLootOverlay, setShowLootOverlay] = useState(false);
     const [lastMsg, setLastMsg] = useState("");
     const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
 
@@ -124,7 +181,16 @@ const AssaultNavigator = () => {
 
     const rafRef = useRef<number | null>(null);
 
-    const dungeon = session ? DUNGEONS.find(d => d.id === session.dungeonId) : null;
+    const dungeon = useMemo(() => 
+        session ? DUNGEONS.find(d => d.id === session.dungeonId) : null,
+        [session?.dungeonId]
+    );
+
+    const rescueTarget = useMemo(() => {
+        if (!dungeon?.rescueMercenaryId) return null;
+        return SPECIAL_RECRUITS_REGISTRY[dungeon.rescueMercenaryId] || null;
+    }, [dungeon?.rescueMercenaryId]);
+
     const party = useMemo(() => {
         if (!session) return [];
         return state.knownMercenaries.filter(m => session.partyIds.includes(m.id));
@@ -133,7 +199,37 @@ const AssaultNavigator = () => {
     const isEncountered = session?.encounterStatus === 'ENCOUNTERED';
     const isBattle = session?.encounterStatus === 'BATTLE';
     const isStairs = session?.encounterStatus === 'STAIRS';
+    const isVictory = session?.encounterStatus === 'VICTORY';
     const currentRoom = session ? session.grid[session.playerPos.y][session.playerPos.x] : null;
+
+    // 조우 시 자동 전투 진입 및 연출 로직
+    useEffect(() => {
+        if (isEncountered && currentRoom && (currentRoom === 'ENEMY' || (currentRoom === 'BOSS' && !session.isBossDefeated))) {
+            const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
+            if (scene) {
+                scene.playEncounterEffect();
+            }
+
+            const timer = setTimeout(() => {
+                actions.startCombatManual();
+            }, 2000); // 2초 대기 후 전투 시작
+            
+            return () => clearTimeout(timer);
+        }
+    }, [isEncountered, currentRoom, session?.isBossDefeated, actions]);
+
+    // 전투 종료 후 화면 복구 로직
+    const prevIsBattleRef = useRef(false);
+    useEffect(() => {
+        // BATTLE 상태였다가 해제된 경우 (승리/후퇴 등)
+        if (prevIsBattleRef.current && !isBattle) {
+            const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
+            if (scene) {
+                scene.resetEncounterEffect(mapZoom);
+            }
+        }
+        prevIsBattleRef.current = isBattle;
+    }, [isBattle, mapZoom]);
 
     useEffect(() => {
         if (session?.lastActionMessage) {
@@ -142,11 +238,11 @@ const AssaultNavigator = () => {
     }, [session?.lastActionMessage]);
 
     useEffect(() => {
-        if (!session) return;
+        if (!session || !rescueTarget) return;
         if (currentRoom === 'NPC' && !session.npcFound) {
-            setLastMsg(`"Help! Please... is someone there? The rats... they're everywhere..."`);
+            setLastMsg(`"Help! Please... is someone there? I don't think I can hold out much longer..."`);
         }
-    }, [currentRoom, session?.npcFound]);
+    }, [currentRoom, session?.npcFound, rescueTarget]);
 
     const handleDpadMove = (dx: number, dy: number) => {
         if (isEncountered || isBattle || isStairs) return;
@@ -258,6 +354,22 @@ const AssaultNavigator = () => {
     const isOnNPCTile = currentRoom === 'NPC' && !session.npcFound;
     const inspectedMercenary = state.knownMercenaries.find(m => m.id === inspectedMercId) || null;
 
+    const getDialogue = () => {
+        if (isOnNPCTile) return { speaker: (rescueTarget?.name || "Survivor"), text: lastMsg };
+        if (isEncountered) {
+            if (currentRoom === 'BOSS' && session.isBossDefeated) return { speaker: "Tactical AI", text: "Target core neutralized. Area remains unstable but traversable. Secure loot and extract?" };
+            return { speaker: "Tactical AI", text: lastMsg };
+        }
+        if (isVictory) return { speaker: "Squad Comms", text: "Hostiles cleared. Sector marked as safe." };
+        if (isStairs) return { speaker: "Navigation System", text: lastMsg };
+        return { speaker: "Comms Link", text: lastMsg };
+    };
+
+    const { speaker, text } = getDialogue();
+
+    // 몬스터 조우 중에는 다이얼로그 박스를 가립니다. (연출 집중)
+    const isEncounterAnimationActive = isEncountered && currentRoom && (currentRoom === 'ENEMY' || (currentRoom === 'BOSS' && !session.isBossDefeated));
+
     return (
         <div className="absolute inset-0 z-[100] bg-stone-950 flex flex-col animate-in fade-in duration-500 overflow-hidden">
             <div ref={containerRef} className={`absolute inset-0 z-0 transition-opacity ${isBattle ? 'opacity-20 blur-md' : 'opacity-100'}`} />
@@ -267,18 +379,28 @@ const AssaultNavigator = () => {
             {/* Top Center: Floor Display */}
             {!isBattle && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-3 px-4 py-2 bg-stone-900/90 backdrop-blur-md border border-amber-500/30 rounded-2xl shadow-2xl">
-                    <Layers className="w-4 h-4 text-amber-500" />
+                    <Layers className="w-4 h-4 text-amber-50" />
                     <span className="text-xs md:text-sm font-black text-amber-50 uppercase tracking-widest font-mono">
                         Floor {session.currentFloor} / {session.maxFloors}
                     </span>
                 </div>
             )}
 
-            {/* Top Right: Zoom & Key Controls */}
-            <div className="absolute top-4 right-4 z-[110] flex flex-col items-end gap-2 pointer-events-auto">
-                <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
-                    <Key className={`w-4 h-4 ${session.hasKey ? 'animate-pulse' : ''}`} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
+            {/* Top Right: Zoom & Key Controls & Loot */}
+            <div className={`absolute top-4 right-4 z-[110] flex flex-col items-end gap-2 pointer-events-auto transition-opacity duration-500 ${isEncounterAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => setShowLootOverlay(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border border-amber-500/30 rounded-xl shadow-xl text-amber-400 hover:bg-stone-800 transition-all"
+                    >
+                        <Package className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden xs:block">Loot Bag</span>
+                    </button>
+
+                    <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
+                        <Key className={`w-4 h-4 ${session.hasKey ? 'animate-pulse' : ''}`} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
+                    </div>
                 </div>
                 
                 <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl">
@@ -299,7 +421,7 @@ const AssaultNavigator = () => {
             </div>
 
             {/* NPC Discovery Scene */}
-            {isOnNPCTile && (
+            {isOnNPCTile && rescueTarget && (
                 <div className="absolute inset-0 z-40 flex flex-col items-center justify-end pointer-events-none pb-20">
                     <div className="relative flex justify-center items-end w-full h-[80dvh] animate-in fade-in zoom-in slide-in-from-bottom-12 duration-1000 ease-out">
                         <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/20 blur-[80px] rounded-full -z-10 animate-pulse"></div>
@@ -308,7 +430,7 @@ const AssaultNavigator = () => {
                             <Sparkles className="w-12 h-12 text-amber-300 opacity-40 animate-bounce" />
                         </div>
                         <AnimatedMercenary
-                            mercenary={TILLY_FOOTLOOSE}
+                            mercenary={rescueTarget}
                             className="h-full w-auto filter drop-shadow-[0_0_50px_rgba(245,158,11,0.5)] transition-all duration-500 relative z-10"
                         />
                     </div>
@@ -328,7 +450,7 @@ const AssaultNavigator = () => {
                     {/* Draggable D-pad Container */}
                     {!isOnNPCTile && (
                         <div 
-                            className={`pointer-events-auto transition-all z-[200] select-none ${isDraggingDpad ? 'shadow-glow-amber cursor-grabbing' : 'cursor-default'}`}
+                            className={`pointer-events-auto transition-all z-[200] select-none ${isDraggingDpad ? 'shadow-glow-amber cursor-grabbing' : 'cursor-default'} ${isEncounterAnimationActive ? 'opacity-0 scale-95' : 'opacity-100'}`}
                             style={{
                                 position: 'absolute',
                                 bottom: 'calc(22dvh + 32px)',
@@ -398,23 +520,38 @@ const AssaultNavigator = () => {
 
                     {/* Bottom dialogue box container */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[95vw] max-w-5xl z-50 pointer-events-none">
-                        <div className="flex flex-col items-end gap-4 relative">
+                        <div className={`flex flex-col items-end gap-4 relative transition-all duration-500 ${isEncounterAnimationActive ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
+                            {/* FIX: Add 'as const' to variants to ensure they match literal type union in DialogueOption */}
+                            {/* FIX: STAY HERE action now calls resolveCombatManual(false, true, party) to clear encounter state correctly */}
                             <DialogueBox 
-                                speaker={isOnNPCTile ? "Tilly Footloose" : isEncountered ? "Tactical AI" : isStairs ? "Navigation System" : "Comms Link"}
-                                speakerAvatar={isOnNPCTile ? getAssetUrl(TILLY_FOOTLOOSE.profileImage || 'tilly_footloose.png') : undefined}
-                                text={lastMsg}
+                                speaker={speaker}
+                                speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.profileImage || 'default.png', 'mercenaries') : undefined}
+                                text={text}
                                 options={isOnNPCTile ? [
-                                    { label: "RESCUE SURVIVOR", action: () => { actions.rescueMercenary('tilly_footloose'); actions.showToast("Tilly Footloose has been secured!"); }, variant: 'primary' },
-                                    { label: "LEAVE FOR NOW", action: () => setLastMsg("Sector marked for later extraction. Resuming scan."), variant: 'neutral' }
+                                    { label: "RESCUE SURVIVOR", action: () => { 
+                                        if (dungeon?.rescueMercenaryId) {
+                                            actions.rescueMercenary(dungeon.rescueMercenaryId); 
+                                            actions.showToast(`${rescueTarget?.name} has been secured!`); 
+                                        }
+                                    }, variant: 'primary' as const },
+                                    { label: "LEAVE FOR NOW", action: () => setLastMsg("Sector marked for later extraction. Resuming scan."), variant: 'neutral' as const }
                                 ] : isEncountered ? [
-                                    { label: "ENGAGE TARGET", action: () => actions.startCombatManual(), variant: 'primary' },
-                                    { label: "RETREAT", action: () => setShowRetreatConfirm(true), variant: 'neutral' }
+                                    ...(currentRoom === 'BOSS' && session.isBossDefeated ? [
+                                        { label: "COLLECT & EXTRACT", action: () => actions.finishManualAssault(), variant: 'primary' as const },
+                                        { label: "STAY HERE", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+                                    ] : [
+                                        // 몬스터 조우 시에는 텍스트만 보여주거나 위에서 설정한 2초 시퀀스로 자동 이동
+                                        // { label: "ENGAGE TARGET", action: () => actions.startCombatManual(), variant: 'primary' as const },
+                                        // { label: "WITHDRAW", action: () => setShowRetreatConfirm(true), variant: 'neutral' as const }
+                                    ])
                                 ] : isStairs ? [
-                                    { label: `DESCEND TO FLOOR ${session.currentFloor + 1}`, action: () => actions.proceedToNextFloorManual(), variant: 'primary' },
-                                    { label: "FINISH & EXTRACT", action: () => actions.finishManualAssault(), variant: 'primary' },
-                                    { label: "STAY HERE", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' }
+                                    { label: `DESCEND TO FLOOR ${session.currentFloor + 1}`, action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
+                                    { label: "FINISH & EXTRACT", action: () => actions.finishManualAssault(), variant: 'primary' as const },
+                                    { label: "STAY HERE", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+                                ] : isVictory ? [
+                                    { label: "CONTINUE EXPLORING", action: () => actions.resolveCombatManual(false, true, party), variant: 'primary' as const }
                                 ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
-                                    { label: "FINISH MISSION", action: () => actions.finishManualAssault(), variant: 'primary' }
+                                    { label: "FINISH MISSION", action: () => actions.finishManualAssault(), variant: 'primary' as const }
                                 ] : []}
                                 className="w-full pointer-events-auto"
                             />
@@ -432,7 +569,14 @@ const AssaultNavigator = () => {
                 />
             )}
 
-            {/* Comment: Replaced undefined showRecallConfirm with showRetreatConfirm as defined on line 132 */}
+            {showLootOverlay && (
+                <LootOverlay 
+                    loot={session.collectedLoot} 
+                    gold={session.goldCollected} 
+                    onClose={() => setShowLootOverlay(false)} 
+                />
+            )}
+
             <ConfirmationModal isOpen={showRetreatConfirm} title="Abort Mission?" message="Extraction will return the squad to safety. No rewards will be collected." onConfirm={() => actions.retreatFromManualDungeon()} onCancel={() => setShowRetreatConfirm(false)} isDanger={true} />
         </div>
     );

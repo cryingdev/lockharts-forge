@@ -55,6 +55,7 @@ export default class DungeonScene extends Phaser.Scene {
     private dragStartY = 0;
 
     private cameraTrackTween: Phaser.Tweens.Tween | null = null;
+    private pixelateFX: any = null;
 
     constructor() {
         super('DungeonScene');
@@ -161,9 +162,55 @@ export default class DungeonScene extends Phaser.Scene {
         this.redFocusOverlay.fillRect(width - thickness, 0, thickness, height);
     }
 
+    /**
+     * 전투 진입 시 줌인 및 모자이크 효과 실행 (2초)
+     */
+    public playEncounterEffect() {
+        // 1. 카메라 줌인
+        this.cameras.main.zoomTo(2.5, 2000, 'Cubic.easeInOut');
+        
+        // 2. 모자이크 FX (Phaser 3.60+ Pixelate)
+        if (this.cameras.main.postFX) {
+            this.pixelateFX = this.cameras.main.postFX.addPixelate(2);
+            this.tweens.add({
+                targets: this.pixelateFX,
+                amount: 32,
+                duration: 2000,
+                ease: 'Quad.easeIn'
+            });
+        }
+
+        // 3. 화면 떨림
+        this.cameras.main.shake(2000, 0.005);
+    }
+
+    /**
+     * 전투 종료 시 화면 연출 초기화
+     */
+    public resetEncounterEffect(targetZoom: number) {
+        // 1. 카메라 줌 복구
+        this.cameras.main.zoomTo(targetZoom, 1000, 'Cubic.easeOut');
+
+        // 2. 모자이크 제거
+        if (this.pixelateFX) {
+            this.tweens.add({
+                targets: this.pixelateFX,
+                amount: 2,
+                duration: 800,
+                ease: 'Quad.easeOut',
+                onComplete: () => {
+                    if (this.cameras.main.postFX) {
+                        this.cameras.main.postFX.remove(this.pixelateFX);
+                    }
+                    this.pixelateFX = null;
+                }
+            });
+        }
+    }
+
     private setupDragControls() {
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            if (this.session.encounterStatus === 'BATTLE') return;
+            if (this.session.encounterStatus === 'BATTLE' || this.session.encounterStatus === 'ENCOUNTERED') return;
             this.isDragging = true;
             this.dragStartX = pointer.x - this.root.x;
             this.dragStartY = pointer.y - this.root.y;

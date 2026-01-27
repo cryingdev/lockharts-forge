@@ -17,16 +17,17 @@ export const DUNGEONS: DungeonDefinition[] = [
         moveEnergy: 3,
         bossEnergy: 10,
         isBossLocked: true,
-        goldReward: 250,
+        goldReward: 50,
         maxPartySize: 4,
         bossUnlockReq: 1,
         bossVariantId: 'plague_rat_king',
-        rewards: [
-             { itemId: 'leather_strips', minQuantity: 2, maxQuantity: 4, chance: 1.0 },
-             { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.6 },
-             { itemId: 'tin_ore', minQuantity: 1, maxQuantity: 2, chance: 0.4 },
-             { itemId: 'hide_patch', minQuantity: 1, maxQuantity: 2, chance: 0.3 }
-        ]
+        rescueMercenaryId: 'tilly_footloose',
+        monsterPools: [
+            { minFloor: 1, maxFloor: 2, monsterIds: ['giant_rat', 'sewer_slime', 'cave_bat'] },
+            { minFloor: 3, maxFloor: 4, monsterIds: ['rat_man', 'mold_sporeling', 'carrion_beetle', 'ember_beetle'] },
+            { minFloor: 5, maxFloor: 5, monsterIds: ['sewer_thief'] }
+        ],
+        rewards: [] // Rewards moved to floor-based monster drops
     },
     {
         id: 'dungeon_t1_goblins',
@@ -37,19 +38,19 @@ export const DUNGEONS: DungeonDefinition[] = [
         requiredPower: 105,
         energyCost: 25,
         baseXp: 80,
-        maxFloors: 1,
+        maxFloors: 2,
         gridWidth: 4,
         gridHeight: 4,
         moveEnergy: 4,
         bossEnergy: 6,
         isBossLocked: true,
-        rewards: [
-             { itemId: 'copper_ore', minQuantity: 2, maxQuantity: 4, chance: 1.0 },
-             { itemId: 'tin_ore', minQuantity: 1, maxQuantity: 3, chance: 0.8 },
-             { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.5 }
-        ],
         bossUnlockReq: 10,
-        bossVariantId: 'goblin_king'
+        bossVariantId: 'goblin_king',
+        monsterPools: [
+            { minFloor: 1, maxFloor: 1, monsterIds: ['goblin_grunt', 'scavenger_hyena'] },
+            { minFloor: 2, maxFloor: 2, monsterIds: ['goblin_slinger', 'goblin_shaman'] }
+        ],
+        rewards: []
     },
     
     // --- TIER 2 ---
@@ -68,11 +69,12 @@ export const DUNGEONS: DungeonDefinition[] = [
         moveEnergy: 5,
         bossEnergy: 8,
         isBossLocked: true,
-        rewards: [
-             { itemId: 'iron_ore', minQuantity: 2, maxQuantity: 5, chance: 1.0 },
-             { itemId: 'coal', minQuantity: 2, maxQuantity: 4, chance: 0.8 },
-             { itemId: 'silver_ore', minQuantity: 1, maxQuantity: 2, chance: 0.3 }
-        ]
+        monsterPools: [
+            { minFloor: 1, maxFloor: 1, monsterIds: ['kobold_miner', 'cave_spider'] },
+            { minFloor: 2, maxFloor: 2, monsterIds: ['kobold_trapper', 'frost_wolf'] },
+            { minFloor: 3, maxFloor: 3, monsterIds: ['kobold_pyro', 'kobold_foreman'] }
+        ],
+        rewards: []
     },
     {
         id: 'dungeon_t2_bandits',
@@ -89,12 +91,12 @@ export const DUNGEONS: DungeonDefinition[] = [
         moveEnergy: 6,
         bossEnergy: 10,
         isBossLocked: true,
-        rewards: [
-             { itemId: 'hard_leather', minQuantity: 2, maxQuantity: 4, chance: 1.0 },
-             { itemId: 'iron_ore', minQuantity: 2, maxQuantity: 4, chance: 0.6 },
-             { itemId: 'gold_ore', minQuantity: 1, maxQuantity: 1, chance: 0.1 }
-        ],
         bossUnlockReq: 20,
-        bossVariantId: 'werewolf'
+        bossVariantId: 'werewolf',
+        monsterPools: [
+            { minFloor: 1, maxFloor: 1, monsterIds: ['bandit_cutthroat', 'dire_wolf'] },
+            { minFloor: 2, maxFloor: 2, monsterIds: ['bandit_archer'] }
+        ],
+        rewards: []
     }
 ];

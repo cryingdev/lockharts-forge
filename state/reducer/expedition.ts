@@ -3,8 +3,9 @@ import { DUNGEONS } from '../../data/dungeons';
 import { Expedition } from '../../models/Dungeon';
 import { materials } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
-import { TILLY_FOOTLOOSE } from '../../data/mercenaries';
-// Add import for MercenaryStatus
+import { SPECIAL_RECRUITS_REGISTRY } from '../../data/mercenaries';
+import { MONSTER_DROPS } from '../../data/monster-drops';
+import { MONSTERS } from '../../data/monsters';
 import { MercenaryStatus } from '../../models/Mercenary';
 
 export const handleStartExpedition = (state: GameState, payload: { dungeonId: string; partyIds: string[] }): GameState => {
@@ -94,6 +95,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     const dungeon = DUNGEONS.find(d => d.id === expedition.dungeonId);
     if (!dungeon) return state;
 
+    const isManualAssault = expeditionId.startsWith('temp_manual_');
+
     const partyMembers = state.knownMercenaries.filter(m => expedition.partyIds.includes(m.id));
     const totalLuck = partyMembers.reduce((sum, m) => sum + (m.stats.luk + m.allocatedStats.luk), 0);
     const avgLuck = totalLuck / (partyMembers.length || 1);
@@ -102,46 +105,68 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     const gainedItems: { id: string, count: number, name: string }[] = [];
     let newInventory = [...state.inventory];
 
-    dungeon.rewards.forEach(reward => {
-            const adjustedChance = reward.chance * luckMultiplier;
-            if (Math.random() <= adjustedChance) {
-                const quantity = Math.floor(Math.random() * (reward.maxQuantity - reward.minQuantity + 1)) + reward.minQuantity;
-                if (quantity > 0) {
-                    const materialDef = Object.values(materials).find(m => m.id === reward.itemId);
-                    if (materialDef) {
-                        const existingItem = newInventory.find(i => i.id === reward.itemId);
-                        if (existingItem) {
-                            newInventory = newInventory.map(i => i.id === reward.itemId ? { ...i, quantity: i.quantity + quantity } : i);
-                        } else {
-                            newInventory.push({ ...materialDef, quantity } as InventoryItem);
-                        }
-                        gainedItems.push({ id: reward.itemId, count: quantity, name: materialDef.name });
-                    }
-                }
+    const processItemGain = (itemId: string, quantity: number) => {
+        if (quantity <= 0) return;
+        const materialDef = materials[itemId];
+        if (materialDef) {
+            const existingItem = newInventory.find(i => i.id === itemId);
+            if (existingItem) {
+                newInventory = newInventory.map(i => i.id === itemId ? { ...i, quantity: i.quantity + quantity } : i);
+            } else {
+                newInventory.push({ ...materialDef, quantity } as InventoryItem);
             }
-    });
+            const existingGained = gainedItems.find(g => g.id === itemId);
+            if (existingGained) {
+                existingGained.count += quantity;
+            } else {
+                gainedItems.push({ id: itemId, count: quantity, name: materialDef.name });
+            }
+        }
+    };
 
-    const goldGained = dungeon.goldReward || 0;
-
-    const isFirstClear = (state.dungeonClearCounts[dungeon.id] || 0) === 0;
-    if (isFirstClear && dungeon.id === 'dungeon_t1_rats') {
-        const scrollDef = materials.recipe_scroll_bronze_longsword;
-        const alreadyHasScroll = newInventory.some(i => i.id === scrollDef.id);
-        const alreadyHasRecipe = state.unlockedRecipes.includes('sword_bronze_long_t1');
+    // 1. Roll for monster drops (Auto-expedition represents clearing many encounters)
+    // Only roll for auto expeditions, as manual assault already collected drops during combat
+    if (!isManualAssault) {
+        const encounterCount = Math.floor(Math.random() * 5) + 5; // Simulate 5-10 encounters
+        const allMobIds = Array.from(new Set(dungeon.monsterPools.flatMap(p => p.monsterIds)));
         
-        if (!alreadyHasScroll && !alreadyHasRecipe) {
-            newInventory.push({ ...scrollDef, quantity: 1 } as InventoryItem);
-            gainedItems.push({ id: scrollDef.id, count: 1, name: scrollDef.name });
+        for (let i = 0; i < encounterCount; i++) {
+            const mobId = allMobIds[Math.floor(Math.random() * allMobIds.length)];
+            const drops = MONSTER_DROPS[mobId];
+            if (drops) {
+                drops.forEach(drop => {
+                    const adjustedChance = drop.chance * luckMultiplier;
+                    if (Math.random() <= adjustedChance) {
+                        const quantity = Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) + drop.minQuantity;
+                        processItemGain(drop.itemId, quantity);
+                    }
+                });
+            }
         }
     }
+
+    // 2. Gold Reward: Only for Auto-expedition completion
+    const goldGained = isManualAssault ? 0 : (dungeon.goldReward || 0);
 
     const mercenaryResults: DungeonResult['mercenaryResults'] = [];
     let newKnownMercenaries = [...state.knownMercenaries];
 
+    // Calculate dungeon's average monster level for penalty
+    const allPoolMobIds = dungeon.monsterPools.flatMap(p => p.monsterIds);
+    const avgDungeonMobLevel = allPoolMobIds.length > 0
+        ? allPoolMobIds.reduce((sum, id) => sum + (MONSTERS[id]?.level || 1), 0) / allPoolMobIds.length
+        : 1;
+
     // Process XP for party and handle health-based status changes
     newKnownMercenaries = newKnownMercenaries.map(merc => {
         if (expedition.partyIds.includes(merc.id)) {
-            let xpToAdd = dungeon.baseXp || 50;
+            const baseXp = dungeon.baseXp || 50;
+            
+            // Apply level-based penalty
+            const levelDiff = Math.max(0, merc.level - Math.floor(avgDungeonMobLevel));
+            const penaltyMult = Math.max(0.1, 1 - (levelDiff * 0.1));
+            const xpToAdd = Math.floor(baseXp * penaltyMult);
+
             let currentXp = merc.currentXp || 0;
             let xpToNext = merc.xpToNextLevel || (merc.level * 100);
             let level = merc.level;
@@ -165,15 +190,12 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
                 maxHp = calculateMaxHp(merged, level);
                 maxMp = calculateMaxMp(merged, level);
                 currentHp = maxHp;
-                // Add 3 points per level gained
                 bonusStatPoints += (level - levelBefore) * 3;
             }
 
-            // Fix: Explicitly type nextStatus as MercenaryStatus to allow assignment of 'INJURED'
             let nextStatus: MercenaryStatus = 'HIRED';
             let recoveryUntilDay: number | undefined = undefined;
 
-            // If HP < 1, they return INJURED
             if (currentHp < 1) {
                 nextStatus = 'INJURED' as const;
                 recoveryUntilDay = state.stats.day + Math.floor(Math.random() * 2) + 1;
@@ -211,8 +233,9 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     // Handle Rescued NPC
     let rescuedMercenary = undefined;
     if (rescuedNpcId) {
-        if (rescuedNpcId === 'tilly_footloose') {
-            rescuedMercenary = { ...TILLY_FOOTLOOSE };
+        const specialMerc = SPECIAL_RECRUITS_REGISTRY[rescuedNpcId];
+        if (specialMerc) {
+            rescuedMercenary = { ...specialMerc };
             if (!newKnownMercenaries.some(m => m.id === rescuedMercenary!.id)) {
                 newKnownMercenaries.push(rescuedMercenary);
             }
@@ -257,7 +280,6 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     };
 };
 
-// Fixed: Added the missing handleDismissDungeonResult function
 export const handleDismissDungeonResult = (state: GameState): GameState => {
     return {
         ...state,

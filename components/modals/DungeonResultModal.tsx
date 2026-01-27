@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Trophy, Check, Star, Heart, Sparkles, Coins, Award, User, XCircle, AlertTriangle, Skull } from 'lucide-react';
 import { getAssetUrl } from '../../utils';
-// Fixed: Changed MATERIALS to lowercase materials to match export in data/materials.ts
 import { materials } from '../../data/materials';
 import { MercenaryPortrait } from '../common/ui/MercenaryPortrait';
 
@@ -35,7 +34,6 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
     const radius = 46;
     const circumference = 2 * Math.PI * radius;
     
-    // Find mercenary data to get sprite
     const merc = state.knownMercenaries.find(m => m.id === result.id);
     
     const targetPercent = (result.currentXp / result.xpToNext) * 100;
@@ -56,7 +54,6 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
         <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in duration-700" style={{ animationDelay: `${delay}ms` }}>
             <div className="relative group">
                 <div className={`w-16 h-16 md:w-24 md:h-24 bg-stone-900 rounded-full flex items-center justify-center relative z-10 p-1 md:p-2 border border-stone-800/50 shadow-xl transition-all duration-700 ${isLevelUp ? 'shadow-[0_0_20px_rgba(59,130,246,0.3)]' : ''} ${(isInjured || isDead) ? 'grayscale' : ''}`}>
-                    {/* Radial SVG Gauge */}
                     <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-stone-950/40" />
                         <circle 
@@ -81,7 +78,6 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
                         )}
                     </div>
 
-                    {/* Status/Level Badge */}
                     <div className={`absolute -bottom-1 -right-1 md:bottom-0 md:right-0 z-30 px-1.5 py-0.5 rounded-full border shadow-xl flex items-center gap-0.5 ${isDead ? 'bg-black border-red-600' : isInjured ? 'bg-red-900 border-red-500' : isLevelUp ? 'bg-blue-600 border-blue-400 animate-bounce' : 'bg-stone-800 border-stone-700'}`}>
                         <span className="text-[8px] md:text-[10px] font-black text-white font-mono uppercase">
                             {isDead ? 'DEAD' : isInjured ? 'INJ' : `LV.${result.levelAfter}`}
@@ -170,36 +166,30 @@ const DungeonResultModal = () => {
                         </div>
                     )}
 
-                    {/* Rewards Section - Only show if not defeat or if there are actually rewards */}
-                    {(dungeonResult.rewards.length > 0 || !isDefeat) && (
+                    {!isDefeat && dungeonResult.rewards.length > 0 && (
                         <div className="space-y-3 px-2">
-                            <h3 className={`font-black uppercase text-[8px] md:text-xs tracking-widest border-b pb-1 ${isDefeat ? 'text-stone-600 border-stone-800' : 'text-stone-500 border-stone-800'}`}>
+                            <h3 className="font-black uppercase text-[8px] md:text-xs tracking-widest border-b pb-1 text-stone-500 border-stone-800">
                                 Acquired Materials
                             </h3>
-                            {dungeonResult.rewards.length === 0 ? (
-                                <div className="text-stone-600 italic text-[10px] md:text-sm text-center py-4 bg-stone-950/30 rounded-lg border border-stone-800 border-dashed">No items found.</div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-2">
-                                    {dungeonResult.rewards.map((reward, idx) => (
-                                        <div key={idx} className="flex gap-2 bg-stone-800/40 p-2 rounded-lg border border-stone-700 items-center min-w-[120px]">
-                                            <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 bg-stone-950 rounded border border-stone-700 flex items-center justify-center relative">
-                                                <img src={getAssetUrl(`${reward.id}.png`)} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="text-[10px] md:text-xs font-black text-stone-200 truncate">{reward.name}</div>
-                                                <div className="text-amber-500 font-mono text-[9px] font-bold">x{reward.count}</div>
-                                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {dungeonResult.rewards.map((reward, idx) => (
+                                    <div key={idx} className="flex gap-2 bg-stone-800/40 p-2 rounded-lg border border-stone-700 items-center min-w-[120px]">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 bg-stone-950 rounded border border-stone-700 flex items-center justify-center relative">
+                                            <img src={getAssetUrl(`${reward.id}.png`, 'materials')} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-[10px] md:text-xs font-black text-stone-200 truncate">{reward.name}</div>
+                                            <div className="text-amber-500 font-mono text-[9px] font-bold">x{reward.count}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className={`p-4 border-t shrink-0 ${isDefeat ? 'bg-stone-900 border-red-900/30' : 'bg-stone-850 border-stone-700'}`}>
-                    <button onClick={actions.dismissDungeonResult} className={`w-full py-3 md:py-4 font-black rounded-xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 border-b-4 text-xs md:text-base uppercase tracking-widest ${isDefeat ? 'bg-red-700 hover:bg-red-600 text-white border-red-900' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800'}`}>
+                    <button onClick={actions.dismissDungeonResult} className={`w-full py-3 md:py-4 font-black rounded-xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 border-b-4 border-emerald-800 text-xs md:text-base uppercase tracking-widest ${isDefeat ? 'bg-red-700 hover:bg-red-600 text-white border-red-900' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800'}`}>
                         {isDefeat ? <AlertTriangle className="w-4 h-4 md:w-6 md:h-6" /> : <Check className="w-4 h-4 md:w-6 md:h-6" />}
                         {isDefeat ? 'Emergency Return' : 'Acknowledge & Close'}
                     </button>
