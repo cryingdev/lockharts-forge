@@ -200,7 +200,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
         newGrid[newY][newX] = 'EMPTY';
         actionMsg = `Credits recovered. (+${extraGold} G)`;
     } else if (targetRoom === 'RESOURCE' && !isAlreadyVisited) {
-        const possibleResources = ['copper_ore', 'tin_ore', 'leather_strips', 'charcoal', 'rat_hide_patch'];
+        const possibleResources = ['copper_ore', 'tin_ore', 'leather_strips', 'charcoal', 'hide_patch'];
         const resId = possibleResources[Math.floor(Math.random() * possibleResources.length)];
         const count = 1 + Math.floor(Math.random() * 2);
         const matDef = materials[resId];

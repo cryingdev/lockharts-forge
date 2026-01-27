@@ -4,7 +4,7 @@ export interface MaterialDefinition {
     id: string;
     name: string;
     type: ItemType;
-    category?: 'METAL' | 'WOOD' | 'LEATHER' | 'CLOTH' | 'FUEL' | 'MONSTER_PART' | 'GEM' | 'POTION' | 'TOOL' | 'SCROLL' | 'KEY_ITEM';
+    category?: 'METAL' | 'WOOD' | 'LEATHER' | 'CLOTH' | 'FUEL' | 'MONSTER_PART' | 'GEM' | 'POTION' | 'TOOL' | 'SCROLL' | 'KEY_ITEM' | 'VENDOR_TRASH';
     tier?: number;
     description: string;
     baseValue: number; // Single source of truth for item value (Buy/Sell base)
@@ -88,50 +88,41 @@ export const materials: Record<string, MaterialDefinition> = {
     },
 
     // --- TIER 1 SPECIAL & DROPS ---
-    rat_hide_patch: {
-        id: 'rat_hide_patch', name: 'Rat Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+    vermin_fang: {
+        id: 'vermin_fang', name: 'Vermin Fang', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
+        description: 'A grimy vermin fang. Traders buy them as proof of pest control.', baseValue: 15, icon: '🦷'
+    },
+    hide_patch: {
+        id: 'hide_patch', name: 'Rat Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A tough patch cut from rat-man hide. Good for light armor seams.', baseValue: 140, icon: '🧷'
     },
-    vermin_fang: {
-        id: 'vermin_fang', name: 'Vermin Fang', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A sharp, yellowed fang. Can be used for jagged dagger edges.', baseValue: 110, icon: '🦷'
-    },
-    slime_coagulum: {
-        id: 'slime_coagulum', name: 'Slime Coagulum', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A semi-solid slime mass. Acts as a decent adhesive for belts.', baseValue: 130, icon: '🟢'
-    },
-    bat_wing_membrane: {
-        id: 'bat_wing_membrane', name: 'Bat Wing Membrane', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'Thin but surprisingly durable leather-like membrane.', baseValue: 150, icon: '🦇'
-    },
     bat_sonar_gland: {
-        id: 'bat_sonar_gland', name: 'Bat Sonar Gland', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A sensitive organ that pulses. Useful for accuracy-boosting charms.', baseValue: 190, icon: '👂'
+        id: 'bat_sonar_gland', name: 'Bat Sonar Gland', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
+        description: 'A strange gland that still twitches. Alchemists will pay a little for it.', baseValue: 18, icon: '👂'
     },
     sewer_buckle: {
-        id: 'sewer_buckle', name: 'Sewer Buckle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A rusted but functional metal buckle salvaged from the muck.', baseValue: 175, icon: '🪝'
+        id: 'sewer_buckle', name: 'Sewer Buckle', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
+        description: 'A rusted buckle pulled from the muck. Worth a few coins as scrap.', baseValue: 12, icon: '🪝'
     },
     mold_spore_sac: {
         id: 'mold_spore_sac', name: 'Mold Spore Sac', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A dangerous sac filled with acidic spores.', baseValue: 210, icon: '🍄'
+        description: 'A swollen sac packed with caustic spores. Handle with care.', baseValue: 45, icon: '🍄'
     },
     beetle_carapace_shard: {
         id: 'beetle_carapace_shard', name: 'Carapace Shard', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A hard piece of insect shell. Great for reinforcing armor plates.', baseValue: 230, icon: '🪲'
+        description: 'A hard carapace shard. Tough, but not yet refined into usable plates.', baseValue: 40, icon: '🪲'
     },
-    vermin_ring_core: {
-        id: 'vermin_ring_core', name: 'Vermin Ring Core', type: 'RESOURCE', category: 'GEM', tier: 1,
-        description: 'A smooth bone-like sphere found inside sewer thieves\' loot.', baseValue: 280, icon: '⚪'
+
+    // plague_rat_king
+    rat_king_crown_shard: {
+        id: 'rat_king_crown_shard', name: 'Rat King Crown Shard', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1, 
+        description: 'A jagged piece of the Rat King’s crown. Proof of a filthy victory.', baseValue: 60, icon: '👑'    
     },
-    rat_king_molar: {
-        id: 'rat_king_molar', name: 'Rat King Molar', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A massive, yellow tooth. Heavy enough to be a mace-head.', baseValue: 350, icon: '🦴'
+    scrap_mace_head: {
+        id: 'scrap_mace_head', name: 'Scrap Mace Head', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A crude mace head bolted from sewer scrap. Heavy, dented, and valuable as salvage.', baseValue: 75, icon: '🔩'
     },
-    plague_sac: {
-        id: 'plague_sac', name: 'Plague Sac', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A toxic gland from the Rat King. Enables potent debuff catalysts.', baseValue: 320, icon: '🤢'
-    },
+
     goblin_scrap_buckle: {
         id: 'goblin_scrap_buckle', name: 'Goblin Scrap Buckle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A crude but sturdy buckle. Perfect for belts and straps.', baseValue: 160, icon: '🪝'
@@ -143,10 +134,6 @@ export const materials: Record<string, MaterialDefinition> = {
     acidic_slime_core: {
         id: 'acidic_slime_core', name: 'Acidic Slime Core', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A pulsing core that correodes metal. Used for edge coating and poisons.', baseValue: 240, icon: '🧪'
-    },
-    wolf_fang_shard: {
-        id: 'wolf_fang_shard', name: 'Wolf Fang Shard', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A jagged fang shard. Can be set into blades for vicious cuts.', baseValue: 180, icon: '🦷'
     },
     rusty_amulet_fragment: {
         id: 'rusty_amulet_fragment', name: 'Rusty Amulet Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
