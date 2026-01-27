@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Shield, Sword, Activity, Skull, Zap, LogOut, FastForward, Pause, ChevronDown, ChevronUp, Sparkles, Target } from 'lucide-react';
 import { Mercenary } from '../../../models/Mercenary';
@@ -8,6 +9,7 @@ import { calculateDerivedStats, applyEquipmentBonuses, mergePrimaryStats } from 
 import { useGame } from '../../../context/GameContext';
 import { SKILLS } from '../../../data/skills';
 import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
+import { getAssetUrl } from '../../../utils';
 
 const ACTION_THRESHOLD = 1000;
 
@@ -276,7 +278,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
             {/* Top Toolbar */}
             <div className="p-3 bg-red-950/20 border-b border-red-900/30 flex justify-between items-center shrink-0 z-[200]">
                 <div className="flex items-center gap-2">
-                    <Skull className="w-4 h-4 text-red-500" />
+                    <Skull className="w-4 h-4 text-red-50" />
                     <h2 className="text-white font-black uppercase text-[10px] md:text-sm tracking-widest font-mono">Combat Zone</h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -303,7 +305,13 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                             className={`relative flex flex-col items-center transition-all duration-300 ease-out ${e.currentHp <= 0 ? 'grayscale opacity-20 scale-90' : e.lastDamaged ? 'animate-hit' : ''}`}
                         >
                             <div className={`w-16 h-16 md:w-32 md:h-32 bg-stone-900/60 rounded-2xl border-2 flex items-center justify-center relative shadow-2xl transition-colors ${e.lastDamaged ? 'border-red-500 bg-red-950/20' : 'border-stone-800'} ${attackingUnitId === e.instanceId ? 'ring-4 ring-red-500/40' : ''}`}>
-                                <div className="text-4xl md:text-7xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">{e.icon}</div>
+                                <div className="w-[85%] h-[85%] flex items-center justify-center relative overflow-hidden">
+                                    <img 
+                                        src={getAssetUrl(e.sprite || 'giant_rat.png', 'monsters')} 
+                                        className="w-full h-full object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]" 
+                                        alt={e.name}
+                                    />
+                                </div>
                                 
                                 {/* Damage Popups */}
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

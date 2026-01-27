@@ -86,8 +86,8 @@ export const materials: Record<string, MaterialDefinition> = {
         description: 'A grimy vermin fang. Traders buy them as proof of pest control.', baseValue: 15, icon: '🦷'
     },
     hide_patch: {
-        id: 'hide_patch', name: 'Rat Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A tough patch cut from rat-man hide. Good for light armor seams.', baseValue: 140, icon: '🧷'
+        id: 'hide_patch', name: 'Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A tough patch cut from rat hide. Good for light armor seams.', baseValue: 140, icon: '🧷'
     },
     // sewer_slime
     slime_gel: {
