@@ -11,11 +11,11 @@ const RomanTierOverlay = ({ id }: { id: string }) => {
 };
 
 const CartItemImage = ({ id, meta }: { id: string, meta: any }) => {
-    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${id}.png`));
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${id}.png`, 'materials'));
     
     const handleImgError = () => {
-        if (meta?.image && imgSrc !== getAssetUrl(meta.image)) {
-            setImgSrc(getAssetUrl(meta.image));
+        if (meta?.image && imgSrc !== getAssetUrl(meta.image, 'materials')) {
+            setImgSrc(getAssetUrl(meta.image, 'materials'));
         }
     };
 

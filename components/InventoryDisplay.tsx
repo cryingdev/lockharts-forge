@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle, Brain, Lock, Unlock, Star, Sparkles } from 'lucide-react';
@@ -12,18 +13,21 @@ const RomanTierOverlay = ({ id }: { id: string }) => {
 };
 
 const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, className?: string }) => {
+    const isEquip = item.type === 'EQUIPMENT';
+    const folder = isEquip ? 'equipments' : 'materials';
+    
     // 1순위: ID 기반 파일명 시도 (Equipment는 recipeId 우선)
-    const baseId = (item.type === 'EQUIPMENT' && item.equipmentData?.recipeId) 
+    const baseId = (isEquip && item.equipmentData?.recipeId) 
         ? item.equipmentData.recipeId 
         : item.id;
     
-    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`));
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`, folder));
 
     const handleImgError = () => {
         // 2순위: 아이템 메타데이터의 image 또는 equipmentData의 image 폴백
         const fallbackPath = item.image || item.equipmentData?.image;
-        if (fallbackPath && imgSrc !== getAssetUrl(fallbackPath)) {
-            setImgSrc(getAssetUrl(fallbackPath));
+        if (fallbackPath && imgSrc !== getAssetUrl(fallbackPath, folder)) {
+            setImgSrc(getAssetUrl(fallbackPath, folder));
         }
     };
 

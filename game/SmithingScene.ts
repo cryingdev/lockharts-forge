@@ -210,20 +210,20 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('tile_forge', getAssetUrl('tile_forge.png'));
+    this.load.image('tile_forge', getAssetUrl('tile_forge.png', 'minigame'));
     this.load.image('anvil_img', getAssetUrl('anvil.png'));
-    this.load.image('spark_perfect', getAssetUrl('particle_spark1.png'));
-    this.load.image('spark_normal', getAssetUrl('particle_spark2.png'));
-    this.load.image('billet_stage_0', getAssetUrl('billet_default.png'));
-    this.load.image('blade_stage_1', getAssetUrl('billet_blade_01.png'));
-    this.load.image('blade_stage_2', getAssetUrl('billet_blade_02.png'));
-    this.load.image('blade_stage_3', getAssetUrl('billet_blade_03.png'));
-    this.load.image('blade_stage_4', getAssetUrl('billet_blade_04.png'));
-    this.load.image('blade_stage_5', getAssetUrl('billet_blade_05.png'));
-    this.load.spritesheet('bellows', getAssetUrl('bellows_sprite.png'), { frameWidth: 298, frameHeight: 188 });
+    this.load.image('spark_perfect', getAssetUrl('particle_spark1.png', 'minigame'));
+    this.load.image('spark_normal', getAssetUrl('particle_spark2.png', 'minigame'));
+    this.load.image('billet_stage_0', getAssetUrl('billet_default.png', 'minigame'));
+    this.load.image('blade_stage_1', getAssetUrl('billet_blade_01.png', 'minigame'));
+    this.load.image('blade_stage_2', getAssetUrl('billet_blade_02.png', 'minigame'));
+    this.load.image('blade_stage_3', getAssetUrl('billet_blade_03.png', 'minigame'));
+    this.load.image('blade_stage_4', getAssetUrl('billet_blade_04.png', 'minigame'));
+    this.load.image('blade_stage_5', getAssetUrl('billet_blade_05.png', 'minigame'));
+    this.load.spritesheet('bellows', getAssetUrl('bellows_sprite.png', 'minigame'), { frameWidth: 298, frameHeight: 188 });
     this.load.image('icon_hammer', getAssetUrl('hammer.png'));
-    this.load.image('icon_tongs', getAssetUrl('tongs.png'));
-    this.load.image('hammer_strike', getAssetUrl('hammer.png'));
+    this.load.image('icon_tongs', getAssetUrl('tongs.png', 'minigame'));
+    this.load.image('hammer_strike', getAssetUrl('hammer.png', 'minigame'));
   }
 
   create() {

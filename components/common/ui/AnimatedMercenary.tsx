@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { getAssetUrl } from '../../../utils';
 
@@ -24,8 +23,8 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
 
     const isSpriteSheet = mercenary?.sprite?.includes('_sprite');
     const spriteUrl = mercenary?.sprite 
-        ? getAssetUrl(mercenary.sprite) 
-        : getAssetUrl('adventurer_wanderer_01.png');
+        ? getAssetUrl(mercenary.sprite, 'mercenaries') 
+        : getAssetUrl('adventurer_wanderer_01.png', 'mercenaries');
 
     // 이미지 로드 시 실제 해상도를 측정하여 가로세로비 계산 (프레임 단위 비율)
     useEffect(() => {

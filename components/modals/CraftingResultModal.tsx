@@ -61,7 +61,11 @@ const CraftingResultModal = () => {
 
     const data = item.equipmentData;
     const recipe = EQUIPMENT_ITEMS.find(r => r.id === data.recipeId);
-    const imageUrl = data.image ? getAssetUrl(data.image) : (data.recipeId ? getAssetUrl(`${recipe?.id}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`));
+    const imageUrl = data.image 
+        ? getAssetUrl(data.image, 'equipments') 
+        : (data.recipeId 
+            ? getAssetUrl(`${recipe?.id}.png`, 'equipments') 
+            : getAssetUrl(`${item.id.split('_')[0]}.png`, 'equipments'));
 
     const getQualityLabel = (q: number): string => {
         if (q >= 110) return "Masterwork";

@@ -25,7 +25,7 @@ export const DUNGEONS: DungeonDefinition[] = [
              { itemId: 'leather_strips', minQuantity: 2, maxQuantity: 4, chance: 1.0 },
              { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.6 },
              { itemId: 'tin_ore', minQuantity: 1, maxQuantity: 2, chance: 0.4 },
-             { itemId: 'rat_hide_patch', minQuantity: 1, maxQuantity: 2, chance: 0.3 }
+             { itemId: 'hide_patch', minQuantity: 1, maxQuantity: 2, chance: 0.3 }
         ]
     },
     {

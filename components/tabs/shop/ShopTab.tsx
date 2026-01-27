@@ -27,7 +27,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         {/* Background Layer */}
         <div className="absolute inset-0 z-0">
             <img 
-                src={getAssetUrl('shop_bg.jpeg')} 
+                src={getAssetUrl('shop_bg.jpeg', 'bg')} 
                 className="absolute top-0 opacity-60 w-full h-full object-cover"
                 onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #292524, #1c1917)'; }}
             />
@@ -92,7 +92,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 flex items-end justify-center pointer-events-none">
             {!counterImgError ? (
                 <img 
-                    src={getAssetUrl('shop_counter.png')} 
+                    src={getAssetUrl('shop_counter.png', 'bg')} 
                     className="w-full h-full object-cover object-top filter drop-shadow-[0_-30px_50px_rgba(0,0,0,0.8)]"
                     onError={() => setCounterImgError(true)}
                 />
@@ -110,8 +110,10 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     speaker={shop.dialogueState.speaker}
                     text={shop.dialogueState.text}
                     options={shop.dialogueState.options}
-                    highlightTerm={shop.dialogueState.highlightTerm}
-                    itemDetail={shop.dialogueState.itemDetail}
+                    // Fix: Use type assertion to access optional properties in union type
+                    highlightTerm={(shop.dialogueState as any).highlightTerm}
+                    // Fix: Use type assertion to access optional properties in union type
+                    itemDetail={(shop.dialogueState as any).itemDetail}
                     className="w-full relative pointer-events-auto"
                 />
             )}

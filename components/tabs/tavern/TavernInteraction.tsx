@@ -185,7 +185,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
 
             <div className="absolute inset-0 z-0">
                 <img 
-                    src={getAssetUrl('tavern_bg.jpeg')} 
+                    src={getAssetUrl('tavern_bg.jpeg', 'bg')} 
                     alt="Tavern Interior" 
                     className="absolute inset-0 w-full h-full object-cover opacity-50"
                 />

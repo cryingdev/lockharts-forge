@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { X, Check, Search, Sword, Shield, Zap, Brain, Sparkles, Lock, Info } from 'lucide-react';
 import { InventoryItem } from '../../../../types/inventory';
@@ -41,11 +42,13 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
     };
 
     const getInventoryItemImageUrl = (item: InventoryItem) => {
-        if (item.type === 'EQUIPMENT' && item.equipmentData) {
-            if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image);
-            return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`) : getAssetUrl(`${item.id.split('_')[0]}.png`);
+        const isEquip = item.type === 'EQUIPMENT';
+        const folder = isEquip ? 'equipments' : 'materials';
+        if (isEquip && item.equipmentData) {
+            if (item.equipmentData.image) return getAssetUrl(item.equipmentData.image, folder);
+            return item.equipmentData.recipeId ? getAssetUrl(`${item.equipmentData.recipeId}.png`, folder) : getAssetUrl(`${item.id.split('_')[0]}.png`, folder);
         }
-        return getAssetUrl(`${item.id}.png`);
+        return getAssetUrl(`${item.id}.png`, folder);
     };
 
     return (

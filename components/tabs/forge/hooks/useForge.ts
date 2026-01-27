@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EquipmentCategory, EquipmentItem } from '../../../../types';
@@ -5,6 +6,7 @@ import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../../data/equip
 import { MASTERY_THRESHOLDS } from '../../../../config/mastery-config';
 import { materials } from '../../../../data/materials';
 import { getSmithingLevel, getUnlockedTier, getEnergyCost } from '../../../../utils/craftingLogic';
+import { getAssetUrl } from '../../../../utils';
 
 export const useForge = (onNavigate: (tab: any) => void) => {
   const { state, actions } = useGame();
@@ -282,6 +284,11 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     setHoveredItem(null);
   }, [clearTooltipRef]);
 
+  const getItemImageUrl = (item: EquipmentItem) => {
+    if (item.image) return getAssetUrl(item.image, 'equipments');
+    return getAssetUrl(`${item.id}.png`, 'equipments');
+  };
+
   return {
     state,
     actions,
@@ -290,6 +297,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     selectedItem,
     isPanelOpen,
     isSkillsExpanded,
+    // Fix duplicate activeCategory property at line 300
     expandedSubCat,
     favorites,
     isFavExpanded,
@@ -309,6 +317,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     requiredEnergy: selectedItem ? getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0) : 20,
     getInventoryCount,
     masteryInfo,
+    getItemImageUrl,
     handlers: {
       setActiveCategory,
       setSelectedItem,

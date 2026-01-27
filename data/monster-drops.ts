@@ -13,26 +13,23 @@ export interface MonsterDropEntry {
 export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
   // ===== BAND 1: The Sewer Cellars =====
   giant_rat: [
-    { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.55 },
-    { itemId: 'charcoal', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
-    { itemId: 'rat_hide_patch', minQuantity: 1, maxQuantity: 1, chance: 0.22 },
-    { itemId: 'vermin_fang', minQuantity: 1, maxQuantity: 2, chance: 0.18 },
+    { itemId: 'vermin_fang', minQuantity: 1, maxQuantity: 2, chance: 0.88 },
+    { itemId: 'hide_patch', minQuantity: 1, maxQuantity: 1, chance: 0.22 },
   ],
   sewer_slime: [
     { itemId: 'slime_gel', minQuantity: 1, maxQuantity: 2, chance: 0.80 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 1, chance: 0.18 },
-    { itemId: 'slime_coagulum', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
     { itemId: 'acidic_slime_core', minQuantity: 1, maxQuantity: 1, chance: 0.15 },
   ],
   cave_bat: [
-    { itemId: 'bat_wing_membrane', minQuantity: 1, maxQuantity: 1, chance: 0.28 },
+    { itemId: 'leather_strip', minQuantity: 1, maxQuantity: 1, chance: 0.28 },
     { itemId: 'bat_sonar_gland', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
     { itemId: 'cave_moss_pad', minQuantity: 1, maxQuantity: 2, chance: 0.20 },
   ],
   rat_man: [
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 3, chance: 0.75 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 2, chance: 0.25 },
-    { itemId: 'rat_hide_patch', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
+    { itemId: 'hide_patch', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
     { itemId: 'sewer_buckle', minQuantity: 1, maxQuantity: 1, chance: 0.14 },
   ],
   mold_sporeling: [
@@ -43,8 +40,13 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
   ],
   carrion_beetle: [
     { itemId: 'beetle_carapace_shard', minQuantity: 1, maxQuantity: 2, chance: 0.32 },
-    { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.40 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
+  ],
+  ember_beetle: [
+    { itemId: 'beetle_carapace_shard', minQuantity: 1, maxQuantity: 2, chance: 0.28 },
+    { itemId: 'charcoal',            minQuantity: 1, maxQuantity: 2, chance: 0.30 },
+    { itemId: 'ember_beetle_gland',  minQuantity: 1, maxQuantity: 1, chance: 0.10 },
+    { itemId: 'copper_ore',          minQuantity: 1, maxQuantity: 1, chance: 0.12 },
   ],
   sewer_thief: [
     { itemId: 'wool_cloth', minQuantity: 1, maxQuantity: 2, chance: 0.40 },
@@ -56,8 +58,9 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
   plague_rat_king: [
     { itemId: 'leather_strips', minQuantity: 2, maxQuantity: 4, chance: 1.00 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.40 },
-    { itemId: 'rat_king_molar', minQuantity: 1, maxQuantity: 1, chance: 0.35 },
-    { itemId: 'plague_sac', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
+      // REPLACE molar with crown + scrap mace
+    { itemId: 'rat_king_crown_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
+    { itemId: 'scrap_mace_head', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
   ],
 
   // ===== BAND 2: The Goblin Plains =====
@@ -75,24 +78,21 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'wool_cloth', minQuantity: 1, maxQuantity: 2, chance: 0.45 },
     { itemId: 'fetish_totem_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
   ],
-  dire_wolf: [
-    { itemId: 'wolf_fang_shard', minQuantity: 1, maxQuantity: 3, chance: 0.50 },
-    { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
-    { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
-  ],
   goblin_brute: [
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.45 },
     { itemId: 'hard_leather', minQuantity: 1, maxQuantity: 1, chance: 0.12 },
-    { itemId: 'brute_tendon', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
+    { itemId: 'brute_sinew', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
   ],
   scavenger_hyena: [
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.45 },
     { itemId: 'hyena_pelt_strip', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
-    { itemId: 'wolf_fang_shard', minQuantity: 1, maxQuantity: 2, chance: 0.25 },
+  ],
+  dire_wolf: [
+    { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 1, chance: 0.40 },
+    { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
   ],
   werewolf: [
-    { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 3, chance: 0.70 },
-    { itemId: 'wolf_fang_shard', minQuantity: 2, maxQuantity: 5, chance: 0.85 },
+    { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 3, chance: 0.40 },
     { itemId: 'hard_leather', minQuantity: 1, maxQuantity: 1, chance: 0.30 },
   ],
   bandit_cutthroat: [
@@ -110,7 +110,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'tin_ore', minQuantity: 2, maxQuantity: 4, chance: 0.85 },
     { itemId: 'copper_ore', minQuantity: 2, maxQuantity: 5, chance: 1.00 },
     { itemId: 'goblin_scrap_buckle', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
-    { itemId: 'crown_gilded_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
+    { itemId: 'goblin_crown_gilded_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
   ],
 
   // ===== BAND 3: The Deep Mines =====
@@ -134,7 +134,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'venom_sac', minQuantity: 1, maxQuantity: 1, chance: 0.22 },
   ],
   frost_wolf: [
-    { itemId: 'wolf_fang_shard', minQuantity: 1, maxQuantity: 2, chance: 0.40 },
+    { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 2, chance: 0.40 },
     { itemId: 'frost_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
   ],
   brood_mother: [
@@ -173,10 +173,6 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'rotting_hide', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
     { itemId: 'grave_wax', minQuantity: 1, maxQuantity: 1, chance: 0.22 },
     { itemId: 'bone_splint', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
-  ],
-  shadow_wolf: [
-    { itemId: 'wolf_fang_shard', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
-    { itemId: 'shade_ichor', minQuantity: 1, maxQuantity: 1, chance: 0.18 },
   ],
   wraith: [
     { itemId: 'ectoplasm', minQuantity: 1, maxQuantity: 2, chance: 0.35 },

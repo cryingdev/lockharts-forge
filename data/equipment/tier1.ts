@@ -85,7 +85,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
       { id: 'copper_ore', count: 2 },
       { id: 'tin_ore', count: 1 },
       { id: 'oak_log', count: 1 },
-      { id: 'wolf_fang_shard', count: 1 }
+      { id: 'wolf_fang', count: 1 }
     ],
     baseStats: { physicalAttack: 12, physicalDefense: 0, magicalAttack: 0, magicalDefense: 0, luk: 1 },
     slotType: 'MAIN_HAND',
@@ -271,7 +271,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     requirements: [
       { id: 'leather_strips', count: 3 },
       { id: 'wool_cloth', count: 1 },
-      { id: 'rat_hide_patch', count: 1 }
+      { id: 'hide_patch', count: 1 }
     ],
     baseStats: { physicalAttack: 0, physicalDefense: 8, magicalAttack: 0, magicalDefense: 0, vit: 1 },
     slotType: 'BODY',
@@ -314,7 +314,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     requirements: [
       { id: 'leather_strips', count: 2 },
       { id: 'wool_cloth', count: 1 },
-      { id: 'rat_hide_patch', count: 1 },
+      { id: 'hide_patch', count: 1 },
       { id: 'bone_splint', count: 1 }
     ],
     baseStats: { physicalAttack: 0, physicalDefense: 6, magicalAttack: 0, magicalDefense: 0, vit: 1, dex: 1 },

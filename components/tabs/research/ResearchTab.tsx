@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useGame } from '../../../context/GameContext';
 import { Sparkles, Beaker, Microscope, Loader2, ArrowLeft, Check, AlertCircle, Trash2, Trophy, Ghost } from 'lucide-react';
@@ -28,7 +29,7 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
                             <div className="absolute inset-0 bg-amber-500/40 blur-3xl animate-pulse rounded-full" />
                             <div className="w-32 h-32 bg-stone-950 rounded-full border-4 border-amber-500 flex items-center justify-center relative shadow-2xl animate-bounce-slow">
                                 <img 
-                                    src={getAssetUrl(`${discoveredRecipe.id}.png`)} 
+                                    src={getAssetUrl(`${discoveredRecipe.id}.png`, 'equipments')} 
                                     className="w-20 h-20 object-contain drop-shadow-[0_0_20px_rgba(245,158,11,1)]" 
                                     alt="Discovered" 
                                 />
@@ -98,7 +99,7 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
             {/* Background Layer */}
             <div className="absolute inset-0 z-0">
                 <img 
-                    src={getAssetUrl('research_table_bg.png')} 
+                    src={getAssetUrl('research_table_bg.png', 'bg')} 
                     className="absolute inset-0 w-full h-full object-cover opacity-30" 
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
@@ -169,7 +170,7 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
                     {result && !isResearching ? (
                          <button 
                             onClick={handlers.handleClearResult}
-                            className="w-full py-4 rounded-2xl font-black text-sm md:text-lg uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 bg-stone-800 hover:bg-stone-700 text-stone-200 border-b-4 border-stone-950 shadow-2xl active:scale-95"
+                            className="w-full py-4 rounded-2xl font-black text-sm md:text-lg uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 bg-stone-800 hover:bg-stone-750 text-stone-200 border-b-4 border-stone-950 shadow-2xl active:scale-95"
                          >
                             <Trash2 className="w-5 h-5 md:w-6 md:h-6" /> Purge Workspace
                         </button>

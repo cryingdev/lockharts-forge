@@ -177,7 +177,7 @@ const DungeonTab = () => {
                         return (
                             <button key={d.id} onClick={() => handleDungeonSelect(d.id)} className={`w-full group relative flex flex-col md:flex-row items-center gap-4 p-4 md:p-6 rounded-2xl border-2 transition-all overflow-hidden ${isLocked ? 'bg-stone-900 border-stone-800 opacity-50 grayscale' : 'bg-stone-900/40 border-stone-800 hover:border-amber-500 hover:bg-stone-800 shadow-xl active:scale-[0.99]'}`}>
                                 <div className="w-20 h-20 md:w-32 md:h-32 bg-stone-950 rounded-xl border-2 border-stone-800 flex items-center justify-center text-4xl md:text-6xl shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
-                                    {isLocked ? <Lock className="w-8 h-8 text-stone-700" /> : (d.id.includes('rat') ? '🐀' : d.id.includes('goblin') ? '👺' : d.id.includes('mine') ? '⛏️' : '🏰')}
+                                    {isLocked ? <Lock className="w-8 h-8 text-stone-700" /> : (d.id.includes('rat') ? ' Rats' : d.id.includes('goblin') ? ' Goblins' : d.id.includes('mine') ? ' Mines' : ' Dungeon')}
                                 </div>
                                 <div className="flex-1 text-center md:text-left min-w-0">
                                     <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
@@ -237,7 +237,7 @@ const DungeonTab = () => {
                             <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                                 {selectedDungeon.rewards.map((reward, ridx) => (
                                     <div key={`${reward.itemId}-${ridx}`} className="w-8 h-8 md:w-12 md:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center shadow-inner group">
-                                        <img src={getAssetUrl(`${reward.itemId}.png`)} className="w-6 h-6 md:w-8 md:h-8 object-contain" onError={e=>e.currentTarget.style.display='none'} />
+                                        <img src={getAssetUrl(`${reward.itemId}.png`, 'materials')} className="w-6 h-6 md:w-8 md:h-8 object-contain" onError={e=>e.currentTarget.style.display='none'} />
                                     </div>
                                 ))}
                             </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { LayoutGrid, List, Lock, Unlock, Star, Sword, Shield, Coins, Package, Sparkles, Check } from 'lucide-react';
 import { InventoryItem } from '../types/inventory';
@@ -15,20 +16,22 @@ const RomanTierOverlay = ({ id, isList = false }: { id: string, isList?: boolean
 };
 
 const AdaptiveItemImage = ({ item, className }: { item: InventoryItem, className?: string }) => {
-    const baseId = (item.type === 'EQUIPMENT' && item.equipmentData?.recipeId) 
+    const isEquip = item.type === 'EQUIPMENT';
+    const folder = isEquip ? 'equipments' : 'materials';
+    const baseId = (isEquip && item.equipmentData?.recipeId) 
         ? item.equipmentData.recipeId 
         : item.id;
     
-    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`));
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`, folder));
 
     useEffect(() => {
-        setImgSrc(getAssetUrl(`${baseId}.png`));
-    }, [baseId]);
+        setImgSrc(getAssetUrl(`${baseId}.png`, folder));
+    }, [baseId, folder]);
 
     const handleImgError = () => {
         const fallbackPath = item.image || item.equipmentData?.image;
-        if (fallbackPath && imgSrc !== getAssetUrl(fallbackPath)) {
-            setImgSrc(getAssetUrl(fallbackPath));
+        if (fallbackPath && imgSrc !== getAssetUrl(fallbackPath, folder)) {
+            setImgSrc(getAssetUrl(fallbackPath, folder));
         }
     };
 

@@ -5,7 +5,7 @@ import { Monster } from '../models/Monster';
  */
 export const MONSTERS: Record<string, Monster> = {
   // =========================
-  // BAND 1 (Cellar / Vermin) - 8
+  // BAND 1 (Cellar / Vermin) - 9
   // =========================
   giant_rat: {
     id: 'giant_rat',
@@ -107,6 +107,23 @@ export const MONSTERS: Record<string, Monster> = {
       magicalAttack: 0, magicalDefense: 18, magicalReduction: 0.11,
       critChance: 4, critDamage: 150,
       accuracy: 96, evasion: 8, speed: 105
+    }
+  },
+  ember_beetle: {
+    id: 'ember_beetle',
+    name: 'Ember Beetle',
+    level: 3,
+    icon: '🔥',
+    sprite: 'ember_beetle.png',
+    description: 'A heat-fed beetle that glows faintly like embers in the dark.',
+    currentHp: 240,
+    rewardXp: 140,
+    stats: {
+      maxHp: 240, maxMp: 0,
+      physicalAttack: 22, physicalDefense: 30, physicalReduction: 0.16,
+      magicalAttack: 26, magicalDefense: 16, magicalReduction: 0.10,
+      critChance: 5, critDamage: 155,
+      accuracy: 92, evasion: 10, speed: 112
     }
   },
   sewer_thief: {
