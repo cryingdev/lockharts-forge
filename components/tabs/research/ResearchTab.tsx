@@ -99,7 +99,7 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
             {/* Background Layer */}
             <div className="absolute inset-0 z-0">
                 <img 
-                    src={getAssetUrl('research_table_bg.png')} 
+                    src={getAssetUrl('research_table_bg.png', 'bg')} 
                     className="absolute inset-0 w-full h-full object-cover opacity-30" 
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />

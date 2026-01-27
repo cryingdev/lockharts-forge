@@ -52,7 +52,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             `}</style>
 
             <div className="absolute inset-0 z-0">
-                <img src={getAssetUrl('garricks_store_bg.png')} className="absolute top-0 opacity-60 w-full h-full object-cover" />
+                <img src={getAssetUrl('garricks_store_bg.png', 'bg')} className="absolute top-0 opacity-60 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30"></div>
             </div>
 

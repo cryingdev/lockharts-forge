@@ -64,7 +64,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                 {/* Background Layer */}
                 <div className="absolute inset-0 z-0">
                     <img 
-                        src={getAssetUrl('forge_bg.png')} 
+                        src={getAssetUrl('forge_bg.png', 'bg')} 
                         className="w-full h-full object-cover opacity-30 blur-sm scale-105"
                         alt="Background"
                         onError={(e) => {

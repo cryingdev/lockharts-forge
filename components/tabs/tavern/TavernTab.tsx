@@ -165,7 +165,7 @@ const TavernTab = ({ activeTab }: { activeTab?: string }) => {
 
     return (
         <div className="h-full w-full bg-stone-950 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10"><img src={getAssetUrl('tavern_bg.jpeg')} className="w-full h-full object-cover blur-[2px]" /></div>
+            <div className="absolute inset-0 opacity-10"><img src={getAssetUrl('tavern_bg.jpeg', 'bg')} className="w-full h-full object-cover blur-[2px]" /></div>
             <div className="relative z-10 h-full p-3 md:p-5 overflow-y-auto custom-scrollbar flex flex-col gap-6 pb-20">
                 
                 {/* Header Toolbar */}

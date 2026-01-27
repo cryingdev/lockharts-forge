@@ -114,13 +114,13 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('workbench_bg', getAssetUrl('workbench_bg.png'));
-    this.load.image('niddle', getAssetUrl('niddle.png'));
-    this.load.image('nail', getAssetUrl('nail.png'));
-    this.load.image('nail_head', getAssetUrl('nail_head.png'));
+    this.load.image('workbench_bg', getAssetUrl('workbench_bg.png', 'minigame'));
+    this.load.image('niddle', getAssetUrl('niddle.png', 'minigame'));
+    this.load.image('nail', getAssetUrl('nail.png', 'minigame'));
+    this.load.image('nail_head', getAssetUrl('nail_head.png', 'minigame'));
     this.load.image('hammer', getAssetUrl('hammer.png'));
-    this.load.image('saw', getAssetUrl('saw.png'));
-    this.load.image('spark', getAssetUrl('particle_spark1.png'));
+    this.load.image('saw', getAssetUrl('saw.png', 'minigame'));
+    this.load.image('spark', getAssetUrl('particle_spark1.png', 'minigame'));
     if (this.itemImage) this.load.image('item_source', getAssetUrl(this.itemImage, 'equipments'));
   }
 

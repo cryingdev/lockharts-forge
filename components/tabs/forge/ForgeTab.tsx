@@ -32,7 +32,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="relative h-full w-full bg-stone-950 overflow-hidden" style={{ backgroundImage: `url(${getAssetUrl('tile_forge.png')})`, backgroundRepeat: 'repeat', backgroundBlendMode: 'multiply' }}>
+    <div className="relative h-full w-full bg-stone-950 overflow-hidden" style={{ backgroundImage: `url(${getAssetUrl('tile_forge.png', 'minigame')})`, backgroundRepeat: 'repeat', backgroundBlendMode: 'multiply' }}>
         
         {isCrafting && selectedItem && (
             <div className="absolute inset-0 z-[100] bg-stone-950">
