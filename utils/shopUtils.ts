@@ -1,4 +1,3 @@
-
 import { Mercenary } from '../models/Mercenary';
 import { ShopCustomer } from '../types/index';
 import { EQUIPMENT_ITEMS } from '../data/equipment';
@@ -36,20 +35,20 @@ export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] =
     const allowedSubCats = JOB_PREFERENCES[merc.job] || [];
     
     // 2. Filter Equipment based on Job Class and appropriate Tier
-    // If no items found for the exact tier, we look at current and lower tiers
     let validItems = EQUIPMENT_ITEMS.filter(i => 
         i.tier === targetTier && allowedSubCats.includes(i.subCategoryId)
     );
 
-    // Fallback: If no items found for target tier (unlikely with current data), try lower tiers
+    // Fallback: If no items found for target tier, try lower tiers
     if (validItems.length === 0) {
-        validItems = EQUIPMENT_ITEMS.filter(i => 
+        const lowerTierItems = EQUIPMENT_ITEMS.filter(i => 
             i.tier < targetTier && allowedSubCats.includes(i.subCategoryId)
-        ).sort((a, b) => b.tier - a.tier); // Pick highest available below target
+        ).sort((a, b) => b.tier - a.tier);
         
-        // Grab only the top tier available from the filtered list
-        const highestAvailableTier = validItems[0]?.tier || 1;
-        validItems = validItems.filter(i => i.tier === highestAvailableTier);
+        if (lowerTierItems.length > 0) {
+            const highestAvailableTier = lowerTierItems[0].tier;
+            validItems = lowerTierItems.filter(i => i.tier === highestAvailableTier);
+        }
     }
 
     // 3. Filter by Unlock Status
@@ -58,7 +57,6 @@ export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] =
 
     let target;
     // 85% chance to pick from unlocked items if any exist.
-    // 15% chance to pick a locked item (to hint at what to research).
     if (unlockedCandidates.length > 0 && Math.random() < 0.85) {
         target = unlockedCandidates[Math.floor(Math.random() * unlockedCandidates.length)];
     } else if (lockedCandidates.length > 0) {
@@ -69,11 +67,9 @@ export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] =
 
     if (target) {
         requestedId = target.id;
-        // Current offered price as a preview (calculated for 100 quality)
         price = Math.ceil(target.baseValue * markup);
         dialogue = `I require a ${target.name}.`;
     } else {
-        // Ultimate fallback to anything in Tier 1 for their job
         const fallbackList = EQUIPMENT_ITEMS.filter(i => i.tier === 1 && allowedSubCats.includes(i.subCategoryId));
         const fallback = fallbackList.length > 0 ? fallbackList[0] : EQUIPMENT_ITEMS[0];
         requestedId = fallback.id;

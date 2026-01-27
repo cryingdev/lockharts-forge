@@ -446,10 +446,7 @@ export const materials: Record<string, MaterialDefinition> = {
     
     hammer: { id: 'hammer', name: 'Blacksmith Hammer', type: 'TOOL', category: 'TOOL', description: 'Your trusty tool.', baseValue: 0 },
     anvil: { id: 'anvil', name: 'Old Anvil', type: 'TOOL', category: 'TOOL', description: 'Heavy and reliable.', baseValue: 0 },
-    recipe_scroll_bronze_longsword: {
-        id: 'recipe_scroll_bronze_longsword', name: 'Scroll: Bronze Longsword', type: 'SCROLL', category: 'SCROLL',
-        description: 'An ancient parchment detailing techniques for a Bronze Longsword.', baseValue: 0
-    },
+
     affinity_debug_gift: {
         id: 'affinity_debug_gift', name: 'Sparkling Heart', type: 'GIFT', category: 'GEM', tier: 1,
         description: 'A magical debug item that increases affinity by 50.', baseValue: 500

@@ -1,4 +1,3 @@
-
 # Project Map – Lockhart’s Forge (v0.1.42a)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
@@ -31,6 +30,7 @@ This document provides a comprehensive structural map of the project, detailing 
     - `manualDungeon.ts`: Grid generation, movement, and **Immersive Narrative Logic**.
     - `expedition.ts`: Auto-expedition results and status updates.
     - `research.ts`: Alchemical combination logic.
+    - `inventory.ts`: Item management and **Bronze Longsword** starting availability.
 - `state/initial-game-state.ts`: Initial data structure for new saves.
 
 ### Business Models (`models/`)
@@ -59,6 +59,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `utils/saveSystem.ts`: Version-validated persistence (`0.1.42a`).
 - `utils/combatLogic.ts`: CP formulas and hit resolution.
 - `utils/cacheManager.ts`: Web cache maintenance.
+- `utils/shopUtils.ts`: **Tier-matched request logic** and **85/15 unlocked item weighting**.
 
 ---
 
@@ -68,5 +69,11 @@ This document provides a comprehensive structural map of the project, detailing 
     *   Environmental descriptions added to movement and interaction events.
 *   **Casualty Visibility**:
     *   Implemented "Injured" and "K.I.A" status overlays in squad slots and mercenary picker.
+*   **Shop Optimization**:
+    *   Updated request logic to match mercenary level with equipment tier.
+    *   Prioritized unlocked recipes (85% chance) to reduce frustration from impossible requests.
+    *   **Bronze Longsword** is now available from the start without a recipe scroll.
+*   **Tutorial Polish**:
+    *   Blocked all non-Pip arrivals during the tutorial queue phase.
 *   **Version Synchronization**:
     *   Updated across all metadata and UI systems to `0.1.42a`.

@@ -128,7 +128,6 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
  * handleInstallFurnace
  * Sets the forge status to indicate a furnace is installed.
  */
-// Added missing handleInstallFurnace export to satisfy import in gameReducer.ts
 export const handleInstallFurnace = (state: GameState): GameState => {
     return {
         ...state,
@@ -227,7 +226,6 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
             };
         }
 
-        // Fix: Updated tutorial step name from 'PIP_PRAISE' to 'PIP_PRAISE_DIALOG'
         if (isPipTutorial) {
             newTutorialStep = 'PIP_PRAISE_DIALOG';
         }
@@ -283,7 +281,6 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
         if (recoverValue === undefined) return state;
 
         if (type === 'energy') {
-            // Energy Potion now heals Mercenary HP and MP simultaneously
             if (mercenaryId) {
                 const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);
                 if (mercIdx > -1) {
@@ -296,14 +293,12 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
                     merc.currentMp = Math.min(merc.maxMp, merc.currentMp + amount);
                     logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} HP and MP.`;
                     itemUsed = true;
-                    // Fix: Move mercenary update inside the index check block to fix 'Cannot find name merc' error
                     newKnownMercenaries[mercIdx] = merc;
                 }
             } else {
                 return { ...state, toastQueue: [...state.toastQueue, `This potion must be used on a mercenary.`] };
             }
         } else if (mercenaryId) {
-            // Mercenary Targeted Potions
             const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);
             if (mercIdx > -1) {
                 const merc = { ...newKnownMercenaries[mercIdx] };
@@ -356,12 +351,7 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
     };
 };
 
-/**
- * handleToggleLockItem
- * Toggles the lock status of an item.
- */
 export const handleToggleLockItem = (state: GameState, payload: { itemId: string }): GameState => {
-    // Fix: Corrected typo where newInventory was declared and assigned to itself
     const newInventory = state.inventory.map(item => {
         if (item.id === payload.itemId) {
             return { ...item, isLocked: !item.isLocked };
