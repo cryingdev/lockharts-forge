@@ -1,3 +1,4 @@
+
 const VERSION_MARKER_KEY = 'lockharts_forge_version_marker';
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 
@@ -7,7 +8,7 @@ const SAVE_PREFIX = 'lockharts_forge_slot_';
  * 프리뷰 환경에서의 안정성을 위해 metadata.json을 fetch로 로드합니다.
  */
 export const initializeWebCache = async (): Promise<void> => {
-    let currentVersion = '0.1.41b'; // 기본값
+    let currentVersion = '0.1.42a'; // 기본값
 
     try {
         // 프리뷰 환경 도메인 문제를 피하기 위해 런타임에 상대 경로로 가져옵니다.

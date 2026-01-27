@@ -86,8 +86,8 @@ export const materials: Record<string, MaterialDefinition> = {
         description: 'A grimy vermin fang. Traders buy them as proof of pest control.', baseValue: 15, icon: '🦷'
     },
     hide_patch: {
-        id: 'hide_patch', name: 'Rat Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A tough patch cut from rat-man hide. Good for light armor seams.', baseValue: 140, icon: '🧷'
+        id: 'hide_patch', name: 'Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A tough patch cut from rat hide. Good for light armor seams.', baseValue: 140, icon: '🧷'
     },
     // sewer_slime
     slime_gel: {
@@ -432,10 +432,10 @@ export const materials: Record<string, MaterialDefinition> = {
     potion_stamina_large: { id: 'potion_stamina_large', name: 'Large Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 Stamina.', baseValue: 600 },
     potion_stamina_huge: { id: 'potion_stamina_huge', name: 'Huge Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 Stamina.', baseValue: 1500 },
 
-    potion_energy_small: { id: 'potion_energy_small', name: 'Small Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 20 Energy.', baseValue: 100 },
-    potion_energy_medium: { id: 'potion_energy_medium', name: 'Medium Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 45 Energy.', baseValue: 250 },
-    potion_energy_large: { id: 'potion_energy_large', name: 'Large Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 Energy.', baseValue: 600 },
-    potion_energy_huge: { id: 'potion_energy_huge', name: 'Huge Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 Energy.', baseValue: 1500 },
+    potion_energy_small: { id: 'potion_energy_small', name: 'Small Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 20 HP and 20 MP for a mercenary.', baseValue: 100 },
+    potion_energy_medium: { id: 'potion_energy_medium', name: 'Medium Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 45 HP and 45 MP for a mercenary.', baseValue: 250 },
+    potion_energy_large: { id: 'potion_energy_large', name: 'Large Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 HP and 75 MP for a mercenary.', baseValue: 600 },
+    potion_energy_huge: { id: 'potion_energy_huge', name: 'Huge Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 HP and 100 MP for a mercenary.', baseValue: 1500 },
 
     // Facilities & Key Items
     furnace: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for smelting metal ores.', baseValue: 0 },
@@ -446,10 +446,7 @@ export const materials: Record<string, MaterialDefinition> = {
     
     hammer: { id: 'hammer', name: 'Blacksmith Hammer', type: 'TOOL', category: 'TOOL', description: 'Your trusty tool.', baseValue: 0 },
     anvil: { id: 'anvil', name: 'Old Anvil', type: 'TOOL', category: 'TOOL', description: 'Heavy and reliable.', baseValue: 0 },
-    recipe_scroll_bronze_longsword: {
-        id: 'recipe_scroll_bronze_longsword', name: 'Scroll: Bronze Longsword', type: 'SCROLL', category: 'SCROLL',
-        description: 'An ancient parchment detailing techniques for a Bronze Longsword.', baseValue: 0
-    },
+
     affinity_debug_gift: {
         id: 'affinity_debug_gift', name: 'Sparkling Heart', type: 'GIFT', category: 'GEM', tier: 1,
         description: 'A magical debug item that increases affinity by 50.', baseValue: 500

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Shield, Sword, Activity, Skull, Zap, LogOut, FastForward, Pause, ChevronDown, ChevronUp, Sparkles, Target } from 'lucide-react';
+import { Shield, Sword, Activity, Skull, Zap, LogOut, FastForward, Pause, Play, ChevronDown, ChevronUp, Sparkles, Target } from 'lucide-react';
 import { Mercenary } from '../../../models/Mercenary';
 import { Monster } from '../../../models/Monster';
 import { ManualDungeonSession } from '../../../types/game-state';
@@ -8,6 +8,7 @@ import { calculateDerivedStats, applyEquipmentBonuses, mergePrimaryStats } from 
 import { useGame } from '../../../context/GameContext';
 import { SKILLS } from '../../../data/skills';
 import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
+import { getAssetUrl } from '../../../utils';
 
 const ACTION_THRESHOLD = 1000;
 
@@ -59,12 +60,17 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
     const [damagePopups, setDamagePopups] = useState<DamagePopup[]>([]);
     const [isAuto, setIsAuto] = useState(true);
     const [isPaused, setIsPaused] = useState(false);
+    const [battleSpeed, setBattleSpeed] = useState<1 | 2 | 4>(1);
     const [activeActorId, setActiveActorId] = useState<string | null>(null); 
-    const [attackingUnitId, setAttackingUnitId] = useState<string | null>(null); // For Dash Animation
+    const [attackingUnitId, setAttackingUnitId] = useState<string | null>(null);
     const [showLogs, setShowLogs] = useState(false);
     const battleInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+    const speedRef = useRef(1);
 
-    // Orientation Detector
+    useEffect(() => {
+        speedRef.current = battleSpeed;
+    }, [battleSpeed]);
+
     useEffect(() => {
         const handleResize = () => {
             setOrientation(window.innerWidth > window.innerHeight ? 'LANDSCAPE' : 'PORTRAIT');
@@ -82,12 +88,10 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
         setDamagePopups(prev => [...prev, { id, value, targetId, isCrit, isSkill }]);
         setTimeout(() => {
             setDamagePopups(prev => prev.filter(p => p.id !== id));
-        }, 800);
+        }, 800 / speedRef.current);
     };
 
     const executeAttack = useCallback((attacker: any, target: any, isPlayerAttacker: boolean, skillId?: string) => {
-        // Trigger Visual Dash
-        const attackerId = isPlayerAttacker ? attacker.id : target.instanceId; // Logical ID check
         setAttackingUnitId(isPlayerAttacker ? attacker.id : target.instanceId);
         
         setTimeout(() => {
@@ -119,7 +123,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                             }
                             triggerDamagePopup(target.instanceId, res.damage, res.isCrit, !!skill);
                         }
-                        setTimeout(() => setEnemySquadState(curr => curr.map(currE => currE.instanceId === target.instanceId ? { ...currE, lastDamaged: false } : currE)), 200);
+                        setTimeout(() => setEnemySquadState(curr => curr.map(currE => currE.instanceId === target.instanceId ? { ...currE, lastDamaged: false } : currE)), 200 / speedRef.current);
                         return next;
                     }
                     return e;
@@ -139,7 +143,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                             next.currentHp = Math.max(0, next.currentHp - res.damage);
                             triggerDamagePopup(p.id, res.damage, res.isCrit, false);
                         }
-                        setTimeout(() => setPartyState(curr => curr.map(c => c.id === p.id ? { ...c, lastDamaged: false } : c)), 200);
+                        setTimeout(() => setPartyState(curr => curr.map(c => c.id === p.id ? { ...c, lastDamaged: false } : c)), 200 / speedRef.current);
                         return next;
                     }
                     return p;
@@ -147,9 +151,8 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                 addLog(`${attacker.name} strikes ${target.name.split(' ')[0]} for ${res.damage}`, 'ENEMY');
             }
             
-            // End Animation
-            setTimeout(() => setAttackingUnitId(null), 150);
-        }, 200); // Wait for dash to peak
+            setTimeout(() => setAttackingUnitId(null), 150 / speedRef.current);
+        }, 200 / speedRef.current);
     }, [addLog]);
 
     const processLoop = useCallback(() => {
@@ -160,11 +163,9 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
             setEnemySquadState(prevEnemySquad => {
                 const nextEnemySquad = [...prevEnemySquad];
 
-                // 1. Tick Gauges
-                nextParty.forEach(p => { if (p.currentHp > 0) p.gauge += p.derived.speed * 0.5; });
-                nextEnemySquad.forEach(e => { if (e.currentHp > 0) e.gauge += e.stats.speed * 0.5; });
+                nextParty.forEach(p => { if (p.currentHp > 0) p.gauge += p.derived.speed * 0.5 * speedRef.current; });
+                nextEnemySquad.forEach(e => { if (e.currentHp > 0) e.gauge += e.stats.speed * 0.5 * speedRef.current; });
 
-                // 2. Player Turns
                 const readyMerc = nextParty.find(p => p.currentHp > 0 && p.gauge >= ACTION_THRESHOLD);
                 if (readyMerc) {
                     const livingEnemies = nextEnemySquad.filter(e => e.currentHp > 0);
@@ -186,7 +187,6 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                     }
                 }
 
-                // 3. Enemy Turns
                 const readyEnemy = nextEnemySquad.find(e => e.currentHp > 0 && e.gauge >= ACTION_THRESHOLD);
                 if (readyEnemy && !activeActorId && !attackingUnitId) {
                     const livingPlayers = nextParty.filter(p => p.currentHp > 0);
@@ -233,14 +233,13 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
     useEffect(() => {
         if (enemySquadState.every(e => e.currentHp <= 0)) {
             setIsPaused(true);
-            setTimeout(() => onFinish(true, partyState), 1200);
+            setTimeout(() => onFinish(true, partyState), 1200 / speedRef.current);
         } else if (partyState.every(p => p.currentHp <= 0)) {
             setIsPaused(true);
-            setTimeout(() => onFinish(false, partyState), 1200);
+            setTimeout(() => onFinish(false, partyState), 1200 / speedRef.current);
         }
     }, [enemySquadState, partyState, onFinish]);
 
-    // UI Helper for Attack Dash
     const getUnitStyle = (id: string, side: 'PLAYER' | 'ENEMY'): React.CSSProperties => {
         if (attackingUnitId !== id) return {};
         
@@ -274,27 +273,52 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
             `}</style>
 
             {/* Top Toolbar */}
-            <div className="p-3 bg-red-950/20 border-b border-red-900/30 flex justify-between items-center shrink-0 z-[200]">
+            <div className="p-3 bg-red-950/20 border-b border-red-900/30 flex justify-between items-center shrink-0 z-[200] gap-2">
                 <div className="flex items-center gap-2">
-                    <Skull className="w-4 h-4 text-red-500" />
-                    <h2 className="text-white font-black uppercase text-[10px] md:text-sm tracking-widest font-mono">Combat Zone</h2>
+                    <Skull className="w-4 h-4 text-red-50" />
+                    <h2 className="text-white font-black uppercase text-[10px] md:text-sm tracking-widest font-mono hidden xs:block">Combat Zone</h2>
                 </div>
+
+                <div className="flex items-center gap-1 md:gap-3 bg-black/40 px-3 py-1 rounded-full border border-white/5">
+                    {/* Play/Pause Toggle */}
+                    <button 
+                        onClick={() => setIsPaused(!isPaused)}
+                        className={`p-1.5 rounded-full transition-all active:scale-90 ${isPaused ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-400 hover:text-stone-200'}`}
+                    >
+                        {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                    </button>
+
+                    <div className="w-px h-4 bg-stone-700" />
+
+                    {/* Speed Controls */}
+                    <div className="flex items-center gap-1">
+                        {[1, 2, 4].map(s => (
+                            <button 
+                                key={s} 
+                                onClick={() => setBattleSpeed(s as any)}
+                                className={`px-2.5 py-0.5 rounded font-mono text-[9px] font-black transition-all ${battleSpeed === s ? 'bg-indigo-600 text-white shadow-glow-sm' : 'text-stone-600 hover:text-stone-400'}`}
+                            >
+                                {s}x
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="flex items-center gap-2">
                     <button 
                         onClick={() => setIsAuto(!isAuto)}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg border font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all ${isAuto ? 'bg-amber-600 border-amber-400 text-white shadow-glow-sm' : 'bg-stone-800 border-stone-600 text-stone-400'}`}
+                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-lg border font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all ${isAuto ? 'bg-amber-600 border-amber-400 text-white shadow-glow-sm' : 'bg-stone-800 border-stone-600 text-stone-400'}`}
                     >
                         {isAuto ? <FastForward className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-                        {isAuto ? 'AUTO' : 'MANUAL'}
+                        <span className="font-black">{isAuto ? 'AUTO' : 'MANUAL'}</span>
                     </button>
                 </div>
             </div>
 
             <div className={`flex-1 flex relative overflow-hidden transition-all duration-700 ${orientation === 'PORTRAIT' ? 'flex-col' : 'flex-row'}`}>
-                {/* Visual Background Decor */}
                 <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-                {/* SQUAD AREA 1 (Top in Portrait / Right in Landscape) */}
+                {/* SQUAD AREA: ENEMIES */}
                 <div className={`flex flex-1 items-center justify-center p-4 gap-3 md:gap-6 ${orientation === 'PORTRAIT' ? 'order-1' : 'order-2'}`}>
                     {enemySquadState.map((e) => (
                         <div 
@@ -303,9 +327,14 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                             className={`relative flex flex-col items-center transition-all duration-300 ease-out ${e.currentHp <= 0 ? 'grayscale opacity-20 scale-90' : e.lastDamaged ? 'animate-hit' : ''}`}
                         >
                             <div className={`w-16 h-16 md:w-32 md:h-32 bg-stone-900/60 rounded-2xl border-2 flex items-center justify-center relative shadow-2xl transition-colors ${e.lastDamaged ? 'border-red-500 bg-red-950/20' : 'border-stone-800'} ${attackingUnitId === e.instanceId ? 'ring-4 ring-red-500/40' : ''}`}>
-                                <div className="text-4xl md:text-7xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">{e.icon}</div>
+                                <div className="w-[85%] h-[85%] flex items-center justify-center relative overflow-hidden">
+                                    <img 
+                                        src={getAssetUrl(e.sprite || 'giant_rat.png', 'monsters')} 
+                                        className="w-full h-full object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]" 
+                                        alt={e.name}
+                                    />
+                                </div>
                                 
-                                {/* Damage Popups */}
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     {damagePopups.filter(p => p.targetId === e.instanceId).map(p => (
                                         <div key={p.id} className={`absolute font-black text-2xl md:text-4xl animate-damage drop-shadow-[0_4px_6px_rgba(0,0,0,1)] ${p.isSkill ? 'text-blue-400' : p.isCrit ? 'text-amber-400' : 'text-red-500'}`}>
@@ -315,25 +344,31 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                                 </div>
                             </div>
                             {e.currentHp > 0 && (
-                                <div className="mt-2 w-16 md:w-32 space-y-1">
-                                    <div className="h-1.5 bg-black rounded-full overflow-hidden border border-white/5">
+                                <div className="mt-2 w-16 md:w-36 space-y-1">
+                                    <div className="text-[7px] font-black text-stone-500 text-center uppercase tracking-tighter truncate leading-none">
+                                        Lv.{e.level} {e.name}
+                                    </div>
+                                    <div className="relative h-2 bg-black rounded-full overflow-hidden border border-white/5">
                                         <div className="h-full bg-red-600 rounded-full transition-all duration-500" style={{ width: `${(e.currentHp/e.stats.maxHp)*100}%` }} />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className="text-[6px] md:text-[8px] font-mono font-black text-white drop-shadow-sm">{Math.floor(e.currentHp)}/{e.stats.maxHp}</span>
+                                        </div>
                                     </div>
                                     <div className="h-1 bg-black rounded-full overflow-hidden border border-white/5">
                                         <div className="h-full bg-amber-500 transition-all duration-100" style={{ width: `${(e.gauge/ACTION_THRESHOLD)*100}%` }} />
                                     </div>
-                                    <div className="text-[7px] font-black text-stone-500 text-center uppercase truncate tracking-[0.2em]">{e.name.split(' ')[0]}</div>
                                 </div>
                             )}
                         </div>
                     ))}
                 </div>
 
-                {/* SQUAD AREA 2 (Bottom in Portrait / Left in Landscape) */}
+                {/* SQUAD AREA: PLAYERS */}
                 <div className={`flex flex-1 items-center justify-center p-4 gap-3 md:gap-6 ${orientation === 'PORTRAIT' ? 'order-3' : 'order-1'}`}>
                     {partyState.map((p) => {
                         const isActive = activeActorId === p.id;
                         const hpPer = (p.currentHp / p.derived.maxHp) * 100;
+                        const mpPer = (p.currentMp / (p.derived.maxMp || 1)) * 100;
                         const isReady = p.gauge >= ACTION_THRESHOLD;
 
                         return (
@@ -351,10 +386,9 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                                         </div>
                                     )}
 
-                                    {/* Damage Popups */}
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                         {damagePopups.filter(dp => dp.targetId === p.id).map(dp => (
-                                            <div key={dp.id} className="absolute font-black text-2xl md:text-4xl animate-damage text-red-500 drop-shadow-[0_4px_6px_rgba(0,0,0,1)]">
+                                            <div key={dp.id} className="absolute font-black text-2xl md:text-4xl animate-damage text-red-50 drop-shadow-[0_4px_6px_rgba(0,0,0,1)]">
                                                 -{dp.value}
                                             </div>
                                         ))}
@@ -362,25 +396,32 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                                 </div>
 
                                 {p.currentHp > 0 && (
-                                    <div className="mt-2 w-16 md:w-32 space-y-1">
-                                        <div className="h-1.5 bg-black rounded-full overflow-hidden border border-white/5">
-                                            <div className={`h-full transition-all duration-500 ${hpPer < 30 ? 'bg-red-500 animate-pulse' : 'bg-red-600'}`} style={{ width: `${hpPer}%` }} />
-                                        </div>
-                                        <div className="h-1 bg-black rounded-full overflow-hidden border border-white/5">
-                                            <div className="h-full bg-amber-500 transition-all duration-100" style={{ width: `${(p.gauge/ACTION_THRESHOLD)*100}%` }} />
+                                    <div className="mt-2 w-16 md:w-40 space-y-1">
+                                        <div className="flex flex-col items-center leading-none">
+                                            <span className="text-[7px] font-black text-stone-400 uppercase tracking-tighter truncate">{p.name.split(' ')[0]}</span>
+                                            <span className="text-[6px] font-bold text-stone-500 uppercase tracking-tighter">{p.job} • Lv.{p.level}</span>
                                         </div>
                                         
-                                        <div className="flex justify-between items-center px-0.5">
-                                            <span className="text-[7px] font-black text-stone-400 uppercase tracking-tighter truncate">{p.name.split(' ')[0]}</span>
-                                            <div className="flex items-center gap-0.5">
-                                                <Zap className="w-1.5 h-1.5 text-blue-400" />
-                                                <span className="text-[6px] font-mono text-blue-400 font-black">{Math.floor(p.currentMp)}</span>
+                                        <div className="relative h-2 bg-black rounded-full overflow-hidden border border-white/5">
+                                            <div className={`h-full transition-all duration-500 ${hpPer < 30 ? 'bg-red-500 animate-pulse' : 'bg-red-600'}`} style={{ width: `${hpPer}%` }} />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-[6px] md:text-[8px] font-mono font-black text-white drop-shadow-sm">{Math.floor(p.currentHp)}/{p.derived.maxHp}</span>
                                             </div>
+                                        </div>
+                                        
+                                        <div className="relative h-1.5 bg-black rounded-full overflow-hidden border border-white/5">
+                                            <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${mpPer}%` }} />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-[5px] md:text-[7px] font-mono font-black text-white drop-shadow-sm">{Math.floor(p.currentMp)}/{p.derived.maxMp}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="h-1 bg-black rounded-full overflow-hidden border border-white/5">
+                                            <div className="h-full bg-amber-500 transition-all duration-100" style={{ width: `${(p.gauge/ACTION_THRESHOLD)*100}%` }} />
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Manual Action Menu */}
                                 {isActive && (
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 z-[300] animate-in slide-in-from-top-4 duration-300">
                                         <div className="flex flex-col gap-2 bg-stone-900/95 backdrop-blur-xl border-2 border-amber-500 p-2 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.9)] w-36 md:w-52">
@@ -425,7 +466,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                     })}
                 </div>
 
-                {/* Message Hub (Middle) */}
+                {/* Message Hub */}
                 <div className={`flex items-center justify-center z-50 pointer-events-none transition-all duration-700 ${orientation === 'PORTRAIT' ? 'order-2 h-16 w-full' : 'absolute inset-0 pointer-events-none'}`}>
                     <div className="bg-stone-900/90 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-2">
                          <Activity className={`w-3.5 h-3.5 text-red-500 ${isPaused ? '' : 'animate-pulse'}`} />
@@ -436,7 +477,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ party, enemies, f
                 </div>
             </div>
 
-            {/* Tactical Feed (Footer) */}
+            {/* Tactical Feed */}
             <div className={`bg-stone-900 border-t border-stone-800 transition-all duration-500 flex flex-col shrink-0 z-[200] ${showLogs ? 'h-48 md:h-60' : 'h-10 md:h-12'}`}>
                 <button 
                     onClick={() => setShowLogs(!showLogs)}

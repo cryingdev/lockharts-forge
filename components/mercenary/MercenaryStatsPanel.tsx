@@ -41,6 +41,7 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
       : 0;
   const hpPercent = finalStats.maxHp > 0 ? (mercenary.currentHp / finalStats.maxHp) * 100 : 0;
   const mpPercent = finalStats.maxMp > 0 ? (mercenary.currentMp / finalStats.maxMp) * 100 : 0;
+  const staminaPercent = Math.min(100, Math.max(0, (mercenary.expeditionEnergy || 0)));
 
   const isModified = useMemo(() => {
     return (Object.keys(pendingAllocated) as Array<keyof PrimaryStats>).some(
@@ -68,8 +69,6 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
       </div>
     );
   };
-
-  const skillIds = mercenary.skillIds;
 
   return (
     <div className="p-3 md:p-6 flex flex-col gap-4 md:gap-6 bg-stone-900/10 border-t border-white/5">
@@ -171,37 +170,54 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
           </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2 md:gap-6 shrink-0">
-        <div className="bg-stone-950/40 p-2 md:p-5 rounded-xl border border-white/5 flex items-center gap-2 md:gap-4 shadow-sm">
-          <div className="p-1.5 md:p-3 bg-red-950/40 rounded-lg text-red-500 border border-red-900/30">
-            <Heart className="w-4 h-4 md:w-6 md:h-6" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4 shrink-0">
+        <div className="bg-stone-950/40 p-2 md:p-3 rounded-xl border border-white/5 flex items-center gap-2 md:gap-3 shadow-sm">
+          <div className="p-1.5 md:p-2 bg-red-950/40 rounded-lg text-red-500 border border-red-900/30">
+            <Heart className="w-3.5 h-3.5 md:w-5 md:h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between text-[7px] md:text-xs text-stone-500 font-black mb-0.5 md:mb-1">
+            <div className="flex justify-between text-[7px] md:text-[10px] text-stone-500 font-black mb-0.5 md:mb-1">
               <span>HP</span>
               <span className="text-stone-300 font-mono">
                 {Math.floor(mercenary.currentHp)}/{finalStats.maxHp}
               </span>
             </div>
-            <div className="w-full h-1 md:h-2 bg-stone-900 rounded-full overflow-hidden shadow-inner">
+            <div className="w-full h-1 md:h-1.5 bg-stone-900 rounded-full overflow-hidden shadow-inner">
               <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${hpPercent}%` }} />
             </div>
           </div>
         </div>
 
-        <div className="bg-stone-950/40 p-2 md:p-5 rounded-xl border border-white/5 flex items-center gap-2 md:gap-4 shadow-sm">
-          <div className="p-1.5 md:p-3 bg-blue-950/40 rounded-lg text-blue-500 border border-blue-900/30">
-            <Activity className="w-4 h-4 md:w-6 md:h-6" />
+        <div className="bg-stone-950/40 p-2 md:p-3 rounded-xl border border-white/5 flex items-center gap-2 md:gap-3 shadow-sm">
+          <div className="p-1.5 md:p-2 bg-blue-950/40 rounded-lg text-blue-400 border border-blue-900/30">
+            <Activity className="w-3.5 h-3.5 md:w-5 md:h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between text-[7px] md:text-xs text-stone-500 font-black mb-0.5 md:mb-1">
+            <div className="flex justify-between text-[7px] md:text-[10px] text-stone-500 font-black mb-0.5 md:mb-1">
               <span>MP</span>
               <span className="text-stone-300 font-mono">
                 {Math.floor(mercenary.currentMp)}/{finalStats.maxMp}
               </span>
             </div>
-            <div className="w-full h-1 md:h-2 bg-stone-900 rounded-full overflow-hidden shadow-inner">
+            <div className="w-full h-1 md:h-1.5 bg-stone-900 rounded-full overflow-hidden shadow-inner">
               <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${mpPercent}%` }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-stone-950/40 p-2 md:p-3 rounded-xl border border-white/5 flex items-center gap-2 md:gap-3 shadow-sm">
+          <div className="p-1.5 md:p-2 bg-stone-800 rounded-lg text-stone-100 border border-white/10">
+            <Zap className={`w-3.5 h-3.5 md:w-5 md:h-5 ${staminaPercent < 20 ? 'animate-pulse text-red-500' : 'text-stone-100'}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between text-[7px] md:text-[10px] text-stone-500 font-black mb-0.5 md:mb-1">
+              <span>STAMINA</span>
+              <span className="text-stone-300 font-mono">
+                {Math.floor(mercenary.expeditionEnergy || 0)}/100
+              </span>
+            </div>
+            <div className="w-full h-1 md:h-1.5 bg-stone-900 rounded-full overflow-hidden shadow-inner">
+              <div className={`h-full transition-all duration-500 ${staminaPercent < 20 ? 'bg-red-500 animate-pulse' : 'bg-stone-100'}`} style={{ width: `${staminaPercent}%` }} />
             </div>
           </div>
         </div>
@@ -226,9 +242,9 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
           <Sparkles className="w-3 h-3 text-amber-600" /> Techniques & Skills
         </h4>
 
-        {skillIds && skillIds.length > 0 ? (
+        {mercenary.skillIds && mercenary.skillIds.length > 0 ? (
           <div className="space-y-1.5 md:space-y-3">
-            {skillIds.map((id) => {
+            {mercenary.skillIds.map((id) => {
               const skill = (SKILLS as any)[id];
               if (!skill) return null;
               return (

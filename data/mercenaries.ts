@@ -321,3 +321,12 @@ export const NAMED_MERCENARIES: Mercenary[] = [
     const maxMp = calculateMaxMp(m.stats, m.level);
     return { ...m, maxHp, currentHp: maxHp, maxMp, currentMp: maxMp } as Mercenary;
 });
+
+/**
+ * SPECIAL_RECRUITS_REGISTRY
+ * Map of IDs to special mercenary objects. Used for rescue system lookups.
+ */
+export const SPECIAL_RECRUITS_REGISTRY: Record<string, Mercenary> = {
+    'tilly_footloose': TILLY_FOOTLOOSE,
+    ...NAMED_MERCENARIES.reduce((acc, m) => ({ ...acc, [m.id]: m }), {})
+};

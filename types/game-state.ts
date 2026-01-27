@@ -21,6 +21,8 @@ export interface ManualDungeonSession {
     npcFound?: boolean; 
     rescuedNpcId?: string; 
     goldCollected: number; 
+    collectedLoot: { id: string; count: number; name: string }[]; // New: Real-time loot tracking
+    sessionXp: Record<string, number>; // New: Track XP gained during this session for result screen
     encounterStatus: 'NONE' | 'ENCOUNTERED' | 'BATTLE' | 'VICTORY' | 'DEFEAT' | 'STAIRS';
     currentEnemyHp?: number;
     lastActionMessage?: string; 
