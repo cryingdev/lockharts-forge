@@ -1,0 +1,16 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# VCS
+.git
+
+# OS / logs
+.DS_Store
+*.log
+
+# Optional (keep build context small)
+*.tmp
+*.swp
