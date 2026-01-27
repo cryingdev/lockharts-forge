@@ -29,7 +29,7 @@ export const MercenaryPortrait: React.FC<MercenaryPortraitProps> = ({
         return (
             <div className={`relative overflow-hidden rounded-lg ${showBg ? 'bg-stone-800' : ''} ${className}`}>
                 <img 
-                    src={getAssetUrl(profileImage)} 
+                    src={getAssetUrl(profileImage, 'mercenaries')} 
                     alt={name}
                     className="w-full h-full object-cover object-top"
                     style={{ imageRendering: 'pixelated' }}
@@ -41,8 +41,8 @@ export const MercenaryPortrait: React.FC<MercenaryPortraitProps> = ({
     // 전용 이미지가 없고 스프라이트만 있는 경우 (일반 용병)
     const isSpriteSheet = sprite?.includes('_sprite');
     const spriteUrl = sprite 
-        ? getAssetUrl(sprite) 
-        : getAssetUrl('adventurer_wanderer_01.png');
+        ? getAssetUrl(sprite, 'mercenaries') 
+        : getAssetUrl('adventurer_wanderer_01.png', 'mercenaries');
 
     return (
         <div className={`relative overflow-hidden rounded-lg ${showBg ? 'bg-stone-800' : ''} ${className}`}>

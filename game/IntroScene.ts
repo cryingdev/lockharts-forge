@@ -37,13 +37,13 @@ export default class IntroScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('intro_bg', getAssetUrl('intro_bg_01.png'));
-    this.load.image('intro_bg_02', getAssetUrl('intro_bg_02.png'));
-    this.load.image('intro_bg_03', getAssetUrl('intro_bg_03.png'));
-    this.load.image('intro_bg_04', getAssetUrl('intro_bg_04.png'));
-    this.load.image('intro_bg_05', getAssetUrl('intro_bg_05.png'));
-    this.load.image('intro_dragon', getAssetUrl('dragon_front.png'));
-    this.load.image('dragon_top', getAssetUrl('dragon_top.png'));
+    this.load.image('intro_bg', getAssetUrl('intro_bg_01.png', 'intro'));
+    this.load.image('intro_bg_02', getAssetUrl('intro_bg_02.png', 'intro'));
+    this.load.image('intro_bg_03', getAssetUrl('intro_bg_03.png', 'intro'));
+    this.load.image('intro_bg_04', getAssetUrl('intro_bg_04.png', 'intro'));
+    this.load.image('intro_bg_05', getAssetUrl('intro_bg_05.png', 'intro'));
+    this.load.image('intro_dragon', getAssetUrl('dragon_front.png', 'intro'));
+    this.load.image('dragon_top', getAssetUrl('dragon_top.png', 'intro'));
   }
 
   private createNarrativeText(text: string, color: string = '#b91c1c') {

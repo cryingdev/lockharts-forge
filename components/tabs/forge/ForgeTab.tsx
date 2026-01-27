@@ -25,11 +25,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
   const startButtonRef = useRef<HTMLButtonElement>(null);
   const quickButtonRef = useRef<HTMLButtonElement>(null);
 
-  const getItemImageUrl = (item: any) => {
-    if (item.image) return getAssetUrl(item.image);
-    return getAssetUrl(`${item.id}.png`);
-  };
-
   const getExtraFuelCost = (tier: number) => {
     if (tier === 1) return 3;
     if (tier === 2) return 5;
@@ -116,7 +111,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                 <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-8 bg-stone-925/40 relative overflow-hidden text-center">
                     {selectedItem ? (
                         <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg mx-auto">
-                            <MasteryRadialGauge imageUrl={getItemImageUrl(selectedItem)} masteryInfo={masteryInfo} />
+                            <MasteryRadialGauge imageUrl={forge.getItemImageUrl(selectedItem)} masteryInfo={masteryInfo} />
                             <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1.5 font-serif tracking-wide">{selectedItem.name}</h2>
                             <p className="text-stone-500 mb-6 italic text-[9px] md:text-sm px-6">"{selectedItem.description}"</p>
                             <ForgeStatsGrid item={selectedItem} />
@@ -190,7 +185,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             {isFavExpanded && (
                                 <div className="grid grid-cols-2 gap-2">
                                     {favoriteItems.map(item => (
-                                        <RecipeCard key={`fav-${item.id}`} item={item} isSelected={selectedItem?.id === item.id} isFav={true} inventoryCount={forge.getInventoryCount(item.id)} onSelect={handlers.handleSelectItem} onToggleFavorite={handlers.toggleFavorite} onMouseEnter={handlers.handleMouseEnter} onMouseMove={handlers.handleMouseMove} onMouseLeave={handlers.handleMouseLeave} imageUrl={getItemImageUrl(item)} />
+                                        <RecipeCard key={`fav-${item.id}`} item={item} isSelected={selectedItem?.id === item.id} isFav={true} inventoryCount={forge.getInventoryCount(item.id)} onSelect={handlers.handleSelectItem} onToggleFavorite={handlers.toggleFavorite} onMouseEnter={handlers.handleMouseEnter} onMouseMove={handlers.handleMouseMove} onMouseLeave={handlers.handleMouseLeave} imageUrl={forge.getItemImageUrl(item)} />
                                     ))}
                                 </div>
                             )}
@@ -202,7 +197,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                             {expandedSubCat === subCat.id && (
                                 <div className="grid grid-cols-2 gap-2">
                                     {groupedItems[subCat.id]?.map(item => (
-                                        <RecipeCard key={item.id} item={item} isSelected={selectedItem?.id === item.id} isFav={forge.favorites.includes(item.id)} inventoryCount={forge.getInventoryCount(item.id)} onSelect={handlers.handleSelectItem} onToggleFavorite={handlers.toggleFavorite} onMouseEnter={handlers.handleMouseEnter} onMouseMove={handlers.handleMouseMove} onMouseLeave={handlers.handleMouseLeave} imageUrl={getItemImageUrl(item)} />
+                                        <RecipeCard key={item.id} item={item} isSelected={selectedItem?.id === item.id} isFav={forge.favorites.includes(item.id)} inventoryCount={forge.getInventoryCount(item.id)} onSelect={handlers.handleSelectItem} onToggleFavorite={handlers.toggleFavorite} onMouseEnter={handlers.handleMouseEnter} onMouseMove={handlers.handleMouseMove} onMouseLeave={handlers.handleMouseLeave} imageUrl={forge.getItemImageUrl(item)} />
                                     ))}
                                 </div>
                             )}

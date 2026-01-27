@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Package, Coins, Lock } from 'lucide-react';
 import { getAssetUrl } from '../../../../utils';
@@ -28,13 +27,13 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
     const canAfford = gold >= currentPrice;
     
     // 1순위: ID 기반 파일명 우선 시도
-    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${item.id}.png`));
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${item.id}.png`, 'materials'));
 
     // 이미지 로드 실패 시 폴백 처리
     const handleImgError = () => {
-        if (meta.image && imgSrc !== getAssetUrl(meta.image)) {
+        if (meta.image && imgSrc !== getAssetUrl(meta.image, 'materials')) {
             // 2순위: 메타데이터에 정의된 image 경로
-            setImgSrc(getAssetUrl(meta.image));
+            setImgSrc(getAssetUrl(meta.image, 'materials'));
         }
     };
 

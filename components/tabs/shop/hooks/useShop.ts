@@ -5,6 +5,7 @@ import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
 import { materials } from '../../../../data/materials';
 import { GAME_CONFIG } from '../../../../config/game-config';
 import { InventoryItem } from '../../../../types/inventory';
+import { getAssetUrl as globalGetAssetUrl } from '../../../../utils';
 
 interface FloatingHeart {
     id: number;
@@ -16,7 +17,7 @@ interface FloatingHeart {
 export const useShop = () => {
     const { state, actions } = useGame();
     const { isShopOpen } = state.forge;
-    const { activeCustomer, shopQueue, tutorialStep, inventory, unlockedRecipes } = state;
+    const { activeCustomer, shopQueue, tutorialStep, inventory } = state;
 
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     const [saleCompleted, setSaleCompleted] = useState(false);
@@ -130,7 +131,6 @@ export const useShop = () => {
         actions.toggleShop();
     }, [isShopOpen, state.tutorialStep, actions]);
 
-    // --- Dialogue Generation ---
     const getThanksDialogue = useCallback(() => {
         const itemName = getItemName(activeCustomer?.request.requestedId || "");
         if (lastSoldQuality > 100) {
@@ -191,33 +191,14 @@ export const useShop = () => {
         if (tutorialStep === 'TUTORIAL_END_DIALOG') {
             return {
                 speaker: "Lockhart",
-                text: "Finally... the first sale. It's just a simple bronze blade, but it marks the beginning of my resurgence. I will rebuild this forge, piece by piece, until the name Lockhart once again commands respect across the realm. Every strike of my hammer brings me closer to the day I face that dragon. ... I miss my people. I miss my home. But I will not falter. My business starts now.",
-                options: [{ label: "The Shop is Open", action: () => actions.completeTutorial(), variant: 'primary' as const }]
+                text: "Finally... the first sale. It's a small spark, but enough to light the way. I'll reclaim our legacy, one blade at a time.",
+                options: [{ label: "Complete Tutorial", action: () => actions.completeTutorial(), variant: 'primary' as const }]
             };
         }
         return null;
     }, [tutorialStep, activeCustomer, actions, handleFarewell]);
 
-    const itemDetails = useMemo(() => {
-        if (!activeCustomer) return undefined;
-        const requestedId = activeCustomer.request.requestedId;
-        const eq = EQUIPMENT_ITEMS.find(e => e.id === requestedId);
-        const isUnlocked = eq ? (eq.unlockedByDefault !== false || unlockedRecipes.includes(requestedId)) : true;
-        
-        return {
-            icon: eq?.icon || '📦',
-            imageUrl: eq?.image ? getAssetUrl(eq.image) : getAssetUrl(`${requestedId}.png`),
-            price: activeCustomer.request.price,
-            requirements: eq?.requirements,
-            isUnlocked
-        };
-        function getAssetUrl(filename: string) {
-            return `https://raw.githubusercontent.com/cryingdev/lockharts-forge/sub/assets/${filename}`;
-        }
-    }, [activeCustomer, unlockedRecipes]);
-
     const dialogueState = useMemo(() => {
-        if (!isShopOpen) return null;
         if (tutorialContent) return tutorialContent;
         if (!activeCustomer) return null;
 
@@ -225,7 +206,7 @@ export const useShop = () => {
             return {
                 speaker: activeCustomer.mercenary.name,
                 text: getThanksDialogue(),
-                options: [{ label: "Farewell", action: handleFarewell, variant: 'primary' as const }]
+                options: [{ label: "Farewell", action: handleFarewell, variant: 'neutral' as const }]
             };
         }
 
@@ -233,59 +214,62 @@ export const useShop = () => {
             return {
                 speaker: activeCustomer.mercenary.name,
                 text: getRefusalDialogue(),
-                options: [{ label: "Farewell", action: handleFarewell, variant: (refusalReaction === 'ANGRY' ? 'danger' : 'neutral') as any }]
+                options: [{ label: "Farewell", action: handleFarewell, variant: 'neutral' as const }]
             };
         }
 
+        const { request, mercenary } = activeCustomer;
+        const inventoryMatch = matchingItems.length > 0;
+        
         return {
-            speaker: activeCustomer.mercenary.name,
-            text: activeCustomer.request.dialogue,
-            highlightTerm: getItemName(activeCustomer.request.requestedId),
-            itemDetail: itemDetails,
+            speaker: mercenary.name,
+            text: request.dialogue,
+            highlightTerm: getItemName(request.requestedId),
+            itemDetail: {
+                icon: '📦',
+                imageUrl: globalGetAssetUrl(`${request.requestedId}.png`, 'equipments'),
+                price: request.price,
+                isUnlocked: true
+            },
             options: [
                 { 
-                    label: `Sell`, 
+                    label: `Sell (${request.price} G)`, 
                     action: handleSellClick, 
                     variant: 'primary' as const, 
-                    disabled: !matchingItems.some(i => !i.isLocked) 
+                    disabled: !inventoryMatch 
                 },
                 { 
                     label: "Refuse", 
                     action: handleRefuse, 
-                    variant: 'danger' as const, 
-                    disabled: tutorialStep === 'SELL_ITEM_GUIDE' 
+                    variant: 'danger' as const 
                 }
             ]
         };
-    }, [
-        isShopOpen, activeCustomer, tutorialContent, saleCompleted, refusalReaction, 
-        getThanksDialogue, getRefusalDialogue, handleFarewell, handleSellClick, 
-        handleRefuse, getItemName, itemDetails, matchingItems, tutorialStep
-    ]);
-
-    const canAffordOpen = state.stats.energy >= GAME_CONFIG.ENERGY_COST.OPEN_SHOP;
-    const isTutorialActive = tutorialStep === 'SELL_ITEM_GUIDE' || !!tutorialContent;
+    }, [activeCustomer, saleCompleted, refusalReaction, matchingItems, tutorialContent, getThanksDialogue, getRefusalDialogue, handleFarewell, handleSellClick, handleRefuse, getItemName]);
 
     return {
+        state,
+        actions,
         isShopOpen,
         activeCustomer,
         shopQueue,
         floatingHearts,
+        saleCompleted,
+        refusalReaction,
         dialogueState,
+        matchingItems,
         showInstanceSelector,
         selectedInstance,
-        matchingItems,
-        canAffordOpen,
-        isTutorialActive,
-        refusalReaction,
+        isTutorialActive: !!tutorialStep,
+        canAffordOpen: state.stats.energy >= GAME_CONFIG.ENERGY_COST.OPEN_SHOP,
         handlers: {
             handleToggleShop,
             handleFarewell,
-            handleRefuse,
             handleSellClick,
-            executeSell,
+            handleRefuse,
             setShowInstanceSelector,
-            setSelectedInstance
+            setSelectedInstance,
+            executeSell
         }
     };
 };

@@ -110,8 +110,10 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     speaker={shop.dialogueState.speaker}
                     text={shop.dialogueState.text}
                     options={shop.dialogueState.options}
-                    highlightTerm={shop.dialogueState.highlightTerm}
-                    itemDetail={shop.dialogueState.itemDetail}
+                    // Fix: Use type assertion to access optional properties in union type
+                    highlightTerm={(shop.dialogueState as any).highlightTerm}
+                    // Fix: Use type assertion to access optional properties in union type
+                    itemDetail={(shop.dialogueState as any).itemDetail}
                     className="w-full relative pointer-events-auto"
                 />
             )}

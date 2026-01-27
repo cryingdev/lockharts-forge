@@ -121,7 +121,7 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.load.image('hammer', getAssetUrl('hammer.png'));
     this.load.image('saw', getAssetUrl('saw.png'));
     this.load.image('spark', getAssetUrl('particle_spark1.png'));
-    if (this.itemImage) this.load.image('item_source', getAssetUrl(this.itemImage));
+    if (this.itemImage) this.load.image('item_source', getAssetUrl(this.itemImage, 'equipments'));
   }
 
   private getRingColor(type: RingType): number {

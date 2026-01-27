@@ -215,12 +215,12 @@ const TutorialScene: React.FC = () => {
     }, [seq]);
 
     const bgImage = useMemo(() => {
-        if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'forge_ruined_bg.png';
-        if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'forge_fixed_bg.png';
+        if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'tutorial/forge_ruined_bg.png';
+        if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'tutorial/forge_fixed_bg.png';
         const currentDegrees = Math.round(IDLE_TEMP + (temp / 100) * (MAX_TEMP - IDLE_TEMP));
-        if (currentDegrees >= 1490) return 'forge_hot_bg.png';
-        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'forge_start_bg.png';
-        return 'forge_fixed_bg.png';
+        if (currentDegrees >= 1490) return 'tutorial/forge_hot_bg.png';
+        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'tutorial/forge_start_bg.png';
+        return 'tutorial/forge_fixed_bg.png';
     }, [mode, seq, temp, isStarted]);
 
     const handleStart = () => {
