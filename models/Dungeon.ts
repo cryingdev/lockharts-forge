@@ -15,6 +15,7 @@ export interface DungeonDefinition {
   id: string;
   name: string;
   tier: number;
+  image?: string; // New: visual assets for dungeon cards and backgrounds
   description: string;
   durationMinutes: number;
   requiredPower: number;

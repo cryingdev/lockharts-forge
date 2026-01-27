@@ -49,7 +49,7 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                             onClick={() => onSelectMercenary(merc.id)}
                             className={`bg-stone-900/90 backdrop-blur-xl border border-white/5 p-2 rounded-xl shadow-xl flex flex-col gap-1.5 cursor-pointer hover:bg-stone-800 hover:border-amber-500/30 transition-all group active:scale-[0.98] ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}
                         >
-                            {/* Header: Portrait, Name & Job/Level, Energy */}
+                            {/* Header: Portrait, Name & Job/Level, Stamina */}
                             <div className="flex justify-between items-center px-0.5 border-b border-white/5 pb-1 mb-0.5">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <div className="relative">
@@ -68,7 +68,7 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1 bg-black/40 px-1 rounded border border-white/5 shrink-0">
-                                    <Zap className={`w-2 h-2 ${enPer < 20 ? 'text-red-500 animate-pulse' : 'text-blue-400'}`} />
+                                    <Zap className={`w-2 h-2 ${enPer < 20 ? 'text-red-500 animate-pulse' : 'text-stone-100'}`} />
                                     <span className="text-[8px] font-mono font-bold text-stone-400">{Math.floor(enPer)}</span>
                                 </div>
                             </div>
@@ -357,12 +357,12 @@ const AssaultNavigator = () => {
     const getDialogue = () => {
         if (isOnNPCTile) return { speaker: (rescueTarget?.name || "Survivor"), text: lastMsg };
         if (isEncountered) {
-            if (currentRoom === 'BOSS' && session.isBossDefeated) return { speaker: "Tactical AI", text: "Target core neutralized. Area remains unstable but traversable. Secure loot and extract?" };
-            return { speaker: "Tactical AI", text: lastMsg };
+            if (currentRoom === 'BOSS' && session.isBossDefeated) return { speaker: "Inner Voice", text: "The terror is gone, but the air still trembles. We've taken what we came for. Time to leave?" };
+            return { speaker: "Inner Voice", text: lastMsg };
         }
-        if (isVictory) return { speaker: "Squad Comms", text: "Hostiles cleared. Sector marked as safe." };
-        if (isStairs) return { speaker: "Navigation System", text: lastMsg };
-        return { speaker: "Comms Link", text: lastMsg };
+        if (isVictory) return { speaker: "Frontline Shout", text: "They're all down! Sector secured, Lockhart!" };
+        if (isStairs) return { speaker: "The Path Ahead", text: lastMsg };
+        return { speaker: "Exploration Log", text: lastMsg };
     };
 
     const { speaker, text } = getDialogue();
@@ -505,7 +505,7 @@ const AssaultNavigator = () => {
 
                                 <button onClick={() => handleDpadMove(-1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronLeft /></button>
                                 
-                                <div className="w-12 h-12 bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-400/40">
+                                <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-stone-100/40">
                                     <Zap className="w-6 h-6" />
                                 </div>
 
@@ -521,37 +521,31 @@ const AssaultNavigator = () => {
                     {/* Bottom dialogue box container */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[95vw] max-w-5xl z-50 pointer-events-none">
                         <div className={`flex flex-col items-end gap-4 relative transition-all duration-500 ${isEncounterAnimationActive ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
-                            {/* FIX: Add 'as const' to variants to ensure they match literal type union in DialogueOption */}
-                            {/* FIX: STAY HERE action now calls resolveCombatManual(false, true, party) to clear encounter state correctly */}
                             <DialogueBox 
                                 speaker={speaker}
                                 speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.profileImage || 'default.png', 'mercenaries') : undefined}
                                 text={text}
                                 options={isOnNPCTile ? [
-                                    { label: "RESCUE SURVIVOR", action: () => { 
+                                    { label: "GET THEM TO SAFETY", action: () => { 
                                         if (dungeon?.rescueMercenaryId) {
                                             actions.rescueMercenary(dungeon.rescueMercenaryId); 
                                             actions.showToast(`${rescueTarget?.name} has been secured!`); 
                                         }
                                     }, variant: 'primary' as const },
-                                    { label: "LEAVE FOR NOW", action: () => setLastMsg("Sector marked for later extraction. Resuming scan."), variant: 'neutral' as const }
+                                    { label: "WE'LL BE BACK FOR YOU", action: () => setLastMsg("We've marked the spot. Resuming exploration for now."), variant: 'neutral' as const }
                                 ] : isEncountered ? [
                                     ...(currentRoom === 'BOSS' && session.isBossDefeated ? [
-                                        { label: "COLLECT & EXTRACT", action: () => actions.finishManualAssault(), variant: 'primary' as const },
-                                        { label: "STAY HERE", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
-                                    ] : [
-                                        // 몬스터 조우 시에는 텍스트만 보여주거나 위에서 설정한 2초 시퀀스로 자동 이동
-                                        // { label: "ENGAGE TARGET", action: () => actions.startCombatManual(), variant: 'primary' as const },
-                                        // { label: "WITHDRAW", action: () => setShowRetreatConfirm(true), variant: 'neutral' as const }
-                                    ])
+                                        { label: "CLAIM THE LOOT AND LEAVE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
+                                        { label: "CONTINUE EXPLORING", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+                                    ] : [])
                                 ] : isStairs ? [
-                                    { label: `DESCEND TO FLOOR ${session.currentFloor + 1}`, action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
-                                    { label: "FINISH & EXTRACT", action: () => actions.finishManualAssault(), variant: 'primary' as const },
-                                    { label: "STAY HERE", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+                                    { label: `INTO THE ABYSS (Sector ${session.currentFloor + 1})`, action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
+                                    { label: "REACH THE SURFACE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
+                                    { label: "STAY IN THIS SECTOR", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
                                 ] : isVictory ? [
-                                    { label: "CONTINUE EXPLORING", action: () => actions.resolveCombatManual(false, true, party), variant: 'primary' as const }
+                                    { label: "RESUME SEARCH", action: () => actions.resolveCombatManual(false, true, party), variant: 'primary' as const }
                                 ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
-                                    { label: "FINISH MISSION", action: () => actions.finishManualAssault(), variant: 'primary' as const }
+                                    { label: "END MISSION", action: () => actions.finishManualAssault(), variant: 'primary' as const }
                                 ] : []}
                                 className="w-full pointer-events-auto"
                             />

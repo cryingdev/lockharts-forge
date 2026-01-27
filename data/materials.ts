@@ -432,10 +432,10 @@ export const materials: Record<string, MaterialDefinition> = {
     potion_stamina_large: { id: 'potion_stamina_large', name: 'Large Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 Stamina.', baseValue: 600 },
     potion_stamina_huge: { id: 'potion_stamina_huge', name: 'Huge Stamina Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 Stamina.', baseValue: 1500 },
 
-    potion_energy_small: { id: 'potion_energy_small', name: 'Small Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 20 Energy.', baseValue: 100 },
-    potion_energy_medium: { id: 'potion_energy_medium', name: 'Medium Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 45 Energy.', baseValue: 250 },
-    potion_energy_large: { id: 'potion_energy_large', name: 'Large Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 Energy.', baseValue: 600 },
-    potion_energy_huge: { id: 'potion_energy_huge', name: 'Huge Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 Energy.', baseValue: 1500 },
+    potion_energy_small: { id: 'potion_energy_small', name: 'Small Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 20 HP and 20 MP for a mercenary.', baseValue: 100 },
+    potion_energy_medium: { id: 'potion_energy_medium', name: 'Medium Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 45 HP and 45 MP for a mercenary.', baseValue: 250 },
+    potion_energy_large: { id: 'potion_energy_large', name: 'Large Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 HP and 75 MP for a mercenary.', baseValue: 600 },
+    potion_energy_huge: { id: 'potion_energy_huge', name: 'Huge Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 HP and 100 MP for a mercenary.', baseValue: 1500 },
 
     // Facilities & Key Items
     furnace: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for smelting metal ores.', baseValue: 0 },

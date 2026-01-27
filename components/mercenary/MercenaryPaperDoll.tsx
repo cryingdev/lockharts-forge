@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Star, 
@@ -124,8 +123,9 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
     <div className="w-full flex flex-col shrink-0">
       <div className="p-4 md:p-6 flex flex-col gap-0.5 md:gap-1 shrink-0 bg-stone-950/40 border-b border-white/5 backdrop-blur-md z-30">
         <div className="flex justify-between items-start mb-1">
-          <h2 className="text-sm md:text-2xl font-black text-stone-100 font-serif truncate leading-none">
-            {mercenary.name}
+          <h2 className="text-sm md:text-2xl font-black text-stone-100 font-serif truncate leading-none flex items-center gap-2">
+            <span>{mercenary.name}</span>
+            <span className="text-stone-500 font-mono text-[10px] md:text-lg">Lv.{mercenary.level}</span>
           </h2>
           {isHired && (
             <button

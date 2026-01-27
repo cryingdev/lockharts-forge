@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
 import { calculatePartyPower, calculateMercenaryPower } from '../../../utils/combatLogic';
-import { Skull, Timer, Zap, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Box, AlertCircle, Gamepad2, Ban, Layers, X, Search, Sword, LayoutList } from 'lucide-react';
+import { Skull, Timer, Zap, ChevronRight, ChevronLeft, Lock, CheckCircle, Trophy, User, XCircle, Box, AlertCircle, Gamepad2, Ban, Layers, X, Search, Sword, LayoutList, AlertTriangle } from 'lucide-react';
 import { getAssetUrl, formatDuration } from '../../../utils';
 import AssaultNavigator from './AssaultNavigator';
 import ConfirmationModal from '../../modals/ConfirmationModal';
@@ -72,8 +72,9 @@ const DungeonTab = () => {
         return false;
     }, [selectedDungeon, selectedFloor, maxFloorReached, dungeonClearCounts]);
 
+    // Filter hired and potentially dead mercenaries to show impact in UI
     const hiredMercs = useMemo(() => 
-        knownMercenaries.filter(m => m.status === 'HIRED' || m.status === 'ON_EXPEDITION' || m.status === 'INJURED'), 
+        knownMercenaries.filter(m => m.status === 'HIRED' || m.status === 'ON_EXPEDITION' || m.status === 'INJURED' || m.status === 'DEAD'), 
     [knownMercenaries]);
 
     const availableCandidates = useMemo(() => 
@@ -85,7 +86,7 @@ const DungeonTab = () => {
         return Math.round(base * (1 + (selectedFloor - 1) * 0.25));
     }, [selectedDungeon, selectedFloor]);
 
-    const energyCostForFloor = useMemo(() => {
+    const staminaCostForFloor = useMemo(() => {
         const base = selectedDungeon.energyCost;
         return base + (selectedFloor - 1) * 5;
     }, [selectedDungeon, selectedFloor]);
@@ -114,6 +115,15 @@ const DungeonTab = () => {
     };
 
     const toggleMercenary = (mercId: string) => {
+        const merc = hiredMercs.find(m => m.id === mercId);
+        if (!merc) return;
+        
+        // Cannot add dead mercenaries
+        if (merc.status === 'DEAD') {
+            actions.showToast("The fallen cannot be deployed.");
+            return;
+        }
+
         if (party.includes(mercId)) {
             setParty(prev => prev.filter(id => id !== mercId));
         } else if (party.length < maxPartySize) {
@@ -126,7 +136,7 @@ const DungeonTab = () => {
         if (party.length === 0) return false;
         const selectedMercs = knownMercenaries.filter(m => party.includes(m.id));
         
-        const lowHpIds = selectedMercs.filter(m => (m.currentHp || 0) < 1).map(m => m.id);
+        const lowHpIds = selectedMercs.filter(m => (m.currentHp || 0) < 1 || m.status === 'INJURED').map(m => m.id);
         if (lowHpIds.length > 0) {
             setLowHpMercs(lowHpIds);
             setTimeout(() => setLowHpMercs([]), 2000);
@@ -134,9 +144,15 @@ const DungeonTab = () => {
             return false;
         }
 
-        const lowEnergyIds = selectedMercs.filter(m => (m.expeditionEnergy || 0) < energyCostForFloor).map(m => m.id);
-        if (lowEnergyIds.length > 0) {
-            setFailedMercs(lowEnergyIds);
+        const deadIds = selectedMercs.filter(m => m.status === 'DEAD').map(m => m.id);
+        if (deadIds.length > 0) {
+            actions.showToast("Casualties must be removed from the squad.");
+            return false;
+        }
+
+        const lowStaminaIds = selectedMercs.filter(m => (m.expeditionEnergy || 0) < staminaCostForFloor).map(m => m.id);
+        if (lowStaminaIds.length > 0) {
+            setFailedMercs(lowStaminaIds);
             setTimeout(() => setFailedMercs([]), 2000);
             actions.showToast("Some squad members are too exhausted.");
             return false;
@@ -206,8 +222,17 @@ const DungeonTab = () => {
                         
                         return (
                             <button key={d.id} onClick={() => handleDungeonSelect(d.id)} className={`w-full group relative flex flex-col md:flex-row items-center gap-4 p-4 md:p-6 rounded-2xl border-2 transition-all overflow-hidden ${isLocked ? 'bg-stone-900 border-stone-800 opacity-50 grayscale' : 'bg-stone-900/40 border-stone-800 hover:border-amber-500 hover:bg-stone-800 shadow-xl active:scale-[0.99]'}`}>
-                                <div className="w-20 h-20 md:w-32 md:h-32 bg-stone-950 rounded-xl border-2 border-stone-800 flex items-center justify-center text-4xl md:text-6xl shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
-                                    {isLocked ? <Lock className="w-8 h-8 text-stone-700" /> : (d.id.includes('rat') ? ' Rats' : d.id.includes('goblin') ? ' Goblins' : d.id.includes('mine') ? ' Mines' : ' Dungeon')}
+                                <div className="w-20 h-20 md:w-32 md:h-32 bg-stone-950 rounded-xl border-2 border-stone-800 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500 overflow-hidden relative">
+                                    <img 
+                                        src={getAssetUrl(d.image || 'dungeon_sewer.jpeg', 'dungeons')} 
+                                        className={`w-full h-full object-cover transition-all duration-700 ${isLocked ? 'grayscale brightness-50' : 'group-hover:scale-110'}`} 
+                                        alt={d.name} 
+                                    />
+                                    {isLocked && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
+                                            <Lock className="w-8 h-8 text-stone-400" />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1 text-center md:text-left min-w-0">
                                     <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
@@ -239,7 +264,9 @@ const DungeonTab = () => {
 
             {/* Left Info Section */}
             <div className="w-full sm:w-[40%] h-[55%] sm:h-full flex flex-col border-b sm:border-b-0 sm:border-r border-stone-800 bg-stone-900/50 relative overflow-hidden shrink-0 min-h-0">
-                <div className="absolute inset-0 opacity-10 pointer-events-none"><img src={getAssetUrl('dungeon_bg.png')} className="w-full h-full object-cover grayscale" /></div>
+                <div className="absolute inset-0 opacity-20 pointer-events-none transition-all duration-1000">
+                    <img src={getAssetUrl(selectedDungeon.image || 'dungeon_sewer.jpeg', 'dungeons')} className="w-full h-full object-cover grayscale" />
+                </div>
                 <div className="flex-1 flex flex-col items-center z-10 min-h-0">
                     <button onClick={() => setView('LIST')} className="absolute top-3 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 bg-stone-800 hover:bg-stone-700 rounded-lg border border-stone-700 text-stone-400 text-[10px] font-black uppercase transition-all shadow-xl active:scale-95"><ChevronLeft className="w-3.5 h-3.5" /> Back</button>
                     <div className="relative flex flex-col items-center pt-8 sm:pt-14 shrink-0 w-full">
@@ -250,9 +277,12 @@ const DungeonTab = () => {
                         <div className="relative w-full flex items-center justify-center h-20 sm:h-44 mb-1 sm:mb-4">
                             <button onClick={handlePrevFloor} className={`absolute left-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${selectedFloor > 1 ? 'bg-stone-800 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`}><ChevronLeft className="w-5 h-5 sm:w-10 sm:h-10" /></button>
                             <div className="relative group animate-in fade-in zoom-in duration-300">
-                                <div className="w-16 h-16 sm:w-36 lg:w-44 sm:h-36 lg:h-44 bg-stone-900 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 border-stone-700 flex flex-col items-center justify-center relative shadow-2xl ring-4 ring-white/5">
-                                     <div className="text-[8px] sm:text-[10px] font-black text-stone-600 uppercase">Floor</div>
-                                     <div className="text-3xl sm:text-7xl lg:text-8xl font-black text-white font-mono leading-none">{selectedFloor}</div>
+                                <div className="w-16 h-16 sm:w-36 lg:w-44 sm:h-36 lg:h-44 bg-stone-900 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 border-stone-700 flex flex-col items-center justify-center relative shadow-2xl ring-4 ring-white/5 overflow-hidden">
+                                     <img src={getAssetUrl(selectedDungeon.image || 'dungeon_sewer.jpeg', 'dungeons')} className="absolute inset-0 w-full h-full object-cover opacity-30 brightness-50" alt="bg" />
+                                     <div className="relative z-10 flex flex-col items-center">
+                                         <div className="text-[8px] sm:text-[10px] font-black text-amber-50/60 uppercase">Sector</div>
+                                         <div className="text-3xl sm:text-7xl lg:text-8xl font-black text-white font-mono leading-none drop-shadow-glow-amber">{selectedFloor}</div>
+                                     </div>
                                 </div>
                                 {selectedFloor === selectedDungeon.maxFloors && <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-600 border border-red-400 rounded-lg text-white font-black text-[8px] sm:text-[10px] shadow-2xl rotate-12 z-40">BOSS</div>}
                             </div>
@@ -285,8 +315,8 @@ const DungeonTab = () => {
                                 <span className="text-[10px] sm:text-sm font-black text-stone-200 font-mono truncate">{selectedDungeon.durationMinutes}m</span>
                             </div>
                             <div className="flex items-center gap-1.5 bg-stone-950 px-2 py-1.5 rounded-lg border border-stone-800 flex-1 justify-center min-w-0">
-                                <Zap className="w-3 h-3 text-blue-500 shrink-0" />
-                                <span className="text-[10px] sm:text-sm font-black text-blue-400 font-mono truncate">-{energyCostForFloor}</span>
+                                <Zap className="w-3 h-3 text-stone-200 shrink-0" />
+                                <span className="text-[10px] sm:text-sm font-black text-stone-100 font-mono truncate">-{staminaCostForFloor}</span>
                             </div>
                             <div className={`flex items-center justify-center gap-1.5 bg-stone-950 px-2 py-1.5 rounded-lg border transition-all flex-[1.5] min-w-0 ${failedPowerHighlight ? 'border-red-500 ring-2 ring-red-500/50 animate-shake-hard' : 'border-stone-800'}`}>
                                 <Skull className="w-3 h-3 text-red-500 shrink-0" />
@@ -325,15 +355,17 @@ const DungeonTab = () => {
                                     {Array.from({ length: 4 }).map((_, idx) => {
                                         const isAvailable = idx < maxPartySize;
                                         const mercId = party[idx];
-                                        const merc = knownMercenaries.find(m => m.id === mercId);
+                                        const merc = hiredMercs.find(m => m.id === mercId);
                                         const hasError = mercId && (failedMercs.includes(mercId) || lowHpMercs.includes(mercId));
+                                        const isInjured = merc?.status === 'INJURED';
+                                        const isDead = merc?.status === 'DEAD';
 
                                         if (!isAvailable) return <div key={idx} className="aspect-square bg-stone-950/60 border-2 border-stone-900 rounded-xl md:rounded-2xl flex items-center justify-center grayscale"><Ban className="w-6 md:w-8 text-stone-800" /></div>;
 
                                         return (
-                                            <div key={idx} className={`aspect-square bg-stone-900 border-2 rounded-xl md:rounded-2xl flex items-center justify-center relative shadow-2xl overflow-hidden group hover:bg-stone-850 transition-all ${hasError ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
+                                            <div key={idx} className={`aspect-square bg-stone-900 border-2 rounded-xl md:rounded-2xl flex items-center justify-center relative shadow-2xl overflow-hidden group hover:bg-stone-850 transition-all ${hasError || isInjured || isDead ? 'border-red-600 animate-shake-hard' : 'border-dashed border-stone-800'}`}>
                                                 {!!merc ? (
-                                                    <button onClick={() => toggleMercenary(merc.id)} className="w-full h-full flex flex-col items-center justify-center p-1 md:p-2 relative animate-in zoom-in-95">
+                                                    <button onClick={() => toggleMercenary(merc.id)} className={`w-full h-full flex flex-col items-center justify-center p-1 md:p-2 relative animate-in zoom-in-95 ${(isInjured || isDead) ? 'grayscale' : ''}`}>
                                                         <MercenaryPortrait mercenary={merc} className="w-10 h-10 md:w-16 md:h-16 rounded-xl group-hover:scale-110 transition-transform mb-1" />
                                                         <div className="flex flex-col items-center leading-tight w-full">
                                                             <div className="text-[7px] md:text-xs font-black text-stone-200 truncate w-full text-center">{merc.name.split(' ')[0]}</div>
@@ -342,7 +374,21 @@ const DungeonTab = () => {
                                                             </div>
                                                         </div>
                                                         <div className="absolute top-1 right-1 md:top-2 md:right-2 opacity-0 group-hover:opacity-100 transition-opacity"><XCircle className="w-4 md:w-5 text-red-600" /></div>
-                                                        {hasError && <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[1px] flex items-center justify-center"><AlertCircle className="w-6 md:w-8 text-white" /></div>}
+                                                        
+                                                        {/* Status Overlays */}
+                                                        {isInjured && (
+                                                            <div className="absolute inset-0 bg-red-950/60 backdrop-blur-[1px] flex flex-col items-center justify-center">
+                                                                <AlertTriangle className="w-6 md:w-8 text-red-500 mb-0.5" />
+                                                                <span className="text-[6px] md:text-[8px] font-black text-red-200 uppercase">Injured</span>
+                                                            </div>
+                                                        )}
+                                                        {isDead && (
+                                                            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] flex flex-col items-center justify-center">
+                                                                <Skull className="w-6 md:w-8 text-stone-500 mb-0.5" />
+                                                                <span className="text-[6px] md:text-[8px] font-black text-stone-400 uppercase">K.I.A</span>
+                                                            </div>
+                                                        )}
+                                                        {hasError && !isInjured && !isDead && <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[1px] flex items-center justify-center"><AlertCircle className="w-6 md:w-8 text-white" /></div>}
                                                     </button>
                                                 ) : (
                                                     <button onClick={() => setIsPickerOpen(true)} className="w-full h-full flex flex-col items-center justify-center gap-1 md:gap-2 text-stone-700 hover:text-amber-500 hover:bg-stone-850 transition-all">
@@ -390,28 +436,49 @@ const DungeonTab = () => {
                             ) : (
                                 availableCandidates.map(merc => {
                                     const isBusy = activeExpeditions.some(e => e.partyIds.includes(merc.id)) || (activeManualDungeon?.partyIds.includes(merc.id));
+                                    const isInjured = merc.status === 'INJURED';
+                                    const isDead = merc.status === 'DEAD';
+                                    const isUnavailable = isBusy || isInjured || isDead;
+                                    
                                     const power = calculateMercenaryPower(merc);
-                                    const energy = merc.expeditionEnergy || 0;
-                                    const hpPer = (merc.currentHp / merc.maxHp) * 100;
+                                    const stamina = merc.expeditionEnergy || 0;
+                                    const hpPer = (merc.currentHp / (merc.maxHp || 1)) * 100;
                                     
                                     return (
-                                        <button key={merc.id} onClick={() => !isBusy && toggleMercenary(merc.id)} disabled={isBusy} className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isBusy ? 'bg-stone-950 border-stone-900 opacity-40 grayscale cursor-not-allowed' : 'bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750 shadow-lg'}`}>
+                                        <button 
+                                            key={merc.id} 
+                                            onClick={() => !isUnavailable && toggleMercenary(merc.id)} 
+                                            disabled={isUnavailable} 
+                                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isUnavailable ? 'bg-stone-950 border-stone-900 opacity-40 grayscale cursor-not-allowed' : 'bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750 shadow-lg'}`}
+                                        >
                                             <div className="flex items-center gap-4 min-w-0">
                                                 <MercenaryPortrait mercenary={merc} className="w-10 h-10 md:w-14 md:h-14 rounded-lg shrink-0" />
                                                 <div className="text-left">
                                                     <div className="font-black text-stone-100 text-sm md:text-base truncate">{merc.name}</div>
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest">{merc.job} • Lv.{merc.level}</span>
-                                                        <div className="flex items-center gap-1 text-[10px] text-amber-500 font-mono font-bold border-l border-stone-700 pl-2"><Sword className="w-3 h-3" /> {power}</div>
+                                                        {!isDead && (
+                                                            <div className="flex items-center gap-1 text-[10px] text-amber-500 font-mono font-bold border-l border-stone-700 pl-2"><Sword className="w-3 h-3" /> {power}</div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col items-end gap-1.5">
-                                                {isBusy ? <span className="text-[8px] font-black uppercase text-stone-600 bg-stone-900 px-2 py-0.5 rounded border border-white/5">On Mission</span> : (
+                                                {isBusy ? (
+                                                    <span className="text-[8px] font-black uppercase text-blue-400 bg-blue-900/20 px-2 py-0.5 rounded border border-blue-500/30">On Mission</span>
+                                                ) : isInjured ? (
+                                                    <div className="flex items-center gap-1 text-[8px] font-black uppercase text-red-400 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/30">
+                                                        <AlertTriangle className="w-2.5 h-2.5" /> Injured
+                                                    </div>
+                                                ) : isDead ? (
+                                                    <div className="flex items-center gap-1 text-[8px] font-black uppercase text-stone-400 bg-stone-900 px-2 py-0.5 rounded border border-white/5">
+                                                        <Skull className="w-2.5 h-2.5" /> K.I.A
+                                                    </div>
+                                                ) : (
                                                     <div className="flex flex-col items-end gap-1">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-16 h-1.5 bg-stone-950 rounded-full border border-stone-700 overflow-hidden"><div className={`h-full rounded-full ${energy >= energyCostForFloor ? 'bg-blue-500' : 'bg-red-600 animate-pulse'}`} style={{ width: `${energy}%` }} /></div>
-                                                            <Zap className={`w-3 h-3 ${energy >= energyCostForFloor ? 'text-blue-400' : 'text-red-500 animate-pulse'}`} />
+                                                            <div className="w-16 h-1.5 bg-stone-950 rounded-full border border-stone-700 overflow-hidden"><div className={`h-full rounded-full ${stamina >= staminaCostForFloor ? 'bg-stone-100' : 'bg-red-600 animate-pulse'}`} style={{ width: `${stamina}%` }} /></div>
+                                                            <Zap className={`w-3 h-3 ${stamina >= staminaCostForFloor ? 'text-stone-100' : 'text-red-500 animate-pulse'}`} />
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-16 h-1.5 bg-stone-950 rounded-full border border-stone-700 overflow-hidden"><div className={`h-full rounded-full ${hpPer < 30 ? 'bg-red-500 animate-pulse' : 'bg-red-600'}`} style={{ width: `${hpPer}%` }} /></div>

@@ -1,4 +1,5 @@
-# Project Map – Lockhart’s Forge (v0.1.41b)
+
+# Project Map – Lockhart’s Forge (v0.1.42a)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -7,20 +8,18 @@ This document provides a comprehensive structural map of the project, detailing 
 ## 🏗️ 1. Core & Infrastructure
 
 ### Root Directory
-- `index.html`: Entry HTML. Defines **Grenze/Gotisch** font integration, viewport protections, and global CSS.
-- `index.tsx`: React entry point. Handles web cache initialization and font loading before mounting.
-- `App.tsx`: Central View Controller. Manages top-level state transitions (`INTRO -> TITLE -> GAME`).
-- `utils.ts`: Global utilities. Asset URL generation and formatting helpers.
-- `metadata.json`: App metadata and versioning.
+- `index.html`: Entry HTML. Defines **Grenze/Gotisch** font integration.
+- `index.tsx`: React entry point. Handles web cache initialization.
+- `App.tsx`: Central View Controller. Manages top-level state transitions.
+- `utils.ts`: Global utilities. Asset URL generation.
+- `metadata.json`: App metadata and versioning (`0.1.42a`).
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs.
-- `config/smithing-config.ts`: Difficulty parameters and probability balancing for smithing.
-- `config/ui-config.ts`: Standardized modal layout and Z-index specs.
+- `config/smithing-config.ts`: Smithing difficulty parameters.
+- `config/ui-config.ts`: Standardized modal layout.
 - `config/contract-config.ts`: Hiring costs and wage formulas.
 - `config/dungeon-config.ts`: Expedition energy and recovery constants.
-- `config/mastery-config.ts`: Crafting mastery thresholds and bonus definitions.
-- `config/derived-stats-config.ts`: Combat formulas and stat scaling coefficients.
 
 ---
 
@@ -29,94 +28,45 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Core State Engine
 - `state/gameReducer.ts`: Primary state machine.
 - `state/reducer/`: Modularized handlers.
-    - `repair.ts`: Forge repair logic.
-    - `sleep.ts`: Day transition and recovery.
-    - `crafting.ts`: Item generation and mastery.
-    - `inventory.ts`: Item acquisition and storage.
-    - `mercenary.ts`: Recruitment and stats.
-    - `shop.ts`: Customer queue management.
-    - `research.ts`: Material combination and blueprint discovery.
-- `state/actions.ts`: Dispatchable action type definitions.
+    - `manualDungeon.ts`: Grid generation, movement, and **Immersive Narrative Logic**.
+    - `expedition.ts`: Auto-expedition results and status updates.
+    - `research.ts`: Alchemical combination logic.
 - `state/initial-game-state.ts`: Initial data structure for new saves.
 
 ### Business Models (`models/`)
-- `models/Mercenary.ts`: Characters, vitals, and relationship structures.
-- `models/Equipment.ts`: Equipment specs and durability logic.
+- `models/Mercenary.ts`: Characters, vitals, and **Status Types (Injured/Dead)**.
 - `models/Stats.ts`: Combat stat calculation (Primary & Derived).
-- `models/Skill.ts`: Combat skill definitions.
-- `models/Monster.ts`: Monster data structures.
-- `models/Dungeon.ts`: Dungeon and reward definitions.
-
-### Game Data Repository (`data/`)
-- `data/mercenaries.ts`: Named NPC definitions.
-- `data/materials.ts`: Database of resources and special materials.
-- `data/monsters.ts`: Monster combat stats.
-- `data/dungeons.ts`: Tiered dungeon and floor layouts.
-- `data/equipment/`: Tiered equipment templates (Tier 1-4).
 
 ---
 
 ## ⚛️ 3. UI Components (`components/`)
 
-### Common UI (`components/common/ui/`)
-Shared visual fragments used across multiple modules.
-- `AnimatedMercenary.tsx`: Dynamic character rendering with blinking animation logic.
-- `MercenaryPortrait.tsx`: Cropped portrait rendering for HUDs and lists.
-
 ### Modular Tabs (`components/tabs/`)
-Functional pages following the Hooks/UI separation pattern.
-- `tabs/forge/`: The crafting interface.
-    - `hooks/useForge.ts`: Crafting business logic.
-    - `ui/`: Sub-components for smithing/workbench interaction.
-- `tabs/market/`: Garrick's store.
-    - `hooks/useMarket.ts`: Procurement and affinity logic.
-    - `ui/`: Shopping cart and catalog interface.
-- `tabs/shop/`: Customer counter.
-    - `hooks/useShop.ts`: Sales queue and pricing logic.
-    - `ui/`: Counter interface and customer HUD.
-- `tabs/research/`: The Scholars Desk.
-    - `hooks/useResearch.ts`: Alchemical combination logic and recipe discovery.
-    - `ui/`: Magical slots and dedicated inventory selection.
+- `tabs/Dungeon/`: Tactical Assault system.
+    - `DungeonTab.tsx`: Mission overview and **Squad Assembly with Casualty UI**.
+    - `AssaultNavigator.tsx`: Manual dungeon UI with **Narrative Dialogue Hub**.
+    - `DungeonCombatView.tsx`: Turn-based manual battle system.
 
 ### Mercenary Management (`components/mercenary/`)
 - `MercenaryPaperDoll.tsx`: Visual equipment management.
 - `MercenaryStatsPanel.tsx`: Attribute allocation.
-- `EquipmentInventoryList.tsx`: Gear selection and filtering.
 
 ---
 
 ## 🎮 4. Game Logic & Systems (`hooks/`, `services/`, `utils/`)
 
-### Background Services
-- `services/shop/shop-service.ts`: Customer arrival and patience logic.
-- `services/dungeon/dungeon-service.ts`: Auto-expedition timer monitoring.
-
-### Logic Hooks
-- `hooks/useSimulation.ts`: Combat analysis engine.
-- `hooks/useMercenaryDetail.ts`: Reactive state for character inspection.
-
 ### Core Utilities
-- `utils/saveSystem.ts`: Version-validated persistence.
+- `utils/saveSystem.ts`: Version-validated persistence (`0.1.42a`).
 - `utils/combatLogic.ts`: CP formulas and hit resolution.
-- `utils/craftingLogic.ts`: Experience curves and equipment generation.
-- `utils/cacheManager.ts`: Web cache and storage maintenance.
+- `utils/cacheManager.ts`: Web cache maintenance.
 
 ---
 
-## ⚙️ 5. Phaser Game Engine (`game/`)
-
-- `game/SmithingScene.ts`: Smithing minigame core.
-- `game/SmithingTutorialHandler.ts`: Phase-based tutorial logic for Phaser.
-- `game/WorkbenchScene.ts`: Precision crafting core.
-- `game/DungeonScene.ts`: Manual assault renderer.
-
----
-
-## 🔄 Recent Updates (v0.1.41b)
-*   **Research System Implementation**:
-    *   Introduced "Scholars Desk" (`tabs/research/`) for discovering lost blueprints through material extraction.
-    *   Magical synthesis animations and specialized inventory UI.
+## 🔄 Recent Updates (v0.1.42a)
+*   **Narrative Immersion**:
+    *   Shifted Manual Dungeon feedback from technical AI logs to "Inner Voice" and "Exploration Logs".
+    *   Environmental descriptions added to movement and interaction events.
+*   **Casualty Visibility**:
+    *   Implemented "Injured" and "K.I.A" status overlays in squad slots and mercenary picker.
 *   **Version Synchronization**:
-    *   Bumping version to `0.1.41b` across all systems.
-*   **Modular State Refinement**:
-    *   Separated `state/reducer/research.ts` for clean combination logic.
+    *   Updated across all metadata and UI systems to `0.1.42a`.

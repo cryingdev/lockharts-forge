@@ -160,11 +160,11 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
             const rarityClasses = isConsumable ? 'text-stone-400 border-stone-700 bg-stone-900/40' : getRarityClasses(item.equipmentData?.rarity);
             const imageUrl = item.type === 'EQUIPMENT' && item.equipmentData
               ? (item.equipmentData.image
-                  ? getAssetUrl(item.equipmentData.image)
+                  ? getAssetUrl(item.equipmentData.image, 'equipments')
                   : item.equipmentData.recipeId
-                    ? getAssetUrl(`${item.equipmentData.recipeId}.png`)
-                    : getAssetUrl(`${item.id.split('_')[0]}.png`))
-              : getAssetUrl(`${item.id}.png`);
+                    ? getAssetUrl(`${item.equipmentData.recipeId}.png`, 'equipments')
+                    : getAssetUrl(`${item.id.split('_')[0]}.png`, 'equipments'))
+              : getAssetUrl(`${item.id}.png`, 'materials');
 
             return (
               <div

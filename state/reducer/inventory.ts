@@ -273,18 +273,8 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
     let logMsg = '';
     let itemUsed = false;
 
-    // --- Special Logic: Scrolls & Recipes ---
-    if (itemId === 'recipe_scroll_bronze_longsword') {
-        const targetRecipeId = 'sword_bronze_long_t1';
-        if (newUnlockedRecipes.includes(targetRecipeId)) {
-            return { ...state, logs: [`You already know the techniques in this scroll.`, ...state.logs] };
-        }
-        newUnlockedRecipes.push(targetRecipeId);
-        logMsg = `Studied the scroll. Bronze Longsword recipe unlocked!`;
-        itemUsed = true;
-    } 
     // --- Unified Potion System ---
-    else if (itemId.startsWith('potion_')) {
+    if (itemId.startsWith('potion_')) {
         const parts = itemId.split('_'); // potion, type, size
         const type = parts[1];
         const size = parts[2];
@@ -293,14 +283,25 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
         if (recoverValue === undefined) return state;
 
         if (type === 'energy') {
-            // Blacksmith Energy Potion
-            if (newStats.energy >= newStats.maxEnergy) {
-                return { ...state, toastQueue: [...state.toastQueue, `Blacksmith energy is already at maximum.`], logs: [`Energy is already full!`, ...state.logs] };
+            // Energy Potion now heals Mercenary HP and MP simultaneously
+            if (mercenaryId) {
+                const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);
+                if (mercIdx > -1) {
+                    const merc = { ...newKnownMercenaries[mercIdx] };
+                    if (merc.currentHp >= merc.maxHp && merc.currentMp >= merc.maxMp) {
+                        return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is already at full vitals.`] };
+                    }
+                    const amount = recoverValue === 'FULL' ? Math.max(merc.maxHp, merc.maxMp) : (recoverValue as number);
+                    merc.currentHp = Math.min(merc.maxHp, merc.currentHp + amount);
+                    merc.currentMp = Math.min(merc.maxMp, merc.currentMp + amount);
+                    logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} HP and MP.`;
+                    itemUsed = true;
+                    // Fix: Move mercenary update inside the index check block to fix 'Cannot find name merc' error
+                    newKnownMercenaries[mercIdx] = merc;
+                }
+            } else {
+                return { ...state, toastQueue: [...state.toastQueue, `This potion must be used on a mercenary.`] };
             }
-            const amount = typeof recoverValue === 'number' ? recoverValue : newStats.maxEnergy;
-            newStats.energy = Math.min(newStats.maxEnergy, newStats.energy + amount);
-            logMsg = `Consumed ${inventoryItem.name}. +${amount} Energy.`;
-            itemUsed = true;
         } else if (mercenaryId) {
             // Mercenary Targeted Potions
             const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);

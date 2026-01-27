@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { Coins, Zap, Calendar, BedDouble, BookOpen, Settings } from 'lucide-react';
@@ -61,18 +60,18 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
           {/* Energy Bar */}
           <div className={`flex flex-col w-12 md:w-28 p-0.5 rounded-lg transition-all ease-out ${
               uiEffects.energyHighlight 
-              ? 'ring-2 ring-yellow-400 scale-105 shadow-[0_0_20px_rgba(251,191,36,0.4)] bg-amber-400/10 z-30 animate-shake-hard' 
+              ? 'ring-2 ring-emerald-400 scale-105 shadow-[0_0_20px_rgba(16,185,129,0.4)] bg-emerald-400/10 z-30 animate-shake-hard' 
               : 'ring-0 ring-transparent duration-[2000ms] scale-100 bg-transparent z-10'
           }`}>
             <div className="flex justify-between items-center text-[6px] md:text-[9px] mb-0.5 text-stone-400 uppercase tracking-widest font-black">
               <Zap className={`w-2 h-2 md:w-3 md:h-3 transition-all ${
-                  uiEffects.energyHighlight ? 'text-yellow-300 scale-125' : 'text-blue-500'
+                  uiEffects.energyHighlight ? 'text-emerald-300 scale-125' : 'text-emerald-500'
               }`} /> 
               <span className="font-mono">{energy}</span>
             </div>
             <div className="w-full bg-stone-900 rounded-full h-1 md:h-1.5 border border-stone-800 shadow-inner overflow-hidden">
               <div 
-                className={`h-full rounded-full transition-all duration-700 ${energy < 20 ? 'bg-red-500' : 'bg-blue-600'} ${uiEffects.energyHighlight ? 'brightness-150' : ''}`} 
+                className={`h-full rounded-full transition-all duration-700 ${energy < 20 ? 'bg-red-500' : 'bg-emerald-600'} ${uiEffects.energyHighlight ? 'brightness-150' : ''}`} 
                 style={{ width: `${(energy / maxEnergy) * 100}%` }}
               ></div>
             </div>

@@ -8,12 +8,12 @@ import { Mercenary } from '../../../models/Mercenary';
 import { calculateMercenaryPower } from '../../../utils/combatLogic';
 import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 
-const EnergyBattery = ({ value }: { value: number }) => {
-    let color = 'bg-emerald-500';
+const StaminaBattery = ({ value }: { value: number }) => {
+    let color = 'bg-white';
     if (value < 20) {
         color = 'bg-red-500 animate-pulse';
     } else if (value < 50) {
-        color = 'bg-amber-500';
+        color = 'bg-stone-300';
     }
 
     // 5 segments
@@ -21,7 +21,7 @@ const EnergyBattery = ({ value }: { value: number }) => {
 
     return (
         <div className="flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded border border-white/5 w-fit">
-            <Zap className={`w-2.5 h-2.5 ${value < 20 ? 'text-red-500 animate-pulse' : 'text-amber-500'}`} />
+            <Zap className={`w-2.5 h-2.5 ${value < 20 ? 'text-red-500 animate-pulse' : 'text-stone-100'}`} />
             <div className="flex items-center gap-0.5 h-2 px-0.5 border-x border-stone-700/50">
                 {segments.map((threshold, idx) => (
                     <div 
@@ -104,10 +104,10 @@ const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: b
                 </div>
             </div>
 
-            {/* Vitals: Energy Battery (Slim Style) */}
+            {/* Vitals: Stamina Battery (Slim Style) */}
             {isHired && merc.status !== 'DEAD' && (
                 <div className="mb-2">
-                    <EnergyBattery value={merc.expeditionEnergy} />
+                    <StaminaBattery value={merc.expeditionEnergy} />
                 </div>
             )}
 
@@ -172,7 +172,7 @@ const TavernTab = ({ activeTab }: { activeTab?: string }) => {
                 <div className="flex justify-between items-end border-b border-stone-800 pb-3 shrink-0">
                     <div>
                         <h2 className="text-xl md:text-2xl font-black text-amber-500 font-serif leading-none uppercase tracking-tighter">The Broken Anvil</h2>
-                        <p className="text-stone-600 text-[8px] md:text-[10px] mt-1 uppercase tracking-widest font-bold">Wayfarers gather here.</p>
+                        <p className="text-stone-600 text-[8px] md:text-sm mt-1 uppercase tracking-widest font-bold">Wayfarers gather here.</p>
                     </div>
                     <button onClick={handleScout} className="bg-stone-900 border border-stone-700 px-4 py-1.5 rounded-lg text-stone-300 flex items-center gap-2 hover:border-amber-500 transition-all shadow-md active:scale-95 group">
                         <PlusCircle className="w-3.5 h-3.5 text-amber-500 group-hover:rotate-90 transition-transform duration-300" />
