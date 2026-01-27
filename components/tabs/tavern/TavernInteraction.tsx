@@ -32,22 +32,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const [showDetail, setShowDetail] = useState(false);
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
-    
     const [step, setStep] = useState<InteractionStep>('IDLE');
-
-    // Debugging Mercenary Gift Menu
-    useEffect(() => {
-        if (showGiftMenu) {
-            console.group(`[TavernInteraction] Gift Menu Debug for ${mercenary.name}`);
-            console.log('Total Inventory Size:', state.inventory.length);
-            const validTypes = ['EQUIPMENT', 'PRODUCT', 'CONSUMABLE'];
-            const filtered = state.inventory.filter(i => validTypes.includes(i.type));
-            console.log('Filtered Count (EQUIPMENT/PRODUCT/CONSUMABLE):', filtered.length);
-            console.table(state.inventory.map(i => ({ name: i.name, type: i.type, quantity: i.quantity })));
-            console.groupEnd();
-        }
-    }, [showGiftMenu, state.inventory, mercenary.name]);
-
     const isHired = mercenary.status === 'HIRED' || mercenary.status === 'ON_EXPEDITION' || mercenary.status === 'INJURED';
     const isOnExpedition = mercenary.status === 'ON_EXPEDITION';
     const hiringCost = calculateHiringCost(mercenary.level, mercenary.job);

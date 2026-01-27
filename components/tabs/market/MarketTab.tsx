@@ -16,19 +16,6 @@ interface MarketTabProps {
 const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     const market = useMarket(onNavigate);
     const { state, actions, handlers, viewMode, dialogue, cart, isCartOpen, totalCost, categorizedMarketItems, floatingHearts, showGiftModal, pendingGiftItem, collapsedSections } = market;
-
-    // Debugging Garrick Gift Modal
-    useEffect(() => {
-        if (showGiftModal) {
-            console.group('[MarketTab] Garrick Gift Selection Debug');
-            console.log('Total Inventory Size:', state.inventory.length);
-            const equipmentItems = state.inventory.filter(i => i.type === 'EQUIPMENT');
-            console.log('Equipment Items Count:', equipmentItems.length);
-            console.table(state.inventory.map(i => ({ name: i.name, type: i.type, quantity: i.quantity })));
-            console.groupEnd();
-        }
-    }, [showGiftModal, state.inventory]);
-
     // 마켓 튜토리얼 씬인지 확인
     const isLocalTutorial = state.activeTutorialScene === 'MARKET';
     
@@ -52,7 +39,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             `}</style>
 
             <div className="absolute inset-0 z-0">
-                <img src={getAssetUrl('garricks_store_bg.png', 'bg')} className="absolute top-0 opacity-60 w-full h-full object-cover" />
+                <img src={getAssetUrl('garricks_store_bg.jpeg', 'bg')} className="absolute top-0 opacity-60 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-black/30"></div>
             </div>
 

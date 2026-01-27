@@ -114,7 +114,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('workbench_bg', getAssetUrl('workbench_bg.png', 'minigame'));
+    this.load.image('workbench_bg', getAssetUrl('workbench_bg.jpeg', 'minigame'));
     this.load.image('niddle', getAssetUrl('niddle.png', 'minigame'));
     this.load.image('nail', getAssetUrl('nail.png', 'minigame'));
     this.load.image('nail_head', getAssetUrl('nail_head.png', 'minigame'));

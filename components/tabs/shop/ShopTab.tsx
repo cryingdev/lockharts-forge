@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -18,9 +19,12 @@ interface ShopTabProps {
 }
 
 const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
-  const { actions } = useGame();
+  const { state, actions } = useGame();
   const shop = useShop();
   const [counterImgError, setCounterImgError] = useState(false);
+
+  // 튜토리얼 중 상점 열기 단계인지 확인
+  const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
 
   return (
     <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
@@ -37,7 +41,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <ShopSign 
             isOpen={shop.isShopOpen} 
             onToggle={shop.handlers.handleToggleShop} 
-            disabled={(!shop.isShopOpen && !shop.canAffordOpen) || shop.isTutorialActive}
+            disabled={isOpeningStep ? false : ((!shop.isShopOpen && !shop.canAffordOpen) || shop.isTutorialActive)}
         />
 
         {/* UI Elements: Queue & HUD */}

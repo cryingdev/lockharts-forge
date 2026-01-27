@@ -33,11 +33,8 @@ const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
 };
 
 const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
-    PROLOGUE_0: { text: "I have just returned from the hill after burying my family... My hands, stained with earth, are still trembling." },
-    PROLOGUE_1: { text: "The forge has been ruthlessly trampled by their hands. Everything I built... gone in a single night of fire and blood." },
-    PROLOGUE_2: { text: "But the fury within me burns hotter than any flame. For the sake of vengeance, I will rekindle the embers of this forge once more." },
-    PROLOGUE_3: { text: "Wait... the furnace is completely beyond repair. I cannot melt ore without a steady flame." },
-    PROLOGUE_4: { text: "I must head to the Market immediately to find a replacement. The hammer of the Lockhart lineage will not be silenced." },
+    PROLOGUE_0: { text: "The Lockhart forge lies in ashes, and my family is gone. But the fury in my blood burns hotter than any dragon's fire. I will rebuild." },
+    PROLOGUE_1: { text: "The furnace is cold as death and beyond repair. I must head to the Market immediately to find a replacement and light the hearth once more." },
     
     FURNACE_0: { text: "The furnace is finally in place. The air in the forge doesn't feel so heavy and cold anymore." },
     FURNACE_1: { text: "It's a sturdy unit. I've managed to seal the connections, but I should check if the flue is drawing correctly. Striking the flint now..." },
@@ -215,12 +212,12 @@ const TutorialScene: React.FC = () => {
     }, [seq]);
 
     const bgImage = useMemo(() => {
-        if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'tutorial/forge_ruined_bg.png';
-        if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'tutorial/forge_fixed_bg.png';
+        if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'tutorial/forge_ruined_bg.jpeg';
+        if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'tutorial/forge_fixed_bg.jpeg';
         const currentDegrees = Math.round(IDLE_TEMP + (temp / 100) * (MAX_TEMP - IDLE_TEMP));
-        if (currentDegrees >= 1490) return 'tutorial/forge_hot_bg.png';
-        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'tutorial/forge_start_bg.png';
-        return 'tutorial/forge_fixed_bg.png';
+        if (currentDegrees >= 1490) return 'tutorial/forge_hot_bg.jpeg';
+        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'tutorial/forge_start_bg.jpeg';
+        return 'tutorial/forge_fixed_bg.jpeg';
     }, [mode, seq, temp, isStarted]);
 
     const handleStart = () => {
@@ -270,7 +267,7 @@ const TutorialScene: React.FC = () => {
 
     const handleNext = () => {
         if (mode === 'PROLOGUE') {
-            if (currentStep < 4) setCurrentStep(prev => prev + 1);
+            if (currentStep < 1) setCurrentStep(prev => prev + 1);
             else actions.completePrologue();
         } else {
             if (seq === 'POST_REPLACE_TALK') {

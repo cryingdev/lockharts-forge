@@ -165,6 +165,7 @@ const AssaultNavigator = () => {
     const [showLootOverlay, setShowLootOverlay] = useState(false);
     const [lastMsg, setLastMsg] = useState("");
     const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
+    const [hasInteractedWithNpc, setHasInteractedWithNpc] = useState(false); // New: Track if player chose to defer NPC rescue
 
     // --- D-pad & Camera Zoom State ---
     const [dpadTransform, setDpadTransform] = useState(() => {
@@ -202,6 +203,11 @@ const AssaultNavigator = () => {
     const isStairs = session?.encounterStatus === 'STAIRS';
     const isVictory = session?.encounterStatus === 'VICTORY';
     const currentRoom = session ? session.grid[session.playerPos.y][session.playerPos.x] : null;
+
+    // Reset NPC interaction state when moving to a new tile
+    useEffect(() => {
+        setHasInteractedWithNpc(false);
+    }, [session?.playerPos.x, session?.playerPos.y]);
 
     // 조우 시 자동 전투 진입 및 연출 로직
     useEffect(() => {
@@ -447,7 +453,7 @@ const AssaultNavigator = () => {
             {!isBattle && (
                 <>
                     {/* Draggable D-pad Container */}
-                    {!isOnNPCTile && (
+                    {(!isOnNPCTile || hasInteractedWithNpc) && (
                         <div 
                             className={`pointer-events-auto transition-all z-[200] select-none ${isDraggingDpad ? 'shadow-glow-amber cursor-grabbing' : 'cursor-default'} ${isEncounterAnimationActive ? 'opacity-0 scale-95' : 'opacity-100'}`}
                             style={{
@@ -465,7 +471,7 @@ const AssaultNavigator = () => {
                                 {showDpadMenu && (
                                     <div className="absolute -top-12 right-0 flex items-center gap-3 pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div className="flex items-center gap-2 bg-stone-900/80 border border-white/10 px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md">
-                                            <Ghost className="w-3.5 h-3.5 text-stone-500" />
+                                            <Ghost className="w-3.5 h-3.5 text-stone-50" />
                                             <input 
                                                 type="range" min="0.1" max="1.0" step="0.1"
                                                 value={dpadTransform.opacity}
@@ -531,7 +537,10 @@ const AssaultNavigator = () => {
                                             actions.showToast(`${rescueTarget?.name} has been secured!`); 
                                         }
                                     }, variant: 'primary' as const },
-                                    { label: "WE'LL BE BACK FOR YOU", action: () => setLastMsg("We've marked the spot. Resuming exploration for now."), variant: 'neutral' as const }
+                                    { label: "WE'LL BE BACK FOR YOU", action: () => {
+                                        setLastMsg("We've marked the spot. Resuming exploration for now.");
+                                        setHasInteractedWithNpc(true);
+                                    }, variant: 'neutral' as const }
                                 ] : isEncountered ? [
                                     ...(currentRoom === 'BOSS' && session.isBossDefeated ? [
                                         { label: "CLAIM THE LOOT AND LEAVE", action: () => actions.finishManualAssault(), variant: 'primary' as const },

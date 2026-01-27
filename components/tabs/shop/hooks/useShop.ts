@@ -125,9 +125,16 @@ export const useShop = () => {
     }, [actions]);
 
     const handleToggleShop = useCallback(() => {
-        if (!isShopOpen && state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE') {
+        const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
+        
+        // 튜토리얼 중이고 아직 상점이 닫힌 상태라면 무조건 열 수 있도록 유도
+        if (isOpeningStep && !isShopOpen) {
             actions.setTutorialStep('SELL_ITEM_GUIDE');
+            // 에너지가 부족할 수도 있는 극한 상황을 대비해 강제 실행 (reducer가 거부해도 호출은 함)
+            actions.toggleShop();
+            return;
         }
+        
         actions.toggleShop();
     }, [isShopOpen, state.tutorialStep, actions]);
 
@@ -221,14 +228,21 @@ export const useShop = () => {
         const { request, mercenary } = activeCustomer;
         const inventoryMatch = matchingItems.length > 0;
         
+        // 아이템 정보 보완 (툴팁용)
+        const isEquip = request.type === 'EQUIPMENT';
+        const recipe = isEquip ? EQUIPMENT_ITEMS.find(e => e.id === request.requestedId) : null;
+        const material = !isEquip ? Object.values(materials).find(m => m.id === request.requestedId) : null;
+
         return {
             speaker: mercenary.name,
             text: request.dialogue,
             highlightTerm: getItemName(request.requestedId),
             itemDetail: {
-                icon: '📦',
-                imageUrl: globalGetAssetUrl(`${request.requestedId}.png`, 'equipments'),
+                id: request.requestedId,
+                image: isEquip ? recipe?.image : material?.image, // 추가: 실제 이미지 파일명
+                icon: isEquip ? (recipe?.icon || '⚔️') : (material?.icon || '📦'),
                 price: request.price,
+                requirements: recipe?.requirements, // 제작 재료 추가
                 isUnlocked: true
             },
             options: [
