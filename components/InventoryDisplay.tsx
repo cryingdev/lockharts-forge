@@ -1,7 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useGame } from '../context/GameContext';
-import { Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle, Brain, Lock, Unlock, Star, Sparkles } from 'lucide-react';
+import { 
+    Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle, 
+    Brain, Lock, Unlock, Star, Sparkles, X, Minus, Plus, ChevronRight 
+} from 'lucide-react';
 import { InventoryItem } from '../types/index';
 import { getAssetUrl } from '../utils';
 
@@ -16,7 +19,6 @@ const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, clas
     const isEquip = item.type === 'EQUIPMENT';
     const folder = isEquip ? 'equipments' : 'materials';
     
-    // 1순위: ID 기반 파일명 시도 (Equipment는 recipeId 우선)
     const baseId = (isEquip && item.equipmentData?.recipeId) 
         ? item.equipmentData.recipeId 
         : item.id;
@@ -24,7 +26,6 @@ const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, clas
     const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`, folder));
 
     const handleImgError = () => {
-        // 2순위: 아이템 메타데이터의 image 또는 equipmentData의 image 폴백
         const fallbackPath = item.image || item.equipmentData?.image;
         if (fallbackPath && imgSrc !== getAssetUrl(fallbackPath, folder)) {
             setImgSrc(getAssetUrl(fallbackPath, folder));
@@ -36,29 +37,47 @@ const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, clas
 
 export const InventoryDisplay = () => {
     const { state, actions } = useGame();
-    const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+    const [sellQuantity, setSellQuantity] = useState(1);
+
+    const currentSelectedItem = useMemo(() => 
+        state.inventory.find(i => i.id === selectedItemId) || null
+    , [state.inventory, selectedItemId]);
 
     const handleSelect = (item: InventoryItem) => {
-        setSelectedItem(item);
+        setSelectedItemId(item.id);
     };
 
-    const handleQuickSell = () => {
-        if (!selectedItem || selectedItem.isLocked) return;
-        const sellPrice = Math.floor(selectedItem.baseValue * 0.5);
-        if (sellPrice <= 0) return;
-        actions.sellItem(selectedItem.id, 1, sellPrice, selectedItem.type === 'EQUIPMENT' ? selectedItem.id : undefined);
-        if (selectedItem.quantity <= 1) setSelectedItem(null);
+    const handleOpenSellModal = () => {
+        if (!currentSelectedItem || currentSelectedItem.isLocked) return;
+        setSellQuantity(1);
+        setIsSellModalOpen(true);
+    };
+
+    const handleConfirmBulkSell = () => {
+        if (!currentSelectedItem) return;
+        const sellPricePerItem = Math.floor(currentSelectedItem.baseValue * 0.5);
+        const totalPrice = sellPricePerItem * sellQuantity;
+        
+        actions.sellItem(
+            currentSelectedItem.id, 
+            sellQuantity, 
+            totalPrice, 
+            currentSelectedItem.type === 'EQUIPMENT' ? currentSelectedItem.id : undefined
+        );
+        
+        setIsSellModalOpen(false);
+        // If we sold all items, deselect
+        if (currentSelectedItem.quantity <= sellQuantity) {
+            setSelectedItemId(null);
+        }
     };
 
     const handleConsume = () => {
-        if (!selectedItem) return;
-        actions.useItem(selectedItem.id);
-        if (selectedItem.quantity <= 1) setSelectedItem(null);
-    };
-
-    const handleToggleLock = () => {
-        if (!selectedItem) return;
-        actions.toggleLockItem(selectedItem.id);
+        if (!currentSelectedItem) return;
+        actions.useItem(currentSelectedItem.id);
+        if (currentSelectedItem.quantity <= 1) setSelectedItemId(null);
     };
 
     const getQualityLabel = (q: number): string => {
@@ -80,9 +99,6 @@ export const InventoryDisplay = () => {
             default: return 'text-stone-400 border-stone-700/50 bg-stone-900/40';
         }
     };
-
-    const currentSelectedItem = state.inventory.find(i => i.id === selectedItem?.id) || null;
-    if (selectedItem && !currentSelectedItem) setSelectedItem(null);
 
     const renderEquipmentStats = (item: InventoryItem) => {
         if (!item.equipmentData?.stats) return null;
@@ -124,7 +140,9 @@ export const InventoryDisplay = () => {
     };
 
     return (
-        <div className="flex flex-row h-full w-full max-w-7xl mx-auto p-2 md:p-4 gap-2 md:gap-4 overflow-hidden">
+        <div className="flex flex-row h-full w-full max-w-7xl mx-auto p-2 md:p-4 gap-2 md:gap-4 overflow-hidden relative">
+            
+            {/* Storage List Section */}
             <div className="flex-[1.5] md:flex-[2.5] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex flex-col min-w-0">
                 <div className="bg-slate-800/50 p-2 md:p-3 border-b border-slate-700 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
@@ -133,14 +151,13 @@ export const InventoryDisplay = () => {
                     </div>
                     <span className="text-[10px] text-slate-500 font-mono">{state.inventory.length}</span>
                 </div>
-                {/* min-h-0 is essential for flex-1 scrolling in some browsers */}
                 <div className="p-2 overflow-y-auto flex-1 custom-scrollbar min-h-0 bg-stone-950/20">
                     {state.inventory.length === 0 ? (
                         <div className="text-slate-500 text-center py-12 italic text-xs">Empty</div>
                     ) : (
                         <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 pb-8">
                             {state.inventory.map(item => {
-                                const isSelected = currentSelectedItem?.id === item.id;
+                                const isSelected = selectedItemId === item.id;
                                 return (
                                     <button
                                         key={item.id} onClick={() => handleSelect(item)}
@@ -163,6 +180,7 @@ export const InventoryDisplay = () => {
                 </div>
             </div>
 
+            {/* Details Section */}
             <div className="flex-1 md:w-96 bg-black rounded-xl border border-stone-800 overflow-hidden flex flex-col min-w-0">
                 <div className="bg-stone-900/50 p-2 md:p-3 border-b border-stone-800 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
@@ -216,7 +234,7 @@ export const InventoryDisplay = () => {
                             )}
                             {currentSelectedItem.baseValue > 0 && currentSelectedItem.type !== 'KEY_ITEM' && (
                                 <button 
-                                    onClick={handleQuickSell} 
+                                    onClick={handleOpenSellModal} 
                                     disabled={currentSelectedItem.isLocked}
                                     className={`w-full py-2 rounded text-[10px] md:text-sm font-bold border transition-all ${currentSelectedItem.isLocked ? 'bg-stone-900 border-stone-800 text-stone-700 cursor-not-allowed' : 'bg-stone-800 hover:bg-red-900/30 text-stone-300 border-stone-700'}`}
                                 >
@@ -232,6 +250,91 @@ export const InventoryDisplay = () => {
                     </div>
                 )}
             </div>
+
+            {/* Bulk Sell Modal */}
+            {isSellModalOpen && currentSelectedItem && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+                    <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95">
+                        <div className="p-4 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
+                            <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">Sell Inventory</h3>
+                            <button onClick={() => setIsSellModalOpen(false)} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500"><X className="w-5 h-5" /></button>
+                        </div>
+                        
+                        <div className="p-6 flex flex-col items-center gap-6">
+                            <div className="flex items-center gap-4 w-full">
+                                <div className="w-16 h-16 bg-stone-950 rounded-xl border border-stone-800 flex items-center justify-center shrink-0">
+                                    <AdaptiveInventoryImage item={currentSelectedItem} className="w-10 h-10 object-contain" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-stone-100 font-black text-sm truncate uppercase">{currentSelectedItem.name}</h4>
+                                    <p className="text-stone-500 text-[10px] font-bold">Price per unit: <span className="text-amber-500">{Math.floor(currentSelectedItem.baseValue * 0.5)}G</span></p>
+                                </div>
+                            </div>
+
+                            <div className="w-full bg-stone-950/50 p-4 rounded-2xl border border-stone-800 flex flex-col items-center gap-3">
+                                <span className="text-[8px] font-black text-stone-600 uppercase tracking-[0.2em]">Select Quantity</span>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => setSellQuantity(Math.max(1, sellQuantity - 1))}
+                                        className="w-10 h-10 bg-stone-800 hover:bg-stone-700 rounded-full flex items-center justify-center text-stone-400 transition-colors border border-stone-700"
+                                    >
+                                        <Minus className="w-5 h-5" />
+                                    </button>
+                                    <div className="flex flex-col items-center min-w-[80px]">
+                                        <span className="text-3xl font-mono font-black text-stone-100 leading-none">{sellQuantity}</span>
+                                        <span className="text-[10px] font-bold text-stone-600 uppercase mt-1">/ {currentSelectedItem.quantity}</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSellQuantity(Math.min(currentSelectedItem.quantity, sellQuantity + 1))}
+                                        className="w-10 h-10 bg-stone-800 hover:bg-stone-700 rounded-full flex items-center justify-center text-stone-400 transition-colors border border-stone-700"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <div className="flex gap-2 w-full mt-2">
+                                    <button 
+                                        onClick={() => setSellQuantity(1)}
+                                        className="flex-1 py-1.5 bg-stone-900 hover:bg-stone-800 rounded-lg text-[9px] font-black text-stone-500 uppercase border border-stone-800 transition-all"
+                                    >
+                                        Min
+                                    </button>
+                                    <button 
+                                        onClick={() => setSellQuantity(currentSelectedItem.quantity)}
+                                        className="flex-1 py-1.5 bg-stone-900 hover:bg-stone-800 rounded-lg text-[9px] font-black text-amber-500/80 uppercase border border-stone-800 transition-all"
+                                    >
+                                        Max
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="w-full flex justify-between items-center px-2 py-3 border-t border-stone-800">
+                                <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Total Payout</span>
+                                <div className="flex items-center gap-1.5">
+                                    <Coins className="w-5 h-5 text-amber-500" />
+                                    <span className="text-2xl font-mono font-black text-emerald-400">
+                                        {(sellQuantity * Math.floor(currentSelectedItem.baseValue * 0.5)).toLocaleString()} G
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-stone-850 border-t border-stone-800 flex gap-3">
+                            <button 
+                                onClick={() => setIsSellModalOpen(false)}
+                                className="flex-1 py-3 bg-stone-800 hover:bg-stone-700 text-stone-400 font-black rounded-xl text-xs uppercase tracking-widest transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleConfirmBulkSell}
+                                className="flex-[2] py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/20 border-b-4 border-emerald-800 active:translate-y-0.5"
+                            >
+                                Confirm Sale
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

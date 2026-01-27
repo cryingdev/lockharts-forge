@@ -40,7 +40,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `state/reducer/manualDungeon.ts`: Grid movement, floor transitions, and **Immersive Narrative Logic**.
 - `state/reducer/shop.ts`: Shop open/close, queue management, and customer refusal.
 - `state/reducer/equipment.ts`: Equip/Unequip logic and level requirement checks.
-- `state/reducer/research.ts`: Alchemical combination logic for discovering blueprints.
+- `state/reducer/research.ts`: Research combination logic for discovering blueprints.
 - `state/reducer/market-affinity.ts`: Garrick relationship tracking.
 - `state/reducer/repair.ts`: Forge facility restoration logic.
 - `state/reducer/sleep.ts`: End-of-day cleanup, recovery, and daily financials.
@@ -140,6 +140,6 @@ This document provides a comprehensive structural map of the project, detailing 
     *   Updated request logic to match mercenary level with equipment tier.
     *   Prioritized unlocked recipes (85% chance) in shop requests.
 *   **Scholars Desk**:
-    *   Full implementation of the Alchemical Bench for blueprint discovery.
+    *   Full implementation of the Research Bench for blueprint discovery.
 *   **Version Sync**:
     *   Unified all systems to Build `0.1.42a`.

@@ -57,19 +57,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
 }) => {
     const { state, actions } = useGame();
     
-    // Debug Logging
-    useEffect(() => {
-        console.group('[ItemSelectorList] Render Debug');
-        console.log('Item count:', items.length);
-        if (items.length > 0) {
-            console.table(items.map(i => ({ name: i.name, type: i.type, id: i.id })));
-        } else {
-            console.warn('List is empty. Filter might be too restrictive.');
-        }
-        console.groupEnd();
-    }, [items]);
-
-    // Safety check for older save data without settings
     const viewMode = state.settings?.inventoryViewMode || 'LIST';
 
     const setViewMode = (mode: 'GRID' | 'LIST') => {
@@ -153,12 +140,19 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                     >
                                         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
                                         
-                                        <div className="relative">
+                                        {/* Item Name Overlay */}
+                                        <div className="absolute top-0 inset-x-0 bg-black/40 py-0.5 px-1 z-20 backdrop-blur-[1px] border-b border-white/5">
+                                            <div className="text-[7px] md:text-[9px] font-black text-white/90 truncate uppercase text-center leading-none tracking-tighter">
+                                                {item.name}
+                                            </div>
+                                        </div>
+
+                                        <div className="relative mt-2">
                                             <AdaptiveItemImage item={item} className="w-16 h-16 md:w-20 md:h-20 object-contain p-1 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
                                             <RomanTierOverlay id={item.id} />
                                         </div>
                                         
-                                        <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 pointer-events-none items-start max-w-[85%] z-20">
+                                        <div className="absolute top-4 left-1.5 flex flex-col gap-1 pointer-events-none items-start max-w-[85%] z-20">
                                             {isEquip && (
                                                 <div className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase border shadow-md leading-none ${rarityClasses}`}>
                                                     {item.equipmentData!.rarity}
@@ -172,13 +166,13 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                         </div>
 
                                         {isSelected && (
-                                            <div className="absolute top-1 right-1 bg-indigo-600 rounded-full p-0.5 shadow-lg z-30 animate-pulse">
+                                            <div className="absolute top-4 right-1 bg-indigo-600 rounded-full p-0.5 shadow-lg z-30 animate-pulse">
                                                 <Check className="w-3 h-3 text-white" />
                                             </div>
                                         )}
 
                                         {isEquip && (
-                                            <div className="absolute top-[60%] left-1/2 -translate-x-1/2 pointer-events-none z-20">
+                                            <div className="absolute top-[65%] left-1/2 -translate-x-1/2 pointer-events-none z-20">
                                                 <div className="bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/10 shadow-lg">
                                                     <Sparkles className="w-2 h-2 text-amber-400" />
                                                     <span className="text-[7px] font-black text-amber-200 uppercase whitespace-nowrap tracking-tight">{qualityLabel}</span>
@@ -204,18 +198,22 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                                 </div>
                                             ) : <div />}
 
-                                            <div className="bg-stone-900/95 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 border border-amber-900/40 shadow-xl">
-                                                <span className="text-[9px] font-mono font-black text-amber-500">{finalPrice}</span>
-                                                <Coins className="w-2.5 h-2.5 text-amber-600" />
+                                            <div className="bg-stone-900/95 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-amber-900/40 shadow-xl pointer-events-auto">
+                                                <div className="flex items-center gap-0.5">
+                                                    <span className="text-[9px] font-mono font-black text-amber-500">{finalPrice}</span>
+                                                    <Coins className="w-2.5 h-2.5 text-amber-600" />
+                                                </div>
+                                                {isLocked && (
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); onToggleLock(item.id); }}
+                                                        className="ml-0.5 p-0.5 text-amber-500 hover:text-white transition-colors"
+                                                        title="Unlock Item"
+                                                    >
+                                                        <Lock className="w-2.5 h-2.5" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
-                                    </button>
-
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); onToggleLock(item.id); }}
-                                        className={`absolute top-1.5 right-1.5 p-1.5 rounded-lg border transition-all z-30 shadow-xl ${isLocked ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-900/80 border-stone-700 text-stone-500 opacity-0 group-hover:opacity-100 hover:text-stone-200 hover:bg-stone-800'}`}
-                                    >
-                                        {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                                     </button>
                                 </div>
                             );
@@ -236,7 +234,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                     <div className="w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-lg border border-stone-800 flex items-center justify-center shrink-0 overflow-hidden relative shadow-[inset_0_2px_10px_rgba(0,0,0,0.6)]">
                                         <AdaptiveItemImage item={item} className="w-8 h-8 md:w-12 md:h-12 object-contain drop-shadow-md" />
                                         <RomanTierOverlay id={item.id} isList />
-                                        {isLocked && <Lock className="absolute top-0.5 right-0.5 w-2.5 h-2.5 text-amber-500 z-30" />}
                                     </div>
 
                                     <div className="flex-1 min-w-0">
@@ -275,17 +272,21 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                     </div>
 
                                     <div className="flex flex-col items-end gap-1 shrink-0 bg-stone-950/50 p-2 rounded-lg border border-white/5">
-                                        <div className={`flex items-center gap-1 font-mono font-black text-[10px] md:text-sm ${isSelected ? 'text-indigo-400' : isLocked ? 'text-stone-600' : 'text-emerald-400'}`}>
-                                            <Coins className="w-3.5 h-3.5" /> {finalPrice}G
+                                        <div className="flex items-center gap-2">
+                                            <div className={`flex items-center gap-1 font-mono font-black text-[10px] md:text-sm ${isSelected ? 'text-indigo-400' : isLocked ? 'text-stone-600' : 'text-emerald-400'}`}>
+                                                <Coins className="w-3.5 h-3.5" /> {finalPrice}G
+                                            </div>
+                                            {isLocked && (
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); onToggleLock(item.id); }}
+                                                    className="p-1 rounded bg-amber-600 text-white shadow-md hover:bg-amber-500 transition-colors"
+                                                    title="Unlock Item"
+                                                >
+                                                    <Lock className="w-3 h-3" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
-                                </button>
-
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); onToggleLock(item.id); }}
-                                    className={`absolute top-3 right-3 p-1.5 rounded-lg border transition-all z-30 ${isLocked ? 'bg-amber-600 border-amber-400 text-white shadow-lg' : 'bg-stone-900 border-stone-700 text-stone-500 opacity-0 group-hover:opacity-100 hover:text-stone-200'}`}
-                                >
-                                    {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                                 </button>
                             </div>
                         );

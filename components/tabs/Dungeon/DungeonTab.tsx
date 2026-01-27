@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { DUNGEONS } from '../../../data/dungeons';
@@ -34,6 +35,19 @@ const DungeonTab = () => {
     const isOngoingManual = !!activeManualDungeon && activeManualDungeon.dungeonId === selectedDungeon.id;
     const currentExpedition = activeExpeditions.find(e => e.dungeonId === selectedDungeon.id);
     const hasActiveMission = !!currentExpedition || isOngoingManual;
+
+    // --- EFFECT: Auto-Scrub Dead/Injured Mercenaries from local party state ---
+    useEffect(() => {
+        if (party.length > 0) {
+            const validParty = party.filter(id => {
+                const merc = knownMercenaries.find(m => m.id === id);
+                return merc && merc.status !== 'DEAD' && merc.status !== 'INJURED';
+            });
+            if (validParty.length !== party.length) {
+                setParty(validParty);
+            }
+        }
+    }, [knownMercenaries, party]);
 
     // Dynamically calculate potential rewards from monsters in the pool FOR THE CURRENT FLOOR
     const potentialRewards = useMemo(() => {
@@ -118,16 +132,22 @@ const DungeonTab = () => {
         const merc = hiredMercs.find(m => m.id === mercId);
         if (!merc) return;
         
-        // Cannot add dead mercenaries
+        const isCurrentlyInParty = party.includes(mercId);
+
+        // ALWAYS allow removal if they are already in the party, regardless of status
+        if (isCurrentlyInParty) {
+            setParty(prev => prev.filter(id => id !== mercId));
+            return;
+        }
+
+        // Only block ADDING if dead
         if (merc.status === 'DEAD') {
             actions.showToast("The fallen cannot be deployed.");
             return;
         }
 
-        if (party.includes(mercId)) {
-            setParty(prev => prev.filter(id => id !== mercId));
-        } else if (party.length < maxPartySize) {
-            setParty(prev => [...prev, ...[mercId]].slice(0, maxPartySize));
+        if (party.length < maxPartySize) {
+            setParty(prev => [...prev, mercId]);
             setIsPickerOpen(false);
         }
     };
@@ -217,7 +237,10 @@ const DungeonTab = () => {
                     {DUNGEONS.map(d => {
                         const isLocked = d.tier > state.stats.tierLevel + 1;
                         const maxReached = maxFloorReached[d.id] || 1;
-                        const completedFloors = (dungeonClearCounts[d.id] || 0) > 0 ? d.maxFloors : Math.max(0, maxReached - 1);
+                        const hasClearedAtLeastOnce = (dungeonClearCounts[d.id] || 0) > 0;
+                        
+                        // 현재 뚫려있는 진행도 계산
+                        const completedFloors = hasClearedAtLeastOnce ? d.maxFloors : Math.max(0, maxReached - 1);
                         const progressPercent = (completedFloors / d.maxFloors) * 100;
                         
                         return (
@@ -259,7 +282,7 @@ const DungeonTab = () => {
 
     // --- RENDER: DETAIL VIEW ---
     return (
-        <div className="h-full w-full flex flex-col sm:flex-row bg-stone-950 text-stone-200 overflow-hidden font-sans relative">
+        <div className="h-full w-full bg-stone-950 text-stone-200 overflow-hidden font-sans relative flex flex-col sm:flex-row">
             {(!!activeManualDungeon && showManualDungeonOverlay) && <AssaultNavigator />}
 
             {/* Left Info Section */}
@@ -286,7 +309,7 @@ const DungeonTab = () => {
                                 </div>
                                 {selectedFloor === selectedDungeon.maxFloors && <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-600 border border-red-400 rounded-lg text-white font-black text-[8px] sm:text-[10px] shadow-2xl rotate-12 z-40">BOSS</div>}
                             </div>
-                            <button onClick={handleNextFloor} className={`absolute right-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${selectedFloor < selectedDungeon.maxFloors ? 'bg-stone-800 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`} desert-text-stone-800 opacity-20 cursor-not-allowed><ChevronRight className="w-5 h-5 sm:w-10 sm:h-10" /></button>
+                            <button onClick={handleNextFloor} className={`absolute right-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${selectedFloor < selectedDungeon.maxFloors ? 'bg-stone-800 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`}><ChevronRight className="w-5 h-5 sm:w-10 sm:h-10" /></button>
                         </div>
                     </div>
                     
@@ -407,7 +430,7 @@ const DungeonTab = () => {
                             <div className="grid grid-cols-2 gap-3 max-w-xl mx-auto">
                                 <button onClick={handleStartAutoExpedition} disabled={party.length === 0 || isOngoingManual || !isFloorCleared} className={`flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all shadow-xl ${party.length > 0 && !isOngoingManual && isFloorCleared ? 'bg-indigo-700 hover:bg-indigo-600 border-indigo-900 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 opacity-60'}`}>
                                     <div className="flex items-center gap-2">{!isFloorCleared ? <Lock className="w-3.5" /> : <Timer className="w-4" />}<span className="font-black uppercase text-[10px] sm:text-xs">Strategic Deploy</span></div>
-                                    <span className="text-[7px] sm:text-[8px] font-bold desert-text-[8px] font-bold opacity-60 uppercase">{isFloorCleared ? "Auto Expedition" : "Requires Manual Clear"}</span>
+                                    <span className="text-[7px] sm:text-[8px] font-bold opacity-60 uppercase">{isFloorCleared ? "Auto Expedition" : "Requires Manual Clear"}</span>
                                 </button>
                                 <button onClick={handleStartManualAssault} disabled={party.length === 0 && !isOngoingManual} className={`flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all shadow-xl ${party.length > 0 || isOngoingManual ? 'bg-amber-600 hover:bg-amber-500 border-amber-800 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 opacity-60'}`}><div className="flex items-center gap-2"><Gamepad2 className="w-4" /><span className="font-black uppercase text-[10px] sm:text-xs">{isOngoingManual ? 'Resume' : 'Direct Assault'}</span></div><span className="text-[7px] sm:text-[8px] font-bold opacity-60 uppercase">Manual Exploration</span></button>
                             </div>

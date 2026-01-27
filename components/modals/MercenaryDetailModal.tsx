@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { X } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
@@ -13,6 +14,8 @@ interface MercenaryDetailModalProps {
   mercenary: Mercenary | null;
   onClose: () => void;
   onUnequip: (mercId: string, slot: EquipmentSlotType) => void;
+  onEquip?: (mercId: string, itemId: string) => void; // New: Optional action for combat
+  onConsume?: (mercId: string, itemId: string) => void; // New: Optional action for combat
   isReadOnly?: boolean;
 }
 
@@ -20,6 +23,8 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
   mercenary, 
   onClose, 
   onUnequip, 
+  onEquip,
+  onConsume,
   isReadOnly = false 
 }) => {
   const { state, actions } = useGame();
@@ -100,11 +105,21 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
               selectedItemId={selectedInventoryItemId}
               onSelect={setSelectedInventoryItemId}
               onEquip={(id) => {
-                actions.equipItem(mercenary.id, id);
+                // If special handler is provided (combat), use it, otherwise default to global action
+                if (onEquip) {
+                  onEquip(mercenary.id, id);
+                } else {
+                  actions.equipItem(mercenary.id, id);
+                }
                 setSelectedInventoryItemId(null);
               }}
               onConsume={(id) => {
-                actions.useItem(id, mercenary.id);
+                // If special handler is provided (combat), use it, otherwise default to global action
+                if (onConsume) {
+                  onConsume(mercenary.id, id);
+                } else {
+                  actions.useItem(id, mercenary.id);
+                }
                 setSelectedInventoryItemId(null);
               }}
               selectedSlotFilter={selectedSlot}

@@ -18,7 +18,7 @@
 ## 🔄 Recent Updates (v0.1.41b)
 
 *   **Scholars Desk (Research System)**:
-    *   Introduced the Alchemical Bench where players can experiment with materials.
+    *   Introduced the Research Bench where players can experiment with materials.
     *   Combining correct proportions of resources allows discovery of lost equipment blueprints.
 
 ## 🌟 Key Features

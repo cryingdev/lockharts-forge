@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem, DungeonResult } from '../../types/index';
 import { DUNGEONS } from '../../data/dungeons';
 import { Expedition } from '../../models/Dungeon';
@@ -87,8 +88,8 @@ export const handleAbortExpedition = (state: GameState, payload: { expeditionId:
     };
 };
 
-export const handleClaimExpedition = (state: GameState, payload: { expeditionId: string; rescuedNpcId?: string }): GameState => {
-    const { expeditionId, rescuedNpcId } = payload;
+export const handleClaimExpedition = (state: GameState, payload: { expeditionId: string; rescuedNpcId?: string; isFullClear?: boolean }): GameState => {
+    const { expeditionId, rescuedNpcId, isFullClear = true } = payload;
     const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
     if (!expedition) return state;
 
@@ -243,7 +244,10 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     }
 
     const newClearCounts = { ...state.dungeonClearCounts };
-    newClearCounts[dungeon.id] = (newClearCounts[dungeon.id] || 0) + 1;
+    if (isFullClear) {
+        newClearCounts[dungeon.id] = (newClearCounts[dungeon.id] || 0) + 1;
+    }
+    
     const remainingExpeditions = state.activeExpeditions.filter(e => e.id !== expeditionId);
 
     const resultData: DungeonResult = {

@@ -45,7 +45,7 @@ export const ResearchInventoryModal: React.FC<ResearchInventoryModalProps> = ({
                             }`}>
                                 {item ? (
                                     <>
-                                        <img src={getAssetUrl(`${item.id}.png`)} className="w-10 h-10 md:w-16 md:h-16 object-contain p-1" />
+                                        <img src={getAssetUrl(`${item.id}.png`, 'materials')} className="w-10 h-10 md:w-16 md:h-16 object-contain p-1" />
                                         
                                         {/* Quick Controls */}
                                         <div className="absolute inset-x-0 bottom-0 bg-black/60 flex items-center justify-between p-1">
@@ -79,7 +79,7 @@ export const ResearchInventoryModal: React.FC<ResearchInventoryModalProps> = ({
                         }))}
                         onSelect={onSelect}
                         onToggleLock={(id) => {}} // Research items logic simplified
-                        emptyMessage="No alchemical materials available."
+                        emptyMessage="No materials available."
                     />
                 </div>
 

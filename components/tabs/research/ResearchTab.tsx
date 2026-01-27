@@ -19,9 +19,9 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
 
     return (
         <div className="absolute inset-0 z-[150] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-700" />
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-700" />
             
-            <div className="relative w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,1)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col items-center p-8 text-center ring-1 ring-white/10">
+            <div className="relative w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,1)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col items-center p-8 text-center ring-1 ring-white/10">
                 
                 {isSuccess && discoveredRecipe ? (
                     <div className="flex flex-col items-center gap-6">
@@ -156,8 +156,8 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
                     {/* Result View Overlay */}
                     {result && !isResearching && <ResearchResultOverlay result={result} onConfirm={handlers.handleClearResult} />}
 
-                    {/* Slot Container with Accelerated Rotation */}
-                    <div className={`transition-all duration-300 ${isSuccessAnim ? 'animate-research-spin' : isFailAnim ? 'animate-research-spin-fail' : ''}`}>
+                    {/* Slot Container with Accelerated Rotation - Hidden when result is active */}
+                    <div className={`transition-all duration-500 ${result && !isResearching ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'} ${isSuccessAnim ? 'animate-research-spin' : isFailAnim ? 'animate-research-spin-fail' : ''}`}>
                         <ResearchSlots 
                             slots={selectedSlots} 
                             onOpenInventory={() => !isResearching && !result && handlers.setIsInventoryModalOpen(true)} 
@@ -167,46 +167,40 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
                 </div>
 
                 <div className="mt-8 md:mt-12 flex flex-col items-center gap-4 w-full max-w-md">
-                    {result && !isResearching ? (
-                         <button 
-                            onClick={handlers.handleClearResult}
-                            className="w-full py-4 rounded-2xl font-black text-sm md:text-lg uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 bg-stone-800 hover:bg-stone-750 text-stone-200 border-b-4 border-stone-950 shadow-2xl active:scale-95"
-                         >
-                            <Trash2 className="w-5 h-5 md:w-6 md:h-6" /> Purge Workspace
-                        </button>
-                    ) : (
-                        <button 
-                            onClick={handlers.handleResearch}
-                            disabled={selectedSlots.every(s => !s) || isResearching}
-                            className={`w-full py-4 rounded-2xl font-black text-sm md:text-lg uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 border-b-4 shadow-2xl relative overflow-hidden ${
-                                selectedSlots.every(s => !s) || isResearching
-                                ? 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale' 
-                                : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-800 active:scale-95 shadow-indigo-900/40'
-                            }`}
-                        >
-                            {isResearching ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
-                                    Synthesizing...
-                                </>
-                            ) : (
-                                <>
-                                    <Beaker className="w-5 h-5 md:w-6 md:h-6" />
-                                    Initiate Extraction
-                                </>
-                            )}
-                            
-                            {/* Progress Bar inside button for researching state */}
-                            {isResearching && (
-                                <div 
-                                    className={`absolute bottom-0 left-0 h-1 bg-white/30 ${isFailAnim ? 'animate-button-progress-fail' : 'animate-button-progress'}`} 
-                                />
-                            )}
-                        </button>
+                    {!result && (
+                        <>
+                            <button 
+                                onClick={handlers.handleResearch}
+                                disabled={selectedSlots.every(s => !s) || isResearching}
+                                className={`w-full py-4 rounded-2xl font-black text-sm md:text-lg uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 border-b-4 shadow-2xl relative overflow-hidden ${
+                                    selectedSlots.every(s => !s) || isResearching
+                                    ? 'bg-stone-800 text-stone-600 border-stone-900 cursor-not-allowed grayscale' 
+                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-800 active:scale-95 shadow-indigo-900/40'
+                                }`}
+                            >
+                                {isResearching ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
+                                        Synthesizing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Beaker className="w-5 h-5 md:w-6 md:h-6" />
+                                        Initiate Extraction
+                                    </>
+                                )}
+                                
+                                {isResearching && (
+                                    <div 
+                                        className={`absolute bottom-0 left-0 h-1 bg-white/30 ${isFailAnim ? 'animate-button-progress-fail' : 'animate-button-progress'}`} 
+                                    />
+                                )}
+                            </button>
+                            <p className={`text-[8px] md:text-[10px] text-stone-600 font-bold uppercase tracking-widest text-center px-6 transition-opacity duration-300 ${isResearching ? 'opacity-0' : 'opacity-100'}`}>
+                                Warning: All items in slots are permanently consumed during the reaction.
+                            </p>
+                        </>
                     )}
-                    <p className={`text-[8px] md:text-[10px] text-stone-600 font-bold uppercase tracking-widest text-center px-6 transition-opacity duration-300 ${isResearching || (result && !isResearching) ? 'opacity-0' : 'opacity-100'}`}>
-                        Warning: All items in slots are permanently consumed during the reaction.
-                    </p>
                 </div>
             </div>
 

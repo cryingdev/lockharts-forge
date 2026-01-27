@@ -1,3 +1,4 @@
+
 import { GameState, ManualDungeonSession, RoomType, DungeonResult, InventoryItem } from '../../types/index';
 import { DUNGEONS } from '../../data/dungeons';
 import { handleClaimExpedition } from './expedition';
@@ -577,7 +578,8 @@ export const handleFinishManualDungeon = (state: GameState): GameState => {
 
     const claimedState = handleClaimExpedition({ ...stateWithTempExp, inventory: newInventory }, { 
         expeditionId: tempExpId, 
-        rescuedNpcId: session.rescuedNpcId 
+        rescuedNpcId: session.rescuedNpcId,
+        isFullClear: !!session.isBossDefeated
     });
 
     if (claimedState.dungeonResult) {

@@ -1,3 +1,4 @@
+
 import { GameEvent } from '../types/events';
 import { EquipmentItem, InventoryItem } from '../types/inventory';
 import { EquipmentSlotType } from '../models/Equipment';
@@ -41,7 +42,7 @@ export type GameAction =
   | { type: 'START_EXPEDITION'; payload: { dungeonId: string; partyIds: string[] } }
   | { type: 'COMPLETE_EXPEDITION'; payload: { expeditionId: string } }
   | { type: 'ABORT_EXPEDITION'; payload: { expeditionId: string } }
-  | { type: 'CLAIM_EXPEDITION'; payload: { expeditionId: string; rescuedNpcId?: string } }
+  | { type: 'CLAIM_EXPEDITION'; payload: { expeditionId: string; rescuedNpcId?: string; isFullClear?: boolean } }
   | { type: 'DISMISS_DUNGEON_RESULT' }
   | { type: 'EQUIP_ITEM'; payload: { mercenaryId: string; inventoryItemId: string } }
   | { type: 'UNEQUIP_ITEM'; payload: { mercenaryId: string; slot: EquipmentSlotType } }

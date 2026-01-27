@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import Phaser from 'phaser';
 import { useGame } from '../../../context/GameContext';
@@ -371,7 +372,7 @@ const AssaultNavigator = () => {
     const isEncounterAnimationActive = isEncountered && currentRoom && (currentRoom === 'ENEMY' || (currentRoom === 'BOSS' && !session.isBossDefeated));
 
     return (
-        <div className="absolute inset-0 z-[100] bg-stone-950 flex flex-col animate-in fade-in duration-500 overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-stone-950 flex flex-col animate-in fade-in duration-500 overflow-hidden">
             <div ref={containerRef} className={`absolute inset-0 z-0 transition-opacity ${isBattle ? 'opacity-20 blur-md' : 'opacity-100'}`} />
             
             {!isBattle && <SquadPanel party={party} onSelectMercenary={(id) => setInspectedMercId(id)} />}
@@ -386,21 +387,11 @@ const AssaultNavigator = () => {
                 </div>
             )}
 
-            {/* Top Right: Zoom & Key Controls & Loot */}
+            {/* Top Right: Vertical Control Stack */}
             <div className={`absolute top-4 right-4 z-[110] flex flex-col items-end gap-2 pointer-events-auto transition-opacity duration-500 ${isEncounterAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
-                <div className="flex items-center gap-2">
-                    <button 
-                        onClick={() => setShowLootOverlay(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border border-amber-500/30 rounded-xl shadow-xl text-amber-400 hover:bg-stone-800 transition-all"
-                    >
-                        <Package className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-widest hidden xs:block">Loot Bag</span>
-                    </button>
-
-                    <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
-                        <Key className={`w-4 h-4 ${session.hasKey ? 'animate-pulse' : ''}`} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
-                    </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
+                    <Key className={`w-4 h-4 ${session.hasKey ? 'animate-pulse' : ''}`} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
                 </div>
                 
                 <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl">
@@ -417,6 +408,14 @@ const AssaultNavigator = () => {
                     className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/30 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl"
                 >
                     <LogOut className="w-4 h-4" /> Retreat
+                </button>
+
+                <button 
+                    onClick={() => setShowLootOverlay(true)}
+                    className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-amber-500/30 rounded-xl shadow-xl text-amber-400 hover:bg-stone-800 transition-all"
+                >
+                    <Package className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Loot Bag</span>
                 </button>
             </div>
 

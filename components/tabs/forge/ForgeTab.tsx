@@ -98,7 +98,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate }) => {
                         <Library className="w-4 h-4 md:w-5 md:h-5 text-indigo-300 group-hover:scale-110 transition-transform" />
                     </div>
                     <div className="flex flex-col items-start leading-tight">
-                        <span className="text-[8px] md:text-[10px] font-black text-indigo-300 uppercase tracking-widest">Alchemical Bench</span>
+                        <span className="text-[8px] md:text-[10px] font-black text-indigo-300 uppercase tracking-widest">Research Bench</span>
                         <span className="text-[10px] md:text-xs font-black text-white uppercase tracking-tighter">Scholars Desk</span>
                     </div>
                     <ChevronRight className="w-3 h-3 text-indigo-400 ml-auto group-hover:translate-x-0.5 transition-transform" />
