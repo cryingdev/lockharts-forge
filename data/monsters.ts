@@ -5,14 +5,14 @@ import { Monster } from '../models/Monster';
  */
 export const MONSTERS: Record<string, Monster> = {
   // =========================
-  // BAND 1 (Cellar / Vermin) - 8
+  // BAND 1 (Cellar / Vermin) - 9
   // =========================
   giant_rat: {
     id: 'giant_rat',
     name: 'Giant Rat',
     level: 1,
     icon: '🐀',
-    sprite: 'giant_rat.png',
+    sprite: 'monsters/giant_rat.png',
     description: 'A bloated cellar rat with needle teeth.',
     currentHp: 90,
     rewardXp: 55,
@@ -29,7 +29,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Sewer Slime',
     level: 1,
     icon: '🟢',
-    sprite: 'sewer_slime.png',
+    sprite: 'monsters/sewer_slime.png',
     description: 'A wobbling mass that dissolves metal and cloth.',
     currentHp: 120,
     rewardXp: 60,
@@ -46,7 +46,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Cave Bat',
     level: 2,
     icon: '🦇',
-    sprite: 'cave_bat.png',
+    sprite: 'monsters/cave_bat.png',
     description: 'A screeching flier that strikes from the dark.',
     currentHp: 80,
     rewardXp: 75,
@@ -63,7 +63,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Rat Man',
     level: 2,
     icon: '🐀',
-    sprite: 'rat_man.png',
+    sprite: 'monsters/rat_man.png',
     description: 'A mutated, semi-intelligent scavenger hiding in the depths.',
     currentHp: 150,
     rewardXp: 100,
@@ -80,7 +80,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Mold Sporeling',
     level: 2,
     icon: '🍄',
-    sprite: 'mold_sporeling.png',
+    sprite: 'monsters/mold_sporeling.png',
     description: 'A fungus-creature that spreads choking spores.',
     currentHp: 140,
     rewardXp: 95,
@@ -97,7 +97,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Carrion Beetle',
     level: 3,
     icon: '🪲',
-    sprite: 'carrion_beetle.png',
+    sprite: 'monsters/carrion_beetle.png',
     description: 'Hard-shelled scavenger. Its chitin takes a polish.',
     currentHp: 220,
     rewardXp: 130,
@@ -109,12 +109,29 @@ export const MONSTERS: Record<string, Monster> = {
       accuracy: 96, evasion: 8, speed: 105
     }
   },
+  ember_beetle: {
+    id: 'ember_beetle',
+    name: 'Ember Beetle',
+    level: 3,
+    icon: '🔥',
+    sprite: 'ember_beetle.png',
+    description: 'A heat-fed beetle that glows faintly like embers in the dark.',
+    currentHp: 240,
+    rewardXp: 140,
+    stats: {
+      maxHp: 240, maxMp: 0,
+      physicalAttack: 22, physicalDefense: 30, physicalReduction: 0.16,
+      magicalAttack: 26, magicalDefense: 16, magicalReduction: 0.10,
+      critChance: 5, critDamage: 155,
+      accuracy: 92, evasion: 10, speed: 112
+    }
+  },
   sewer_thief: {
     id: 'sewer_thief',
     name: 'Sewer Thief',
     level: 3,
     icon: '🗡️',
-    sprite: 'sewer_thief.png',
+    sprite: 'monsters/sewer_thief.png',
     description: 'A desperate cutpurse hiding among the vermin.',
     currentHp: 180,
     rewardXp: 140,
@@ -131,7 +148,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Plague Rat King',
     level: 3,
     icon: '👑',
-    sprite: 'rat_king.png',
+    sprite: 'monsters/rat_king.png',
     description: 'A bloated, intelligent rodent ruling over the filth of the cellar.',
     currentHp: 450,
     rewardXp: 250,
@@ -152,7 +169,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Goblin Grunt',
     level: 4,
     icon: '👺',
-    sprite: 'goblin_grunt.png',
+    sprite: 'monsters/goblin_grunt.png',
     description: 'A small raider with sharp instincts and rusty blades.',
     currentHp: 380,
     rewardXp: 230,

@@ -42,6 +42,12 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'beetle_carapace_shard', minQuantity: 1, maxQuantity: 2, chance: 0.32 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
   ],
+  ember_beetle: [
+    { itemId: 'beetle_carapace_shard', minQuantity: 1, maxQuantity: 2, chance: 0.28 },
+    { itemId: 'charcoal',            minQuantity: 1, maxQuantity: 2, chance: 0.30 },
+    { itemId: 'ember_beetle_gland',  minQuantity: 1, maxQuantity: 1, chance: 0.10 },
+    { itemId: 'copper_ore',          minQuantity: 1, maxQuantity: 1, chance: 0.12 },
+  ],
   sewer_thief: [
     { itemId: 'wool_cloth', minQuantity: 1, maxQuantity: 2, chance: 0.40 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
@@ -72,18 +78,18 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'wool_cloth', minQuantity: 1, maxQuantity: 2, chance: 0.45 },
     { itemId: 'fetish_totem_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
   ],
-  dire_wolf: [
-    { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 1, chance: 0.40 },
-    { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
-  ],
   goblin_brute: [
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.45 },
     { itemId: 'hard_leather', minQuantity: 1, maxQuantity: 1, chance: 0.12 },
-    { itemId: 'brute_tendon', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
+    { itemId: 'brute_sinew', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
   ],
   scavenger_hyena: [
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.45 },
     { itemId: 'hyena_pelt_strip', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
+  ],
+  dire_wolf: [
+    { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 1, chance: 0.40 },
+    { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
   ],
   werewolf: [
     { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 3, chance: 0.40 },
@@ -104,7 +110,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'tin_ore', minQuantity: 2, maxQuantity: 4, chance: 0.85 },
     { itemId: 'copper_ore', minQuantity: 2, maxQuantity: 5, chance: 1.00 },
     { itemId: 'goblin_scrap_buckle', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
-    { itemId: 'crown_gilded_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
+    { itemId: 'goblin_crown_gilded_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
   ],
 
   // ===== BAND 3: The Deep Mines =====

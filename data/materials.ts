@@ -73,21 +73,14 @@ export const materials: Record<string, MaterialDefinition> = {
         description: 'Burns hotter than charcoal.', baseValue: 85
     },
 
-    // --- 5. MONSTER PARTS & GEMS ---
-    slime_gel: {
-        id: 'slime_gel', name: 'Slime Gel', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'Sticky goo. Useful for coating.', baseValue: 80
-    },
-    wolf_fang: {
-        id: 'wolf_fang', name: 'Wolf Fang', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'Sharp fang used for jagged edges.', baseValue: 120
-    },
+    // --- 5. MONSTER PARTS & GEMS --
     fire_essence: {
         id: 'fire_essence', name: 'Fire Essence', type: 'RESOURCE', category: 'GEM', tier: 3,
         description: 'Warm to the touch. Glows faintly.', baseValue: 900
     },
 
-    // --- TIER 1 SPECIAL & DROPS ---
+    // ===== BAND 1: The Sewer Cellars =====
+    // giant_rat
     vermin_fang: {
         id: 'vermin_fang', name: 'Vermin Fang', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
         description: 'A grimy vermin fang. Traders buy them as proof of pest control.', baseValue: 15, icon: '🦷'
@@ -96,23 +89,49 @@ export const materials: Record<string, MaterialDefinition> = {
         id: 'hide_patch', name: 'Rat Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A tough patch cut from rat-man hide. Good for light armor seams.', baseValue: 140, icon: '🧷'
     },
+    // sewer_slime
+    slime_gel: {
+        id: 'slime_gel', name: 'Slime Gel', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'Sticky goo. Useful for coating.', baseValue: 80
+    },
+    acidic_slime_core: {
+        id: 'acidic_slime_core', name: 'Acidic Slime Core', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A pulsing core that correodes metal. Used for edge coating and poisons.', baseValue: 240, icon: '🧪'
+    },
+    // cave_bat
     bat_sonar_gland: {
         id: 'bat_sonar_gland', name: 'Bat Sonar Gland', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
         description: 'A strange gland that still twitches. Alchemists will pay a little for it.', baseValue: 18, icon: '👂'
     },
+    cave_moss_pad: {
+        id: 'cave_moss_pad', name: 'Cave Moss Pad', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A damp cushion-like moss. Helps reduce friction and impact.', baseValue: 120, icon: '🌿'
+    },
+    // rat_man
     sewer_buckle: {
         id: 'sewer_buckle', name: 'Sewer Buckle', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
         description: 'A rusted buckle pulled from the muck. Worth a few coins as scrap.', baseValue: 12, icon: '🪝'
     },
+    // mold_sporeling
     mold_spore_sac: {
         id: 'mold_spore_sac', name: 'Mold Spore Sac', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A swollen sac packed with caustic spores. Handle with care.', baseValue: 45, icon: '🍄'
     },
+    // carrion_beetle
     beetle_carapace_shard: {
         id: 'beetle_carapace_shard', name: 'Carapace Shard', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A hard carapace shard. Tough, but not yet refined into usable plates.', baseValue: 40, icon: '🪲'
     },
-
+    // ember_beetle
+    ember_beetle_gland: {
+        id: 'ember_beetle_gland', name: 'Ember Beetle Gland', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A warm gland from ember beetles. Adds minor heat resistance.', baseValue: 260, icon: '🔥'
+    },
+    // sewer_thief
+    rusty_amulet_fragment: {
+        id: 'rusty_amulet_fragment', name: 'Rusty Amulet Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A fragment of a cursed trinket. Useful for simple rings and charms.', baseValue: 200, icon: '🧿'
+    },
     // plague_rat_king
     rat_king_crown_shard: {
         id: 'rat_king_crown_shard', name: 'Rat King Crown Shard', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1, 
@@ -123,72 +142,50 @@ export const materials: Record<string, MaterialDefinition> = {
         description: 'A crude mace head bolted from sewer scrap. Heavy, dented, and valuable as salvage.', baseValue: 75, icon: '🔩'
     },
 
-    goblin_scrap_buckle: {
-        id: 'goblin_scrap_buckle', name: 'Goblin Scrap Buckle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A crude but sturdy buckle. Perfect for belts and straps.', baseValue: 160, icon: '🪝'
-    },
-    spider_silk_bundle: {
-        id: 'spider_silk_bundle', name: 'Spider Silk Bundle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'Fine silk thread. Used to reinforce cloth and bindings.', baseValue: 220, icon: '🕸️'
-    },
-    acidic_slime_core: {
-        id: 'acidic_slime_core', name: 'Acidic Slime Core', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A pulsing core that correodes metal. Used for edge coating and poisons.', baseValue: 240, icon: '🧪'
-    },
-    rusty_amulet_fragment: {
-        id: 'rusty_amulet_fragment', name: 'Rusty Amulet Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A fragment of a cursed trinket. Useful for simple rings and charms.', baseValue: 200, icon: '🧿'
-    },
-    ember_beetle_gland: {
-        id: 'ember_beetle_gland', name: 'Ember Beetle Gland', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A warm gland from ember beetles. Adds minor heat resistance.', baseValue: 260, icon: '🔥'
-    },
-    bone_splint: {
-        id: 'bone_splint', name: 'Bone Splint', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'Small bones shaped as splints. Good for reinforcing leggings and boots.', baseValue: 150, icon: '🦴'
-    },
-    cave_moss_pad: {
-        id: 'cave_moss_pad', name: 'Cave Moss Pad', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A damp cushion-like moss. Helps reduce friction and impact.', baseValue: 120, icon: '🌿'
-    },
-
-    // --- TIER 2 SPECIAL & DROPS ---
+    // ===== BAND 2: The Goblin Plains =====
+    // goblin_grunt: 'copper_ore','tin_ore', 'leather_strips'
+    // goblin_slinger
     goblin_sling_pouch: {
         id: 'goblin_sling_pouch', name: 'Goblin Sling Pouch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'A leather pouch used by slingers. Handy for belt accessory slots.', baseValue: 340, icon: '👑'
     },
+    // goblin_shaman
     fetish_totem_shard: {
         id: 'fetish_totem_shard', name: 'Totem Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
         description: 'A shard of a goblin shaman\'s focus. Resonates with minor spells.', baseValue: 380, icon: '🪵'
     },
-    brute_tendon: {
-        id: 'brute_tendon', name: 'Brute Tendon', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
-        description: 'Incredibly tough tendon. Ideal for heavy-duty reinforcement.', baseValue: 400, icon: '🎗️'
+    // goblin_brute
+    brute_sinew: {
+        id: 'brute_sinew', name: 'Brute Sinew', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
+        description: 'Incredibly tough sinew. Ideal for heavy-duty reinforcement.', baseValue: 400, icon: '🎗️'
     },
+    // scavenger_hyena
     hyena_pelt_strip: {
         id: 'hyena_pelt_strip', name: 'Hyena Pelt Strip', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'Coarse fur strip. Used for warm armor linings.', baseValue: 370, icon: '🐕'
     },
-    bandit_emblem_ring: {
-        id: 'bandit_emblem_ring', name: 'Bandit Emblem Ring', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
-        description: 'A brass ring bearing a bandit clan mark.', baseValue: 450, icon: '💍'
+    // dire_wolf
+    wolf_fang: {
+        id: 'wolf_fang', name: 'Wolf Fang', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'Sharp fang used for jagged edges.', baseValue: 120
     },
-    sharpened_shiv_fragment: {
-        id: 'sharpened_shiv_fragment', name: 'Shiv Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
-        description: 'A broken but wicked-sharp blade tip.', baseValue: 390, icon: '🗡️'
-    },
+    // werewolf : wolf_fang, hard_leather
+    // bandit_cutthroat: 'wool_cloth', 'leather_strips', 'hard_leather', 'rusty_amulet_fragment'
+    // bandit_archer
     bowstring_bundle: {
         id: 'bowstring_bundle', name: 'Bowstring Bundle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'High-tension strings. Excellent for DEX-focused equipment.', baseValue: 410, icon: '🧵'
     },
-    crown_gilded_shard: {
-        id: 'crown_gilded_shard', name: 'Gilded Crown Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
+    // goblin_king
+    goblin_crown_gilded_shard: {
+        id: 'goblin_crown_gilded_shard', name: 'Gilded Crown Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
         description: 'A piece of the Goblin King\'s crown. Highly sought by collectors.', baseValue: 600, icon: '👑'
     },
-    king_blood_seal: {
-        id: 'king_blood_seal', name: 'King\'s Blood Seal', type: 'RESOURCE', category: 'GEM', tier: 2,
-        description: 'A sigil stained with royal goblin blood. Boosts rarity chances.', baseValue: 650, icon: '🩸'
+    goblin_scrap_buckle: {
+        id: 'goblin_scrap_buckle', name: 'Goblin Scrap Buckle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'A crude but sturdy buckle. Perfect for belts and straps.', baseValue: 160, icon: '🪝'
     },
+    // ===== BAND 3: The Deep Mines =====
     kobold_scale: {
         id: 'kobold_scale', name: 'Kobold Scale', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'A rough scale from tunnel kobolds. Great for flexible armor plates.', baseValue: 320, icon: '🟫'
@@ -228,6 +225,19 @@ export const materials: Record<string, MaterialDefinition> = {
     queen_thread_spool: {
         id: 'queen_thread_spool', name: 'Queen\'s Thread', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'Luminous thread from the Brood Mother. Increases rarity chances.', baseValue: 580, icon: '🧶'
+    },
+    // ===== BAND 3: The Deep Mines =====
+    // cave_spider
+    spider_silk_bundle: {
+        id: 'spider_silk_bundle', name: 'Spider Silk Bundle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'Fine silk thread. Used to reinforce cloth and bindings.', baseValue: 220, icon: '🕸️'
+    },
+
+    // ===== BAND 4: The Cursed Ruins =====
+    // skeleton_soldier
+    bone_splint: {
+        id: 'bone_splint', name: 'Bone Splint', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
+        description: 'Small bones shaped as splints. Good for reinforcing leggings and boots.', baseValue: 150, icon: '🦴'
     },
 
     // --- TIER 3 SPECIAL & DROPS ---
