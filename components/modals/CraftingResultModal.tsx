@@ -59,6 +59,10 @@ const CraftingResultModal = () => {
 
     if (!item || !item.equipmentData || !masteryInfo) return null;
 
+    const playClick = () => {
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+    };
+
     const data = item.equipmentData;
     const recipe = EQUIPMENT_ITEMS.find(r => r.id === data.recipeId);
     const imageUrl = data.image 
@@ -92,6 +96,7 @@ const CraftingResultModal = () => {
 
     const handleFinalize = () => {
         if (isLockedByTutorial) return;
+        playClick();
         if (state.tutorialStep === 'FINALIZE_FORGE_GUIDE') {
             actions.setTutorialStep('SHOP_INTRO_DIALOG');
         }
@@ -142,7 +147,7 @@ const CraftingResultModal = () => {
                             
                             <img src={imageUrl} className="w-10 h-10 md:w-20 md:h-20 object-contain drop-shadow-2xl z-20 relative" />
                             
-                            <div className={`absolute -bottom-1 -right-1 md:bottom-0 md:right-0 z-30 px-1 md:px-1.5 py-0.5 rounded-full border border-stone-700 bg-stone-900 shadow-xl flex items-center gap-1`}>
+                            <div className={`absolute -bottom-1 -right-1 md:bottom-2 md:right-2 z-30 px-1 md:px-1.5 py-0.5 rounded-full border border-stone-700 bg-stone-900 shadow-xl flex items-center gap-1`}>
                                 <Star className={`w-2 h-2 md:w-3 md:h-3 fill-current ${masteryInfo.textClass}`} />
                                 <span className={`text-[6px] md:text-[9px] font-black uppercase tracking-tighter ${masteryInfo.textClass}`}>{masteryInfo.label}</span>
                             </div>

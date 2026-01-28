@@ -98,11 +98,16 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     };
   }, [text]);
 
+  const playClickSfx = () => {
+      window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+  };
+
   const handleSkipTyping = () => {
     if (isTyping) {
       if (timerRef.current) clearInterval(timerRef.current);
       setDisplayedIndex(text.length);
       setIsTyping(false);
+      playClickSfx();
     }
   };
 
@@ -145,6 +150,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
                 e.stopPropagation(); 
                 updateTooltipPosition(e); 
                 setShowItemTooltip(!showItemTooltip); 
+                playClickSfx();
             }}
           >
             {visiblePart}
@@ -262,7 +268,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   );
 
   return (
-    <div className={className} onClick={() => showItemTooltip && setShowItemTooltip(false)}>
+    <div className={className} onClick={() => { if (showItemTooltip) { setShowItemTooltip(false); playClickSfx(); } }}>
       {tooltipElement}
 
       <div 
@@ -305,7 +311,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
               {options.map((option, idx) => (
                 <button
                   key={idx}
-                  onClick={(e) => { e.stopPropagation(); option.action(); }}
+                  onClick={(e) => { e.stopPropagation(); playClickSfx(); option.action(); }}
                   disabled={option.disabled}
                   className={`px-4 md:px-10 py-1.5 md:py-4 rounded-lg md:rounded-xl font-black text-[9px] md:text-sm flex items-center gap-1.5 md:gap-3 transition-all transform active:scale-95 border shadow-2xl ${
                     option.disabled 

@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { 
   Sword, Shield, Activity, Star, Zap, Brain, Target, Wind, 
@@ -48,6 +49,10 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
         key => pendingAllocated[key] !== mercenary.allocatedStats[key]
     );
   }, [pendingAllocated, mercenary.allocatedStats]);
+
+  const playClick = () => {
+    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+  };
 
   const renderStatRow = (icon: React.ReactNode, label: string, baseValue: number, nextValue: number, isPercent = false) => {
     return (
@@ -132,14 +137,14 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
                 {!isReadOnly && (
                   <div className="flex flex-col gap-1">
                     <button
-                      onClick={() => onModifyStat(stat.key, 1)}
+                      onClick={() => { playClick(); onModifyStat(stat.key, 1); }}
                       disabled={pendingPoints <= 0}
                       className="w-full h-4 md:h-7 bg-stone-800 hover:bg-amber-600 text-stone-500 hover:text-white rounded transition-all disabled:opacity-20 flex items-center justify-center shadow-sm"
                     >
                       <Plus className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
                     </button>
                     <button
-                      onClick={() => onModifyStat(stat.key, -1)}
+                      onClick={() => { playClick(); onModifyStat(stat.key, -1); }}
                       disabled={pendingAllocated[stat.key] <= mercenary.allocatedStats[stat.key]}
                       className="w-full h-4 md:h-7 bg-stone-800 hover:bg-red-900 text-stone-500 hover:text-white rounded transition-all disabled:opacity-20 flex items-center justify-center shadow-sm"
                     >
@@ -156,13 +161,13 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
       {isModified && !isReadOnly && (
           <div className="flex gap-2 animate-in slide-in-from-bottom-2 duration-300">
               <button 
-                onClick={onReset}
+                onClick={() => { playClick(); onReset(); }}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-stone-200 rounded-xl border border-stone-700 transition-all text-[10px] font-black uppercase tracking-widest"
               >
                   <RotateCcw className="w-3.5 h-3.5" /> Discard
               </button>
               <button 
-                onClick={onSave}
+                onClick={() => { playClick(); onSave(); }}
                 className="flex-[2] flex items-center justify-center gap-2 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl border-b-4 border-amber-800 shadow-xl transition-all active:translate-y-0.5 text-[10px] font-black uppercase tracking-widest"
               >
                   <Save className="w-3.5 h-3.5" /> Save Attributes

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Package, Coins, Lock } from 'lucide-react';
 import { getAssetUrl } from '../../../../utils';
@@ -39,6 +40,7 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
 
     const handleQuickBuy = () => {
         if (isSoldOut || isLocked || !canAfford) return;
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
         onAdd(item.id, multiplier);
     };
 

@@ -19,10 +19,10 @@ export const getAssetUrl = (filename: string, folder?: string): string => {
 
 /**
  * sfx 폴더 내의 오디오 에셋 URL을 생성합니다.
- * 경로가 assets/sfx/로 고정되어 있습니다.
+ * 경로가 assets/audio/sfx/로 고정되어 있습니다.
  */
 export const getAudioUrl = (filename: string): string => {
-  const baseUrl = 'https://raw.githubusercontent.com/cryingdev/lockharts-forge/sub/assets/sfx/';
+  const baseUrl = 'https://raw.githubusercontent.com/cryingdev/lockharts-forge/sub/assets/audio/sfx/';
   const cleanFile = filename.startsWith('/') ? filename.slice(1) : filename;
   return `${baseUrl}${cleanFile}?v=${SESSION_VERSION}`;
 };

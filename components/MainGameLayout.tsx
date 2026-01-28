@@ -184,10 +184,6 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [showRightArrow, setShowRightArrow] = useState(false);
   const prevDayRef = useRef(state.stats.day);
 
-  // SFX Buffer Cache for better performance with AudioContext
-  const sfxBufferRef = useRef<AudioBuffer | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-
   // Background Services
   useShopService();
   useDungeonService();
@@ -231,45 +227,6 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
-
-  const playTabSfx = useCallback(async () => {
-    const { masterVolume, sfxVolume, masterEnabled, sfxEnabled } = state.settings.audio;
-    if (!masterEnabled || !sfxEnabled) return;
-    
-    // Web Audio API를 사용하여 OS 미디어 컨트롤러에 등록되지 않도록 재생
-    if (!audioContextRef.current) {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        audioContextRef.current = new AudioCtx();
-    }
-    const ctx = audioContextRef.current;
-    
-    // Autoplay 차단 해제
-    if (ctx.state === 'suspended') await ctx.resume();
-
-    // Media Session 초기화
-    if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = null;
-        navigator.mediaSession.playbackState = 'none';
-    }
-
-    try {
-        if (!sfxBufferRef.current) {
-            const response = await fetch(getAssetUrl('shutter_open.mp3', 'audio/sfx'));
-            const arrayBuffer = await response.arrayBuffer();
-            sfxBufferRef.current = await ctx.decodeAudioData(arrayBuffer);
-        }
-
-        const source = ctx.createBufferSource();
-        source.buffer = sfxBufferRef.current;
-        const gainNode = ctx.createGain();
-        gainNode.gain.value = masterVolume * sfxVolume;
-        source.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        source.start(0);
-    } catch (e) {
-        console.debug("SFX play failed", e);
-    }
-  }, [state.settings.audio]);
 
   const completedExpeditionsCount = state.activeExpeditions.filter(exp => exp.status === 'COMPLETED').length;
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
@@ -363,7 +320,8 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                 onClick={() => { 
                   if (!state.unlockedTabs.includes(tab.id) && !(tab.id === 'SHOP' && state.tutorialStep)) return actions.showToast("Facility locked."); 
                   
-                  playTabSfx();
+                  // 효과음 출력
+                  window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'tab_switch.mp3' } }));
 
                   if (state.tutorialStep === 'MARKET_GUIDE' && tab.id === 'MARKET') { actions.setTutorialStep('BROWSE_GOODS_GUIDE'); actions.setTutorialScene('MARKET'); } 
                   else if (state.tutorialStep === 'FORGE_TAB_GUIDE' && tab.id === 'FORGE') actions.setTutorialStep('SELECT_SWORD_GUIDE'); 

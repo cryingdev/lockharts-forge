@@ -21,6 +21,9 @@ import { SPECIAL_RECRUITS_REGISTRY } from '../../../data/mercenaries';
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { EquipmentSlotType } from '../../../types/inventory';
 
+// DungeonScene.ts의 이동 애니메이션 시간과 일치시킵니다.
+const MOVE_DURATION = 300;
+
 // Memoized to prevent re-renders during D-pad dragging
 const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onSelectMercenary: (id: string) => void }) => {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -31,7 +34,9 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl text-stone-300 hover:text-amber-400 transition-all w-fit group"
             >
-                <Users className={`w-4 h-4 ${isExpanded ? 'text-amber-500' : 'text-stone-500'}`} />
+                <div className="relative">
+                   <Users className={`w-4 h-4 ${isExpanded ? 'text-amber-500' : 'text-stone-500'}`} />
+                </div>
                 <span className="text-[10px] font-black uppercase tracking-widest hidden xs:block">Squad Status</span>
                 {isExpanded ? <ChevronUp className="w-3 h-3 opacity-50" /> : <ChevronDown className="w-3 h-3 opacity-50" />}
             </button>
@@ -165,7 +170,73 @@ const AssaultNavigator = () => {
     const [showLootOverlay, setShowLootOverlay] = useState(false);
     const [lastMsg, setLastMsg] = useState("");
     const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
-    const [hasInteractedWithNpc, setHasInteractedWithNpc] = useState(false); // New: Track if player chose to defer NPC rescue
+    const [hasInteractedWithNpc, setHasInteractedWithNpc] = useState(false);
+
+    // 함정 밟았는지 확인하기 위한 이전 위치 추적
+    const lastPosRef = useRef(session?.playerPos ? { ...session.playerPos } : { x: -1, y: -1 });
+
+    useEffect(() => {
+        if (!session) return;
+        
+        const { x, y } = session.playerPos;
+        const oldPos = lastPosRef.current;
+        
+        // 위치가 변경되었을 때만 트랩 체크
+        if (x !== oldPos.x || y !== oldPos.y) {
+            const currentTile = session.grid[y][x];
+            // 함정 방이며 해당 메시지가 함정 발동을 알릴 때 효과 재생
+            if (currentTile === 'TRAP' && session.lastActionMessage?.includes('springs')) {
+                // 이동이 끝난 후(300ms) 효과 재생
+                setTimeout(() => {
+                    const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
+                    if (scene) scene.playTrapEffect();
+                    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'trap_triggered.mp3' } }));
+                }, MOVE_DURATION);
+            }
+            lastPosRef.current = { x, y };
+        }
+    }, [session?.playerPos, session?.lastActionMessage]);
+
+    // 골드 및 아이템 획득 상태 추적
+    const prevGoldRef = useRef(session?.goldCollected || 0);
+    const prevLootRef = useRef<any[]>(session?.collectedLoot || []);
+
+    useEffect(() => {
+        if (!session) return;
+
+        const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
+
+        // 1. 골드 획득 처리
+        if (session.goldCollected > prevGoldRef.current) {
+            const diff = session.goldCollected - prevGoldRef.current;
+            // 이동 완료 후 실행
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'get_coin.mp3' } }));
+                if (scene) scene.showFloatingGold(diff);
+            }, MOVE_DURATION);
+        }
+        prevGoldRef.current = session.goldCollected;
+
+        // 2. 아이템 획득 처리 (정밀 대조)
+        const currentLoot = session.collectedLoot || [];
+        const prevLoot = prevLootRef.current;
+
+        currentLoot.forEach(item => {
+            const prevItem = prevLoot.find(p => p.id === item.id);
+            const diff = item.count - (prevItem?.count || 0);
+            
+            if (diff > 0) {
+                // 새로운 아이템이나 수량 증가 발견 -> 이동 완료 후 실행
+                setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'found_item.mp3' } }));
+                    if (scene) scene.showFloatingItem(item.id, diff);
+                }, MOVE_DURATION);
+            }
+        });
+        
+        prevLootRef.current = [...currentLoot.map(i => ({ ...i }))];
+        
+    }, [session?.goldCollected, session?.collectedLoot]);
 
     // --- D-pad & Camera Zoom State ---
     const [dpadTransform, setDpadTransform] = useState(() => {
@@ -204,31 +275,35 @@ const AssaultNavigator = () => {
     const isVictory = session?.encounterStatus === 'VICTORY';
     const currentRoom = session ? session.grid[session.playerPos.y][session.playerPos.x] : null;
 
-    // Reset NPC interaction state when moving to a new tile
     useEffect(() => {
         setHasInteractedWithNpc(false);
     }, [session?.playerPos.x, session?.playerPos.y]);
 
-    // 조우 시 자동 전투 진입 및 연출 로직
     useEffect(() => {
         if (isEncountered && currentRoom && (currentRoom === 'ENEMY' || (currentRoom === 'BOSS' && !session.isBossDefeated))) {
             const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
-            if (scene) {
-                scene.playEncounterEffect();
-            }
-
-            const timer = setTimeout(() => {
-                actions.startCombatManual();
-            }, 2000); // 2초 대기 후 전투 시작
             
-            return () => clearTimeout(timer);
+            // 이동이 끝난 후 조우 연출 시작
+            const effectTimer = setTimeout(() => {
+                if (scene) scene.playEncounterEffect();
+                // Play ambush sound effect
+                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'ambush.mp3' } }));
+            }, MOVE_DURATION);
+
+            // 전투 시작 타이머도 이동 시간을 고려하여 조정 (2000 -> 2300)
+            const combatTimer = setTimeout(() => {
+                actions.startCombatManual();
+            }, 2000 + MOVE_DURATION); 
+            
+            return () => {
+                clearTimeout(effectTimer);
+                clearTimeout(combatTimer);
+            };
         }
     }, [isEncountered, currentRoom, session?.isBossDefeated, actions]);
 
-    // 전투 종료 후 화면 복구 로직
     const prevIsBattleRef = useRef(false);
     useEffect(() => {
-        // BATTLE 상태였다가 해제된 경우 (승리/후퇴 등)
         if (prevIsBattleRef.current && !isBattle) {
             const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
             if (scene) {
@@ -365,16 +440,15 @@ const AssaultNavigator = () => {
         if (isOnNPCTile) return { speaker: (rescueTarget?.name || "Survivor"), text: lastMsg };
         if (isEncountered) {
             if (currentRoom === 'BOSS' && session.isBossDefeated) return { speaker: "Inner Voice", text: "The terror is gone, but the air still trembles. We've taken what we came for. Time to leave?" };
-            return { speaker: "Inner Voice", text: lastMsg };
+            return { speaker: "Inner Voice", text: session.lastActionMessage || lastMsg };
         }
         if (isVictory) return { speaker: "Frontline Shout", text: "They're all down! Sector secured, Lockhart!" };
         if (isStairs) return { speaker: "The Path Ahead", text: lastMsg };
         return { speaker: "Exploration Log", text: lastMsg };
     };
 
-    const { speaker, text } = getDialogue();
+    const { speaker, text: dialogueText } = getDialogue();
 
-    // 몬스터 조우 중에는 다이얼로그 박스를 가립니다. (연출 집중)
     const isEncounterAnimationActive = isEncountered && currentRoom && (currentRoom === 'ENEMY' || (currentRoom === 'BOSS' && !session.isBossDefeated));
 
     return (
@@ -529,7 +603,7 @@ const AssaultNavigator = () => {
                             <DialogueBox 
                                 speaker={speaker}
                                 speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.profileImage || 'default.png', 'mercenaries') : undefined}
-                                text={text}
+                                text={dialogueText}
                                 options={isOnNPCTile ? [
                                     { label: "GET THEM TO SAFETY", action: () => { 
                                         if (dungeon?.rescueMercenaryId) {

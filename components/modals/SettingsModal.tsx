@@ -28,6 +28,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
 
     const audio = state.settings.audio;
 
+    const playClick = () => {
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+    };
+
     const handleSlotAction = (slotIndex: number) => {
         if (slModal.mode === 'SAVE') {
             actions.saveGame(slotIndex);
@@ -53,10 +57,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
     };
 
     const toggleLogTicker = () => {
+        playClick();
         actions.updateSettings({ showLogTicker: !state.settings.showLogTicker });
     };
 
     const toggleMasterAudio = () => {
+        playClick();
         actions.updateSettings({
             audio: {
                 ...audio,
@@ -110,7 +116,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                             <Settings className="w-6 h-6 text-amber-500 animate-spin-slow" />
                             <h3 className="font-bold font-serif uppercase tracking-widest text-base text-stone-100">System Menu</h3>
                         </div>
-                        <button onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-6 h-6" /></button>
+                        <button onClick={() => { playClick(); onClose(); }} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-6 h-6" /></button>
                     </div>
 
                     {/* Menu List */}
@@ -120,7 +126,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                             <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Persistence</h4>
                             <div className="flex flex-col gap-2.5">
                                 <button
-                                    onClick={() => setSlModal({ isOpen: true, mode: 'SAVE' })}
+                                    onClick={() => { playClick(); setSlModal({ isOpen: true, mode: 'SAVE' }); }}
                                     className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-stone-800 hover:border-amber-500 hover:bg-stone-750 text-stone-300 transition-all shadow-md active:scale-95"
                                 >
                                     <Save className="w-5 h-5 text-amber-500" />
@@ -130,7 +136,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                                     </div>
                                 </button>
                                 <button
-                                    onClick={() => setSlModal({ isOpen: true, mode: 'LOAD' })}
+                                    onClick={() => { playClick(); setSlModal({ isOpen: true, mode: 'LOAD' }); }}
                                     className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-stone-800 hover:border-stone-500 hover:bg-stone-750 text-stone-300 transition-all shadow-md active:scale-95"
                                 >
                                     <Upload className="w-5 h-5 text-indigo-400" />
@@ -199,7 +205,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                         {/* Exit */}
                         <div className="pt-2 pb-4">
                             <button
-                                onClick={onQuit}
+                                onClick={() => { playClick(); onQuit(); }}
                                 className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-red-950/10 hover:border-red-500 hover:bg-red-950/20 text-red-400 transition-all"
                             >
                                 <div className="text-red-500"><LogOut className="w-5 h-5" /></div>
@@ -218,7 +224,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
             <SaveLoadModal 
                 isOpen={slModal.isOpen}
                 mode={slModal.mode}
-                onClose={() => setSlModal({ ...slModal, isOpen: false })}
+                onClose={() => { playClick(); setSlModal({ ...slModal, isOpen: false }); }}
                 onAction={handleSlotAction}
             />
 
@@ -228,7 +234,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                 message="Loading this file will discard any unsaved progress in your current session. Do you wish to continue?"
                 confirmLabel="Confirm Load"
                 onConfirm={handleConfirmLoad}
-                onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })}
+                onCancel={() => { playClick(); setLoadConfirm({ ...loadConfirm, isOpen: false }); }}
             />
         </>
     );

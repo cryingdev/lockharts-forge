@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useMarket } from './hooks/useMarket';
 import { GarrickSprite } from './ui/GarrickSprite';
@@ -31,6 +32,10 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
     const isOverBudget = totalCost > state.stats.gold;
 
+    const playClick = () => {
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+    };
+
     return (
         <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center px-safe">
             <style>{`
@@ -50,7 +55,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
             {/* 튜토리얼 중에는 마지막 단계(LEAVE_MARKET_GUIDE)에서만 Back 버튼 노출 */}
             {(!isLocalTutorial || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
-                <button onClick={handlers.handleBackToForge} data-tutorial-id="MARKET_BACK_BUTTON" className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 shadow-2xl backdrop-blur-md transition-all active:scale-90 group">
+                <button onClick={() => { playClick(); handlers.handleBackToForge(); }} data-tutorial-id="MARKET_BACK_BUTTON" className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 shadow-2xl backdrop-blur-md transition-all active:scale-90 group">
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1" /> <span className="text-xs font-black uppercase tracking-widest">Back</span>
                 </button>
             )}
@@ -75,9 +80,9 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     {!isLocalTutorial && (
                         <div className={`flex flex-col items-end gap-2 w-full px-4 py-2 pointer-events-auto transition-opacity ${pendingGiftItem ? 'opacity-30 grayscale pointer-events-none' : ''}`}>
                             <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3 w-full">
-                                <button onClick={handlers.handleTalk} data-tutorial-id="GARRICK_TALK_BUTTON" className="flex items-center gap-2 px-4 py-2 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-amber-500 transition-all shadow-xl active:scale-95"><MessageSquare className="w-4 h-4 text-amber-500" /><span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Talk</span></button>
-                                <button onClick={() => market.setShowGiftModal(true)} className="flex items-center gap-2 px-4 py-2 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-pink-500 transition-all shadow-xl active:scale-95"><Gift className="w-4 h-4 text-pink-500" /><span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Gift</span></button>
-                                <button onClick={() => market.setViewMode('CATALOG')} data-tutorial-id="BROWSE_GOODS_BUTTON" className="flex items-center gap-2 px-6 py-2 bg-amber-700/90 border border-amber-500 rounded-xl shadow-xl active:scale-95"><ShoppingBag className="w-4 h-4 text-white" /><span className="font-black text-[9px] text-white uppercase tracking-widest">Browse Goods</span></button>
+                                <button onClick={() => { playClick(); handlers.handleTalk(); }} data-tutorial-id="GARRICK_TALK_BUTTON" className="flex items-center gap-2 px-4 py-2 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-amber-500 transition-all shadow-xl active:scale-95"><MessageSquare className="w-4 h-4 text-amber-500" /><span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Talk</span></button>
+                                <button onClick={() => { playClick(); market.setShowGiftModal(true); }} className="flex items-center gap-2 px-4 py-2 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-pink-500 transition-all shadow-xl active:scale-95"><Gift className="w-4 h-4 text-pink-500" /><span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Gift</span></button>
+                                <button onClick={() => { playClick(); market.setViewMode('CATALOG'); }} data-tutorial-id="BROWSE_GOODS_BUTTON" className="flex items-center gap-2 px-6 py-2 bg-amber-700/90 border border-amber-500 rounded-xl shadow-xl active:scale-95"><ShoppingBag className="w-4 h-4 text-white" /><span className="font-black text-[9px] text-white uppercase tracking-widest">Browse Goods</span></button>
                             </div>
                         </div>
                     )}
@@ -92,7 +97,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     <div className="w-full h-full bg-stone-900/95 backdrop-blur-xl border-2 border-stone-700 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden">
                         <div className="bg-stone-850 p-4 border-b border-stone-800 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
-                                {!isLocalTutorial && <button onClick={() => market.setViewMode('INTERACTION')} className="bg-stone-800 p-2 rounded-xl border border-stone-700 active:scale-90"><ArrowLeft className="w-5 h-5 text-stone-300" /></button>}
+                                {!isLocalTutorial && <button onClick={() => { playClick(); market.setViewMode('INTERACTION'); }} className="bg-stone-800 p-2 rounded-xl border border-stone-700 active:scale-90"><ArrowLeft className="w-5 h-5 text-stone-300" /></button>}
                                 <div>
                                     <h2 className="text-xl font-black text-stone-100 font-serif uppercase tracking-tight">Garrick's Wares</h2>
                                     <div className="flex items-center gap-2 bg-stone-950 px-2 py-0.5 rounded border border-white/5 mt-1"><Coins className="w-3 h-3 text-amber-50" /><span className="text-[10px] font-mono font-black text-stone-300">{state.stats.gold.toLocaleString()} G</span></div>
@@ -100,7 +105,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                             </div>
                             {!isCartOpen && (
                                 <button 
-                                    onClick={() => !isOverBudget && handlers.handleBuy()} 
+                                    onClick={() => { playClick(); if(!isOverBudget) handlers.handleBuy(); }} 
                                     disabled={market.cartItemCount === 0 || isOverBudget}
                                     data-tutorial-id="PAY_NOW_BUTTON" 
                                     className={`relative flex items-center gap-2 md:gap-3 px-3 md:px-5 py-1.5 md:py-2 rounded-xl border transition-all ${
@@ -125,7 +130,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                             <MarketCatalog 
                                 groups={categorizedMarketItems} 
                                 collapsed={collapsedSections} 
-                                onToggle={(id) => market.setCollapsedSections(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id])} 
+                                onToggle={(id) => { playClick(); market.setCollapsedSections(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]); }} 
                                 stock={state.marketStock} 
                                 cart={cart} 
                                 inventory={state.inventory} 
@@ -133,11 +138,11 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                 affinity={state.garrickAffinity} 
                                 gold={state.stats.gold}
                                 onAdd={handlers.addToCart} 
-                                onSetMultiplier={(id, v) => market.setItemMultipliers(p => ({ ...p, [id]: v }))} 
+                                onSetMultiplier={(id, v) => { playClick(); market.setItemMultipliers(p => ({ ...p, [id]: v })); }} 
                             />
                             <ShoppingCartDrawer isOpen={isCartOpen} cart={cart} total={totalCost} gold={state.stats.gold} onRemove={handlers.removeFromCart} onAdd={handlers.addToCart} onDelete={handlers.deleteFromCart} onBuy={handlers.handleBuy} />
                         </div>
-                        <button onClick={() => { if (!isCartOpen && state.tutorialStep === 'OPEN_SHOPPING_CART') actions.setTutorialStep('CLOSE_SHOPPING_CART'); else if (isCartOpen && state.tutorialStep === 'CLOSE_SHOPPING_CART') actions.setTutorialStep('PAY_NOW'); market.setIsCartOpen(!isCartOpen); }} data-tutorial-id="CART_TOGGLE" className={`absolute top-1/2 right-0 w-8 h-20 -translate-y-1/2 border-y border-l transition-all z-[2100] rounded-l-xl flex flex-col items-center justify-center ${isCartOpen ? 'translate-x-[-192px] md:translate-x-[-288px]' : ''} ${market.cartItemCount > 0 || ['OPEN_SHOPPING_CART', 'CLOSE_SHOPPING_CART'].includes(state.tutorialStep || '') ? 'bg-amber-600 text-white border-amber-400 animate-pulse' : 'bg-stone-800 text-stone-400 border-stone-600'}`}>{isCartOpen ? <ChevronRight className="w-4 h-4"/> : <ChevronLeft className="w-4 h-4"/>}<ShoppingCart className="w-3 h-3 mt-1"/></button>
+                        <button onClick={() => { playClick(); if (!isCartOpen && state.tutorialStep === 'OPEN_SHOPPING_CART') actions.setTutorialStep('CLOSE_SHOPPING_CART'); else if (isCartOpen && state.tutorialStep === 'CLOSE_SHOPPING_CART') actions.setTutorialStep('PAY_NOW'); market.setIsCartOpen(!isCartOpen); }} data-tutorial-id="CART_TOGGLE" className={`absolute top-1/2 right-0 w-8 h-20 -translate-y-1/2 border-y border-l transition-all z-[2100] rounded-l-xl flex flex-col items-center justify-center ${isCartOpen ? 'translate-x-[-192px] md:translate-x-[-288px]' : ''} ${market.cartItemCount > 0 || ['OPEN_SHOPPING_CART', 'CLOSE_SHOPPING_CART'].includes(state.tutorialStep || '') ? 'bg-amber-600 text-white border-amber-400 animate-pulse' : 'bg-stone-800 text-stone-400 border-stone-600'}`}>{isCartOpen ? <ChevronRight className="w-4 h-4"/> : <ChevronLeft className="w-4 h-4"/>}<ShoppingCart className="w-3 h-3 mt-1"/></button>
                     </div>
                 </div>
             )}
@@ -152,7 +157,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                                 </div>
                                 <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">Select Gift for Garrick</h3>
                             </div>
-                            <button onClick={() => market.setShowGiftModal(false)} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500">
+                            <button onClick={() => { playClick(); market.setShowGiftModal(false); }} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>

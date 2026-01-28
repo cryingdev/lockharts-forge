@@ -48,6 +48,10 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
 
   if (!mercenary || !currentStats) return null;
 
+  const playClick = () => {
+    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+  };
+
   const isHired = mercenary.status !== 'VISITOR' && mercenary.status !== 'DEAD';
 
   const effectiveFinalStats = preview?.stats || currentStats;
@@ -57,7 +61,7 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-2 md:p-6 py-[10dvh] md:py-6 animate-in fade-in duration-300 overflow-hidden">
       <button
-        onClick={onClose}
+        onClick={() => { playClick(); onClose(); }}
         className="fixed top-4 right-4 z-[1050] p-1.5 md:p-3 bg-red-900/30 hover:bg-red-600 rounded-full text-red-500 hover:text-white border border-red-500/30 transition-all shadow-2xl backdrop-blur-md active:scale-90"
       >
         <X className="w-4 h-4 md:w-6 md:h-6" />

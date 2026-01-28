@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../../context/GameContext';
 import { createRandomMercenary, getUnmetNamedMercenary } from '../../../utils/mercenaryGenerator';
@@ -49,7 +50,10 @@ const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: b
     const cp = calculateMercenaryPower(merc);
 
     return (
-        <div onClick={onClick} className={`group relative bg-stone-900 border-2 ${isHired ? 'border-amber-600/20 hover:border-amber-500/50 shadow-lg' : 'border-stone-800 hover:border-stone-700'} p-2 rounded-xl cursor-pointer transition-all active:scale-[0.98] ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}>
+        <div onClick={() => {
+            window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+            onClick();
+        }} className={`group relative bg-stone-900 border-2 ${isHired ? 'border-amber-600/20 hover:border-amber-500/50 shadow-lg' : 'border-stone-800 hover:border-stone-700'} p-2 rounded-xl cursor-pointer transition-all active:scale-[0.98] ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}>
             {/* Top Row: Avatar & Mini Tags */}
             <div className="flex justify-between items-start mb-2">
                 <div className="relative">
@@ -74,7 +78,7 @@ const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: b
                     {/* Combat Power Tag (New) */}
                     <div className="flex items-center gap-1 bg-amber-950/20 px-1.5 py-0 rounded border border-amber-900/30">
                         <Sword className="w-2.5 h-2.5 text-amber-500" />
-                        <span className="text-[9px] font-mono text-amber-400 font-black">{cp}</span>
+                        <span className="text-[9px] font-mono text-pink-400 font-black">{cp}</span>
                     </div>
                     
                     {/* Level Tag */}
@@ -118,7 +122,7 @@ const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: b
                     <span className="font-black">{Math.floor(merc.currentHp)}</span>
                 </div>
                 <div className="w-full bg-stone-950 h-0.5 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-600/80 transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, (merc.currentHp / (merc.maxHp || 1)) * 100))}%` }} />
+                    <div className={`h-full bg-red-600/80 transition-all duration-500`} style={{ width: `${Math.min(100, Math.max(0, (merc.currentHp / (merc.maxHp || 1)) * 100))}%` }} />
                 </div>
                 
                 <div className="flex justify-between items-center text-[7px] font-mono text-stone-600 px-0.5">
@@ -126,7 +130,7 @@ const MercenaryCard: React.FC<{ merc: Mercenary, onClick: () => void, isHired: b
                     <span className="font-black">{Math.floor(merc.currentMp)}</span>
                 </div>
                 <div className="w-full bg-stone-950 h-0.5 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600/80 transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, (merc.currentMp / (merc.maxMp || 1)) * 100))}%` }} />
+                    <div className={`h-full bg-blue-600/80 transition-all duration-500`} style={{ width: `${Math.min(100, Math.max(0, (merc.currentMp / (merc.maxMp || 1)) * 100))}%` }} />
                 </div>
             </div>
 
@@ -150,6 +154,7 @@ const TavernTab = ({ activeTab }: { activeTab?: string }) => {
 
     const handleScout = () => {
         if (state.stats.gold < 50) { actions.showToast("Not enough gold."); return; }
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
         let newMerc = getUnmetNamedMercenary(state.knownMercenaries) || createRandomMercenary(state.stats.day);
         actions.scoutMercenary(newMerc, 50);
     };

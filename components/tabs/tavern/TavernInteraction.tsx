@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -40,8 +41,13 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const hasAffinity = mercenary.affinity >= CONTRACT_CONFIG.HIRE_AFFINITY_THRESHOLD;
     const hasUnallocated = isHired && (mercenary.bonusStatPoints || 0) > 0;
 
+    const playClick = useCallback(() => {
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+    }, []);
+
     const handleTalk = () => {
         if (pendingGiftItem || step !== 'IDLE') return;
+        playClick();
 
         if (!state.talkedToToday.includes(mercenary.id)) {
             actions.talkMercenary(mercenary.id);
@@ -68,6 +74,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     };
 
     const handleRecruitInit = () => {
+        playClick();
         if (!hasAffinity) {
             setDialogue("I don't know you well enough to pledge my blade to your forge yet.");
             return;
@@ -87,6 +94,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     };
 
     const handleTerminateInit = () => {
+        playClick();
         setStep('CONFIRM_FIRE');
         setDialogue(`(Surprised) "Terminate the contract? Did I fail you in some way? If you let me go now, I might not return for some time."`);
     };
@@ -99,6 +107,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
 
     const handleRecall = () => {
         if (mercenary.assignedExpeditionId) {
+            playClick();
             if (window.confirm("Abort current mission and recall the entire squad? No rewards will be gained.")) {
                 actions.abortExpedition(mercenary.assignedExpeditionId);
                 setDialogue("(Heavy breathing) We're back. The mission was too hazardous... we had to retreat.");
@@ -116,6 +125,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
             actions.showToast("Cannot gift locked items.");
             return;
         }
+        playClick();
         setPendingGiftItem(item);
         setShowGiftMenu(false);
         const raritySuffix = item.type === 'EQUIPMENT' ? ` (${item.equipmentData?.rarity})` : '';
@@ -145,6 +155,16 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
     const handleCancelGift = () => {
         setPendingGiftItem(null);
         setDialogue(`(You pull your hand back.) "Actually, never mind."`);
+    };
+
+    const handleShowDetail = () => {
+        playClick();
+        setShowDetail(true);
+    };
+
+    const handleBack = () => {
+        playClick();
+        onBack();
     };
 
     // Filter restricted to Mercenary's interests
@@ -178,7 +198,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
             </div>
 
             <button 
-                onClick={onBack}
+                onClick={handleBack}
                 className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 hover:text-red-100 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
                 title="Leave Interaction"
             >
@@ -283,7 +303,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                         </button>
 
                         <button 
-                            onClick={() => setShowGiftMenu(true)}
+                            onClick={() => { playClick(); setShowGiftMenu(true); }}
                             className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0"
                         >
                             <Gift className="w-3 h-3 md:w-4 md:h-4 text-pink-500" />
@@ -318,7 +338,7 @@ const TavernInteraction: React.FC<TavernInteractionProps> = ({ mercenary, onBack
                         )}
 
                         <button 
-                            onClick={() => setShowDetail(true)}
+                            onClick={handleShowDetail}
                             className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 relative ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}
                         >
                             {isHired ? <Wrench className="w-3 h-3 md:w-4 md:h-4 text-emerald-500" /> : <Search className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />}

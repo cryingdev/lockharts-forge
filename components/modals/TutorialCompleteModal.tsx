@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { 
@@ -9,6 +10,10 @@ const TutorialCompleteModal = () => {
     const { state, actions } = useGame();
 
     if (!state.showTutorialCompleteModal) return null;
+
+    const playClick = () => {
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+    };
 
     const features = [
         { id: 'FORGE', icon: Anvil, name: 'The Forge', color: 'text-amber-500' },
@@ -85,7 +90,7 @@ const TutorialCompleteModal = () => {
                 {/* Footer Action */}
                 <div className="p-3 md:p-5 bg-stone-850 border-t border-stone-800 shrink-0">
                     <button 
-                        onClick={actions.dismissTutorialComplete}
+                        onClick={() => { playClick(); actions.dismissTutorialComplete(); }}
                         className="w-full py-2 md:py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 border-b-4 border-emerald-800 text-[9px] md:text-sm uppercase tracking-[0.2em]"
                     >
                         <Check className="w-3 h-3 md:w-4 md:h-4" />

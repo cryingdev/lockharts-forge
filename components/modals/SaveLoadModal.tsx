@@ -28,6 +28,10 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
 
     const slots = [0, 1, 2]; // 3개의 슬롯 지원
 
+    const playClick = () => {
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+    };
+
     const formatDate = (ts: number) => {
         return new Intl.DateTimeFormat('ko-KR', {
             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -36,6 +40,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
 
     const requestDelete = (e: React.MouseEvent, index: number) => {
         e.stopPropagation();
+        playClick();
         setDeleteConfirm({ isOpen: true, index });
     };
 
@@ -48,6 +53,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
     };
 
     const handleSlotClick = (index: number) => {
+        playClick();
         onAction(index);
         if (mode === 'SAVE') {
             setTimeout(() => setMetaList(getSaveMetadataList()), 100);
@@ -69,7 +75,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                 {mode === 'SAVE' ? 'Save Game' : 'Load Game'}
                             </h3>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 hover:text-stone-300 transition-colors ml-4">
+                        <button onClick={() => { playClick(); onClose(); }} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 hover:text-stone-300 transition-colors ml-4">
                             <X className="w-5 h-5" />
                         </button>
                     </div>

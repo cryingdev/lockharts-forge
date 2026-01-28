@@ -22,7 +22,10 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
 }) => {
     return (
         <div 
-            onClick={() => onSelect(item)}
+            onClick={() => {
+                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+                onSelect(item);
+            }}
             data-tutorial-id={item.id === 'sword_bronze_t1' ? 'SWORD_RECIPE' : undefined}
             onMouseEnter={(e) => onMouseEnter(item, e)} 
             onMouseMove={onMouseMove} 

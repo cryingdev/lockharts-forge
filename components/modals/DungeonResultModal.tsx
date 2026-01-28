@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Trophy, Check, Star, Heart, Sparkles, Coins, Award, User, XCircle, AlertTriangle, Skull } from 'lucide-react';
@@ -108,6 +109,10 @@ const DungeonResultModal = () => {
 
     const isDefeat = !!dungeonResult.isDefeat;
 
+    const playClick = () => {
+        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+    };
+
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 backdrop-blur-md px-[10%] py-[15%] animate-in fade-in duration-500 overflow-hidden">
             <div className={`relative w-fit max-w-[600px] h-fit max-h-full min-h-[200px] min-w-[280px] bg-stone-900 border-2 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 ${isDefeat ? 'border-red-900 shadow-red-900/20' : 'border-amber-600'}`}>
@@ -189,7 +194,7 @@ const DungeonResultModal = () => {
                 </div>
 
                 <div className={`p-4 border-t shrink-0 ${isDefeat ? 'bg-stone-900 border-red-900/30' : 'bg-stone-850 border-stone-700'}`}>
-                    <button onClick={actions.dismissDungeonResult} className={`w-full py-3 md:py-4 font-black rounded-xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 border-b-4 border-emerald-800 text-xs md:text-base uppercase tracking-widest ${isDefeat ? 'bg-red-700 hover:bg-red-600 text-white border-red-900' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800'}`}>
+                    <button onClick={() => { playClick(); actions.dismissDungeonResult(); }} className={`w-full py-3 md:py-4 font-black rounded-xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 border-b-4 border-emerald-800 text-xs md:text-base uppercase tracking-widest ${isDefeat ? 'bg-red-700 hover:bg-red-600 text-white border-red-900' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800'}`}>
                         {isDefeat ? <AlertTriangle className="w-4 h-4 md:w-6 md:h-6" /> : <Check className="w-4 h-4 md:w-6 md:h-6" />}
                         {isDefeat ? 'Emergency Return' : 'Acknowledge & Close'}
                     </button>

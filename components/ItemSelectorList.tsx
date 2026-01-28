@@ -131,7 +131,12 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                             return (
                                 <div key={item.id} className="relative group aspect-square">
                                     <button
-                                        onClick={() => !isLocked && onSelect(item)}
+                                        onClick={() => {
+                                            if (!isLocked) {
+                                                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+                                                onSelect(item);
+                                            }
+                                        }}
                                         disabled={isLocked}
                                         className={`w-full h-full rounded-xl border-2 transition-all flex flex-col items-center justify-center p-1 relative overflow-hidden shadow-2xl ${
                                             isSelected ? 'border-indigo-400 bg-indigo-900/20 ring-2 ring-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 
@@ -222,7 +227,12 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                         return (
                             <div key={item.id} className="relative group shrink-0">
                                 <button
-                                    onClick={() => !isLocked && onSelect(item)}
+                                    onClick={() => {
+                                        if (!isLocked) {
+                                            window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+                                            onSelect(item);
+                                        }
+                                    }}
                                     disabled={isLocked}
                                     className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl border-2 transition-all text-left shadow-lg relative overflow-hidden ${
                                         isSelected ? 'border-indigo-400 bg-indigo-900/20 ring-2 ring-indigo-500/10 shadow-[inset_0_0_10px_rgba(99,102,241,0.1)]' : 

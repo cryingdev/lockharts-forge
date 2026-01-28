@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { User, XCircle, CheckCircle, Flame, AlertCircle } from 'lucide-react';
@@ -7,6 +8,10 @@ const EventModal = () => {
   const { activeEvent, inventory, stats } = state;
 
   if (!activeEvent) return null;
+
+  const playClick = () => {
+      window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+  };
 
   const canAfford = (option: typeof activeEvent.options[0]) => {
     if (!option.cost) return true;
@@ -51,7 +56,12 @@ const EventModal = () => {
               return (
                 <button
                   key={idx}
-                  onClick={() => affordable && actions.handleEventOption(option.action)}
+                  onClick={() => {
+                      if (affordable) {
+                          playClick();
+                          actions.handleEventOption(option.action);
+                      }
+                  }}
                   disabled={!affordable}
                   className={`w-full text-left p-3 md:p-5 rounded-xl border transition-all flex justify-between items-center group ${
                     affordable 

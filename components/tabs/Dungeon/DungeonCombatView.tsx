@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Shield, Sword, Activity, Skull, Zap, LogOut, FastForward, Pause, Play, ChevronDown, ChevronUp, Sparkles, Target, Package, X, Check, RotateCcw } from 'lucide-react';
 import { Mercenary } from '../../../models/Mercenary';
@@ -135,6 +136,11 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 isPlayerAttacker ? (attacker.derived.magicalAttack > attacker.derived.physicalAttack ? 'MAGICAL' : 'PHYSICAL') : 'PHYSICAL',
                 multiplier
             );
+
+            // 명중 시 효과음 출력
+            if (res.isHit) {
+                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'battle_slash.mp3' } }));
+            }
 
             if (isPlayerAttacker) {
                 setEnemySquadState(prev => prev.map(e => {

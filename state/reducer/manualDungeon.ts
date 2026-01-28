@@ -1,4 +1,3 @@
-
 import { GameState, ManualDungeonSession, RoomType, DungeonResult, InventoryItem } from '../../types/index';
 import { DUNGEONS } from '../../data/dungeons';
 import { handleClaimExpedition } from './expedition';
@@ -213,7 +212,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
 
     let extraGold = 0;
     let newGrid = [...session.grid.map(row => [...row])];
-    let newInventory = [...state.inventory];
+    let nextCollectedLoot = [...session.collectedLoot];
     let logMsg = '';
     let actionMsg = session.lastActionMessage;
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
@@ -229,11 +228,12 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
         const count = 1 + Math.floor(Math.random() * 2);
         const matDef = materials[resId];
         
-        const existing = newInventory.find(i => i.id === resId);
-        if (existing) {
-            newInventory = newInventory.map(i => i.id === resId ? { ...i, quantity: i.quantity + count } : i);
+        // 필드 자원도 세션 보관함(collectedLoot)에 추가하여 연출 및 결과 합산 처리
+        const existingLoot = nextCollectedLoot.find(l => l.id === resId);
+        if (existingLoot) {
+            existingLoot.count += count;
         } else {
-            newInventory.push({ ...matDef, quantity: count } as InventoryItem);
+            nextCollectedLoot.push({ id: resId, count: count, name: matDef.name });
         }
         
         newGrid[newY][newX] = 'EMPTY';
@@ -263,7 +263,6 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     return {
         ...state,
         knownMercenaries: updatedMercs,
-        inventory: newInventory,
         maxFloorReached: newMaxFloorReached,
         activeManualDungeon: {
             ...session,
@@ -274,6 +273,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
             hasKey: targetRoom === 'KEY' ? true : session.hasKey,
             encounterStatus,
             goldCollected: session.goldCollected + extraGold,
+            collectedLoot: nextCollectedLoot, // 수동 탐사 자원 업데이트 반영
             lastActionMessage: actionMsg
         },
         logs: logMsg ? [logMsg, ...state.logs] : state.logs
@@ -381,11 +381,15 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
 
     const nextSessionXp = { ...session.sessionXp };
 
-    const newKnownMercenaries = state.knownMercenaries.map(m => {
+    // Fix: Declared newKnownMercenaries with 'let'
+    let newKnownMercenaries = state.knownMercenaries.map(m => {
         const combatant = payload.finalParty.find(p => p.id === m.id);
         if (combatant) {
-            let nextXp = m.currentXp;
+            // Fix: Initialized currentXp and nextLevel based on current mercenary state.
+            // Introduced xpToNext to handle threshold updates during potentially multiple level-ups.
+            let currentXp = m.currentXp;
             let nextLevel = m.level;
+            let xpToNext = m.xpToNextLevel || (nextLevel * 100);
             let nextMaxHp = m.maxHp;
             let nextMaxMp = m.maxMp;
             let nextCurrentHp = combatant.currentHp;
@@ -396,12 +400,14 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
                 const penaltyMult = Math.max(0.1, 1 - (levelDiff * 0.1));
                 const xpToAdd = Math.floor(xpPerMemberBase * penaltyMult);
 
-                nextXp += xpToAdd;
+                currentXp += xpToAdd;
                 nextSessionXp[m.id] = (nextSessionXp[m.id] || 0) + xpToAdd;
                 
-                while (nextXp >= m.xpToNextLevel) {
-                    nextXp -= m.xpToNextLevel;
+                // Fix: 'level' renamed to 'nextLevel', added local 'xpToNext' to fix 'Cannot find name' errors.
+                while (currentXp >= xpToNext) {
+                    currentXp -= xpToNext;
                     nextLevel++;
+                    xpToNext = nextLevel * 100;
                     const merged = mergePrimaryStats(m.stats, m.allocatedStats);
                     nextMaxHp = calculateMaxHp(merged, nextLevel);
                     nextMaxMp = calculateMaxMp(merged, nextLevel);
@@ -414,12 +420,12 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
                 ...m, 
                 currentHp: nextCurrentHp, 
                 currentMp: combatant.currentMp,
-                currentXp: nextXp,
+                currentXp: currentXp,
                 level: nextLevel,
                 bonusStatPoints,
                 maxHp: nextMaxHp,
                 maxMp: nextMaxMp,
-                xpToNextLevel: nextLevel * 100
+                xpToNextLevel: xpToNext
             };
         }
         return m;
