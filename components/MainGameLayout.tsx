@@ -184,6 +184,10 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [showRightArrow, setShowRightArrow] = useState(false);
   const prevDayRef = useRef(state.stats.day);
 
+  // SFX Buffer Cache for better performance with AudioContext
+  const sfxBufferRef = useRef<AudioBuffer | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
   // Background Services
   useShopService();
   useDungeonService();
@@ -228,13 +232,43 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
     }
   };
 
-  const playTabSfx = useCallback(() => {
+  const playTabSfx = useCallback(async () => {
     const { masterVolume, sfxVolume, masterEnabled, sfxEnabled } = state.settings.audio;
     if (!masterEnabled || !sfxEnabled) return;
     
-    const audio = new Audio(getAssetUrl('shutter_open.mp3', 'audio/sfx'));
-    audio.volume = masterVolume * sfxVolume;
-    audio.play().catch(e => console.debug("SFX play blocked", e));
+    // Web Audio API를 사용하여 OS 미디어 컨트롤러에 등록되지 않도록 재생
+    if (!audioContextRef.current) {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        audioContextRef.current = new AudioCtx();
+    }
+    const ctx = audioContextRef.current;
+    
+    // Autoplay 차단 해제
+    if (ctx.state === 'suspended') await ctx.resume();
+
+    // Media Session 초기화
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = null;
+        navigator.mediaSession.playbackState = 'none';
+    }
+
+    try {
+        if (!sfxBufferRef.current) {
+            const response = await fetch(getAssetUrl('shutter_open.mp3', 'audio/sfx'));
+            const arrayBuffer = await response.arrayBuffer();
+            sfxBufferRef.current = await ctx.decodeAudioData(arrayBuffer);
+        }
+
+        const source = ctx.createBufferSource();
+        source.buffer = sfxBufferRef.current;
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = masterVolume * sfxVolume;
+        source.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        source.start(0);
+    } catch (e) {
+        console.debug("SFX play failed", e);
+    }
   }, [state.settings.audio]);
 
   const completedExpeditionsCount = state.activeExpeditions.filter(exp => exp.status === 'COMPLETED').length;

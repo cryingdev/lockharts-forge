@@ -5,88 +5,122 @@ import { getMusicUrl } from '../utils';
 
 /**
  * AudioManager
- * 게임 전반의 오디오(BGM)를 관리하는 보이지 않는 컴포넌트입니다.
- * GameState의 오디오 설정 변화를 실시간으로 반영하며 중첩 재생을 방지합니다.
+ * Web Audio API(AudioContext)를 사용하여 배경음을 재생합니다.
+ * 이 방식은 OS 레벨의 미디어 플레이어(다이내믹 아일랜드, 잠금 화면)에 등록되지 않습니다.
  */
 const AudioManager: React.FC = () => {
     const { state } = useGame();
-    const audioRef = useRef<HTMLAudioElement | null>(null);
     const audioSettings = state.settings.audio;
+    
+    const contextRef = useRef<AudioContext | null>(null);
+    const gainNodeRef = useRef<GainNode | null>(null);
+    const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+    const bufferRef = useRef<AudioBuffer | null>(null);
 
-    // 초기 오디오 객체 생성 및 관리
+    // 1. 오디오 컨텍스트 및 노드 초기화
     useEffect(() => {
-        // 기존에 혹시라도 남은 오디오가 있다면 정지 (Safety Check)
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = "";
-            audioRef.current = null;
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioCtx();
+        const gainNode = ctx.createGain();
+        gainNode.connect(ctx.destination);
+        
+        contextRef.current = ctx;
+        gainNodeRef.current = gainNode;
+
+        // Media Session API 무력화 (OS 컨트롤러 노출 방지)
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = null;
+            navigator.mediaSession.playbackState = 'none';
         }
 
-        const music = new Audio(getMusicUrl('track_01.mp3'));
-        music.loop = true;
-        // 초기 볼륨 설정 (마운트 시점의 상태 반영)
-        const initialVol = state.settings.audio.masterVolume * state.settings.audio.musicVolume;
-        music.volume = Math.max(0, Math.min(1, initialVol));
-        
-        audioRef.current = music;
-
-        // 컴포넌트 언마운트 시 클린업 (예: 앱 재시작 등)
-        return () => {
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current.src = "";
-                audioRef.current = null;
+        // BGM 로드
+        const loadBgm = async () => {
+            try {
+                const response = await fetch(getMusicUrl('track_01.mp3'));
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                bufferRef.current = audioBuffer;
+                
+                // 초기 로드 후 설정에 따라 재생 시도
+                if (state.settings.audio.masterEnabled && state.settings.audio.musicEnabled) {
+                    startPlayback();
+                }
+            } catch (e) {
+                console.debug("BGM load failed", e);
             }
         };
-    }, []); // 빈 의존성 배열: 앱 수명 주기 동안 단 한 번만 생성
 
-    // 설정 변경에 따른 실시간 동기화
+        loadBgm();
+
+        return () => {
+            stopPlayback();
+            if (contextRef.current) {
+                contextRef.current.close();
+            }
+        };
+    }, []);
+
+    const startPlayback = () => {
+        const ctx = contextRef.current;
+        const buffer = bufferRef.current;
+        const gainNode = gainNodeRef.current;
+        if (!ctx || !buffer || !gainNode || sourceRef.current) return;
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(gainNode);
+        
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+        
+        source.start(0);
+        sourceRef.current = source;
+    };
+
+    const stopPlayback = () => {
+        if (sourceRef.current) {
+            try {
+                sourceRef.current.stop();
+            } catch (e) {}
+            sourceRef.current.disconnect();
+            sourceRef.current = null;
+        }
+    };
+
+    // 2. 설정 동기화
     useEffect(() => {
-        const music = audioRef.current;
-        if (!music) return;
+        const gainNode = gainNodeRef.current;
+        if (!gainNode) return;
 
-        // 실시간 볼륨 동기화: 마스터 볼륨 * 배경음 볼륨
         const effectiveVolume = audioSettings.masterVolume * audioSettings.musicVolume;
-        music.volume = Math.max(0, Math.min(1, effectiveVolume));
+        gainNode.gain.setTargetAtTime(effectiveVolume, contextRef.current?.currentTime || 0, 0.1);
 
-        // 재생 상태 제어
         const shouldPlay = audioSettings.masterEnabled && audioSettings.musicEnabled;
-
         if (shouldPlay) {
-            // 브라우저 Autoplay 정책 대응
-            if (music.paused) {
-                music.play().catch(() => {
-                    // 상호작용 전이면 실패할 수 있음 (Interaction 리스너에서 처리됨)
-                });
+            if (!sourceRef.current && bufferRef.current) {
+                startPlayback();
             }
         } else {
-            if (!music.paused) {
-                music.pause();
-            }
+            stopPlayback();
         }
-
     }, [audioSettings.masterVolume, audioSettings.musicVolume, audioSettings.masterEnabled, audioSettings.musicEnabled]);
 
-    // 전역 상호작용 리스너 (브라우저 정책 해제용)
+    // 3. 사용자 상호작용 대응 (Autoplay 제한 해제)
     useEffect(() => {
-        const handleFirstInteraction = () => {
-            if (audioRef.current && state.settings.audio.masterEnabled && state.settings.audio.musicEnabled) {
-                if (audioRef.current.paused) {
-                    audioRef.current.play().catch(() => {});
-                }
+        const handleInteraction = () => {
+            if (contextRef.current && contextRef.current.state === 'suspended') {
+                contextRef.current.resume();
             }
-            window.removeEventListener('mousedown', handleFirstInteraction);
-            window.removeEventListener('touchstart', handleFirstInteraction);
+            if (audioSettings.masterEnabled && audioSettings.musicEnabled && !sourceRef.current && bufferRef.current) {
+                startPlayback();
+            }
         };
 
-        window.addEventListener('mousedown', handleFirstInteraction);
-        window.addEventListener('touchstart', handleFirstInteraction);
-
-        return () => {
-            window.removeEventListener('mousedown', handleFirstInteraction);
-            window.removeEventListener('touchstart', handleFirstInteraction);
-        };
-    }, [state.settings.audio.masterEnabled, state.settings.audio.musicEnabled]);
+        window.addEventListener('mousedown', handleInteraction, { once: true });
+        window.addEventListener('touchstart', handleInteraction, { once: true });
+    }, [audioSettings.masterEnabled, audioSettings.musicEnabled]);
 
     return null;
 };
