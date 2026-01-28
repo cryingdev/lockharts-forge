@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { 
     Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle, 
@@ -24,6 +24,11 @@ const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, clas
         : item.id;
     
     const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`, folder));
+
+    // 아이템 데이터가 변경될 때 이미지 경로 상태를 동기화합니다.
+    useEffect(() => {
+        setImgSrc(getAssetUrl(`${baseId}.png`, folder));
+    }, [baseId, folder]);
 
     const handleImgError = () => {
         const fallbackPath = item.image || item.equipmentData?.image;

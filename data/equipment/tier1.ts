@@ -527,23 +527,6 @@ export const TIER1_ITEMS: EquipmentItem[] = [
   // TIER 1 - ACCESSORIES (Belt / Ring)
   // -------------------------------------------------------
   {
-    id: 'belt_rope_t1',
-    name: 'Hemp Rope Belt',
-    tier: 1,
-    minLevel: 1,
-    icon: '➰',
-    description: 'A simple rope to keep your gear together.',
-    subCategoryId: 'BELT',
-    baseValue: 150,
-    requirements: [{ id: 'wool_cloth', count: 1 }, { id: 'leather_strips', count: 1 }],
-    baseStats: { physicalAttack: 0, physicalDefense: 1, magicalAttack: 0, magicalDefense: 0, vit: 1 },
-    slotType: 'WAIST',
-    craftingType: 'WORKBENCH',
-    maxDurability: 20,
-    isRepairable: false,
-    unlockedByDefault: true,
-  },
-  {
     id: 'belt_scavenger_t1',
     name: 'Scavenger Belt',
     tier: 1,
@@ -592,6 +575,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     tier: 1,
     minLevel: 1,
     icon: '💍',
+    image: 'copper_ring.png',
     description: 'A cheap copper ring that slightly focuses mana.',
     subCategoryId: 'RING',
     baseValue: 280,
