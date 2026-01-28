@@ -1,3 +1,4 @@
+
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
@@ -85,9 +86,19 @@ export interface GameToast {
 
 export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED' | 'MARKET' | 'SMITHING';
 
+export interface AudioSettings {
+    masterVolume: number;
+    musicVolume: number;
+    sfxVolume: number;
+    masterEnabled: boolean;
+    musicEnabled: boolean;
+    sfxEnabled: boolean;
+}
+
 export interface GameSettings {
     showLogTicker: boolean;
     inventoryViewMode: 'GRID' | 'LIST';
+    audio: AudioSettings;
 }
 
 export interface GameState {

@@ -1,18 +1,39 @@
+
 const SESSION_VERSION = Date.now();
 
+/**
+ * 이미지 등 일반 에셋의 URL을 생성합니다.
+ */
 export const getAssetUrl = (filename: string, folder?: string): string => {
   const baseUrl = 'https://raw.githubusercontent.com/cryingdev/lockharts-forge/sub/assets/';
   
   let path = filename;
   if (folder) {
-    // 폴더와 파일명 사이의 중복 슬래시 방지 및 경로 결합
     const cleanFolder = folder.endsWith('/') ? folder.slice(0, -1) : folder;
     const cleanFile = filename.startsWith('/') ? filename.slice(1) : filename;
     path = `${cleanFolder}/${cleanFile}`;
   }
   
-  // Use the static session version to cache images for the duration of the session
   return `${baseUrl}${path}?v=${SESSION_VERSION}`;
+};
+
+/**
+ * sfx 폴더 내의 오디오 에셋 URL을 생성합니다.
+ * 경로가 assets/sfx/로 고정되어 있습니다.
+ */
+export const getAudioUrl = (filename: string): string => {
+  const baseUrl = 'https://raw.githubusercontent.com/cryingdev/lockharts-forge/sub/assets/sfx/';
+  const cleanFile = filename.startsWith('/') ? filename.slice(1) : filename;
+  return `${baseUrl}${cleanFile}?v=${SESSION_VERSION}`;
+};
+
+/**
+ * audio/tracks 폴더 내의 음악 트랙 URL을 생성합니다.
+ */
+export const getMusicUrl = (filename: string): string => {
+    const baseUrl = 'https://raw.githubusercontent.com/cryingdev/lockharts-forge/sub/assets/audio/tracks/';
+    const cleanFile = filename.startsWith('/') ? filename.slice(1) : filename;
+    return `${baseUrl}${cleanFile}?v=${SESSION_VERSION}`;
 };
 
 /**

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameProvider } from './context/GameContext';
 import IntroScreen from './components/IntroScreen';
@@ -8,6 +9,7 @@ import { getNextAvailableSlot } from './utils/saveSystem';
 import { GameState } from './types/game-state';
 // Moved useGame import from line 72 to the top of the file
 import { useGame } from './context/GameContext';
+import AudioManager from './components/AudioManager';
 
 type GameView = 'INTRO' | 'TITLE' | 'GAME';
 
@@ -54,19 +56,19 @@ const App = () => {
   };
 
   return (
-      <>
+      <GameProvider initialSlotIndex={activeSlotIndex}>
+        <AudioManager />
+        
         {view === 'INTRO' && <IntroScreen onComplete={handleIntroComplete} />}
         
         {view === 'TITLE' && <TitleScreen onNewGame={handleNewGame} onLoadGame={handleLoadGame} />}
         
         {view === 'GAME' && (
-            <GameProvider initialSlotIndex={activeSlotIndex}>
-                <GameLoader initialData={pendingLoadState}>
-                    <MainGameLayout onQuit={handleQuitToTitle} onLoadFromSettings={handleLoadFromSettings} />
-                </GameLoader>
-            </GameProvider>
+            <GameLoader initialData={pendingLoadState}>
+                <MainGameLayout onQuit={handleQuitToTitle} onLoadFromSettings={handleLoadFromSettings} />
+            </GameLoader>
         )}
-      </>
+      </GameProvider>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import { GameState, InventoryItem } from '../types/index';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { materials } from '../data/materials';
@@ -111,6 +112,14 @@ export const createInitialGameState = (): GameState => ({
     // User Preferences
     settings: {
         showLogTicker: true,
-        inventoryViewMode: 'LIST'
+        inventoryViewMode: 'LIST',
+        audio: {
+            masterVolume: 0.5,
+            musicVolume: 0.8,
+            sfxVolume: 0.8,
+            masterEnabled: true,
+            musicEnabled: true,
+            sfxEnabled: true
+        }
     }
 });

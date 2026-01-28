@@ -4,12 +4,13 @@ import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
 import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, ChevronLeft, ChevronRight, Pointer, Lock as LockIcon, FastForward, AlertCircle, Library } from 'lucide-react';
 import { useGame } from '../context/GameContext';
+import { getAssetUrl } from '../utils';
 
 // Import Background Services
 import { useShopService } from '../services/shop/shop-service';
 import { useDungeonService } from '../services/dungeon/dungeon-service';
 
-// Import Tabs
+// Import TabsSettingsModal
 import ForgeTab from './tabs/forge/ForgeTab';
 import ShopTab from './tabs/shop/ShopTab';
 import TavernTab from './tabs/tavern/TavernTab';
@@ -227,6 +228,15 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
     }
   };
 
+  const playTabSfx = useCallback(() => {
+    const { masterVolume, sfxVolume, masterEnabled, sfxEnabled } = state.settings.audio;
+    if (!masterEnabled || !sfxEnabled) return;
+    
+    const audio = new Audio(getAssetUrl('shutter_open.mp3', 'audio/sfx'));
+    audio.volume = masterVolume * sfxVolume;
+    audio.play().catch(e => console.debug("SFX play blocked", e));
+  }, [state.settings.audio]);
+
   const completedExpeditionsCount = state.activeExpeditions.filter(exp => exp.status === 'COMPLETED').length;
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
   const isFullscreenOverlay = state.isCrafting || (state.activeManualDungeon && state.showManualDungeonOverlay) || state.isResearchOpen;
@@ -318,6 +328,9 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
               <button 
                 onClick={() => { 
                   if (!state.unlockedTabs.includes(tab.id) && !(tab.id === 'SHOP' && state.tutorialStep)) return actions.showToast("Facility locked."); 
+                  
+                  playTabSfx();
+
                   if (state.tutorialStep === 'MARKET_GUIDE' && tab.id === 'MARKET') { actions.setTutorialStep('BROWSE_GOODS_GUIDE'); actions.setTutorialScene('MARKET'); } 
                   else if (state.tutorialStep === 'FORGE_TAB_GUIDE' && tab.id === 'FORGE') actions.setTutorialStep('SELECT_SWORD_GUIDE'); 
                   else if (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE' && tab.id === 'SHOP') actions.setTutorialStep('OPEN_SHOP_SIGN_GUIDE'); 
