@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
@@ -26,11 +25,8 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   // 튜토리얼 중 상점 열기 단계인지 확인
   const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
   
-  // MainGameLayout에서 글로벌로 처리하는 튜토리얼 대화 단계인지 확인
-  const isGlobalTutorialDialogue = state.tutorialStep === 'SHOP_INTRO_DIALOG' || 
-                                   state.tutorialStep === 'PIP_PRAISE_DIALOG' || 
-                                   state.tutorialStep === 'DRAGON_TALK_DIALOG' || 
-                                   state.tutorialStep === 'TUTORIAL_END_DIALOG';
+  // MainGameLayout에서 글로벌로 처리하는 튜토리얼 대화 단계인지 확인 (Shop 인트로만 해당)
+  const isGlobalTutorialDialogue = state.tutorialStep === 'SHOP_INTRO_DIALOG';
 
   return (
     <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
