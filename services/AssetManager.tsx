@@ -81,10 +81,10 @@ const AssetManager: React.FC = () => {
 
         // 병렬 실행
         const tasks = [
-            ...bgms.map(name => loadAudio(name, 'BGM')),
-            ...sfxs.map(name => loadAudio(name, 'SFX')),
-            ...mercs.map(name => loadImage(name, 'mercenaries')),
-            ...misc.map(name => loadImage(name))
+            ...bgms.map((name: string) => loadAudio(name, 'BGM')),
+            ...sfxs.map((name: string) => loadAudio(name, 'SFX')),
+            ...mercs.map((name: string) => loadImage(name, 'mercenaries')),
+            ...misc.map((name: string) => loadImage(name))
         ];
 
         await Promise.all(tasks);
