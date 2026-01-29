@@ -2,6 +2,7 @@
 import React from 'react';
 import { Heart, Box, Coins } from 'lucide-react';
 import { EquipmentItem } from '../../../../types';
+import { useAudio } from '../../../../hooks/useAudio';
 
 interface RecipeCardProps {
     item: EquipmentItem;
@@ -20,10 +21,12 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
     item, isSelected, isFav, inventoryCount, onSelect, onToggleFavorite,
     onMouseEnter, onMouseMove, onMouseLeave, imageUrl
 }) => {
+    const { playClick } = useAudio();
+
     return (
         <div 
             onClick={() => {
-                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+                playClick();
                 onSelect(item);
             }}
             data-tutorial-id={item.id === 'sword_bronze_t1' ? 'SWORD_RECIPE' : undefined}

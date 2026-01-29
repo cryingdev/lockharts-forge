@@ -2,6 +2,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { UI_MODAL_LAYOUT } from '../../config/ui-config';
+import { SfxButton } from '../common/ui/SfxButton';
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -25,10 +26,6 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     isDanger = false
 }) => {
     if (!isOpen) return null;
-
-    const playClick = () => {
-        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
-    };
 
     return (
         <div 
@@ -56,14 +53,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
                 {/* Footer - Vertical stack for mobile */}
                 <div className="p-4 md:p-6 bg-stone-900 border-t border-stone-800 flex flex-col-reverse sm:flex-row gap-2 md:gap-3 shrink-0">
-                    <button 
-                        onClick={() => { playClick(); onCancel(); }}
+                    <SfxButton 
+                        onClick={onCancel}
                         className="w-full sm:flex-1 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black text-stone-500 hover:text-stone-200 bg-stone-800 hover:bg-stone-750 transition-all uppercase tracking-widest px-4"
                     >
                         {cancelLabel}
-                    </button>
-                    <button 
-                        onClick={() => { playClick(); onConfirm(); }}
+                    </SfxButton>
+                    <SfxButton 
+                        onClick={onConfirm}
                         className={`w-full sm:flex-[1.5] py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black transition-all border-b-4 uppercase tracking-widest px-6 ${
                             isDanger 
                             ? 'bg-red-700 hover:bg-red-600 text-white border-red-900' 
@@ -71,7 +68,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                         }`}
                     >
                         {confirmLabel}
-                    </button>
+                    </SfxButton>
                 </div>
             </div>
         </div>

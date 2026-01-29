@@ -698,22 +698,22 @@ export default class SmithingScene extends Phaser.Scene {
     const eff = this.currentTempStage === 'AURA' ? 1.5 : this.currentTempStage === 'HOT' ? 1.0 : 0.5;
     
     if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.PERFECT_THRESHOLD) {
+      window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'billet_hit_normal.mp3' } }));
       this.score += Math.ceil(8 * eff); this.combo++; this.perfectCount++;
       if (this.perfectCount >= 6) { this.currentQuality += 1; }
       if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(x, y);
       this.createSparks(30, this.currentTargetColor, 1.5, 'spark_perfect', x, y); this.showFeedback('PERFECT!', 0xffb300, 1.4, x, y); this.cameras.main.shake(150, 0.02);
       this.applyKickback(0.05); 
       
-      // 튜토리얼 체크: 첫 번째 타격 성공 시 React에 알림
       if (this.isTutorial && this.perfectCount === 1 && this.onTutorialAction) {
           this.onTutorialAction('FIRST_HIT_DONE');
-          // 튜토리얼 일시정지를 위해 즉시 반환 (resetRing 호출 안함)
-          this.targetRing.clear(); // 링 그래픽 명시적 제거
-          this.approachRing.clear(); // 링 그래픽 명시적 제거
+          this.targetRing.clear(); 
+          this.approachRing.clear(); 
           this.updateProgressBar();
           return;
       }
     } else if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.GOOD_THRESHOLD) {
+      window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'billet_hit_normal.mp3' } }));
       this.score += Math.ceil(5 * eff); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
       this.createSparks(15, 0xffffff, 1.1, 'spark_normal', x, y); this.showFeedback('GOOD', 0xe5e5e5, 1.1, x, y);
       this.applyKickback(0.4); 
@@ -722,9 +722,6 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.score >= this.targetScore) this.winGame(); else this.resetRing();
   }
 
-  /**
-   * 튜토리얼 중 리액트의 확인 신호를 받고 다음 단계를 재개합니다.
-   */
   public resumeTutorialCrafting() {
       if (this.isTutorial && this.perfectCount === 1) {
           this.resetRing();
@@ -740,6 +737,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   private handleMiss(x?: number, y?: number, customText?: string) {
     this.score = Math.max(0, this.score - 5); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 5);
+    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'swing_miss.mp3' } }));
     this.cameras.main.shake(100, 0.01); this.showFeedback(customText ?? 'MISS', 0xef4444, 1.0, x ?? this.hitX, y ?? this.hitY);
     if (x !== undefined && y !== undefined) this.triggerHammerAnimation(x, y);
     this.applyKickback(1.5); this.updateProgressBar(); this.resetRing();
@@ -747,33 +745,21 @@ export default class SmithingScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     if (this.isFinished) return;
-
     const currentStep = (this.game as any).tutorialStep;
-    // 튜토리얼 단계 중 'FIRST_HIT_DIALOG' 등 대화가 출력되는 동안은 링 로직 일시 중지
     const isTutorialDialogueActive = this.isTutorial && (currentStep === 'FIRST_HIT_DIALOG' || currentStep?.includes('_DIALOG'));
-
     if (this.isPlaying && this.currentTool === 'HAMMER' && !isTutorialDialogueActive) {
         this.handleRingLogic(delta);
     }
-    
     const floorVal = SmithingTutorialHandler.getTemperatureFloor(this.isTutorial);
-    
-    // 튜토리얼 중이며 아직 본격적인 제작(망치질)을 시작하기 위해 화면을 탭하지 않은 상태일 때,
-    // 온도가 정점(98% 이상)에 도달했다면 냉각을 정지하여 유저가 여유롭게 TOUCH TO START를 할 수 있게 함.
     const isPeakInTutorialWait = this.isTutorial && !this.isPlaying && this.temperature >= 98;
-    
     if (!isPeakInTutorialWait) {
         this.temperature = Math.max(floorVal, this.temperature - this.coolingRate * (delta / 1000));
     }
-    
     this.refreshVisuals();
-
     if (this.onStatusUpdate) this.onStatusUpdate(this.temperature);
-
     if (!this.isPlaying && this.isReadyToStart && this.temperature <= floorVal + 0.1 && !this.isTutorial) {
-      this.isReadyToStart = false; this.infoText.setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6');
+      this.isReadyToStart = false; this.infoText.setText('TOUCH TO START').setColor('#fbbf24');
     }
-
     if (this.isTutorial && this.onTutorialTargetUpdate) {
         const activeRect = SmithingTutorialHandler.getHighlightRect(this.isTutorial, currentStep, this.isPlaying, {
           heatUpBtn: this.heatUpBtnContainer,
@@ -790,7 +776,6 @@ export default class SmithingScene extends Phaser.Scene {
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
     const ratio = this.temperature / 100; 
     this.tempValueText.setText(`${Math.round(IDLE_TEMP + ratio * (MAX_TEMP - IDLE_TEMP))}°C`);
-    
     if (this.tempBarGraphics) {
         const sideAreaWidth = Math.min(this.viewW, this.viewH) * 0.18; const rightX = this.viewW - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
         const panelStartY = this.viewH * 0.45; const btnScale = sideAreaWidth / 100; const btnH = 100 * btnScale;
@@ -822,7 +807,6 @@ export default class SmithingScene extends Phaser.Scene {
   private handleRingLogic(delta: number) {
     const tutorialStep = (this.game as any).tutorialStep;
     const speedFactor = SmithingTutorialHandler.getRingSpeedFactor(this.isTutorial, tutorialStep, this.perfectCount);
-    
     this.ringTimer += delta * this.currentSpeedMult * speedFactor; 
     const t = Math.min(this.ringTimer / this.shrinkDuration, 1.5); this.currentRadius = this.startRadius * (1 - t * t);
     const colorT = Math.min(this.ringTimer / this.shrinkDuration, 1.0);
@@ -830,7 +814,6 @@ export default class SmithingScene extends Phaser.Scene {
     const ringColor = Phaser.Display.Color.GetColor(Math.floor(255 + (targetRGB.red - 255) * colorT), Math.floor(255 + (targetRGB.green - 255) * colorT), Math.floor(255 + (targetRGB.blue - 255) * colorT));
     const ringAlpha = 0.6 + (colorT * 0.3);
     this.approachRing.clear().lineStyle(6, ringColor, ringAlpha).fillStyle(ringColor, ringAlpha * 0.15).fillCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius)).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
-    
     if (this.currentRadius < this.targetRadius - 30) { 
         this.handleMiss(this.hitX, this.hitY, 'TOO LATE'); 
     }
@@ -839,58 +822,35 @@ export default class SmithingScene extends Phaser.Scene {
   private resetRing() {
     if (this.temperature <= 0 || !this.spawnPoly) return; 
     this.targetRing.clear(); this.approachRing.clear(); this.currentRadius = this.startRadius; this.ringTimer = 0;
-    
-    // Check for forced tutorial difficulty
     const tutorialStep = (this.game as any).tutorialStep;
     const forced = SmithingTutorialHandler.getForcedDifficulty(this.isTutorial, tutorialStep, this.perfectCount);
-
     if (forced) {
         this.currentTargetColor = forced.color;
         this.currentSpeedMult = forced.speedMult;
     } else {
-        // 신규 밸런싱 로직 적용
         const bias = SMITHING_CONFIG.BALANCING;
         const redBias = Math.min(bias.MAX_RED_BIAS, this.combo * bias.BIAS_PER_COMBO); 
         const randType = Math.random();
-        
         const diffCfg = SMITHING_CONFIG.DIFFICULTY;
-        
-        // 추첨 로직: EASY -> NORMAL -> HARD 순으로 범위 판정
         const easyThreshold = Math.max(bias.MIN_GREEN_PROB, diffCfg.EASY.baseProbability - (redBias * bias.EASY_REDUCTION_FACTOR));
         const normalThreshold = easyThreshold + (1.0 - easyThreshold - redBias);
-
-        if (randType < easyThreshold) { 
-            this.currentTargetColor = diffCfg.EASY.color; 
-            this.currentSpeedMult = diffCfg.EASY.speedMult; 
-        } 
-        else if (randType < normalThreshold) { 
-            this.currentTargetColor = diffCfg.NORMAL.color; 
-            this.currentSpeedMult = diffCfg.NORMAL.speedMult; 
-        } 
-        else { 
-            this.currentTargetColor = diffCfg.HARD.color; 
-            this.currentSpeedMult = diffCfg.HARD.speedMult; 
-        }
+        if (randType < easyThreshold) { this.currentTargetColor = diffCfg.EASY.color; this.currentSpeedMult = diffCfg.EASY.speedMult; } 
+        else if (randType < normalThreshold) { this.currentTargetColor = diffCfg.NORMAL.color; this.currentSpeedMult = diffCfg.NORMAL.speedMult; } 
+        else { this.currentTargetColor = diffCfg.HARD.color; this.currentSpeedMult = diffCfg.HARD.speedMult; }
     }
-
     this.targetRadius = this.startRadius * Phaser.Math.FloatBetween(0.18, 0.32);
-    
     const rect = Phaser.Geom.Polygon.GetAABB(this.spawnPoly);
     let found = false; let attempts = 0;
     while (!found && attempts < 200) {
         const tx = Phaser.Math.FloatBetween(rect.left, rect.right); 
         const ty = Phaser.Math.FloatBetween(rect.top, rect.bottom);
-        if (Phaser.Geom.Polygon.Contains(this.spawnPoly, tx, ty)) { 
-            this.hitX = tx; this.hitY = ty; found = true; 
-        }
+        if (Phaser.Geom.Polygon.Contains(this.spawnPoly, tx, ty)) { this.hitX = tx; this.hitY = ty; found = true; }
         attempts++;
     }
-    
     if (!found && this.spawnPoly.points.length > 0) {
         const p = this.spawnPoly.points[Math.floor(Math.random() * this.spawnPoly.points.length)];
         this.hitX = p.x; this.hitY = p.y;
     }
-
     if (this.isPlaying && this.currentTool === 'HAMMER') { 
         this.targetRing.clear().fillStyle(this.currentTargetColor, 0.25).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(5, this.currentTargetColor, 0.8) .strokeCircle(this.hitX, this.hitY, this.targetRadius); 
     }
@@ -917,12 +877,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   private winGame() {
     this.isFinished = true; this.isPlaying = false; this.targetRing.clear(); this.approachRing.clear();
-    
-    // 튜토리얼 체크: 제작 완료 시 React에 알림
-    if (this.isTutorial && this.onTutorialAction) {
-        this.onTutorialAction('CRAFT_FINISHED');
-    }
-
+    if (this.isTutorial && this.onTutorialAction) { this.onTutorialAction('CRAFT_FINISHED'); }
     if (this.onStatusUpdate) this.onStatusUpdate(this.temperature);
     const bg = this.add.rectangle(this.centerX, this.centerY, this.viewW, this.viewH, 0x000000).setAlpha(0).setDepth(100);
     this.root.add(bg); this.tweens.add({ targets: bg, alpha: 0.8, duration: 500 });
@@ -933,6 +888,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   private pumpBellows() {
     this.isPumping = true; this.bellowsSprite.play('bellows_pump', true); 
+    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'bellows.wav' } }));
     this.tweens.add({ targets: this.bellowsBg, alpha: { from: 1, to: 0.7 }, scale: { from: 1, to: 1.1 }, duration: 150, yoyo: true, ease: 'Cubic.out' });
     if (this.temperature > 0) { 
         this.temperature = Math.min(100, this.temperature + 5.5); 
@@ -942,18 +898,18 @@ export default class SmithingScene extends Phaser.Scene {
 
   private requestHeatUp() { 
     const hasCharcoal = this.charcoalCount === '∞' || (typeof this.charcoalCount === 'number' && this.charcoalCount > 0);
-    if (hasCharcoal && this.onHeatUpRequest) { this.tweens.add({ targets: this.heatUpBtnContainer, scale: 0.9, duration: 50, yoyo: true }); this.onHeatUpRequest(); } else { this.cameras.main.shake(100, 0.005); } 
+    if (hasCharcoal && this.onHeatUpRequest) { 
+        this.tweens.add({ targets: this.heatUpBtnContainer, scale: 0.9, duration: 50, yoyo: true }); 
+        this.onHeatUpRequest(); 
+    } else { 
+        this.cameras.main.shake(100, 0.005); 
+    } 
   }
 
   public heatUp() {
-    // 튜토리얼이든 아니든 온도가 고정되는 대신 더해지도록 수정
-    // 기본 온도가 너무 낮으면 40으로 끌어올리고, 이미 높으면 점진적으로 추가
+    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'fire_up.mp3' } }));
     this.temperature = Math.min(100, Math.max(this.temperature + 20, 40)); 
-
-    if (!this.isPlaying) { 
-        this.isReadyToStart = true; 
-        this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); 
-    } 
+    if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } 
     this.flashOverlay.setFillStyle(0xff8800, 1).setAlpha(0.4); 
     this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 400, ease: 'Cubic.easeOut' });
   }

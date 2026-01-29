@@ -25,6 +25,12 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
   // 튜토리얼 중 상점 열기 단계인지 확인
   const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
+  
+  // MainGameLayout에서 글로벌로 처리하는 튜토리얼 대화 단계인지 확인
+  const isGlobalTutorialDialogue = state.tutorialStep === 'SHOP_INTRO_DIALOG' || 
+                                   state.tutorialStep === 'PIP_PRAISE_DIALOG' || 
+                                   state.tutorialStep === 'DRAGON_TALK_DIALOG' || 
+                                   state.tutorialStep === 'TUTORIAL_END_DIALOG';
 
   return (
     <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
@@ -105,9 +111,10 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             )}
         </div>
 
-        {/* Dialogue Box */}
+        {/* Dialogue Box Container - Unified 표준 규격 적용 */}
         <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center pointer-events-auto">
-            {shop.isShopOpen && shop.dialogueState && (
+            {/* 튜토리얼 전역 대화창이 떠있을 때는 로컬 대화창을 숨김 */}
+            {shop.isShopOpen && shop.dialogueState && !isGlobalTutorialDialogue && (
                  <DialogueBox 
                     speaker={shop.dialogueState.speaker}
                     text={shop.dialogueState.text}

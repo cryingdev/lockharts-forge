@@ -4,6 +4,7 @@ import { LayoutGrid, List, Lock, Unlock, Star, Sword, Shield, Coins, Package, Sp
 import { InventoryItem } from '../types/inventory';
 import { getAssetUrl } from '../utils';
 import { useGame } from '../context/GameContext';
+import { useAudio } from '../hooks/useAudio';
 
 const RomanTierOverlay = ({ id, isList = false }: { id: string, isList?: boolean }) => {
     const sizeClasses = isList ? "text-[10px] md:text-lg" : "text-xs md:text-2xl";
@@ -56,6 +57,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
     emptyMessage = "No items available."
 }) => {
     const { state, actions } = useGame();
+    const { playClick } = useAudio();
     
     const viewMode = state.settings?.inventoryViewMode || 'LIST';
 
@@ -133,7 +135,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                     <button
                                         onClick={() => {
                                             if (!isLocked) {
-                                                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+                                                playClick();
                                                 onSelect(item);
                                             }
                                         }}
@@ -229,7 +231,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                 <button
                                     onClick={() => {
                                         if (!isLocked) {
-                                            window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
+                                            playClick();
                                             onSelect(item);
                                         }
                                     }}

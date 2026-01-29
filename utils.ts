@@ -1,3 +1,4 @@
+
 const SESSION_VERSION = Date.now();
 
 /**
@@ -18,13 +19,21 @@ export const AUDIO_MANIFEST = {
         'battle_track_01.mp3'
     ],
     SFX: [
-        'item_click.mp3',
-        'tab_switch.mp3',
+        'item_click.wav',
+        'tab_switch.wav',
+        'click_light.wav',
+        'click_medium.wav',
+        // Dungeon
         'trap_triggered.mp3',
         'get_coin.mp3',
         'found_item.mp3',
         'ambush.mp3',
-        'battle_slash.mp3'
+        'battle_slash.mp3',
+        'swing_miss.mp3',
+        // SmithingMinigame
+        'bellows.wav',
+        'billet_hit_normal.mp3',
+        'fire_up.mp3',
     ]
 };
 

@@ -7,6 +7,7 @@ import { EquipmentStats } from '../../models/Equipment';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
 import { MASTERY_THRESHOLDS } from '../../config/mastery-config';
 import { UI_MODAL_LAYOUT } from '../../config/ui-config';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const CraftingResultModal = () => {
     const { state, actions } = useGame();
@@ -59,10 +60,6 @@ const CraftingResultModal = () => {
 
     if (!item || !item.equipmentData || !masteryInfo) return null;
 
-    const playClick = () => {
-        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
-    };
-
     const data = item.equipmentData;
     const recipe = EQUIPMENT_ITEMS.find(r => r.id === data.recipeId);
     const imageUrl = data.image 
@@ -96,7 +93,6 @@ const CraftingResultModal = () => {
 
     const handleFinalize = () => {
         if (isLockedByTutorial) return;
-        playClick();
         if (state.tutorialStep === 'FINALIZE_FORGE_GUIDE') {
             actions.setTutorialStep('SHOP_INTRO_DIALOG');
         }
@@ -145,7 +141,7 @@ const CraftingResultModal = () => {
                                 />
                             </svg>
                             
-                            <img src={imageUrl} className="w-10 h-10 md:w-20 md:h-20 object-contain drop-shadow-2xl z-20 relative" />
+                            <img src={imageUrl} className="w-10 h-10 md:w-20 md:h-20 object-contain p-2 md:p-3 drop-shadow-2xl z-20 relative" />
                             
                             <div className={`absolute -bottom-1 -right-1 md:bottom-2 md:right-2 z-30 px-1 md:px-1.5 py-0.5 rounded-full border border-stone-700 bg-stone-900 shadow-xl flex items-center gap-1`}>
                                 <Star className={`w-2 h-2 md:w-3 md:h-3 fill-current ${masteryInfo.textClass}`} />
@@ -171,10 +167,10 @@ const CraftingResultModal = () => {
                     
                     {/* Unified Stats Grid - 2 columns */}
                     <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-                        {renderStatItem(<Sword className="w-2.5 h-2.5 text-stone-500" />, "P.Atk", "physicalAttack", data.stats.physicalAttack)}
-                        {renderStatItem(<Zap className="w-2.5 h-2.5 text-stone-500" />, "M.Atk", "magicalAttack", data.stats.magicalAttack)}
-                        {renderStatItem(<Shield className="w-2.5 h-2.5 text-stone-500" />, "P.Def", "physicalDefense", data.stats.physicalDefense)}
-                        {renderStatItem(<Brain className="w-2.5 h-2.5 text-stone-500" />, "M.Def", "magicalDefense", data.stats.magicalDefense)}
+                        {renderStatItem(<Sword className="w-2.5 h-2.5 text-stone-50" />, "P.Atk", "physicalAttack", data.stats.physicalAttack)}
+                        {renderStatItem(<Zap className="w-2.5 h-2.5 text-stone-50" />, "M.Atk", "magicalAttack", data.stats.magicalAttack)}
+                        {renderStatItem(<Shield className="w-2.5 h-2.5 text-stone-50" />, "P.Def", "physicalDefense", data.stats.physicalDefense)}
+                        {renderStatItem(<Brain className="w-2.5 h-2.5 text-stone-50" />, "M.Def", "magicalDefense", data.stats.magicalDefense)}
                         
                         {/* Bonus Stats in the same grid with color coding */}
                         {renderStatItem(<Activity className="w-2.5 h-2.5 text-orange-400" />, "STR", "str", data.stats.str || 0, "border-orange-500/20 bg-orange-500/10")}
@@ -186,7 +182,7 @@ const CraftingResultModal = () => {
                 </div>
 
                 <div className="p-3 md:p-5 border-t border-stone-800 bg-stone-850 shrink-0">
-                    <button 
+                    <SfxButton 
                         onClick={handleFinalize} 
                         disabled={isLockedByTutorial}
                         data-tutorial-id="FINALIZE_BUTTON"
@@ -201,7 +197,7 @@ const CraftingResultModal = () => {
                         ) : (
                             <><Check className="w-3 h-3 md:w-4 md:h-4" /> Finalize Forge</>
                         )}
-                    </button>
+                    </SfxButton>
                 </div>
             </div>
         </div>

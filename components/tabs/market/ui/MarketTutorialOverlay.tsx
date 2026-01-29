@@ -178,7 +178,7 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
             )}
 
             {script && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90vw] max-w-4xl pointer-events-none z-[5000]">
+                <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
                     <DialogueBox 
                         speaker={script.speaker} 
                         text={script.text} 

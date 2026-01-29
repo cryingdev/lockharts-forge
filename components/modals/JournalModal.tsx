@@ -2,6 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { X, BookOpen, Scroll, History, Sparkles } from 'lucide-react';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const JournalModal = () => {
     const { state, actions } = useGame();
@@ -15,10 +16,6 @@ const JournalModal = () => {
     }, [state.showJournal]);
 
     if (!state.showJournal) return null;
-
-    const playClick = () => {
-        window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
-    };
 
     return (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/90 backdrop-blur-md px-[5%] py-[10%] md:px-[10%] md:py-[15%] animate-in fade-in duration-300 overflow-hidden">
@@ -38,12 +35,12 @@ const JournalModal = () => {
                             <p className="text-[10px] md:text-xs text-stone-500 font-black uppercase tracking-[0.2em] mt-1">Chronicles of the Lockhart Lineage</p>
                         </div>
                     </div>
-                    <button 
-                        onClick={() => { playClick(); actions.toggleJournal(); }}
+                    <SfxButton 
+                        onClick={actions.toggleJournal}
                         className="p-2.5 bg-stone-800 hover:bg-red-900/40 border border-stone-700 rounded-full text-stone-500 hover:text-red-200 transition-all active:scale-90"
                     >
                         <X className="w-6 h-6" />
-                    </button>
+                    </SfxButton>
                 </div>
 
                 {/* Body - Logs */}

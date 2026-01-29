@@ -83,7 +83,7 @@ export const materials: Record<string, MaterialDefinition> = {
     // giant_rat
     vermin_fang: {
         id: 'vermin_fang', name: 'Vermin Fang', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
-        description: 'A grimy vermin fang. Traders buy them as proof of pest control.', baseValue: 15, icon: '🦷'
+        description: 'A grimy vermin fang. Traders buy them as proof of pest control.', baseValue: 70, icon: '🦷'
     },
     hide_patch: {
         id: 'hide_patch', name: 'Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
@@ -101,7 +101,7 @@ export const materials: Record<string, MaterialDefinition> = {
     // cave_bat
     bat_sonar_gland: {
         id: 'bat_sonar_gland', name: 'Bat Sonar Gland', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
-        description: 'A strange gland that still twitches. Alchemists will pay a little for it.', baseValue: 18, icon: '👂'
+        description: 'A strange gland that still twitches. Alchemists will pay a little for it.', baseValue: 180, icon: '👂'
     },
     cave_moss_pad: {
         id: 'cave_moss_pad', name: 'Cave Moss Pad', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
@@ -110,7 +110,7 @@ export const materials: Record<string, MaterialDefinition> = {
     // rat_man
     sewer_buckle: {
         id: 'sewer_buckle', name: 'Sewer Buckle', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
-        description: 'A rusted buckle pulled from the muck. Worth a few coins as scrap.', baseValue: 12, icon: '🪝'
+        description: 'A rusted buckle pulled from the muck. Worth a few coins as scrap.', baseValue: 120, icon: '🪝'
     },
     // mold_sporeling
     mold_spore_sac: {
@@ -135,7 +135,7 @@ export const materials: Record<string, MaterialDefinition> = {
     // plague_rat_king
     rat_king_crown_shard: {
         id: 'rat_king_crown_shard', name: 'Rat King Crown Shard', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1, 
-        description: 'A jagged piece of the Rat King’s crown. Proof of a filthy victory.', baseValue: 60, icon: '👑'    
+        description: 'A jagged piece of the Rat King’s crown. Proof of a filthy victory.', baseValue: 600, icon: '👑'    
     },
     scrap_mace_head: {
         id: 'scrap_mace_head', name: 'Scrap Mace Head', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,

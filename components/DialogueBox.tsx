@@ -5,6 +5,8 @@ import { User, ChevronRight, Coins, Package, Lock } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import { materials } from '../data/materials';
 import { getAssetUrl } from '../utils';
+import { useAudio } from '../hooks/useAudio';
+import { SfxButton } from './common/ui/SfxButton';
 
 interface DialogueOption {
   label: string;
@@ -42,6 +44,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   speakerAvatar
 }) => {
   const { state } = useGame();
+  const { playClick } = useAudio();
   const [displayedIndex, setDisplayedIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [showItemTooltip, setShowItemTooltip] = useState(false);
@@ -57,12 +60,10 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     return () => { 
       isMounted.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
-      // 언마운트 시 툴팁 강제 종료 (탭 전환 시 대응)
       setShowItemTooltip(false);
     };
   }, []);
 
-  // 전역 클릭 감지: 툴팁이 열려있을 때 화면 어디든 클릭하면 닫힘
   useEffect(() => {
     if (!showItemTooltip) return;
     const handleGlobalClick = () => setShowItemTooltip(false);
@@ -112,16 +113,12 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     };
   }, [text]);
 
-  const playClickSfx = () => {
-      window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
-  };
-
   const handleSkipTyping = () => {
     if (isTyping) {
       if (timerRef.current) clearInterval(timerRef.current);
       setDisplayedIndex(text.length);
       setIsTyping(false);
-      playClickSfx();
+      playClick();
     }
   };
 
@@ -163,12 +160,10 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
             className={`text-amber-400 font-black underline decoration-amber-500/50 underline-offset-4 relative inline-block pointer-events-auto ${isUnlocked ? 'cursor-pointer' : 'cursor-default'}`}
             onClick={(e) => { 
                 e.stopPropagation(); 
-                // 해금되지 않은 경우 툴팁을 노출하지 않음
                 if (!isUnlocked) return;
-                
                 updateTooltipPosition(e); 
                 setShowItemTooltip(!showItemTooltip); 
-                playClickSfx();
+                playClick();
             }}
           >
             {visiblePart}
@@ -191,7 +186,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       onClick={(e) => {
         e.stopPropagation();
         setShowItemTooltip(false);
-        playClickSfx();
+        playClick();
       }}
     >
       <div className="flex items-center gap-3 mb-2 md:mb-3 pb-2 md:pb-3 border-b border-white/10">
@@ -291,7 +286,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   );
 
   return (
-    <div className={className} onClick={(e) => { if (showItemTooltip) { e.stopPropagation(); setShowItemTooltip(false); playClickSfx(); } }}>
+    <div className={className} onClick={(e) => { if (showItemTooltip) { e.stopPropagation(); setShowItemTooltip(false); playClick(); } }}>
       {tooltipElement}
 
       <div 
@@ -332,9 +327,9 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
           {!isTyping && options.length > 0 && (
             <div className="mt-auto pt-2 flex flex-wrap gap-1.5 md:gap-4 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
               {options.map((option, idx) => (
-                <button
+                <SfxButton
                   key={idx}
-                  onClick={(e) => { e.stopPropagation(); playClickSfx(); option.action(); }}
+                  onClick={(e) => { e.stopPropagation(); option.action(); }}
                   disabled={option.disabled}
                   className={`px-4 md:px-10 py-1.5 md:py-4 rounded-lg md:rounded-xl font-black text-[9px] md:text-sm flex items-center gap-1.5 md:gap-3 transition-all transform active:scale-95 border shadow-2xl ${
                     option.disabled 
@@ -348,7 +343,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
                 >
                   <span className="whitespace-nowrap">{option.label}</span>
                   {!option.disabled && <ChevronRight className="hidden xs:block w-2.5 md:w-5 h-2.5 md:h-5 opacity-70 group-hover:translate-x-1 transition-transform" />}
-                </button>
+                </SfxButton>
               ))}
             </div>
           )}

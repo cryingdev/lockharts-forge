@@ -196,7 +196,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       tooltipTimerRef.current = setTimeout(() => {
         setHoveredItem(null);
         tooltipTimerRef.current = null;
-      }, 1000);
+      }, 2500);
       return;
     }
 

@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { Coins, Zap, Calendar, BedDouble, BookOpen, Settings } from 'lucide-react';
+import { SfxButton } from './common/ui/SfxButton';
 
 interface HeaderProps {
     activeTab: string;
@@ -46,7 +48,6 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
   return (
     <header className="w-full bg-stone-950 border-b border-stone-800 shadow-[0_4px_20px_rgba(0,0,0,0.5)] shrink-0 z-20 flex flex-col">
       
-      {/* Top Line: Stats and System Buttons */}
       <div className="w-full flex items-center justify-between p-1.5 md:p-3 px-2 md:px-4 gap-2">
         
         {/* Left: Day info */}
@@ -86,30 +87,30 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
           </div>
 
           {/* Rest Button */}
-          <button
+          <SfxButton
             onClick={actions.rest}
             className="flex items-center space-x-1 md:space-x-2 bg-indigo-950/40 hover:bg-indigo-900/60 text-indigo-300 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-indigo-900/30 transition-all shadow-lg active:scale-95"
             title="End the Day"
           >
             <BedDouble className="w-3 h-3 md:w-4 md:h-4" />
             <span className="text-[8px] md:text-xs font-black hidden xs:inline uppercase tracking-widest font-serif italic">Rest</span>
-          </button>
+          </SfxButton>
 
           {/* Settings Button */}
-          <button
+          <SfxButton
             onClick={onSettingsClick}
             className="p-1 md:p-2 text-stone-500 hover:text-stone-200 bg-stone-900 hover:bg-stone-800 border border-stone-800 rounded-lg transition-all shadow-lg active:rotate-90 duration-300"
             title="System Settings"
           >
             <Settings className="w-3 h-3 md:w-4 md:h-4" />
-          </button>
+          </SfxButton>
         </div>
       </div>
 
-      {/* Bottom Line: Log Ticker / Journal Button (Conditional based on settings) */}
+      {/* Bottom Line: Log Ticker */}
       {settings.showLogTicker && (
           <div className="w-full bg-black/20 px-2 pb-1.5 pt-0.5 md:pb-2 md:pt-1">
-              <button 
+              <SfxButton 
                   onClick={actions.toggleJournal}
                   className="w-full flex items-center gap-2 md:gap-3 px-3 py-1 bg-stone-900/40 hover:bg-stone-900 rounded-md md:rounded-lg border border-stone-800/30 hover:border-stone-700 transition-all group text-left h-6 md:h-8"
                   title="Open Forge Ledger"
@@ -118,7 +119,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
                   <div className="flex-1 min-w-0 h-full">
                       <LogTicker message={state.logs[0] || ''} />
                   </div>
-              </button>
+              </SfxButton>
           </div>
       )}
     </header>

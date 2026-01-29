@@ -13,6 +13,7 @@ import { getAssetUrl } from '../../../utils';
 import { InventoryItem, EquipmentSlotType } from '../../../types/inventory';
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { DUNGEONS } from '../../../data/dungeons';
+import { SfxButton } from '../../common/ui/SfxButton';
 
 const ACTION_THRESHOLD = 1000;
 
@@ -137,9 +138,11 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 multiplier
             );
 
-            // 명중 시 효과음 출력
+            // 명중/회피 시 효과음 출력
             if (res.isHit) {
                 window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'battle_slash.mp3' } }));
+            } else {
+                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'swing_miss.mp3' } }));
             }
 
             if (isPlayerAttacker) {
@@ -247,9 +250,9 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 }
             }
             if (readyEnemy && !activeActorId && !attackingUnitId) {
+                readyEnemy.gauge -= ACTION_THRESHOLD;
                 const livingPlayers = partyState.filter(p => p.currentHp > 0);
                 if (livingPlayers.length > 0) {
-                    readyEnemy.gauge -= ACTION_THRESHOLD;
                     const target = livingPlayers[Math.floor(Math.random() * livingPlayers.length)];
                     executeAttack(readyEnemy, target, false);
                 }
@@ -357,18 +360,18 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                     <h2 className="text-white font-black uppercase text-[10px] md:text-sm tracking-widest font-mono">Combat Zone</h2>
                 </div>
                 <div className="flex items-center gap-3 bg-black/40 px-3 py-1 rounded-full border border-white/5">
-                    <button onClick={() => setIsPaused(!isPaused)} className={`p-1.5 rounded-full transition-all ${isPaused ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-400'}`}>
+                    <SfxButton sfx="switch" onClick={() => setIsPaused(!isPaused)} className={`p-1.5 rounded-full transition-all ${isPaused ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-400'}`}>
                         {isPaused ? <Play size={14} /> : <Pause size={14} />}
-                    </button>
+                    </SfxButton>
                     <div className="flex items-center gap-1">
                         {[1, 2, 4].map(s => (
-                            <button key={s} onClick={() => setBattleSpeed(s as any)} className={`px-2 py-0.5 rounded font-mono text-[8px] md:text-[10px] font-black ${battleSpeed === s ? 'bg-indigo-600 text-white' : 'text-stone-600'}`}>{s}x</button>
+                            <SfxButton sfx="switch" key={s} onClick={() => setBattleSpeed(s as any)} className={`px-2 py-0.5 rounded font-mono text-[8px] md:text-[10px] font-black ${battleSpeed === s ? 'bg-indigo-600 text-white' : 'text-stone-600'}`}>{s}x</SfxButton>
                         ))}
                     </div>
                 </div>
-                <button onClick={() => { setIsAuto(!isAuto); setPendingAction(null); }} className={`px-4 py-1.5 rounded-lg border font-black text-[9px] tracking-widest transition-all ${isAuto ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-800 border-stone-600 text-stone-400'}`}>
+                <SfxButton sfx="switch" onClick={() => { setIsAuto(!isAuto); setPendingAction(null); }} className={`px-4 py-1.5 rounded-lg border font-black text-[9px] tracking-widest transition-all ${isAuto ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-800 border-stone-600 text-stone-400'}`}>
                     {isAuto ? 'AUTO' : 'MANUAL'}
-                </button>
+                </SfxButton>
             </div>
 
             {/* Combat Field */}
@@ -426,9 +429,9 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                                     </div>
                                     {isActive && !pendingAction && !isAuto && (
                                         <div className="absolute -bottom-36 left-1/2 -translate-x-1/2 z-[300] bg-stone-900/95 border-2 border-amber-500 p-2 rounded-xl flex gap-3 shadow-2xl animate-in slide-in-from-top-2 backdrop-blur-md">
-                                            <button onClick={(e) => handleManualAction(e, 'ATTACK')} className="p-3 bg-stone-800 hover:bg-stone-700 rounded-lg text-white transition-colors border border-white/5"><Sword size={24} /></button>
-                                            <button onClick={(e) => { e.stopPropagation(); setInspectedMercId(p.id); }} className="p-3 bg-indigo-900/40 hover:bg-indigo-800 rounded-lg text-indigo-100 transition-colors border border-indigo-500/30"><Package size={24} /></button>
-                                            <button onClick={(e) => handleFlee(e)} className="p-3 bg-red-950/40 hover:bg-red-900 rounded-lg text-red-500 transition-colors border border-red-500/30"><LogOut size={24} /></button>
+                                            <SfxButton onClick={(e) => handleManualAction(e, 'ATTACK')} className="p-3 bg-stone-800 hover:bg-stone-700 rounded-lg text-white transition-colors border border-white/5"><Sword size={24} /></SfxButton>
+                                            <SfxButton sfx="switch" onClick={(e) => { e.stopPropagation(); setInspectedMercId(p.id); }} className="p-3 bg-indigo-900/40 hover:bg-indigo-800 rounded-lg text-indigo-100 transition-colors border border-indigo-500/30"><Package size={24} /></SfxButton>
+                                            <SfxButton onClick={(e) => handleFlee(e)} className="p-3 bg-red-950/40 hover:bg-red-900 rounded-lg text-red-500 transition-colors border border-red-500/30"><LogOut size={24} /></SfxButton>
                                         </div>
                                     )}
                                 </div>

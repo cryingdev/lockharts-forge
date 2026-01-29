@@ -1,4 +1,5 @@
-# Project Map – Lockhart’s Forge (v0.1.42b)
+
+# Project Map – Lockhart’s Forge (v0.1.43a)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -11,7 +12,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.42b`).
+- `metadata.json`: App metadata and versioning (`0.1.43a`).
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs (Repair, Shop, Craft).
@@ -87,7 +88,8 @@ This document provides a comprehensive structural map of the project, detailing 
 - `game/DungeonScene.ts`: Grid-based exploration engine with dynamic fog and Red Focus FX.
 - `game/SmithingTutorialHandler.ts`: Minigame-specific tutorial logic.
 
-### UI Animation Components
+### UI Animation & Core Components (`components/common/ui/`)
+- `components/common/ui/SfxButton.tsx`: **Global standardized button** with integrated audio triggers.
 - `components/common/ui/AnimatedMercenary.tsx`: Handles eye-blinking and sprite rendering.
 - `components/common/ui/MercenaryPortrait.tsx`: Multi-mode face-cropping for sprites.
 - `components/tutorial/TutorialScene.tsx`: Narrative-driven prologue and furnace restoration.
@@ -130,15 +132,17 @@ This document provides a comprehensive structural map of the project, detailing 
 - `services/shop/shop-service.ts`: Handles customer arrival intervals and queue processing.
 - `services/dungeon/dungeon-service.ts`: Monitors auto-expedition completion timers.
 
+### Global Hooks (`hooks/`)
+- `hooks/useAudio.ts`: Simple hook for triggering UI sound effects.
+- `hooks/useMercenaryDetail.ts`: Complex state management for attributes and equipment previews.
+
 ---
 
-## 🔄 Recent Updates (v0.1.42b)
-*   **Architecture Evolution**:
-    *   Moved `AudioManager` and `AssetManager` to `services/` to separate headless logic from UI.
-    *   Implemented `AssetCache` singleton in `utils.ts` for efficient resource access.
-*   **Narrative Immersion**:
-    *   Shifted Manual Dungeon feedback to "Inner Voice" and "Exploration Logs".
-*   **Casualty UI**:
-    *   Implemented "Injured" and "K.I.A" status overlays in squad slots and mercenary picker.
+## 🔄 Recent Updates (v0.1.43a)
+*   **UI/UX Standardization**:
+    *   Unified all dialogue container layouts across Market, Dungeon, Shop, and Tutorial scenes.
 *   **Version Sync**:
-    *   Unified all systems to Build `0.1.42b`.
+    *   Incremented global version to Build `0.1.43a`.
+*   **Refinement**:
+    *   Updated `PROJECT_MAP.md` to reflect `SfxButton` and `useAudio` integration.
+    *   Confirmed `bellows.wav` usage in Smithing minigame.

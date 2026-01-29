@@ -2,16 +2,13 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { User, XCircle, CheckCircle, Flame, AlertCircle } from 'lucide-react';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const EventModal = () => {
   const { state, actions } = useGame();
   const { activeEvent, inventory, stats } = state;
 
   if (!activeEvent) return null;
-
-  const playClick = () => {
-      window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'item_click.mp3' } }));
-  };
 
   const canAfford = (option: typeof activeEvent.options[0]) => {
     if (!option.cost) return true;
@@ -54,11 +51,10 @@ const EventModal = () => {
             {activeEvent.options.map((option, idx) => {
               const affordable = canAfford(option);
               return (
-                <button
+                <SfxButton
                   key={idx}
                   onClick={() => {
                       if (affordable) {
-                          playClick();
                           actions.handleEventOption(option.action);
                       }
                   }}
@@ -75,7 +71,7 @@ const EventModal = () => {
                   ) : (
                      <XCircle className="w-4 h-4 md:w-5 md:h-5 text-red-900 shrink-0" />
                   )}
-                </button>
+                </SfxButton>
               );
             })}
           </div>

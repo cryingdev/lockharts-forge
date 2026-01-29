@@ -1,26 +1,26 @@
+
 # Lockhart's Forge
 
-> **Version**: 0.1.42b
+> **Version**: 0.1.43a
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
 
-## 🔄 Recent Updates (v0.1.42b)
+## 🔄 Recent Updates (v0.1.43a)
 
-*   **Asset Management Architecture Overhaul**:
-    *   Introduced `AssetManager` to handle centralized resource preloading (Audio/Images).
-    *   Moved `AudioManager` and `AssetManager` to `services/` directory to separate headless logic from UI components.
-    *   Implemented `AssetCache` for instantaneous media retrieval, reducing runtime latency.
+*   **Standardized Narrative UI**:
+    *   Unified the layout and margins of the `DialogueBox` across all game modes (Tutorial, Market, Dungeon, Shop).
+    *   Maximized visual consistency for wide-screen and mobile viewports.
+*   **Project Documentation**:
+    *   Completely updated `PROJECT_MAP.md` to match the latest refactored architecture.
 *   **Version Sync**:
-    *   Unified all systems to Build `0.1.42b`.
+    *   Global version set to `0.1.43a`.
 
-## 🔄 Recent Updates (v0.1.42a)
+## 🔄 Recent Updates (v0.1.42c)
 
-*   **Manual Dungeon Immersion Upgrade**:
-    *   Rewrote dungeon status and encounter messages to be narrative-driven (e.g., "The air is thick with dampness," "Shadows shift ahead...").
-    *   Updated dialogue system speakers: `Tactical AI` → `Inner Voice`, `Comms` → `Exploration Log`, `Squad Comms` → `Frontline Shout`.
-*   **Mercenary Casualty UI**:
-    *   Added visual indicators for "Injured" and "K.I.A" (Killed in Action) statuses in the Squad Assembly and Unit Picker.
+*   **Audio UX Enhancement**:
+    *   Added `billet_hit_normal.mp3` for tactile feedback during smithing.
+    *   Integrated hit sounds into `SmithingScene` for `PERFECT` and `GOOD` judgments.
 
 ## 🌟 Key Features
 

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import IntroScene from '../game/IntroScene';
@@ -26,7 +27,11 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
             const assetType = e.detail.assetType || 'Asset';
             setLoadingProgress(progress);
             
-            // 상세 진행률 로그 출력
+            // Phaser Registry 업데이트: 씬에서 이 값을 읽어 스킵 가능 여부를 판단합니다.
+            if (gameRef.current) {
+                gameRef.current.registry.set('loadingProgress', progress);
+            }
+            
             console.log(
                 `%c[AssetLoader] ${progress}% %c| ${assetType}: ${assetName}`, 
                 "color: #fbbf24; font-weight: bold; background: #1c1917; padding: 2px 4px; border-radius: 2px;",
@@ -103,6 +108,9 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
       console.log("[Intro] Initializing cinematic engine...");
       const game = new Phaser.Game(config);
       gameRef.current = game;
+      
+      // 초기 레지스트리 설정
+      game.registry.set('loadingProgress', loadingProgress);
 
       const onIntroComplete = () => {
           console.log("%c[Intro] Sequence concluded. Navigating to title.", "color: #8b5cf6; font-weight: bold;");
@@ -138,8 +146,7 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
     const onOrientationChange = () => {
       sync();
       setTimeout(sync, 100);
-      setTimeout(sync, 250);
-      setTimeout(sync, 450);
+      setTimeout(sync, 300);
     };
 
     vv?.addEventListener('resize', sync);

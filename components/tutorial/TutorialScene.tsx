@@ -6,6 +6,7 @@ import { getAssetUrl } from '../../utils';
 import { TutorialSceneMode } from '../../types/game-state';
 import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
 import ConfirmationModal from '../modals/ConfirmationModal';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const MAX_TEMP = 1500;
 const IDLE_TEMP = 10;
@@ -152,7 +153,6 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 />
             </svg>
 
-            {/* Click-blocking overlay around the target */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full pointer-events-auto bg-transparent" style={{ height: top }} />
                 <div className="absolute left-0 w-full pointer-events-auto bg-transparent" style={{ top: top + height, bottom: 0 }} />
@@ -189,7 +189,6 @@ const TutorialScene: React.FC = () => {
     
     const mode = state.activeTutorialScene || 'PROLOGUE';
 
-    // Reset internal state whenever the tutorial mode changes
     useEffect(() => {
         setIsStarted(false);
         setHasPumpedOnce(false);
@@ -292,8 +291,6 @@ const TutorialScene: React.FC = () => {
     };
 
     const promptText = mode === 'FURNACE_RESTORED' ? "REPLACE FURNACE" : "TAP TO BEGIN";
-
-    // 지시 단계(Spotlight가 활성화되는 단계)인지 확인
     const isIndicateStep = seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP';
 
     return (
@@ -315,9 +312,9 @@ const TutorialScene: React.FC = () => {
             </div>
 
             <div className="absolute top-4 right-4 z-[6000]">
-                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[10px] font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group">
+                <SfxButton sfx="switch" onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[10px] font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group">
                     <FastForward className="w-3 h-3 group-hover:animate-pulse" /> Skip Tutorial
-                </button>
+                </SfxButton>
             </div>
 
             {showFlash && <div className="absolute inset-0 z-[4000] bg-white animate-flash-out pointer-events-none"></div>}
@@ -332,7 +329,6 @@ const TutorialScene: React.FC = () => {
                 <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />
             )}
             
-            {/* 다이얼로그는 지시 단계가 아닐 때만 렌더링 (설명 -> 클릭 -> 다이얼로그 숨김 -> 인터랙션 지시) */}
             {isStarted && !isIndicateStep && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto z-[5000]">
                     <DialogueBox 
@@ -357,15 +353,15 @@ const TutorialScene: React.FC = () => {
                         </div>
                     </div>
 
-                    <button id="tutorial-bellows" onClick={(e) => { e.stopPropagation(); handlePump(); }} disabled={seq !== 'WAIT_PUMP'} className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group ${seq === 'WAIT_PUMP' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'} ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}`}>
+                    <SfxButton id="tutorial-bellows" sfx="bellows.wav" onClick={(e) => { e.stopPropagation(); handlePump(); }} disabled={seq !== 'WAIT_PUMP'} className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group ${seq === 'WAIT_PUMP' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'} ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}`}>
                         <Zap className={`w-6 h-6 md:w-10 md:h-10 ${seq === 'WAIT_PUMP' ? 'text-amber-400' : 'text-stone-600'}`} />
                         <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-1">Pump</span>
-                    </button>
+                    </SfxButton>
 
-                    <button id="tutorial-heat" onClick={(e) => { e.stopPropagation(); handleHeatUp(); }} disabled={seq !== 'WAIT_HEAT'} className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl ${seq === 'WAIT_HEAT' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}`}>
+                    <SfxButton id="tutorial-heat" sfx="fire_up.mp3" onClick={(e) => { e.stopPropagation(); handleHeatUp(); }} disabled={seq !== 'WAIT_HEAT'} className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl ${seq === 'WAIT_HEAT' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}`}>
                         <Flame className={`w-5 h-5 md:w-8 md:h-8 ${seq === 'WAIT_HEAT' ? 'text-orange-400' : 'text-stone-600'}`} />
                         <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest mt-1">Ignite</span>
-                    </button>
+                    </SfxButton>
                 </div>
             )}
 
