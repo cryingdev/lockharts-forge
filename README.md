@@ -1,10 +1,18 @@
-
 # Lockhart's Forge
 
-> **Version**: 0.1.42a
+> **Version**: 0.1.42b
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
+
+## 🔄 Recent Updates (v0.1.42b)
+
+*   **Asset Management Architecture Overhaul**:
+    *   Introduced `AssetManager` to handle centralized resource preloading (Audio/Images).
+    *   Moved `AudioManager` and `AssetManager` to `services/` directory to separate headless logic from UI components.
+    *   Implemented `AssetCache` for instantaneous media retrieval, reducing runtime latency.
+*   **Version Sync**:
+    *   Unified all systems to Build `0.1.42b`.
 
 ## 🔄 Recent Updates (v0.1.42a)
 
@@ -13,13 +21,6 @@
     *   Updated dialogue system speakers: `Tactical AI` → `Inner Voice`, `Comms` → `Exploration Log`, `Squad Comms` → `Frontline Shout`.
 *   **Mercenary Casualty UI**:
     *   Added visual indicators for "Injured" and "K.I.A" (Killed in Action) statuses in the Squad Assembly and Unit Picker.
-    *   Wounded or dead mercenaries are now clearly marked with grayscale filters and alert icons.
-
-## 🔄 Recent Updates (v0.1.41b)
-
-*   **Scholars Desk (Research System)**:
-    *   Introduced the Research Bench where players can experiment with materials.
-    *   Combining correct proportions of resources allows discovery of lost equipment blueprints.
 
 ## 🌟 Key Features
 

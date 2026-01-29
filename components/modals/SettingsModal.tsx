@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Save, Upload, Volume2, VolumeX, LogOut, X, Settings, Layout, Check, Music, Zap } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
@@ -22,7 +21,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         index: null
     });
 
-    const APP_VERSION = "0.1.42a";
+    const APP_VERSION = "0.1.42b";
 
     if (!isOpen) return null;
 

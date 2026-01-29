@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.42a)
+# Project Map – Lockhart’s Forge (v0.1.42b)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -10,8 +10,8 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.html`: Entry HTML. Defines **Grenze/Gotisch** font integration and Tailwind configuration.
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
-- `utils.ts`: Global utilities. Asset URL generation and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.42a`).
+- `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
+- `metadata.json`: App metadata and versioning (`0.1.42b`).
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs (Repair, Shop, Craft).
@@ -56,13 +56,13 @@ This document provides a comprehensive structural map of the project, detailing 
 - `components/DialogueBox.tsx`: The narrative engine. Handles typing effects and item tooltips.
 
 ### Functional Tabs (`components/tabs/`)
-- **Forge Tab**: `ForgeTab.tsx`, `hooks/useForge.ts`, and specialized UI components (`RecipeCard`, `MasteryRadialGauge`, `QuickCraftOverlay`).
+- **Forge Tab**: `ForgeTab.tsx`, `hooks/useForge.ts`, and specialized UI components (`RecipeCard`, `MasteryRadialGauge`).
 - **Inventory Tab**: `InventoryDisplay.tsx`, `ItemSelectorList.tsx`.
 - **Shop Tab**: `ShopTab.tsx`, `hooks/useShop.ts`, and HUD/Overlay components.
 - **Market Tab**: `MarketTab.tsx`, `hooks/useMarket.ts`, `MarketCatalog.tsx`, `ShoppingCartDrawer.tsx`.
 - **Tavern Tab**: `TavernTab.tsx`, `TavernInteraction.tsx` (Character focus mode).
 - **Dungeon Tab**: `DungeonTab.tsx`, `AssaultNavigator.tsx`, `DungeonCombatView.tsx` (Manual battle).
-- **Research Tab**: `ResearchTab.tsx`, `hooks/useResearch.ts`, `ResearchSlots.tsx`.
+- **Research Tab**: `ResearchTab.tsx`, `hooks/useResearch.ts`.
 - **Simulation Tab**: `SimulationTab.tsx`.
 
 ### Modals (`components/modals/`)
@@ -124,22 +124,21 @@ This document provides a comprehensive structural map of the project, detailing 
 - `utils/mercenaryGenerator.ts`: Random trait and name assignment.
 - `utils/cacheManager.ts`: Automated web cache maintenance and version markers.
 
-### Background Services
+### Core Services (`services/`)
+- `services/AssetManager.tsx`: Centralized asset loading and memory cache management.
+- `services/AudioManager.tsx`: Headless Web Audio API controller for BGM/SFX.
 - `services/shop/shop-service.ts`: Handles customer arrival intervals and queue processing.
 - `services/dungeon/dungeon-service.ts`: Monitors auto-expedition completion timers.
 
 ---
 
-## 🔄 Recent Updates (v0.1.42a)
+## 🔄 Recent Updates (v0.1.42b)
+*   **Architecture Evolution**:
+    *   Moved `AudioManager` and `AssetManager` to `services/` to separate headless logic from UI.
+    *   Implemented `AssetCache` singleton in `utils.ts` for efficient resource access.
 *   **Narrative Immersion**:
-    *   Shifted Manual Dungeon feedback from technical AI logs to "Inner Voice" and "Exploration Logs".
-    *   Environmental descriptions added to movement and interaction events.
+    *   Shifted Manual Dungeon feedback to "Inner Voice" and "Exploration Logs".
 *   **Casualty UI**:
     *   Implemented "Injured" and "K.I.A" status overlays in squad slots and mercenary picker.
-*   **Shop Optimization**:
-    *   Updated request logic to match mercenary level with equipment tier.
-    *   Prioritized unlocked recipes (85% chance) in shop requests.
-*   **Scholars Desk**:
-    *   Full implementation of the Research Bench for blueprint discovery.
 *   **Version Sync**:
-    *   Unified all systems to Build `0.1.42a`.
+    *   Unified all systems to Build `0.1.42b`.
