@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameProvider } from './context/GameContext';
 import IntroScreen from './components/IntroScreen';
@@ -9,7 +8,8 @@ import { getNextAvailableSlot } from './utils/saveSystem';
 import { GameState } from './types/game-state';
 // Moved useGame import from line 72 to the top of the file
 import { useGame } from './context/GameContext';
-import AudioManager from './components/AudioManager';
+import AudioManager from './services/AudioManager';
+import AssetManager from './services/AssetManager';
 
 type GameView = 'INTRO' | 'TITLE' | 'GAME';
 
@@ -57,7 +57,8 @@ const App = () => {
 
   return (
       <GameProvider initialSlotIndex={activeSlotIndex}>
-        <AudioManager />
+        <AssetManager />
+        <AudioManager currentView={view} />
         
         {view === 'INTRO' && <IntroScreen onComplete={handleIntroComplete} />}
         

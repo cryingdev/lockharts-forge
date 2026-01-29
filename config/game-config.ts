@@ -1,3 +1,4 @@
+
 /**
  * GAME_CONFIG
  * 게임의 일반적인 규칙과 에너지 소모량을 정의합니다.
@@ -6,7 +7,7 @@
 export const GAME_CONFIG = {
     ENERGY_COST: {
         REPAIR: 15,     // 대장간 수리 액션 시 소모 에너지
-        OPEN_SHOP: 15,  // 상점 운영 시작 시 소모 에너지
+        OPEN_SHOP: 0,   // 상점 운영 시작 시 소모 에너지 (소모 없음으로 변경)
         CRAFT: 20       // 아이템 제작 시 소모 에너지
     }
 };

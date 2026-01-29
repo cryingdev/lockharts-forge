@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import IntroScene from '../game/IntroScene';
 
@@ -16,12 +16,39 @@ function getViewportSize() {
 export default function IntroScreen({ onComplete }: IntroScreenProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  useEffect(() => {
+    const handleProgress = (e: any) => {
+        if (typeof e.detail?.progress === 'number') {
+            const progress = e.detail.progress;
+            const assetName = e.detail.assetName || 'Unknown';
+            const assetType = e.detail.assetType || 'Asset';
+            setLoadingProgress(progress);
+            
+            // 상세 진행률 로그 출력
+            console.log(
+                `%c[AssetLoader] ${progress}% %c| ${assetType}: ${assetName}`, 
+                "color: #fbbf24; font-weight: bold; background: #1c1917; padding: 2px 4px; border-radius: 2px;",
+                "color: #78716c; font-weight: normal;"
+            );
+            
+            if (progress >= 100) {
+                console.log(
+                    "%c[AssetLoader] INTERNALIZED | All resources mapped to memory. Readiness confirmed.", 
+                    "color: #10b981; font-weight: 900; background: #064e3b; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #10b981;"
+                );
+            }
+        }
+    };
+    window.addEventListener('asset-loading-progress', handleProgress);
+    return () => window.removeEventListener('asset-loading-progress', handleProgress);
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
-    // --- wrapper size를 "실제 viewport"에 맞춤 (iOS 주소창/툴바 변화 대응) ---
     const ensureWrapperSize = () => {
       const { w, h } = getViewportSize();
       el.style.width = `${w}px`;
@@ -31,25 +58,19 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
       el.style.position = 'relative';
     };
 
-    // --- Phaser를 wrapper 크기에 맞춰 리사이즈 ---
     const resizePhaserToWrapper = () => {
       const game = gameRef.current;
       if (!game) return;
-
       const rect = el.getBoundingClientRect();
       const w = Math.floor(rect.width);
       const h = Math.floor(rect.height);
       if (w <= 0 || h <= 0) return;
-
       game.scale.resize(w, h);
-
-      // iOS에서 내부 레이아웃이 한 템포 늦게 정리되는 경우가 있어 refresh를 다음 프레임에
       requestAnimationFrame(() => {
         game.scale.refresh();
       });
     };
 
-    // --- rAF로 과도한 resize 호출 방지 ---
     let rafId = 0;
     const sync = () => {
       if (rafId) cancelAnimationFrame(rafId);
@@ -59,18 +80,15 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
       });
     };
 
-    // --- Phaser Game 생성: 반드시 wrapper가 실제 사이즈를 가진 뒤에 생성 ---
     const createGameOnce = () => {
       if (gameRef.current) return;
-
       ensureWrapperSize();
-
       const rect = el.getBoundingClientRect();
       const w = Math.max(1, Math.floor(rect.width));
       const h = Math.max(1, Math.floor(rect.height));
 
       const config: Phaser.Types.Core.GameConfig = {
-        type: Phaser.AUTO, // 필요하면 WEBGL로 고정해도 됨
+        type: Phaser.AUTO,
         parent: el,
         width: w,
         height: h,
@@ -82,18 +100,20 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
         },
       };
 
+      console.log("[Intro] Initializing cinematic engine...");
       const game = new Phaser.Game(config);
       gameRef.current = game;
 
-      const onIntroComplete = () => onComplete();
+      const onIntroComplete = () => {
+          console.log("%c[Intro] Sequence concluded. Navigating to title.", "color: #8b5cf6; font-weight: bold;");
+          onComplete();
+      };
       game.events.on('intro-complete', onIntroComplete);
 
-      // 생성 직후 1회 동기화 + 지연 동기화 (iOS 안정화용)
       sync();
       setTimeout(sync, 80);
       setTimeout(sync, 180);
 
-      // cleanup
       return () => {
         game.events.off('intro-complete', onIntroComplete);
         game.destroy(true);
@@ -101,27 +121,21 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
       };
     };
 
-    // wrapper가 0px로 잡히는 순간이 있어서 “사이즈 확보될 때까지” 기다렸다가 생성
     let cancelled = false;
     const waitForSizeAndCreate = () => {
       if (cancelled) return;
       ensureWrapperSize();
       const rect = el.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
-        const cleanup = createGameOnce();
-        // 리스너 등록은 아래에서 하고, 언마운트 시 cleanup 같이 수행
-        return cleanup;
+        return createGameOnce();
       }
       requestAnimationFrame(waitForSizeAndCreate);
     };
 
     const gameCleanup = waitForSizeAndCreate();
 
-    // --- 리사이즈 / 오리엔테이션 이벤트들 ---
     const vv = window.visualViewport;
-
     const onOrientationChange = () => {
-      // orientationchange 직후 중간값이 들어오는 경우가 많아서 여러 번 sync
       sync();
       setTimeout(sync, 100);
       setTimeout(sync, 250);
@@ -135,30 +149,38 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
     const ro = new ResizeObserver(() => sync());
     ro.observe(el);
 
-    // 최초 1회
     sync();
 
     return () => {
       cancelled = true;
       if (rafId) cancelAnimationFrame(rafId);
-
       ro.disconnect();
       vv?.removeEventListener('resize', sync);
       window.removeEventListener('resize', sync);
       window.removeEventListener('orientationchange', onOrientationChange);
-
-      // Phaser cleanup
       if (typeof gameCleanup === 'function') gameCleanup();
-      else if (gameRef.current) {
-        gameRef.current.destroy(true);
-        gameRef.current = null;
-      }
     };
   }, [onComplete]);
+
+  const isComplete = loadingProgress >= 100;
 
   return (
     <div className="fixed inset-0 bg-black z-50 overflow-hidden touch-none">
       <div ref={containerRef} />
+      
+      {/* Asset Loading Progress Bar Overlay */}
+      <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 w-48 md:w-64 flex flex-col items-center gap-2 transition-opacity duration-1000 ${isComplete ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="flex justify-between w-full px-1">
+            <span className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest">Internalizing Assets</span>
+            <span className="text-[8px] font-mono font-bold text-amber-500/80">{loadingProgress}%</span>
+        </div>
+        <div className="w-full h-1 bg-stone-900 rounded-full border border-white/5 overflow-hidden shadow-inner">
+            <div 
+                className="h-full bg-amber-500 transition-all duration-300 shadow-[0_0_8px_rgba(245,158,11,0.5)]" 
+                style={{ width: `${loadingProgress}%` }}
+            />
+        </div>
+      </div>
     </div>
   );
 }

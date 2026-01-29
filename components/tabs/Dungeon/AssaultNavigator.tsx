@@ -286,7 +286,7 @@ const AssaultNavigator = () => {
             // 이동이 끝난 후 조우 연출 시작
             const effectTimer = setTimeout(() => {
                 if (scene) scene.playEncounterEffect();
-                // Play ambush sound effect
+                // Play ambush sound effect (기습 SFX 재생)
                 window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'ambush.mp3' } }));
             }, MOVE_DURATION);
 

@@ -4,16 +4,11 @@ import { ShopCustomer } from '../../types/shop';
 import { GAME_CONFIG } from '../../config/game-config';
 
 export const handleToggleShop = (state: GameState): GameState => {
-    if (state.stats.energy < GAME_CONFIG.ENERGY_COST.OPEN_SHOP && !state.forge.isShopOpen) {
-        return { ...state, logs: ['Not enough energy to prepare the shop.', ...state.logs] };
-    }
     const willOpen = !state.forge.isShopOpen;
-    const shopCost = willOpen ? GAME_CONFIG.ENERGY_COST.OPEN_SHOP : 0;
     
-    // When closing, kick everyone out and clear the active customer
+    // 에너지 소모 로직 제거: 누구나 언제든 상점을 열고 닫을 수 있음
     return {
         ...state,
-        stats: { ...state.stats, energy: state.stats.energy - shopCost },
         forge: { ...state.forge, isShopOpen: willOpen },
         activeCustomer: willOpen ? state.activeCustomer : null,
         shopQueue: willOpen ? state.shopQueue : [],

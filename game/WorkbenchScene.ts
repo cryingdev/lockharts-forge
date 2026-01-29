@@ -439,7 +439,6 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   private updateInteractablesVisuals() {
     this.interactables.forEach((obj) => {
-      // FIX: Ensure obj.graphic is not hitting null while it's being hit or being destroyed
       if (obj.type === 'TAP' && !obj.hit && !obj.missed && obj.graphic) {
         const pos = this.getPathPosition(obj.p);
         const ringRadius = this.getRingRadius(obj.ringType);
@@ -568,9 +567,9 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   private finishPhase() {
-    this.isTransitioning = true; this.confirmedProgress = Math.min(100, this.confirmedProgress + 25); this.updateProgressBar();
+    this.isTransitioning = true; this.confirmedProgress = Math.min(100, this.confirmedProgress + 50); this.updateProgressBar();
     this.interactables.forEach(obj => { if (obj.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 400 }); if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 400 }); });
-    const isLastPhase = this.currentPhase >= 4;
+    const isLastPhase = this.currentPhase >= 2;
     
     if (isLastPhase) {
         this.win();

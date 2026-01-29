@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -109,7 +110,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) =>
         dispatch({ type: 'SELL_ITEM', payload: { itemId, count, price, equipmentInstanceId, customer } }),
     toggleShop: () => {
-        if (!stateRef.current.forge.isShopOpen && stateRef.current.stats.energy < GAME_CONFIG.ENERGY_COST.OPEN_SHOP) { triggerEnergyHighlight(); return; }
+        // 에너지 소모가 0이므로 체크 로직 제거
         dispatch({ type: 'TOGGLE_SHOP' });
     },
     addMercenary: (merc: Mercenary) => dispatch({ type: 'ADD_KNOWN_MERCENARY', payload: merc }),

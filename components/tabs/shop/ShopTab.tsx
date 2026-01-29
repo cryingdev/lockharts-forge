@@ -41,7 +41,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <ShopSign 
             isOpen={shop.isShopOpen} 
             onToggle={shop.handlers.handleToggleShop} 
-            disabled={isOpeningStep ? false : ((!shop.isShopOpen && !shop.canAffordOpen) || shop.isTutorialActive)}
+            disabled={shop.isTutorialActive && !isOpeningStep}
         />
 
         {/* UI Elements: Queue & HUD */}
@@ -61,7 +61,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none">
         {shop.isShopOpen && shop.activeCustomer && shop.dialogueState && (
             <div className="relative flex justify-center items-end w-full h-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                {/* ✅ ShopTab(=h-full) 기준 80% 스테이지 */}
                 <div className="relative w-full h-[80%] flex items-end justify-center">
                     {shop.floatingHearts.map((heart) => (
                     <Heart
@@ -78,7 +77,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     />
                     ))}
 
-                    {/* ✅ height prop 제거 + h-full로 스테이지에 정확히 맞춤 */}
                     <AnimatedMercenary
                         mercenary={shop.activeCustomer.mercenary}
                         className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${
@@ -114,9 +112,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     speaker={shop.dialogueState.speaker}
                     text={shop.dialogueState.text}
                     options={shop.dialogueState.options}
-                    // Fix: Use type assertion to access optional properties in union type
                     highlightTerm={(shop.dialogueState as any).highlightTerm}
-                    // Fix: Use type assertion to access optional properties in union type
                     itemDetail={(shop.dialogueState as any).itemDetail}
                     className="w-full relative pointer-events-auto"
                 />
@@ -137,7 +133,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
         <ShopClosedOverlay 
             isOpen={shop.isShopOpen}
-            canAffordOpen={shop.canAffordOpen}
             onNavigate={onNavigate}
         />
 

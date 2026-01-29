@@ -353,13 +353,16 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       </div>
 
       <main className="flex-1 overflow-hidden relative bg-stone-925 flex flex-col min-h-0">
+        {/* Phaser 기반 탭은 hidden으로 유지 (세션 유지) */}
         <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab onNavigate={setActiveTab} /></div>
-        <div className={`h-full w-full ${activeTab === 'SHOP' ? 'block' : 'hidden'}`}><ShopTab onNavigate={setActiveTab} /></div>
-        <div className={`h-full w-full ${activeTab === 'INVENTORY' ? 'block' : 'hidden'}`}><InventoryDisplay /></div>
-        <div className={`h-full w-full ${activeTab === 'MARKET' ? 'block' : 'hidden'}`}><MarketTab onNavigate={setActiveTab} /></div>
-        <div className={`h-full w-full ${activeTab === 'TAVERN' ? 'block' : 'hidden'}`}><TavernTab activeTab={activeTab} /></div>
         <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab /></div>
-        <div className={`h-full w-full ${activeTab === 'SIMULATION' ? 'block' : 'hidden'}`}><SimulationTab /></div>
+
+        {/* 리액트 기반 탭들은 조건부 렌더링으로 툴팁 등 상태 클린업 보장 */}
+        {activeTab === 'SHOP' && <ShopTab onNavigate={setActiveTab} />}
+        {activeTab === 'INVENTORY' && <InventoryDisplay />}
+        {activeTab === 'MARKET' && <MarketTab onNavigate={setActiveTab} />}
+        {activeTab === 'TAVERN' && <TavernTab activeTab={activeTab} />}
+        {activeTab === 'SIMULATION' && <SimulationTab />}
       </main>
 
       {/* Full-screen Research Scene Overlay */}

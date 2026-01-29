@@ -946,8 +946,14 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   public heatUp() {
-    this.temperature = 39.6; 
-    if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } 
+    // 튜토리얼이든 아니든 온도가 고정되는 대신 더해지도록 수정
+    // 기본 온도가 너무 낮으면 40으로 끌어올리고, 이미 높으면 점진적으로 추가
+    this.temperature = Math.min(100, Math.max(this.temperature + 20, 40)); 
+
+    if (!this.isPlaying) { 
+        this.isReadyToStart = true; 
+        this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); 
+    } 
     this.flashOverlay.setFillStyle(0xff8800, 1).setAlpha(0.4); 
     this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 400, ease: 'Cubic.easeOut' });
   }

@@ -15,7 +15,7 @@ interface DialogueOption {
 
 interface ItemDetail {
   id: string;
-  image?: string; // 추가: 실제 이미지 파일명
+  image?: string; 
   icon: string;
   price: number;
   requirements?: { id: string; count: number }[];
@@ -57,8 +57,22 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     return () => { 
       isMounted.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
+      // 언마운트 시 툴팁 강제 종료 (탭 전환 시 대응)
+      setShowItemTooltip(false);
     };
   }, []);
+
+  // 전역 클릭 감지: 툴팁이 열려있을 때 화면 어디든 클릭하면 닫힘
+  useEffect(() => {
+    if (!showItemTooltip) return;
+    const handleGlobalClick = () => setShowItemTooltip(false);
+    window.addEventListener('mousedown', handleGlobalClick);
+    window.addEventListener('touchstart', handleGlobalClick);
+    return () => {
+      window.removeEventListener('mousedown', handleGlobalClick);
+      window.removeEventListener('touchstart', handleGlobalClick);
+    };
+  }, [showItemTooltip]);
 
   useEffect(() => {
     if (textContainerRef.current) {
@@ -142,12 +156,16 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       const visiblePart = part.slice(0, visibleCountInPart);
 
       if (part === highlightTerm) {
+        const isUnlocked = itemDetail?.isUnlocked ?? true;
         return (
           <span 
             key={i} 
-            className="text-amber-400 font-black underline decoration-amber-500/50 underline-offset-4 cursor-pointer relative inline-block pointer-events-auto"
+            className={`text-amber-400 font-black underline decoration-amber-500/50 underline-offset-4 relative inline-block pointer-events-auto ${isUnlocked ? 'cursor-pointer' : 'cursor-default'}`}
             onClick={(e) => { 
                 e.stopPropagation(); 
+                // 해금되지 않은 경우 툴팁을 노출하지 않음
+                if (!isUnlocked) return;
+                
                 updateTooltipPosition(e); 
                 setShowItemTooltip(!showItemTooltip); 
                 playClickSfx();
@@ -164,11 +182,16 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
 
   const tooltipElement = showItemTooltip && itemDetail && createPortal(
     <div 
-      className="fixed z-[10000] pointer-events-none p-3 md:p-4 bg-stone-900/98 backdrop-blur-2xl border-2 border-stone-700 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] w-[80vw] max-w-[240px] md:max-w-[320px] animate-in fade-in zoom-in-95 duration-200"
+      className="fixed z-[10000] pointer-events-auto p-3 md:p-4 bg-stone-900/98 backdrop-blur-2xl border-2 border-stone-700 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] w-[80vw] max-w-[240px] md:max-w-[320px] animate-in fade-in zoom-in-95 duration-200 cursor-pointer"
       style={{ 
         left: `${Math.max(130, Math.min(window.innerWidth - 130, tooltipCoords.x))}px`, 
         top: `${tooltipCoords.y - 10}px`,
         transform: 'translate(-50%, -100%)'
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowItemTooltip(false);
+        playClickSfx();
       }}
     >
       <div className="flex items-center gap-3 mb-2 md:mb-3 pb-2 md:pb-3 border-b border-white/10">
@@ -268,7 +291,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   );
 
   return (
-    <div className={className} onClick={() => { if (showItemTooltip) { setShowItemTooltip(false); playClickSfx(); } }}>
+    <div className={className} onClick={(e) => { if (showItemTooltip) { e.stopPropagation(); setShowItemTooltip(false); playClickSfx(); } }}>
       {tooltipElement}
 
       <div 

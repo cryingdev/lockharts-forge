@@ -1,13 +1,17 @@
-
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useGame } from '../context/GameContext';
-import { getMusicUrl, getAudioUrl } from '../utils';
+import { getMusicUrl, getAudioUrl, AssetCache } from '../utils';
+
+interface AudioManagerProps {
+    currentView: 'INTRO' | 'TITLE' | 'GAME';
+}
 
 /**
  * AudioManager
- * Web Audio API(AudioContext)를 사용하여 배경음(BGM)과 효과음(SFX)을 통합 관리합니다.
+ * Web Audio API를 사용하여 오디오 재생 및 볼륨 조절을 담당합니다.
+ * 리소스는 AssetCache에 프리로드된 데이터를 사용합니다.
  */
-const AudioManager: React.FC = () => {
+const AudioManager: React.FC<AudioManagerProps> = ({ currentView }) => {
     const { state } = useGame();
     const audioSettings = state.settings.audio;
     const activeDungeonId = state.activeManualDungeon?.dungeonId;
@@ -17,24 +21,16 @@ const AudioManager: React.FC = () => {
     const bgmGainRef = useRef<GainNode | null>(null);
     const sfxGainRef = useRef<GainNode | null>(null);
     const bgmSourceRef = useRef<AudioBufferSourceNode | null>(null);
-    
-    const bgmCache = useRef<Map<string, AudioBuffer>>(new Map());
-    const sfxCache = useRef<Map<string, AudioBuffer>>(new Map());
     const currentTrackName = useRef<string | null>(null);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     // 1. 현재 상황에 맞는 BGM 트랙 결정
     const targetTrackName = useMemo(() => {
-        // Battle track has priority during combat
-        if (encounterStatus === 'BATTLE') {
-            return 'battle_track_01.mp3';
-        }
-        
-        if (activeDungeonId === 'dungeon_t1_sewers') {
-            return 'dungeon_track_01.mp3';
-        }
+        if (currentView === 'INTRO') return null;
+        if (encounterStatus === 'BATTLE') return 'battle_track_01.mp3';
+        if (activeDungeonId === 'dungeon_t1_sewers') return 'dungeon_track_01.mp3';
         return 'track_01.mp3';
-    }, [activeDungeonId, encounterStatus]);
+    }, [currentView, activeDungeonId, encounterStatus]);
 
     // 2. 오디오 시스템 초기화
     useEffect(() => {
@@ -51,18 +47,13 @@ const AudioManager: React.FC = () => {
         bgmGainRef.current = bgmGain;
         sfxGainRef.current = sfxGain;
 
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.metadata = null;
-            navigator.mediaSession.playbackState = 'none';
-        }
-
-        setIsLoaded(true);
+        setIsInitialized(true);
 
         return () => {
-            stopBgm(0);
-            if (contextRef.current) {
-                contextRef.current.close();
+            if (bgmSourceRef.current) {
+                try { bgmSourceRef.current.stop(); } catch(e) {}
             }
+            if (ctx.state !== 'closed') ctx.close();
         };
     }, []);
 
@@ -74,14 +65,16 @@ const AudioManager: React.FC = () => {
         const source = bgmSourceRef.current;
         const ctx = contextRef.current;
 
-        if (source && gainNode && ctx) {
+        if (source && gainNode && ctx && ctx.state !== 'closed') {
             const currentGain = gainNode.gain.value;
             gainNode.gain.cancelScheduledValues(ctx.currentTime);
             gainNode.gain.setValueAtTime(currentGain, ctx.currentTime);
             gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + fadeTime);
 
             setTimeout(() => {
-                try { source.stop(); } catch (e) {}
+                try { 
+                    if (source && source.buffer) source.stop(); 
+                } catch (e) {}
                 source.disconnect();
                 if (bgmSourceRef.current === source) {
                     bgmSourceRef.current = null;
@@ -102,30 +95,24 @@ const AudioManager: React.FC = () => {
     const startBgm = useCallback(async (trackName: string) => {
         const ctx = contextRef.current;
         const gainNode = bgmGainRef.current;
-        if (!ctx || !gainNode) return;
+        if (!ctx || !gainNode || ctx.state === 'closed') return;
 
         if (currentTrackName.current === trackName && bgmSourceRef.current) return;
 
         stopBgm(0.2); 
 
         try {
-            let buffer = bgmCache.current.get(trackName);
+            // AssetCache에서 버퍼 가져오기
+            let buffer = AssetCache.audio.get(trackName);
+            
             if (!buffer) {
+                // 캐시에 없는 경우 (로딩 지연 등) 런타임 로드 시도
+                console.warn(`[Audio] BGM ${trackName} not in cache, fetching manually...`);
                 const url = getMusicUrl(trackName);
                 const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} at ${url}`);
-                }
-
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('text/html')) {
-                    throw new Error(`Invalid content type: received HTML instead of audio at ${url}`);
-                }
-
                 const arrayBuffer = await response.arrayBuffer();
                 buffer = await ctx.decodeAudioData(arrayBuffer);
-                bgmCache.current.set(trackName, buffer);
+                AssetCache.audio.set(trackName, buffer);
             }
 
             if (targetTrackName !== trackName) return;
@@ -140,7 +127,9 @@ const AudioManager: React.FC = () => {
             gainNode.gain.setValueAtTime(0, ctx.currentTime);
             gainNode.gain.linearRampToValueAtTime(effectiveVolume, ctx.currentTime + 0.5);
 
-            if (ctx.state === 'suspended') await ctx.resume();
+            if (ctx.state === 'suspended') {
+                await ctx.resume().catch(() => {});
+            }
             
             source.start(0);
             bgmSourceRef.current = source;
@@ -156,59 +145,45 @@ const AudioManager: React.FC = () => {
     const playSfx = useCallback(async (filename: string) => {
         const ctx = contextRef.current;
         const gainNode = sfxGainRef.current;
-        if (!ctx || !gainNode) return;
+        if (!ctx || !gainNode || ctx.state === 'closed') return;
 
-        // 설정 확인
-        if (!audioSettings.masterEnabled || !audioSettings.sfxEnabled) {
-            console.debug(`[Audio] SFX [${filename}] skip (Muted)`);
-            return;
-        }
+        if (!audioSettings.masterEnabled || !audioSettings.sfxEnabled) return;
 
         try {
-            let buffer = sfxCache.current.get(filename);
+            let buffer = AssetCache.audio.get(filename);
             if (!buffer) {
                 const url = getAudioUrl(filename);
                 const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} for ${filename} at ${url}`);
-                }
-
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('text/html')) {
-                    throw new Error(`Invalid content type: received HTML instead of audio for ${filename} at ${url}`);
-                }
-
                 const arrayBuffer = await response.arrayBuffer();
                 buffer = await ctx.decodeAudioData(arrayBuffer);
-                sfxCache.current.set(filename, buffer);
+                AssetCache.audio.set(filename, buffer);
             }
 
             if (ctx.state === 'suspended') {
-                await ctx.resume();
+                await ctx.resume().catch(() => {});
             }
 
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(gainNode);
             source.start(0);
-            console.debug(`[Audio] Playing SFX: ${filename}`);
         } catch (e) {
             console.error(`[Audio] SFX [${filename}] error:`, e);
         }
     }, [audioSettings.masterEnabled, audioSettings.sfxEnabled]);
 
-    // BGM 설정 업데이트
+    // BGM 및 설정 감지
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isInitialized) return;
         const gainNode = bgmGainRef.current;
         const ctx = contextRef.current;
-        if (!gainNode || !ctx) return;
+        if (!gainNode || !ctx || ctx.state === 'closed') return;
 
-        const shouldPlay = audioSettings.masterEnabled && audioSettings.musicEnabled;
+        const shouldPlay = audioSettings.masterEnabled && audioSettings.musicEnabled && targetTrackName !== null;
+        
         if (shouldPlay) {
             if (currentTrackName.current !== targetTrackName || !bgmSourceRef.current) {
-                startBgm(targetTrackName);
+                startBgm(targetTrackName!);
             } else {
                 const effectiveVolume = audioSettings.masterVolume * audioSettings.musicVolume;
                 gainNode.gain.setTargetAtTime(effectiveVolume, ctx.currentTime, 0.1);
@@ -216,19 +191,19 @@ const AudioManager: React.FC = () => {
         } else {
             stopBgm(0.5);
         }
-    }, [isLoaded, targetTrackName, audioSettings.masterVolume, audioSettings.musicVolume, audioSettings.masterEnabled, audioSettings.musicEnabled, startBgm, stopBgm]);
+    }, [isInitialized, targetTrackName, audioSettings.masterVolume, audioSettings.musicVolume, audioSettings.masterEnabled, audioSettings.musicEnabled, startBgm, stopBgm]);
 
-    // SFX 볼륨 업데이트 (설정 변경 시 즉각 반영)
+    // SFX 볼륨 업데이트
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isInitialized) return;
         const gainNode = sfxGainRef.current;
         const ctx = contextRef.current;
-        if (gainNode && ctx) {
+        if (gainNode && ctx && ctx.state !== 'closed') {
             const isMuted = !audioSettings.masterEnabled || !audioSettings.sfxEnabled;
             const effectiveVolume = isMuted ? 0 : audioSettings.masterVolume * audioSettings.sfxVolume;
             gainNode.gain.setTargetAtTime(effectiveVolume, ctx.currentTime, 0.05);
         }
-    }, [isLoaded, audioSettings.masterVolume, audioSettings.sfxVolume, audioSettings.masterEnabled, audioSettings.sfxEnabled]);
+    }, [isInitialized, audioSettings.masterVolume, audioSettings.sfxVolume, audioSettings.masterEnabled, audioSettings.sfxEnabled]);
 
     // SFX 이벤트 리스너
     useEffect(() => {
@@ -241,15 +216,16 @@ const AudioManager: React.FC = () => {
         return () => window.removeEventListener('play-sfx', handleSfxRequest);
     }, [playSfx]);
 
-    // 브라우저 Autoplay 정책 대응
+    // Autoplay 대응
     useEffect(() => {
         const handleInteraction = () => {
-            if (contextRef.current && contextRef.current.state === 'suspended') {
-                contextRef.current.resume();
+            const ctx = contextRef.current;
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume().catch(() => {});
             }
         };
-        window.addEventListener('mousedown', handleInteraction, { once: true });
-        window.addEventListener('touchstart', handleInteraction, { once: true });
+        window.addEventListener('mousedown', handleInteraction);
+        window.addEventListener('touchstart', handleInteraction);
         return () => {
             window.removeEventListener('mousedown', handleInteraction);
             window.removeEventListener('touchstart', handleInteraction);
