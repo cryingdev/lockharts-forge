@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
@@ -101,7 +100,7 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
         {isHired && (
           <div className={`bg-stone-950/20 flex flex-col transition-all duration-500 overflow-hidden ${isInventoryOpen ? 'flex-1 h-1/2 md:h-full opacity-100' : 'w-0 h-0 md:h-full opacity-0'}`}>
             <EquipmentInventoryList
-              inventory={state.inventory.filter((i) => i.type === 'EQUIPMENT' || i.type === 'CONSUMABLE')}
+              inventory={state.inventory.filter((i) => i.type === 'EQUIPMENT' || i.type === 'CONSUMABLE' || i.type === 'SKILL_BOOK')}
               selectedItemId={selectedInventoryItemId}
               onSelect={setSelectedInventoryItemId}
               onEquip={(id) => {

@@ -1,5 +1,4 @@
-
-# Project Map – Lockhart’s Forge (v0.1.43a)
+# Project Map – Lockhart’s Forge (v0.1.44b)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -12,7 +11,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.43a`).
+- `metadata.json`: App metadata and versioning (`0.1.44b`).
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs (Repair, Shop, Craft).
@@ -30,12 +29,12 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ### Core Logic
 - `state/gameReducer.ts`: Primary state machine. Routes actions to modular handlers.
-- `state/initial-game-state.ts`: Initial data structure for new saves.
+- `state/initial-game-state.ts`: Initial data structure for new saves. (Includes testing items).
 - `state/actions.ts`: TypeScript definitions for all game actions.
 
 ### Reducer Modules (`state/reducer/`)
 - `state/reducer/crafting.ts`: Start/Finish crafting, exp gain, and mastery tracking.
-- `state/reducer/inventory.ts`: Item acquisition, consumption, selling, and locking.
+- `state/reducer/inventory.ts`: Item acquisition, consumption, selling, locking, and **Skill Application**.
 - `state/reducer/mercenary.ts`: Scouting, hiring, stat allocation, and gifting.
 - `state/reducer/expedition.ts`: Auto-expedition lifecycle and reward claiming.
 - `state/reducer/manualDungeon.ts`: Grid movement, floor transitions, and **Immersive Narrative Logic**.
@@ -58,13 +57,13 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ### Functional Tabs (`components/tabs/`)
 - **Forge Tab**: `ForgeTab.tsx`, `hooks/useForge.ts`, and specialized UI components (`RecipeCard`, `MasteryRadialGauge`).
-- **Inventory Tab**: `InventoryDisplay.tsx`, `ItemSelectorList.tsx`.
+- **Inventory Tab**: `InventoryDisplay.tsx`, `ItemSelectorList.tsx`. **Enchantment Mode implemented.**
 - **Shop Tab**: `ShopTab.tsx`, `hooks/useShop.ts`, and HUD/Overlay components.
-- **Market Tab**: `MarketTab.tsx`, `hooks/useMarket.ts`, `MarketCatalog.tsx`, `ShoppingCartDrawer.tsx`.
-- **Tavern Tab**: `TavernTab.tsx`, `TavernInteraction.tsx` (Character focus mode).
-- **Dungeon Tab**: `DungeonTab.tsx`, `AssaultNavigator.tsx`, `DungeonCombatView.tsx` (Manual battle).
-- **Research Tab**: `ResearchTab.tsx`, `hooks/useResearch.ts`.
-- **Simulation Tab**: `SimulationTab.tsx`.
+- **Market Tab**: `MarketTab.tsx`, `hooks/useMarket.ts`, MarketCatalog.tsx, ShoppingCartDrawer.tsx.
+- **Tavern Tab**: `TavernTab.tsx`, TavernInteraction.tsx (Character focus mode).
+- **Dungeon Tab**: `DungeonTab.tsx`, AssaultNavigator.tsx, DungeonCombatView.tsx (Manual battle).
+- **Research Tab**: `ResearchTab.tsx`, hooks/useResearch.ts.
+- **Simulation Tab**: SimulationTab.tsx.
 
 ### Modals (`components/modals/`)
 - `modals/CraftingResultModal.tsx`: Mastery progress and stat gain display.
@@ -75,6 +74,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `modals/SettingsModal.tsx`: System preferences and data controls.
 - `modals/JournalModal.tsx`: Narrative log history.
 - `modals/TierUnlockModal.tsx`: New crafting tier celebrations.
+- `modals/ConfirmationModal.tsx`: Shared decision UI.
 
 ---
 
@@ -100,18 +100,19 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ### Business Models (`models/`)
 - `models/Mercenary.ts`: Character definition and **Status Types (Injured/K.I.A)**.
-- `models/Equipment.ts`: Item stats, rarity, and slot types.
+- `models/Equipment.ts`: Item stats, rarity, and **Skill Slots (socketedSkillId)**.
 - `models/Stats.ts`: Calculation logic for Primary and Derived combat attributes.
 - `models/Monster.ts`: Enemy archetypes.
 - `models/Dungeon.ts`: Map definitions and reward pools.
+- `models/Skill.ts`: Combat skill definitions.
 
 ### Static Data (`data/`)
-- `data/materials.ts`: The global material registry (single source of truth for values).
+- `data/materials.ts`: The global material registry (including **Skill Manuals** and **Skill Scrolls**).
 - `data/equipment/`: Tier-based recipe files (Tier 1-4).
 - `data/monsters.ts`: Combat stat snapshots for all enemies.
 - `data/monster-drops.ts`: Loot tables for manual/auto expeditions.
 - `data/mercenaries.ts`: Named character data (Pip, Adeline, Sister Aria).
-- `data/skills.ts`: Combat skill registry.
+- `data/skills.ts`: Combat skill registry (Players & Monsters).
 - `data/market/market-catalog.ts`: Garrick’s base stock configuration.
 
 ---
@@ -132,17 +133,11 @@ This document provides a comprehensive structural map of the project, detailing 
 - `services/shop/shop-service.ts`: Handles customer arrival intervals and queue processing.
 - `services/dungeon/dungeon-service.ts`: Monitors auto-expedition completion timers.
 
-### Global Hooks (`hooks/`)
-- `hooks/useAudio.ts`: Simple hook for triggering UI sound effects.
-- `hooks/useMercenaryDetail.ts`: Complex state management for attributes and equipment previews.
-
 ---
 
-## 🔄 Recent Updates (v0.1.43a)
-*   **UI/UX Standardization**:
-    *   Unified all dialogue container layouts across Market, Dungeon, Shop, and Tutorial scenes.
-*   **Version Sync**:
-    *   Incremented global version to Build `0.1.43a`.
-*   **Refinement**:
-    *   Updated `PROJECT_MAP.md` to reflect `SfxButton` and `useAudio` integration.
-    *   Confirmed `bellows.wav` usage in Smithing minigame.
+## 🔄 Recent Updates (v0.1.44b)
+*   **Skill Enchantment**:
+    *   Implemented full enchantment workflow for Skill Scrolls in the Inventory tab.
+    *   Added visual highlighting and filtering for equipment targets during imbuement.
+    *   Added socketed skill display in the equipment inspection panel.
+    *   Initial inventory updated with testing skill items.

@@ -1,26 +1,25 @@
 
 # Lockhart's Forge
 
-> **Version**: 0.1.43a
+> **Version**: 0.1.44a
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
+
+## 🔄 Recent Updates (v0.1.44a)
+
+*   **Skill Knowledge System**:
+    *   Added **Skill Manuals**: Consumable items that allow mercenaries to permanently learn job-specific skills.
+    *   Added **Skill Scrolls**: Magic scrolls used in crafting to imbue equipment with special abilities (replaced Skill Runes).
+*   **Unified Visuals**:
+    *   Skills now support dedicated image assets for future UI enhancements.
 
 ## 🔄 Recent Updates (v0.1.43a)
 
 *   **Standardized Narrative UI**:
     *   Unified the layout and margins of the `DialogueBox` across all game modes (Tutorial, Market, Dungeon, Shop).
-    *   Maximized visual consistency for wide-screen and mobile viewports.
 *   **Project Documentation**:
     *   Completely updated `PROJECT_MAP.md` to match the latest refactored architecture.
-*   **Version Sync**:
-    *   Global version set to `0.1.43a`.
-
-## 🔄 Recent Updates (v0.1.42c)
-
-*   **Audio UX Enhancement**:
-    *   Added `billet_hit_normal.mp3` for tactile feedback during smithing.
-    *   Integrated hit sounds into `SmithingScene` for `PERFECT` and `GOOD` judgments.
 
 ## 🌟 Key Features
 

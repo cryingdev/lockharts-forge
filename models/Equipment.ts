@@ -71,8 +71,9 @@ export interface Equipment {
   // 강화 시스템
   enhancementCount: number; // 5콤보마다 누적된 강화 횟수
 
-  // 특수 능력
+  // 특수 능력 및 소켓 스킬
   specialAbilities: SpecialAbility[];
+  socketedSkillId?: string; // 스킬 스크롤로 부여된 스킬 ID
   
   // 내구도 시스템
   durability: number;      // 현재 내구도

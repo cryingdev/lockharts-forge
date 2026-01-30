@@ -1,12 +1,13 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { 
     Package, Sword, Shield, Coins, Info, Zap, Wrench, ShieldAlert, AlertCircle, 
-    Brain, Lock, Unlock, Star, Sparkles, X, Minus, Plus, ChevronRight 
+    Brain, Lock, Unlock, Star, Sparkles, X, Minus, Plus, ChevronRight, Wand2
 } from 'lucide-react';
 import { InventoryItem } from '../types/index';
 import { getAssetUrl } from '../utils';
+import ConfirmationModal from './modals/ConfirmationModal';
+import { SKILLS } from '../data/skills';
 
 const RomanTierOverlay = ({ id }: { id: string }) => {
     if (id === 'scroll_t2') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-xs md:text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] translate-y-1">II</span></div>;
@@ -17,7 +18,8 @@ const RomanTierOverlay = ({ id }: { id: string }) => {
 
 const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, className?: string }) => {
     const isEquip = item.type === 'EQUIPMENT';
-    const folder = isEquip ? 'equipments' : 'materials';
+    const isSkill = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL';
+    const folder = isEquip ? 'equipments' : isSkill ? 'skills' : 'materials';
     
     const baseId = (isEquip && item.equipmentData?.recipeId) 
         ? item.equipmentData.recipeId 
@@ -45,12 +47,27 @@ export const InventoryDisplay = () => {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
     const [sellQuantity, setSellQuantity] = useState(1);
+    
+    // 인챈트(스크롤 부여) 관련 상태
+    const [enchantingScroll, setEnchantingScroll] = useState<InventoryItem | null>(null);
+    const [confirmEnchantTarget, setConfirmEnchantTarget] = useState<InventoryItem | null>(null);
 
     const currentSelectedItem = useMemo(() => 
         state.inventory.find(i => i.id === selectedItemId) || null
     , [state.inventory, selectedItemId]);
 
     const handleSelect = (item: InventoryItem) => {
+        // 인챈트 모드일 때 로직
+        if (enchantingScroll) {
+            if (item.type === 'EQUIPMENT') {
+                if (item.isLocked) {
+                    actions.showToast("Cannot enchant a locked item.");
+                    return;
+                }
+                setConfirmEnchantTarget(item);
+            }
+            return;
+        }
         setSelectedItemId(item.id);
     };
 
@@ -79,8 +96,26 @@ export const InventoryDisplay = () => {
         }
     };
 
+    const handleUseScroll = () => {
+        if (!currentSelectedItem || currentSelectedItem.type !== 'SKILL_SCROLL') return;
+        setEnchantingScroll(currentSelectedItem);
+    };
+
+    const handleConfirmEnchant = () => {
+        if (enchantingScroll && confirmEnchantTarget) {
+            actions.applySkillScroll(enchantingScroll.id, confirmEnchantTarget.id);
+            setEnchantingScroll(null);
+            setConfirmEnchantTarget(null);
+            actions.showToast("Equipment enchanted successfully!");
+        }
+    };
+
     const handleConsume = () => {
         if (!currentSelectedItem) return;
+        if (currentSelectedItem.type === 'SKILL_SCROLL') {
+            handleUseScroll();
+            return;
+        }
         actions.useItem(currentSelectedItem.id);
         if (currentSelectedItem.quantity <= 1) setSelectedItemId(null);
     };
@@ -114,8 +149,10 @@ export const InventoryDisplay = () => {
         const atkValue = isMagical ? s.magicalAttack : s.physicalAttack;
         const defValue = isMagical ? s.magicalDefense : s.physicalDefense;
 
+        const socketedSkill = item.equipmentData.socketedSkillId ? SKILLS[item.equipmentData.socketedSkillId] : null;
+
         return (
-            <div className="mb-4 space-y-1 shrink-0">
+            <div className="mb-4 space-y-2 shrink-0">
                 <div className="grid grid-cols-2 gap-1.5">
                     <div className="flex justify-between bg-stone-900 p-1.5 rounded border border-stone-800 text-[9px] md:text-[10px]">
                         <span className="text-stone-500 uppercase flex items-center gap-1">
@@ -140,6 +177,16 @@ export const InventoryDisplay = () => {
                         <span className="font-black text-amber-500 uppercase tracking-tighter">{getQualityLabel(item.equipmentData.quality)}</span>
                     </div>
                 )}
+                {socketedSkill && (
+                    <div className="bg-indigo-900/30 border border-indigo-500/30 p-2 rounded-lg mt-2">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Wand2 className="w-3 h-3 text-indigo-400" />
+                            <span className="text-[10px] font-black text-indigo-200 uppercase tracking-widest">Socketed Skill</span>
+                        </div>
+                        <div className="text-xs font-bold text-white">{socketedSkill.name}</div>
+                        <p className="text-[9px] text-stone-400 italic leading-tight mt-1">{socketedSkill.description}</p>
+                    </div>
+                )}
             </div>
         );
     };
@@ -148,14 +195,30 @@ export const InventoryDisplay = () => {
         <div className="flex flex-row h-full w-full max-w-7xl mx-auto p-2 md:p-4 gap-2 md:gap-4 overflow-hidden relative">
             
             {/* Storage List Section */}
-            <div className="flex-[1.5] md:flex-[2.5] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex flex-col min-w-0">
-                <div className="bg-slate-800/50 p-2 md:p-3 border-b border-slate-700 flex items-center justify-between shrink-0">
+            <div className="flex-[1.5] md:flex-[2.5] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex flex-col min-w-0 relative">
+                <div className={`bg-slate-800/50 p-2 md:p-3 border-b border-slate-700 flex items-center justify-between shrink-0 transition-colors duration-500 ${enchantingScroll ? 'bg-amber-900/60' : ''}`}>
                     <div className="flex items-center gap-2">
                         <Package className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-50" />
-                        <h3 className="text-slate-200 text-xs md:text-sm uppercase tracking-wider font-bold">Storage</h3>
+                        <h3 className="text-slate-200 text-xs md:text-sm uppercase tracking-wider font-bold">
+                            {enchantingScroll ? 'Select Equipment to Imbue' : 'Storage'}
+                        </h3>
                     </div>
-                    <span className="text-[10px] text-slate-500 font-mono">{state.inventory.length}</span>
+                    {enchantingScroll ? (
+                        <button onClick={() => setEnchantingScroll(null)} className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded-full text-[9px] md:text-[10px] font-black uppercase text-white shadow-lg transition-all flex items-center gap-1 active:scale-95">
+                            <X className="w-3 h-3" /> Cancel
+                        </button>
+                    ) : (
+                        <span className="text-[10px] text-slate-500 font-mono">{state.inventory.length}</span>
+                    )}
                 </div>
+                
+                {enchantingScroll && (
+                    <div className="bg-amber-600 px-3 py-1.5 border-b border-amber-400/50 text-[9px] md:text-[11px] text-white font-black uppercase tracking-widest flex items-center justify-center gap-2 animate-in slide-in-from-top-2 duration-300">
+                        <Sparkles className="w-3 h-3 animate-spin-slow" />
+                        Targeting: {enchantingScroll.name}
+                    </div>
+                )}
+
                 <div className="p-2 overflow-y-auto flex-1 custom-scrollbar min-h-0 bg-stone-950/20">
                     {state.inventory.length === 0 ? (
                         <div className="text-slate-500 text-center py-12 italic text-xs">Empty</div>
@@ -163,20 +226,29 @@ export const InventoryDisplay = () => {
                         <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 pb-8">
                             {state.inventory.map(item => {
                                 const isSelected = selectedItemId === item.id;
+                                const isEnchantTarget = enchantingScroll && item.type === 'EQUIPMENT';
+                                const isEnchantRestricted = enchantingScroll && item.type !== 'EQUIPMENT';
+
                                 return (
                                     <button
                                         key={item.id} onClick={() => handleSelect(item)}
-                                        className={`relative flex flex-col items-center p-2 rounded-lg border transition-all h-20 md:h-28 justify-between ${isSelected ? 'bg-amber-900/20 border-amber-500 shadow-md ring-1 ring-amber-500/50' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'}`}
+                                        disabled={isEnchantRestricted}
+                                        className={`relative flex flex-col items-center p-2 rounded-lg border transition-all h-20 md:h-28 justify-between ${
+                                            isSelected && !enchantingScroll ? 'bg-amber-900/20 border-amber-500 shadow-md ring-1 ring-amber-500/50' : 
+                                            isEnchantTarget ? 'bg-amber-500/10 border-amber-500 ring-4 ring-amber-500/40 animate-pulse shadow-[0_0_20px_rgba(245,158,11,0.3)] z-10' :
+                                            isEnchantRestricted ? 'opacity-20 grayscale cursor-not-allowed border-transparent' :
+                                            'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                                        }`}
                                     >
                                         <div className="absolute top-1 right-1 bg-slate-950/80 px-1 rounded text-[8px] md:text-[10px] text-slate-400 font-mono flex items-center gap-1 z-20">
                                             {item.isLocked && <Lock className="w-2 h-2 md:w-2.5 md:h-2.5 text-amber-500" />}
                                             x{item.quantity}
                                         </div>
                                         <div className="flex-1 flex items-center justify-center relative">
-                                             <AdaptiveInventoryImage item={item} className="w-6 h-6 md:w-10 md:h-10 object-contain" />
+                                             <AdaptiveInventoryImage item={item} className="w-6 h-6 md:w-10 md:h-10 object-contain drop-shadow-lg" />
                                              <RomanTierOverlay id={item.id} />
                                         </div>
-                                        <div className="text-[9px] md:text-xs text-center font-medium text-slate-300 w-full truncate">{item.name}</div>
+                                        <div className="text-[9px] md:text-xs text-center font-bold text-slate-300 w-full truncate px-1">{item.name}</div>
                                     </button>
                                 );
                             })}
@@ -186,7 +258,7 @@ export const InventoryDisplay = () => {
             </div>
 
             {/* Details Section */}
-            <div className="flex-1 md:w-96 bg-black rounded-xl border border-stone-800 overflow-hidden flex flex-col min-w-0">
+            <div className="flex-1 md:w-96 bg-black rounded-xl border border-stone-800 overflow-hidden flex flex-col min-w-0 transition-opacity duration-300" style={{ opacity: enchantingScroll ? 0.4 : 1 }}>
                 <div className="bg-stone-900/50 p-2 md:p-3 border-b border-stone-800 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
                         <Info className="w-3.5 h-3.5 md:w-4 md:h-4 text-stone-500" />
@@ -232,9 +304,12 @@ export const InventoryDisplay = () => {
                         </div>
 
                         <div className="mt-4 space-y-2 pt-2 shrink-0">
-                            {(currentSelectedItem.type === 'CONSUMABLE' || currentSelectedItem.type === 'SCROLL') && (
-                                <button onClick={handleConsume} className="w-full py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 rounded text-[10px] md:text-sm font-bold transition-all">
-                                    {currentSelectedItem.type === 'SCROLL' ? 'Study Scroll' : 'Use Item'}
+                            {(currentSelectedItem.type === 'CONSUMABLE' || currentSelectedItem.type === 'SCROLL' || currentSelectedItem.type === 'SKILL_BOOK' || currentSelectedItem.type === 'SKILL_SCROLL') && (
+                                <button onClick={handleConsume} className="w-full py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 rounded text-[10px] md:text-sm font-bold transition-all shadow-lg active:scale-[0.98]">
+                                    {currentSelectedItem.type === 'SCROLL' ? 'Study Scroll' : 
+                                     currentSelectedItem.type === 'SKILL_BOOK' ? 'Study Manual' : 
+                                     currentSelectedItem.type === 'SKILL_SCROLL' ? 'Imbue Equipment' :
+                                     'Use Item'}
                                 </button>
                             )}
                             {currentSelectedItem.baseValue > 0 && currentSelectedItem.type !== 'KEY_ITEM' && (
@@ -340,6 +415,17 @@ export const InventoryDisplay = () => {
                     </div>
                 </div>
             )}
+
+            {/* Enchant Confirmation Modal */}
+            <ConfirmationModal 
+                isOpen={!!confirmEnchantTarget}
+                title="Apply Skill Scroll"
+                message={`Do you want to imbue ${confirmEnchantTarget?.name} with ${enchantingScroll?.skillId ? SKILLS[enchantingScroll.skillId]?.name : 'this skill'}? This scroll will be consumed to permanently add an ability to the gear.`}
+                confirmLabel="Confirm Imbuement"
+                cancelLabel="Cancel"
+                onConfirm={handleConfirmEnchant}
+                onCancel={() => setConfirmEnchantTarget(null)}
+            />
         </div>
     );
 };

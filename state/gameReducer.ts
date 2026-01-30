@@ -5,7 +5,7 @@ import { GameAction } from './actions';
 import { handleRepairWork } from './reducer/repair';
 import { handleSleep, handleConfirmSleep } from './reducer/sleep';
 import { handleTriggerEvent, handleCloseEvent, handleToggleJournal } from './reducer/events';
-import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem, handleToggleLockItem } from './reducer/inventory';
+import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem, handleToggleLockItem, handleApplySkillScroll } from './reducer/inventory';
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
 import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer, handleRefuseCustomer } from './reducer/shop';
 import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
@@ -40,6 +40,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'INSTALL_FURNACE': return handleInstallFurnace(state);
     case 'SELL_ITEM': return handleSellItem(state, action.payload);
     case 'USE_ITEM': return handleUseItem(state, action.payload);
+    case 'APPLY_SKILL_SCROLL': return handleApplySkillScroll(state, action.payload);
     case 'TOGGLE_LOCK_ITEM': return handleToggleLockItem(state, action.payload);
 
     // Crafting

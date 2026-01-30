@@ -2,7 +2,7 @@
 {
   "name": "lockharts-forge",
   "private": true,
-  "version": "0.1.43a",
+  "version": "0.1.44a",
   "type": "module",
   "scripts": {
     "dev": "vite",

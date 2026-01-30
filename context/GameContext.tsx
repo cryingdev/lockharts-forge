@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -140,6 +139,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     equipItem: (mercenaryId: string, inventoryItemId: string) => dispatch({ type: 'EQUIP_ITEM', payload: { mercenaryId, inventoryItemId } }),
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => dispatch({ type: 'UNEQUIP_ITEM', payload: { mercenaryId, slot } }),
     useItem: (itemId: string, mercenaryId?: string) => dispatch({ type: 'USE_ITEM', payload: { itemId, mercenaryId } }),
+    // Added applySkillScroll to actions to fix dispatch property access error in InventoryDisplay.tsx
+    applySkillScroll: (scrollItemId: string, targetEquipmentId: string) => dispatch({ type: 'APPLY_SKILL_SCROLL', payload: { scrollItemId, targetEquipmentId } }),
     toggleLockItem: (itemId: string) => dispatch({ type: 'TOGGLE_LOCK_ITEM', payload: { itemId } }),
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
     startManualAssault: (dungeonId: string, partyIds: string[], startFloor?: number) => 

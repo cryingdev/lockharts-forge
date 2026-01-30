@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Package, Coins, Lock } from 'lucide-react';
 import { getAssetUrl } from '../../../../utils';
@@ -27,15 +26,17 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
     const meta = item.meta;
     const currentPrice = meta.baseValue * multiplier;
     const canAfford = gold >= currentPrice;
+    const isSkillItem = meta.type === 'SKILL_BOOK' || meta.type === 'SKILL_SCROLL';
+    const folder = isSkillItem ? 'skills' : 'materials';
     
     // 1순위: ID 기반 파일명 우선 시도
-    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${item.id}.png`, 'materials'));
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${item.id}.png`, folder));
 
     // 이미지 로드 실패 시 폴백 처리
     const handleImgError = () => {
-        if (meta.image && imgSrc !== getAssetUrl(meta.image, 'materials')) {
+        if (meta.image && imgSrc !== getAssetUrl(meta.image, folder)) {
             // 2순위: 메타데이터에 정의된 image 경로
-            setImgSrc(getAssetUrl(meta.image, 'materials'));
+            setImgSrc(getAssetUrl(meta.image, folder));
         }
     };
 

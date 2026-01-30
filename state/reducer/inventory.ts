@@ -2,10 +2,11 @@ import { GameState, InventoryItem } from '../../types/index';
 import { materials } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
+import { SKILLS } from '../../data/skills';
 
 export const handleAcquireItem = (state: GameState, payload: { id: string; quantity: number }): GameState => {
     const { id, quantity } = payload;
-    const itemDef = materials[id];
+    const itemDef = (materials as any)[id];
     if (!itemDef) return state;
 
     const existingItem = state.inventory.find(i => i.id === id);
@@ -94,7 +95,7 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
                 logUpdates.unshift('Research Table installed! You can now experiment with materials to find lost blueprints.');
                 return;
             }
-            const itemDef = materials[buyItem.id];
+            const itemDef = (materials as any)[buyItem.id];
             if (itemDef) {
                 const existingItem = newInventory.find(i => i.id === buyItem.id);
                 if (existingItem) {
@@ -271,8 +272,40 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
     let logMsg = '';
     let itemUsed = false;
 
+    // --- Skill Scroll System ---
+    if (inventoryItem.type === 'SKILL_SCROLL') {
+        // UI에서 인챈트 모드를 트리거하기 위해 리듀서에서는 아무 동작도 하지 않습니다.
+        return state;
+    }
+
+    // --- Skill Book System ---
+    if (inventoryItem.type === 'SKILL_BOOK' && inventoryItem.skillId && mercenaryId) {
+        const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);
+        if (mercIdx > -1) {
+            const merc = { ...newKnownMercenaries[mercIdx] };
+            const skill = SKILLS[inventoryItem.skillId];
+            if (!skill) return state;
+
+            // Check if already learned
+            if (merc.skillIds?.includes(inventoryItem.skillId)) {
+                return { ...state, toastQueue: [...state.toastQueue, `${merc.name} already knows ${skill.name}.`] };
+            }
+
+            // Check job compatibility (empty job list means universal)
+            const isCompatible = skill.job.length === 0 || skill.job.includes(merc.job);
+            if (!isCompatible) {
+                return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is not compatible with this skill type.`] };
+            }
+
+            merc.skillIds = [...(merc.skillIds || []), inventoryItem.skillId];
+            logMsg = `${merc.name} studied the ${inventoryItem.name} and learned ${skill.name}!`;
+            itemUsed = true;
+            newKnownMercenaries[mercIdx] = merc;
+        }
+    }
+
     // --- Unified Potion System ---
-    if (itemId.startsWith('potion_')) {
+    if (!itemUsed && itemId.startsWith('potion_')) {
         const parts = itemId.split('_'); // potion, type, size
         const type = parts[1];
         const size = parts[2];
@@ -348,6 +381,42 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
         unlockedRecipes: newUnlockedRecipes,
         knownMercenaries: newKnownMercenaries,
         logs: [logMsg, ...state.logs]
+    };
+};
+
+export const handleApplySkillScroll = (state: GameState, payload: { scrollItemId: string; targetEquipmentId: string }): GameState => {
+    const { scrollItemId, targetEquipmentId } = payload;
+    const scroll = state.inventory.find(i => i.id === scrollItemId);
+    const target = state.inventory.find(i => i.id === targetEquipmentId);
+
+    if (!scroll || !target || !scroll.skillId || target.type !== 'EQUIPMENT' || !target.equipmentData) {
+        return state;
+    }
+
+    const skill = SKILLS[scroll.skillId];
+    if (!skill) return state;
+
+    // 1. 소모 및 적용 처리
+    const newInventory = state.inventory.map(item => {
+        if (item.id === scrollItemId) {
+            return { ...item, quantity: item.quantity - 1 };
+        }
+        if (item.id === targetEquipmentId) {
+            return { 
+                ...item, 
+                equipmentData: { 
+                    ...item.equipmentData!, 
+                    socketedSkillId: scroll.skillId 
+                } 
+            };
+        }
+        return item;
+    }).filter(i => i.quantity > 0);
+
+    return {
+        ...state,
+        inventory: newInventory,
+        logs: [`Successfully imbued ${target.name} with ${skill.name}.`, ...state.logs]
     };
 };
 

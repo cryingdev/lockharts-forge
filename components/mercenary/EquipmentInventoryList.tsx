@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { 
   Box, Sword, Shield, Sparkles, FlaskConical, Package, 
-  ChevronRight, AlertCircle, Check, X 
+  ChevronRight, AlertCircle, Check, X, BookOpen 
 } from 'lucide-react';
 import { InventoryItem, EquipmentSlotType } from '../../types/inventory';
 import { Mercenary } from '../../models/Mercenary';
@@ -10,7 +9,7 @@ import { PrimaryStats, mergePrimaryStats } from '../../models/Stats';
 import { getAssetUrl } from '../../utils';
 import { SfxButton } from '../common/ui/SfxButton';
 
-type CategoryFilter = 'ALL' | 'WEAPON' | 'ARMOR' | 'ACCESSORY' | 'CONSUMABLE';
+type CategoryFilter = 'ALL' | 'WEAPON' | 'ARMOR' | 'ACCESSORY' | 'CONSUMABLE' | 'SKILL';
 
 interface EquipmentInventoryListProps {
   inventory: InventoryItem[];
@@ -81,7 +80,10 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
       return filtered.filter((item) => ['ACCESSORY', 'WAIST'].includes(item.equipmentData?.slotType || ''));
     }
     if (activeFilter === 'CONSUMABLE') {
-      return filtered.filter((item) => item.type === 'CONSUMABLE');
+      return filtered.filter((item) => item.type === 'CONSUMABLE' || item.type === 'SKILL_BOOK');
+    }
+    if (activeFilter === 'SKILL') {
+      return filtered.filter((item) => item.type === 'SKILL_BOOK');
     }
 
     return filtered;
@@ -93,6 +95,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
     { id: 'ARMOR', label: 'Armor', icon: <Shield className="w-3 h-3" /> },
     { id: 'ACCESSORY', label: 'Accessory', icon: <Sparkles className="w-3 h-3" /> },
     { id: 'CONSUMABLE', label: 'Items', icon: <FlaskConical className="w-3 h-3" /> },
+    { id: 'SKILL', label: 'Manuals', icon: <BookOpen className="w-3 h-3" /> },
   ];
 
   return (
@@ -138,7 +141,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
         {displayInventory.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-stone-800 italic p-12 text-center">
             <Box className="w-12 h-12 opacity-10 mb-2" />
-            <p className="text-xs">No suitable gear found.</p>
+            <p className="text-xs">No suitable items found.</p>
             {selectedSlotFilter && (
               <SfxButton 
                 sfx="switch"
@@ -151,7 +154,8 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
           </div>
         ) : (
           displayInventory.map((item) => {
-            const isConsumable = item.type === 'CONSUMABLE';
+            const isConsumable = item.type === 'CONSUMABLE' || item.type === 'SKILL_BOOK';
+            const isSkillBook = item.type === 'SKILL_BOOK';
             const isSelected = selectedItemId === item.id;
             
             const minLevel = item.equipmentData?.minLevel || 1;
@@ -164,7 +168,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                   : item.equipmentData.recipeId
                     ? getAssetUrl(`${item.equipmentData.recipeId}.png`, 'equipments')
                     : getAssetUrl(`${item.id.split('_')[0]}.png`, 'equipments'))
-              : getAssetUrl(`${item.id}.png`, 'materials');
+              : getAssetUrl(`${item.id}.png`, isSkillBook ? 'skills' : 'materials');
 
             return (
               <div
@@ -183,7 +187,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                     <div className="text-[11px] md:text-lg font-black truncate text-stone-200">{item.name}</div>
                     <div className="flex wrap items-center gap-2 mt-1">
                       <span className={`text-[7px] md:text-[9px] px-1.5 py-0.5 rounded font-black uppercase border leading-none ${rarityClasses}`}>
-                        {isConsumable ? 'CONSUMABLE' : item.equipmentData?.rarity}
+                        {isSkillBook ? 'MANUAL' : isConsumable ? 'CONSUMABLE' : item.equipmentData?.rarity}
                       </span>
                       {item.quantity > 1 && (
                         <span className="text-[7px] md:text-[9px] text-stone-500 font-mono font-bold">
@@ -212,7 +216,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                             className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-emerald-900/40 text-emerald-400 transition-colors"
                         >
                             <Check className="w-4 h-4" />
-                            <span className="text-[8px] md:text-[10px] font-black uppercase">Consume</span>
+                            <span className="text-[8px] md:text-[10px] font-black uppercase">{isSkillBook ? 'Study Manual' : 'Consume'}</span>
                         </SfxButton>
                         <div className="h-px w-full bg-amber-600/10" />
                         <SfxButton 
@@ -252,7 +256,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                         )}
                     </div>
                     {!isConsumable && item.equipmentData && (
-                        <div className="flex items-center gap-2 text-[8px] md:text-xs text-stone-600 font-mono">
+                        <div className="flex items-center gap-2 text-[8px] md:xs text-stone-600 font-mono">
                             {(item.equipmentData.stats.physicalAttack > 0 || item.equipmentData.stats.magicalAttack > 0) && (
                                 <span className="flex items-center gap-1"><Sword className="w-2.5 h-2.5" /> {item.equipmentData.stats.physicalAttack || item.equipmentData.stats.magicalAttack}</span>
                             )}
