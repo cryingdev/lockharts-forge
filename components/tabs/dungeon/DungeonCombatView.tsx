@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Shield, Sword, Activity, Skull, Zap, LogOut, FastForward, Pause, Play, ChevronDown, ChevronUp, Sparkles, Target, Package, X, Check, RotateCcw } from 'lucide-react';
+import { Shield, Sword, Activity, Skull, Zap, LogOut, FastForward, Pause, Play, ChevronDown, ChevronUp, Sparkles, Target, Package, X, Check, RotateCcw, Wand2, ChevronRight, Heart } from 'lucide-react';
 import { Mercenary } from '../../../models/Mercenary';
 import { Monster } from '../../../models/Monster';
 import { ManualDungeonSession } from '../../../types/game-state';
@@ -22,6 +21,7 @@ interface CombatLogEntry {
     team: 'PLAYER' | 'ENEMY' | 'SYSTEM';
     isCrit?: boolean;
     isSkill?: boolean;
+    isHeal?: boolean;
 }
 
 interface DamagePopup {
@@ -30,6 +30,7 @@ interface DamagePopup {
     targetId: string;
     isCrit: boolean;
     isSkill: boolean;
+    isHeal?: boolean;
 }
 
 interface DungeonCombatViewProps {
@@ -66,7 +67,6 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
     const [logs, setLogs] = useState<CombatLogEntry[]>([]);
     const [damagePopups, setDamagePopups] = useState<DamagePopup[]>([]);
     
-    // --- PERSISTENCE: 설정 데이터 유지 ---
     const [isAuto, setIsAuto] = useState(() => {
         const saved = localStorage.getItem('dungeon_combat_auto');
         return saved === null ? true : saved === 'true';
@@ -91,6 +91,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
     const [activeActorId, setActiveActorId] = useState<string | null>(null); 
     const [attackingUnitId, setAttackingUnitId] = useState<string | null>(null);
     const [showLogs, setShowLogs] = useState(false);
+    const [showSkillList, setShowSkillList] = useState(false);
     
     const [pendingAction, setPendingAction] = useState<{ type: 'ATTACK' | 'SKILL', skillId?: string } | null>(null);
     const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
@@ -110,83 +111,125 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const addLog = useCallback((msg: string, team: 'PLAYER' | 'ENEMY' | 'SYSTEM', isCrit = false, isSkill = false) => {
-        setLogs(prev => [{ msg, team, isCrit, isSkill }, ...prev].slice(0, 50));
+    const addLog = useCallback((msg: string, team: 'PLAYER' | 'ENEMY' | 'SYSTEM', isCrit = false, isSkill = false, isHeal = false) => {
+        setLogs(prev => [{ msg, team, isCrit, isSkill, isHeal }, ...prev].slice(0, 50));
     }, []);
 
-    const triggerDamagePopup = useCallback((targetId: string, value: number, isCrit: boolean, isSkill: boolean) => {
+    const triggerDamagePopup = useCallback((targetId: string, value: number, isCrit: boolean, isSkill: boolean, isHeal = false) => {
         const id = Date.now() + Math.random();
-        setDamagePopups(prev => [...prev, { id, value, targetId, isCrit, isSkill }]);
+        setDamagePopups(prev => [...prev, { id, value, targetId, isCrit, isSkill, isHeal }]);
         setTimeout(() => {
             setDamagePopups(prev => prev.filter(p => p.id !== id));
         }, 800 / speedRef.current);
     }, []);
 
-    const executeAttack = useCallback((attacker: any, target: any, isPlayerAttacker: boolean, skillId?: string) => {
-        setAttackingUnitId(isPlayerAttacker ? attacker.id : target.instanceId);
+    /**
+     * executeAction: 전투의 핵심 Use Case 처리기
+     * 공격, 힐, 버프 등 모든 전투 행위를 기술의 태그에 따라 처리합니다.
+     */
+    const executeAction = useCallback((attacker: any, target: any, isPlayerSide: boolean, skillId?: string) => {
+        setAttackingUnitId(isPlayerSide ? attacker.id : attacker.instanceId);
         
         setTimeout(() => {
             const skill = skillId ? SKILLS[skillId] : null;
             const multiplier = skill ? skill.multiplier : 1.0;
-            const mpCost = skill ? skill.mpCost : 0;
+            const mpCost = skill?.mpCost ?? 0;
+            const isHealAction = skill?.tags.includes('HEAL') || false;
 
-            const res = calculateCombatResult(
-                isPlayerAttacker ? attacker.derived : attacker.stats,
-                isPlayerAttacker ? target.stats : target.derived,
-                isPlayerAttacker ? attacker.job : 'Fighter' as any,
-                isPlayerAttacker ? (attacker.derived.magicalAttack > attacker.derived.physicalAttack ? 'MAGICAL' : 'PHYSICAL') : 'PHYSICAL',
-                multiplier
-            );
+            // USE CASE: HEALING
+            if (isHealAction) {
+                const baseHeal = Math.round((attacker.derived?.magicalAttack || attacker.stats.magicalAttack || 10) * multiplier);
+                const isCrit = Math.random() * 100 <= (attacker.derived?.critChance || 0);
+                const finalHeal = isCrit ? Math.round(baseHeal * 1.5) : baseHeal;
 
-            // 명중/회피 시 효과음 출력
-            if (res.isHit) {
-                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'battle_slash.mp3' } }));
-            } else {
-                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'swing_miss.mp3' } }));
-            }
+                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'click_light.wav' } }));
 
-            if (isPlayerAttacker) {
-                setEnemySquadState(prev => prev.map(e => {
-                    if (e.instanceId === target.instanceId) {
-                        const next = { ...e, lastDamaged: res.isHit };
-                        if (res.isHit) {
-                            let nextHp = Math.max(0, next.currentHp - res.damage);
-                            if (nextHp <= 0 && next.id === 'phoenix' && !next.hasUsedRevival) {
-                                nextHp = next.stats.maxHp;
-                                next.hasUsedRevival = true;
-                                addLog("Phoenix rebirth triggered!", 'ENEMY', true, true);
-                                triggerDamagePopup(target.instanceId, 0, true, true);
-                            } else {
-                                next.currentHp = nextHp;
-                            }
-                            triggerDamagePopup(target.instanceId, res.damage, res.isCrit, !!skill);
+                if (isPlayerSide) {
+                    setPartyState(prev => prev.map(p => {
+                        if (p.id === target.id) {
+                            const nextHp = Math.min(p.derived.maxHp, p.currentHp + finalHeal);
+                            triggerDamagePopup(p.id, finalHeal, isCrit, true, true);
+                            return { ...p, currentHp: nextHp };
                         }
-                        setTimeout(() => setEnemySquadState(curr => curr.map(currE => currE.instanceId === target.instanceId ? { ...currE, lastDamaged: false } : currE)), 200 / speedRef.current);
-                        return next;
-                    }
-                    return e;
-                }));
-                
-                if (skill) {
-                    setPartyState(prev => prev.map(p => p.id === attacker.id ? { ...p, currentMp: Math.max(0, p.currentMp - mpCost) } : p));
-                    addLog(`${attacker.name} used ${skill.name}!`, 'PLAYER', res.isCrit, true);
+                        if (p.id === attacker.id) {
+                            return { ...p, currentMp: Math.max(0, p.currentMp - mpCost) };
+                        }
+                        return p;
+                    }));
+                    addLog(`${attacker.name} used ${skill!.name} on ${target.name} for ${finalHeal} HP!`, 'PLAYER', isCrit, true, true);
                 } else {
-                    addLog(`${attacker.name} hits ${target.name} for ${res.damage}`, 'PLAYER', res.isCrit);
-                }
-            } else {
-                setPartyState(prev => prev.map(p => {
-                    if (p.id === target.id) {
-                        const next = { ...p, lastDamaged: res.isHit };
-                        if (res.isHit) {
-                            next.currentHp = Math.max(0, next.currentHp - res.damage);
-                            triggerDamagePopup(p.id, res.damage, res.isCrit, false);
+                    // 적이 자가 회복하거나 다른 적을 치유하는 경우
+                    setEnemySquadState(prev => prev.map(e => {
+                        if (e.instanceId === target.instanceId) {
+                            const nextHp = Math.min(e.stats.maxHp, e.currentHp + finalHeal);
+                            triggerDamagePopup(e.instanceId, finalHeal, isCrit, true, true);
+                            return { ...e, currentHp: nextHp };
                         }
-                        setTimeout(() => setPartyState(curr => curr.map(c => c.id === p.id ? { ...c, lastDamaged: false } : c)), 200 / speedRef.current);
-                        return next;
+                        return e;
+                    }));
+                    addLog(`${attacker.name} healed ${target.name} for ${finalHeal}!`, 'ENEMY', isCrit, true, true);
+                }
+            } 
+            // USE CASE: DAMAGE
+            else {
+                const res = calculateCombatResult(
+                    isPlayerSide ? attacker.derived : attacker.stats,
+                    isPlayerSide ? target.stats : target.derived,
+                    isPlayerSide ? attacker.job : 'Fighter' as any,
+                    isPlayerSide ? (attacker.derived.magicalAttack > attacker.derived.physicalAttack ? 'MAGICAL' : 'PHYSICAL') : 'PHYSICAL',
+                    multiplier
+                );
+
+                if (res.isHit) {
+                    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'battle_slash.mp3' } }));
+                } else {
+                    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'swing_miss.mp3' } }));
+                }
+
+                if (isPlayerSide) {
+                    setEnemySquadState(prev => prev.map(e => {
+                        if (e.instanceId === target.instanceId) {
+                            const next = { ...e, lastDamaged: res.isHit };
+                            if (res.isHit) {
+                                let nextHp = Math.max(0, next.currentHp - res.damage);
+                                if (nextHp <= 0 && next.id === 'phoenix' && !next.hasUsedRevival) {
+                                    nextHp = next.stats.maxHp;
+                                    next.hasUsedRevival = true;
+                                    addLog("Phoenix rebirth triggered!", 'ENEMY', true, true);
+                                    triggerDamagePopup(target.instanceId, 0, true, true);
+                                } else {
+                                    next.currentHp = nextHp;
+                                }
+                                triggerDamagePopup(target.instanceId, res.damage, res.isCrit, !!skill);
+                            }
+                            setTimeout(() => setEnemySquadState(curr => curr.map(currE => currE.instanceId === target.instanceId ? { ...currE, lastDamaged: false } : currE)), 200 / speedRef.current);
+                            return next;
+                        }
+                        return e;
+                    }));
+                    
+                    setPartyState(prev => prev.map(p => p.id === attacker.id ? { ...p, currentMp: Math.max(0, p.currentMp - mpCost) } : p));
+                    
+                    if (skill) {
+                        addLog(`${attacker.name} used ${skill.name}!`, 'PLAYER', res.isCrit, true);
+                    } else {
+                        addLog(`${attacker.name} hits ${target.name} for ${res.damage}`, 'PLAYER', res.isCrit);
                     }
-                    return p;
-                }));
-                addLog(`${attacker.name} strikes ${target.name} for ${res.damage}`, 'ENEMY');
+                } else {
+                    setPartyState(prev => prev.map(p => {
+                        if (p.id === target.id) {
+                            const next = { ...p, lastDamaged: res.isHit };
+                            if (res.isHit) {
+                                next.currentHp = Math.max(0, next.currentHp - res.damage);
+                                triggerDamagePopup(p.id, res.damage, res.isCrit, false);
+                            }
+                            setTimeout(() => setPartyState(curr => curr.map(c => c.id === p.id ? { ...c, lastDamaged: false } : c)), 200 / speedRef.current);
+                            return next;
+                        }
+                        return p;
+                    }));
+                    addLog(`${attacker.name} strikes ${target.name} for ${res.damage}`, 'ENEMY');
+                }
             }
             
             setTimeout(() => setAttackingUnitId(null), 150 / speedRef.current);
@@ -210,7 +253,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
             return;
         }
 
-        // --- SPEED BALANCING: 기초 게이지 충전량 0.2로 고정 ---
+        // 플레이어 턴 게이지 계산 및 행동 결정
         setPartyState(prev => {
             const next = [...prev];
             let readyMerc = null;
@@ -221,25 +264,45 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 }
             }
             if (readyMerc && !attackingUnitId) {
-                const livingEnemies = enemySquadState.filter(e => e.currentHp > 0);
-                if (livingEnemies.length > 0) {
-                    if (isAuto) {
-                        readyMerc.gauge -= ACTION_THRESHOLD;
-                        const target = livingEnemies[Math.floor(Math.random() * livingEnemies.length)];
-                        let sid = undefined;
-                        if (readyMerc.skillIds && readyMerc.skillIds.length > 0) {
-                            const skill = SKILLS[readyMerc.skillIds[0]];
-                            if (skill && readyMerc.currentMp >= skill.mpCost && Math.random() < 0.3) sid = skill.id;
-                        }
-                        executeAttack(readyMerc, target, true, sid);
-                    } else {
-                        setActiveActorId(readyMerc.id);
+                if (isAuto) {
+                    readyMerc.gauge -= ACTION_THRESHOLD;
+                    const livingEnemies = enemySquadState.filter(e => e.currentHp > 0);
+                    const livingAllies = next.filter(p => p.currentHp > 0);
+
+                    const availableSkillIds = [
+                        ...(readyMerc.skillIds || []),
+                        ...Object.values(readyReady(readyMerc)).filter(Boolean) as string[]
+                    ];
+
+                    // Helper to get socketed skills safely
+                    function readyReady(m: any) {
+                        return Object.values(m.equipment || {}).map(i => (i as any)?.socketedSkillId);
                     }
+
+                    let sid = undefined;
+                    let target = livingEnemies[Math.floor(Math.random() * livingEnemies.length)];
+
+                    if (availableSkillIds.length > 0) {
+                        const skill = SKILLS[availableSkillIds[0]];
+                        if (skill && readyMerc.currentMp >= (skill.mpCost ?? 0) && Math.random() < 0.3) {
+                            sid = skill.id;
+                            if (skill.tags.includes('HEAL')) {
+                                // AI: 힐 스킬인 경우 체력이 가장 낮은 아군 선택
+                                target = [...livingAllies].sort((a,b) => (a.currentHp/a.derived.maxHp) - (b.currentHp/b.derived.maxHp))[0];
+                            }
+                        }
+                    }
+                    executeAction(readyMerc, target, true, sid);
+                } else {
+                    setActiveActorId(readyMerc.id);
+                    setShowSkillList(false);
+                    setPendingAction(null);
                 }
             }
             return next;
         });
 
+        // 적군 턴 게이지 계산 및 행동 결정
         setEnemySquadState(prev => {
             const next = [...prev];
             let readyEnemy = null;
@@ -254,12 +317,12 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 const livingPlayers = partyState.filter(p => p.currentHp > 0);
                 if (livingPlayers.length > 0) {
                     const target = livingPlayers[Math.floor(Math.random() * livingPlayers.length)];
-                    executeAttack(readyEnemy, target, false);
+                    executeAction(readyEnemy, target, false);
                 }
             }
             return next;
         });
-    }, [isPaused, isAuto, activeActorId, attackingUnitId, inspectedMercId, enemySquadState, partyState, executeAttack, onFinish]);
+    }, [isPaused, isAuto, activeActorId, attackingUnitId, inspectedMercId, enemySquadState, partyState, executeAction, onFinish]);
 
     useEffect(() => {
         battleInterval.current = setInterval(processLoop, 100);
@@ -297,16 +360,48 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
     const handleManualAction = (e: React.MouseEvent, type: 'ATTACK' | 'SKILL', skillId?: string) => {
         e.stopPropagation(); 
         if (!activeActorId) return;
+        
+        if (type === 'SKILL' && !skillId) {
+            setShowSkillList(true);
+            return;
+        }
+
+        if (type === 'SKILL' && skillId) {
+            const skill = SKILLS[skillId];
+            const actor = partyState.find(p => p.id === activeActorId);
+            if (!actor || actor.currentMp < (skill?.mpCost ?? 0)) {
+                actions.showToast("Not enough MP!");
+                return;
+            }
+            setShowSkillList(false);
+        }
+
         setPendingAction({ type, skillId });
     };
 
-    const handleEnemyClick = (target: any) => {
+    /**
+     * handleTargetClick: 타겟 지정 Use Case
+     * 공격 스킬/액션은 적을, 지원 스킬은 아군을 지정할 수 있습니다.
+     */
+    const handleTargetClick = (target: any, side: 'PLAYER' | 'ENEMY') => {
         if (!activeActorId || !pendingAction) return;
-        if (target.currentHp <= 0) return;
+        
+        // 사망한 유닛은 타겟 불가 (일부 특수 스킬 제외)
+        if (target.currentHp <= 0 && side === 'ENEMY') return;
+        
+        const skill = pendingAction.skillId ? SKILLS[pendingAction.skillId] : null;
+        const isSupportive = skill?.tags.includes('HEAL') || skill?.tags.includes('BUFF');
+
+        // 공격 액션인데 아군 클릭 시 무시, 지원 스킬인데 적군 클릭 시 무시
+        if (!isSupportive && side === 'PLAYER' && pendingAction.type === 'ATTACK') return;
+        if (!isSupportive && side === 'PLAYER' && skill && !skill.tags.includes('DAMAGE')) return;
+        if (isSupportive && side === 'ENEMY') return;
+
         const actor = partyState.find(p => p.id === activeActorId);
         if (!actor) return;
+        
         setPartyState(prev => prev.map(p => p.id === activeActorId ? { ...p, gauge: p.gauge - ACTION_THRESHOLD } : p));
-        executeAttack(actor, target, true, pendingAction.skillId);
+        executeAction(actor, target, true, pendingAction.skillId);
         setPendingAction(null);
         setActiveActorId(null);
     };
@@ -331,15 +426,35 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
         return { transform, zIndex: 100 };
     };
 
+    const activeActor = useMemo(() => partyState.find(p => p.id === activeActorId), [partyState, activeActorId]);
+    const activeActorSkills = useMemo(() => {
+        if (!activeActor) return [];
+        const learned = (activeActor.skillIds || []).map(id => ({ id, source: 'LEARNED' }));
+        const fromGear = Object.values(activeActor.equipment || {}).map(i => (i as any)?.socketedSkillId).filter(Boolean).map(id => ({ id, source: 'GEAR' }));
+        return [...learned, ...fromGear as any];
+    }, [activeActor]);
+
+    // 현재 선택된 행동이 아군 대상인지 여부
+    const isSupportiveAction = useMemo(() => {
+        if (!pendingAction || pendingAction.type === 'ATTACK') return false;
+        if (!pendingAction.skillId) return false;
+        const skill = SKILLS[pendingAction.skillId];
+        return skill.tags.includes('HEAL') || skill.tags.includes('BUFF');
+    }, [pendingAction]);
+
     return (
         <div className="fixed inset-0 z-[150] flex flex-col bg-stone-950 animate-in fade-in duration-500 overflow-hidden font-sans pb-safe">
             <style>{`
                 @keyframes damage-float { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
                 .animate-damage { animation: damage-float 1s ease-out forwards; }
+                @keyframes heal-float { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
+                .animate-heal { animation: heal-float 1s ease-out forwards; }
                 @keyframes unit-shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(-4px, 2px); } 50% { transform: translate(4px, -2px); } 75% { transform: translate(-2px, -4px); } }
                 .animate-hit { animation: unit-shake 0.2s ease-in-out 3; }
                 @keyframes target-pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); } }
                 .animate-target { animation: target-pulse 1.5s infinite; }
+                @keyframes heal-target-pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { transform: scale(1); } }
+                .animate-heal-target { animation: heal-target-pulse 1.5s infinite; }
             `}</style>
 
             {/* Background Tile Layer */}
@@ -369,7 +484,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                         ))}
                     </div>
                 </div>
-                <SfxButton sfx="switch" onClick={() => { setIsAuto(!isAuto); setPendingAction(null); }} className={`px-4 py-1.5 rounded-lg border font-black text-[9px] tracking-widest transition-all ${isAuto ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-800 border-stone-600 text-stone-400'}`}>
+                <SfxButton sfx="switch" onClick={() => { setIsAuto(!isAuto); setPendingAction(null); setShowSkillList(false); }} className={`px-4 py-1.5 rounded-lg border font-black text-[9px] tracking-widest transition-all ${isAuto ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-800 border-stone-600 text-stone-400'}`}>
                     {isAuto ? 'AUTO' : 'MANUAL'}
                 </SfxButton>
             </div>
@@ -378,60 +493,136 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
             <div className={`flex-1 flex relative transition-all duration-700 z-10 ${orientation === 'PORTRAIT' ? 'flex-col' : 'flex-row'}`}>
                 {/* Enemies Area */}
                 <div className={`flex flex-1 items-center justify-center p-4 gap-6 md:gap-12 ${orientation === 'PORTRAIT' ? 'order-1' : 'order-2'}`}>
-                    {enemySquadState.map(e => (
-                        <div key={e.instanceId} style={getUnitStyle(e.instanceId, 'ENEMY')} onClick={() => pendingAction && e.currentHp > 0 && handleEnemyClick(e)} className={`relative flex flex-col items-center transition-all ${e.currentHp <= 0 ? 'opacity-20 grayscale' : e.lastDamaged ? 'animate-hit' : ''}`}>
-                            <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-2xl border-2 flex items-center justify-center relative shadow-2xl ${e.lastDamaged ? 'border-red-500 bg-red-950/20' : 'border-stone-800'} ${pendingAction && e.currentHp > 0 ? 'animate-target border-red-500 cursor-crosshair' : ''}`}>
-                                <img src={getAssetUrl(e.sprite || '', 'monsters')} className="w-[80%] h-[80%] object-contain" alt={e.name} />
-                                {pendingAction && e.currentHp > 0 && <div className="absolute inset-0 flex items-center justify-center"><Target className="w-12 h-12 text-red-500 opacity-50" /></div>}
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    {damagePopups.filter(p => p.targetId === e.instanceId).map(p => (
-                                        <div key={p.id} className={`absolute font-black text-3xl md:text-5xl animate-damage ${p.isCrit ? 'text-amber-400 scale-125' : 'text-red-500'}`}>-{p.value}</div>
-                                    ))}
-                                </div>
-                            </div>
-                            {e.currentHp > 0 && (
-                                <div className="mt-2 w-24 md:w-52 space-y-1">
-                                    <div className="flex flex-col items-center leading-none mb-1">
-                                        <span className="text-[9px] md:text-xs font-black text-stone-300 uppercase tracking-tighter truncate w-full text-center">{e.name}</span>
-                                        <span className="text-[7px] md:text-[9px] font-bold text-stone-500 uppercase tracking-widest">Lv.{e.level}</span>
+                    {enemySquadState.map(e => {
+                        const isTargetable = pendingAction && e.currentHp > 0 && !isSupportiveAction;
+                        return (
+                            <div key={e.instanceId} style={getUnitStyle(e.instanceId, 'ENEMY')} onClick={() => isTargetable && handleTargetClick(e, 'ENEMY')} className={`relative flex flex-col items-center transition-all ${e.currentHp <= 0 ? 'opacity-20 grayscale' : e.lastDamaged ? 'animate-hit' : ''}`}>
+                                <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-2xl border-2 flex items-center justify-center relative shadow-2xl ${e.lastDamaged ? 'border-red-500 bg-red-950/20' : 'border-stone-800'} ${isTargetable ? 'animate-target border-red-500 cursor-crosshair' : ''}`}>
+                                    <img src={getAssetUrl(e.sprite || '', 'monsters')} className="w-[80%] h-[80%] object-contain" alt={e.name} />
+                                    {isTargetable && <div className="absolute inset-0 flex items-center justify-center"><Target className="w-12 h-12 text-red-500 opacity-50" /></div>}
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        {damagePopups.filter(p => p.targetId === e.instanceId).map(p => (
+                                            <div key={p.id} className={`absolute font-black text-3xl md:text-5xl animate-damage ${p.isCrit ? 'text-amber-400 scale-125' : 'text-red-500'}`}>-{p.value}</div>
+                                        ))}
                                     </div>
-                                    <div className="relative h-2.5 bg-black rounded-full overflow-hidden border border-white/5">
-                                        <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${(e.currentHp/e.stats.maxHp)*100}%` }} />
-                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                            <span className="text-[7px] md:text-[10px] font-mono font-black text-white drop-shadow-sm">{Math.floor(e.currentHp)} / {e.stats.maxHp}</span>
+                                </div>
+                                {e.currentHp > 0 && (
+                                    <div className="mt-2 w-24 md:w-52 space-y-1">
+                                        <div className="flex flex-col items-center leading-none mb-1">
+                                            <span className="text-[9px] md:text-xs font-black text-stone-300 uppercase tracking-tighter truncate w-full text-center">{e.name}</span>
+                                            <span className="text-[7px] md:text-[9px] font-bold text-stone-500 uppercase tracking-widest">Lv.{e.level}</span>
+                                        </div>
+                                        <div className="relative h-2.5 bg-black rounded-full overflow-hidden border border-white/5">
+                                            <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${(e.currentHp/e.stats.maxHp)*100}%` }} />
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                <span className="text-[7px] md:text-[10px] font-mono font-black text-white drop-shadow-sm">{Math.floor(e.currentHp)} / {e.stats.maxHp}</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-1 bg-black rounded-full overflow-hidden">
+                                            <div className="h-full bg-amber-500 transition-all" style={{ width: `${(e.gauge/ACTION_THRESHOLD)*100}%` }} />
                                         </div>
                                     </div>
-                                    <div className="h-1 bg-black rounded-full overflow-hidden">
-                                        <div className="h-full bg-amber-500 transition-all" style={{ width: `${(e.gauge/ACTION_THRESHOLD)*100}%` }} />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Players Area */}
                 <div className={`flex flex-1 items-center justify-center p-4 gap-6 md:gap-12 ${orientation === 'PORTRAIT' ? 'order-3 pt-0' : 'order-1'}`}>
                     {partyState.map(p => {
                         const isActive = activeActorId === p.id;
+                        const isTargetable = pendingAction && p.currentHp > 0 && isSupportiveAction;
                         const hpPer = (p.currentHp / p.derived.maxHp) * 100;
                         const mpPer = (p.currentMp / (p.derived.maxMp || 1)) * 100;
 
                         return (
-                            <div key={p.id} style={getUnitStyle(p.id, 'PLAYER')} className={`relative flex flex-col items-center transition-all ${p.currentHp <= 0 ? 'opacity-20 grayscale' : isActive ? '-translate-y-4' : ''} ${p.lastDamaged ? 'animate-hit' : ''}`}>
+                            <div key={p.id} style={getUnitStyle(p.id, 'PLAYER')} onClick={() => isTargetable && handleTargetClick(p, 'PLAYER')} className={`relative flex flex-col items-center transition-all ${p.currentHp <= 0 ? 'opacity-20 grayscale' : isActive ? '-translate-y-4' : ''} ${p.lastDamaged ? 'animate-hit' : ''}`}>
                                 {/* Portrait Container */}
-                                <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-2xl border-2 flex items-center justify-center relative shadow-2xl ${isActive ? 'border-amber-400 ring-4 ring-amber-500/20' : 'border-stone-800'}`}>
+                                <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-2xl border-2 flex items-center justify-center relative shadow-2xl ${isActive ? 'border-amber-400 ring-4 ring-amber-500/20' : isTargetable ? 'animate-heal-target border-emerald-500 ring-4 ring-emerald-500/20 cursor-pointer' : 'border-stone-800'}`}>
                                     <MercenaryPortrait mercenary={p} className="w-[85%] h-[85%] rounded-xl" />
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                         {damagePopups.filter(pop => pop.targetId === p.id).map(pop => (
-                                            <div key={pop.id} className="absolute font-black text-3xl md:text-5xl animate-damage text-red-50">-{pop.value}</div>
+                                            <div key={pop.id} className={`absolute font-black text-3xl md:text-5xl ${pop.isHeal ? 'animate-heal text-emerald-400' : 'animate-damage text-red-50'}`}>{pop.isHeal ? '+' : '-'}{pop.value}</div>
                                         ))}
                                     </div>
-                                    {isActive && !pendingAction && !isAuto && (
-                                        <div className="absolute -bottom-36 left-1/2 -translate-x-1/2 z-[300] bg-stone-900/95 border-2 border-amber-500 p-2 rounded-xl flex gap-3 shadow-2xl animate-in slide-in-from-top-2 backdrop-blur-md">
-                                            <SfxButton onClick={(e) => handleManualAction(e, 'ATTACK')} className="p-3 bg-stone-800 hover:bg-stone-700 rounded-lg text-white transition-colors border border-white/5"><Sword size={24} /></SfxButton>
-                                            <SfxButton sfx="switch" onClick={(e) => { e.stopPropagation(); setInspectedMercId(p.id); }} className="p-3 bg-indigo-900/40 hover:bg-indigo-800 rounded-lg text-indigo-100 transition-colors border border-indigo-500/30"><Package size={24} /></SfxButton>
-                                            <SfxButton onClick={(e) => handleFlee(e)} className="p-3 bg-red-950/40 hover:bg-red-900 rounded-lg text-red-500 transition-colors border border-red-500/30"><LogOut size={24} /></SfxButton>
+                                    
+                                    {/* Action indicator for targeting */}
+                                    {pendingAction && isActive && (
+                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
+                                            <div className={`bg-amber-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-lg border border-amber-400 whitespace-nowrap`}>
+                                                {pendingAction.skillId ? SKILLS[pendingAction.skillId].name : 'Striking'}
+                                            </div>
+                                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-amber-600"></div>
+                                        </div>
+                                    )}
+
+                                    {isActive && !pendingAction && !isAuto && !showSkillList && (
+                                        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 z-[300] bg-stone-900/95 border-2 border-amber-500 p-2.5 rounded-2xl grid grid-cols-2 gap-3 shadow-2xl animate-in slide-in-from-top-2 backdrop-blur-md w-40">
+                                            <SfxButton onClick={(e) => handleManualAction(e, 'ATTACK')} className="p-3 bg-stone-800 hover:bg-stone-700 rounded-xl text-white transition-colors border border-white/5 flex flex-col items-center gap-1 group">
+                                                <Sword size={20} className="group-hover:scale-110 transition-transform" />
+                                                <span className="text-[8px] font-black uppercase">Atk</span>
+                                            </SfxButton>
+                                            <SfxButton onClick={(e) => handleManualAction(e, 'SKILL')} className="p-3 bg-indigo-900/40 hover:bg-indigo-800 rounded-xl text-indigo-100 transition-colors border border-indigo-500/30 flex flex-col items-center gap-1 group">
+                                                <Wand2 size={20} className="group-hover:scale-110 transition-transform" />
+                                                <span className="text-[8px] font-black uppercase">Skill</span>
+                                            </SfxButton>
+                                            <SfxButton sfx="switch" onClick={(e) => { e.stopPropagation(); setInspectedMercId(p.id); }} className="p-3 bg-stone-800 hover:bg-stone-750 rounded-xl text-stone-300 transition-colors border border-stone-700 flex flex-col items-center gap-1 group">
+                                                <Package size={20} className="group-hover:scale-110 transition-transform" />
+                                                <span className="text-[8px] font-black uppercase">Bag</span>
+                                            </SfxButton>
+                                            <SfxButton onClick={(e) => handleFlee(e)} className="p-3 bg-red-950/40 hover:bg-red-900 rounded-xl text-red-500 transition-colors border border-red-500/30 flex flex-col items-center gap-1 group">
+                                                <LogOut size={20} className="group-hover:scale-110 transition-transform" />
+                                                <span className="text-[8px] font-black uppercase">Flee</span>
+                                            </SfxButton>
+                                        </div>
+                                    )}
+
+                                    {/* Skill List Overlay */}
+                                    {isActive && showSkillList && (
+                                        <div className="absolute -bottom-52 left-1/2 -translate-x-1/2 z-[310] bg-stone-900/98 border-2 border-indigo-500 p-3 rounded-2xl shadow-2xl animate-in zoom-in-95 backdrop-blur-xl w-64 md:w-80">
+                                            <div className="flex justify-between items-center mb-2 px-1">
+                                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Available Skills</span>
+                                                <SfxButton sfx="switch" onClick={() => setShowSkillList(false)} className="text-stone-500 hover:text-white"><X size={16} /></SfxButton>
+                                            </div>
+                                            <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                                                {activeActorSkills.map((ref, idx) => {
+                                                    const skill = SKILLS[ref.id];
+                                                    if (!skill) return null;
+                                                    const canCast = activeActor.currentMp >= (skill.mpCost ?? 0);
+                                                    const isHeal = skill.tags.includes('HEAL');
+                                                    return (
+                                                        <button 
+                                                            key={`${ref.id}-${idx}`}
+                                                            disabled={!canCast}
+                                                            onClick={(e) => handleManualAction(e, 'SKILL', ref.id)}
+                                                            className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all text-left group ${canCast ? 'bg-indigo-900/20 border-indigo-500/30 hover:bg-indigo-800/40 hover:border-indigo-400' : 'bg-stone-900 border-stone-800 opacity-50 grayscale cursor-not-allowed'}`}
+                                                        >
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <div className={`p-1.5 rounded-lg border ${ref.source === 'GEAR' ? 'bg-purple-900/30 border-purple-500/50 text-purple-400' : isHeal ? 'bg-emerald-900/30 border-emerald-500/50 text-emerald-400' : 'bg-indigo-900/40 border-indigo-500/50 text-indigo-300'}`}>
+                                                                    {isHeal ? <Heart size={14} /> : <Zap size={14} />}
+                                                                </div>
+                                                                <div className="min-w-0 flex flex-col leading-tight">
+                                                                    <span className="text-[10px] font-black text-stone-100 uppercase truncate">{skill.name}</span>
+                                                                    <span className="text-[7px] text-stone-500 italic truncate">{skill.description}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 shrink-0 pl-2">
+                                                                <span className="text-[9px] font-mono font-black text-blue-400">{skill.mpCost} MP</span>
+                                                                <ChevronRight size={14} className="text-stone-700 group-hover:text-white transition-colors" />
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
+                                                {activeActorSkills.length === 0 && (
+                                                    <div className="py-8 text-center text-stone-600 text-[10px] font-black uppercase tracking-widest opacity-40 italic">No usable skills</div>
+                                                )}
+                                            </div>
+                                            {pendingAction && (
+                                                <div className="mt-3 pt-3 border-t border-indigo-500/30">
+                                                    <SfxButton onClick={() => setPendingAction(null)} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-400 text-[10px] font-black uppercase rounded-lg">Cancel Selection</SfxButton>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -483,7 +674,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 </button>
                 <div className={`flex-1 ${showLogs ? 'overflow-y-auto' : 'overflow-hidden'} p-2 space-y-1 font-mono text-[9px] custom-scrollbar`}>
                     {(showLogs ? logs : logs.slice(0, 1)).map((log, i) => (
-                        <div key={i} className={`p-1.5 border-l-2 ${log.team === 'PLAYER' ? 'border-blue-500 text-blue-100' : log.team === 'ENEMY' ? 'border-red-500 text-red-100' : 'border-stone-700 text-stone-400'} ${log.isCrit ? 'bg-white/5 font-black' : ''}`}>
+                        <div key={i} className={`p-1.5 border-l-2 ${log.team === 'PLAYER' ? (log.isHeal ? 'border-emerald-500 text-emerald-100' : 'border-blue-500 text-blue-100') : log.team === 'ENEMY' ? 'border-red-500 text-red-100' : 'border-stone-700 text-stone-400'} ${log.isCrit ? 'bg-white/5 font-black' : ''}`}>
                             <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}]</span>
                             {log.msg}
                         </div>

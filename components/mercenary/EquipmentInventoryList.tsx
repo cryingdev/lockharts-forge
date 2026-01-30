@@ -156,19 +156,18 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
           displayInventory.map((item) => {
             const isConsumable = item.type === 'CONSUMABLE' || item.type === 'SKILL_BOOK';
             const isSkillBook = item.type === 'SKILL_BOOK';
+            const isSkillScroll = item.type === 'SKILL_SCROLL';
             const isSelected = selectedItemId === item.id;
             
             const minLevel = item.equipmentData?.minLevel || 1;
             const canEquip = isConsumable || (mercenary.level >= minLevel);
 
-            const rarityClasses = isConsumable ? 'text-stone-400 border-stone-700 bg-stone-900/40' : getRarityClasses(item.equipmentData?.rarity);
-            const imageUrl = item.type === 'EQUIPMENT' && item.equipmentData
-              ? (item.equipmentData.image
-                  ? getAssetUrl(item.equipmentData.image, 'equipments')
-                  : item.equipmentData.recipeId
-                    ? getAssetUrl(`${item.equipmentData.recipeId}.png`, 'equipments')
-                    : getAssetUrl(`${item.id.split('_')[0]}.png`, 'equipments'))
-              : getAssetUrl(`${item.id}.png`, isSkillBook ? 'skills' : 'materials');
+            const rarityClasses = (isConsumable || isSkillScroll) ? 'text-stone-400 border-stone-700 bg-stone-900/40' : getRarityClasses(item.equipmentData?.rarity);
+            
+            // Skill icon folder mapping fix
+            const folder = (isSkillBook || isSkillScroll) ? 'skills' : (item.type === 'EQUIPMENT' ? 'equipments' : 'materials');
+            const targetFile = item.image || (item.type === 'EQUIPMENT' && item.equipmentData?.recipeId ? `${item.equipmentData.recipeId}.png` : `${item.id}.png`);
+            const imageUrl = getAssetUrl(targetFile, folder);
 
             return (
               <div
@@ -187,7 +186,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                     <div className="text-[11px] md:text-lg font-black truncate text-stone-200">{item.name}</div>
                     <div className="flex wrap items-center gap-2 mt-1">
                       <span className={`text-[7px] md:text-[9px] px-1.5 py-0.5 rounded font-black uppercase border leading-none ${rarityClasses}`}>
-                        {isSkillBook ? 'MANUAL' : isConsumable ? 'CONSUMABLE' : item.equipmentData?.rarity}
+                        {isSkillBook ? 'MANUAL' : isSkillScroll ? 'SCROLL' : isConsumable ? 'CONSUMABLE' : item.equipmentData?.rarity}
                       </span>
                       {item.quantity > 1 && (
                         <span className="text-[7px] md:text-[9px] text-stone-500 font-mono font-bold">

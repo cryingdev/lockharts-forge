@@ -19,7 +19,7 @@ const RomanTierOverlay = ({ id }: { id: string }) => {
 const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, className?: string }) => {
     const isEquip = item.type === 'EQUIPMENT';
     const isSkill = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL';
-    const folder = isEquip ? 'equipments' : isSkill ? 'skills' : 'materials';
+    const folder = isSkill ? 'skills' : (isEquip ? 'equipments' : 'materials');
     
     const baseId = (isEquip && item.equipmentData?.recipeId) 
         ? item.equipmentData.recipeId 
@@ -27,10 +27,11 @@ const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, clas
     
     const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`, folder));
 
-    // 아이템 데이터가 변경될 때 이미지 경로 상태를 동기화합니다.
     useEffect(() => {
-        setImgSrc(getAssetUrl(`${baseId}.png`, folder));
-    }, [baseId, folder]);
+        const targetFolder = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL' ? 'skills' : (item.type === 'EQUIPMENT' ? 'equipments' : 'materials');
+        const targetFile = item.image || (isEquip && item.equipmentData?.recipeId ? `${item.equipmentData.recipeId}.png` : `${item.id}.png`);
+        setImgSrc(getAssetUrl(targetFile, targetFolder));
+    }, [item.id, item.image, item.type]);
 
     const handleImgError = () => {
         const fallbackPath = item.image || item.equipmentData?.image;
@@ -57,7 +58,6 @@ export const InventoryDisplay = () => {
     , [state.inventory, selectedItemId]);
 
     const handleSelect = (item: InventoryItem) => {
-        // 인챈트 모드일 때 로직
         if (enchantingScroll) {
             if (item.type === 'EQUIPMENT') {
                 if (item.isLocked) {
@@ -90,7 +90,6 @@ export const InventoryDisplay = () => {
         );
         
         setIsSellModalOpen(false);
-        // If we sold all items, deselect
         if (currentSelectedItem.quantity <= sellQuantity) {
             setSelectedItemId(null);
         }
@@ -232,7 +231,7 @@ export const InventoryDisplay = () => {
                                 return (
                                     <button
                                         key={item.id} onClick={() => handleSelect(item)}
-                                        disabled={isEnchantRestricted}
+                                        disabled={!!isEnchantRestricted}
                                         className={`relative flex flex-col items-center p-2 rounded-lg border transition-all h-20 md:h-28 justify-between ${
                                             isSelected && !enchantingScroll ? 'bg-amber-900/20 border-amber-500 shadow-md ring-1 ring-amber-500/50' : 
                                             isEnchantTarget ? 'bg-amber-500/10 border-amber-500 ring-4 ring-amber-500/40 animate-pulse shadow-[0_0_20px_rgba(245,158,11,0.3)] z-10' :

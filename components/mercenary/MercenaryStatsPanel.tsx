@@ -2,13 +2,15 @@
 import React, { useMemo } from 'react';
 import { 
   Sword, Shield, Activity, Star, Zap, Brain, Target, Wind, 
-  Plus, Minus, RotateCcw, Save, Heart, Sparkles 
+  Plus, Minus, RotateCcw, Save, Heart, Sparkles, Wrench
 } from 'lucide-react';
 import { Mercenary } from '../../models/Mercenary';
 import { DerivedStats, PrimaryStats } from '../../models/Stats';
 import { SKILLS } from '../../data/skills';
 import { StatDiff } from './StatDiff';
 import { SfxButton } from '../common/ui/SfxButton';
+// Added Equipment import to fix type inference
+import { Equipment } from '../../models/Equipment';
 
 interface MercenaryStatsPanelProps {
   mercenary: Mercenary;
@@ -50,6 +52,21 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
         key => pendingAllocated[key] !== mercenary.allocatedStats[key]
     );
   }, [pendingAllocated, mercenary.allocatedStats]);
+
+  // Combine learned skills and equipment-socketed skills
+  // Fix: Added explicit type cast to (Equipment | null)[] to resolve 'unknown' property access errors for socketedSkillId (lines 59, 60)
+  const allAvailableSkills = useMemo(() => {
+      const learned = (mercenary.skillIds || []).map(id => ({ id, source: 'LEARNED' as const }));
+      
+      const fromGear = (Object.values(mercenary.equipment) as (Equipment | null)[]).reduce<{ id: string, source: 'GEAR' }[]>((acc, item) => {
+          if (item?.socketedSkillId) {
+              acc.push({ id: item.socketedSkillId, source: 'GEAR' as const });
+          }
+          return acc;
+      }, []);
+
+      return [...learned, ...fromGear];
+  }, [mercenary.skillIds, mercenary.equipment]);
 
   const renderStatRow = (icon: React.ReactNode, label: string, baseValue: number, nextValue: number, isPercent = false) => {
     return (
@@ -245,22 +262,27 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
           <Sparkles className="w-3 h-3 text-amber-600" /> Techniques & Skills
         </h4>
 
-        {mercenary.skillIds && mercenary.skillIds.length > 0 ? (
+        {allAvailableSkills.length > 0 ? (
           <div className="space-y-1.5 md:space-y-3">
-            {mercenary.skillIds.map((id) => {
-              const skill = (SKILLS as any)[id];
+            {allAvailableSkills.map((skillRef, idx) => {
+              const skill = SKILLS[skillRef.id];
               if (!skill) return null;
+              const isGearSkill = skillRef.source === 'GEAR';
+
               return (
                 <div
-                  key={id}
-                  className="bg-stone-950/40 border border-stone-800 rounded-xl p-3 md:p-4 flex justify-between items-center gap-3 hover:border-amber-900/40 transition-all"
+                  key={`${skillRef.id}-${idx}`}
+                  className={`bg-stone-950/40 border rounded-xl p-3 md:p-4 flex justify-between items-center gap-3 hover:border-amber-900/40 transition-all ${isGearSkill ? 'border-indigo-500/30 bg-indigo-900/10' : 'border-stone-800'}`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 bg-amber-900/15 rounded-lg border border-amber-600/20 text-amber-500 shrink-0">
-                      <Sword className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    <div className={`p-2 rounded-lg border shrink-0 ${isGearSkill ? 'bg-indigo-900/30 border-indigo-500/50 text-indigo-400' : 'bg-amber-900/15 border-amber-600/20 text-amber-500'}`}>
+                      {isGearSkill ? <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Sword className="w-3.5 h-3.5 md:w-4 md:h-4" />}
                     </div>
                     <div className="min-w-0">
-                      <h5 className="text-[10px] md:text-xs font-black text-stone-200 uppercase truncate">{skill.name}</h5>
+                      <div className="flex items-center gap-1.5">
+                          <h5 className="text-[10px] md:text-xs font-black text-stone-200 uppercase truncate">{skill.name}</h5>
+                          {isGearSkill && <span className="text-[6px] md:text-[8px] font-black bg-indigo-600 text-white px-1 py-0.5 rounded leading-none uppercase">Gear</span>}
+                      </div>
                       <p className="text-[8px] md:text-[9px] text-stone-500 italic leading-tight line-clamp-1">
                         {skill.description}
                       </p>
@@ -268,7 +290,7 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
                   </div>
                   <div className="text-right shrink-0">
                      <span className="text-[7px] md:text-[8px] font-black text-amber-500 uppercase tracking-tighter">
-                        {Math.round(skill.multiplier * 100)}% DMG
+                        {Math.round((skill.multiplier || 0) * 100)}% {skill.damageType || 'EFF'}
                       </span>
                   </div>
                 </div>
@@ -277,7 +299,7 @@ export const MercenaryStatsPanel: React.FC<MercenaryStatsPanelProps> = ({
           </div>
         ) : (
           <div className="py-4 md:py-6 text-center border-2 border-dashed border-stone-800 rounded-xl text-stone-600 text-[8px] md:text-[10px] font-bold uppercase tracking-widest">
-            No learned skills
+            No available skills
           </div>
         )}
       </div>
