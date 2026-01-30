@@ -31,8 +31,10 @@ export const MarketCatalogView: React.FC<MarketCatalogViewProps> = ({
     garrickAffinity, gold, totalCost, isCartOpen,
     onBack, onToggleSection, onAddToCart, onSetMultiplier, onToggleCart, onRemoveFromCart, onDeleteFromCart, onBuy
 }) => {
-    const isOverBudget = totalCost > gold;
-    const cartItemCount = Object.values(cart).reduce((a: number, b: number) => a + b, 0);
+    // Added explicit type casting to totalCost and gold to prevent 'unknown' comparison errors
+    const isOverBudget = (totalCost as number) > (gold as number);
+    // Use generic reduce type to ensure cartItemCount is strictly a number even if Object.values is loosely typed
+    const cartItemCount = Object.values(cart).reduce<number>((a, b) => (a as number) + (b as number), 0);
 
     return (
         <div className="absolute inset-x-[4vw] md:inset-x-[10vw] top-[10vh] bottom-[10vh] z-[100] flex flex-col animate-in zoom-in-95 duration-300">

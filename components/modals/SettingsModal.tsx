@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Save, Upload, Volume2, VolumeX, LogOut, X, Settings, Layout, Check, Music, Zap } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
@@ -6,15 +5,38 @@ import SaveLoadModal from './SaveLoadModal';
 import { loadFromSlot } from '../../utils/saveSystem';
 import ConfirmationModal from './ConfirmationModal';
 import { SfxButton } from '../common/ui/SfxButton';
+import { CustomSlider } from '../common/ui/CustomSlider';
 
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onQuit: () => void;
-    onLoadRequest: (data: any, depth: number) => void;
+    onQuit?: () => void;
+    onLoadRequest?: (data: any, depth: number) => void;
+    isTitleView?: boolean;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, onLoadRequest }) => {
+/**
+ * Internal sub-component for volume control.
+ * Defined outside the main component to prevent unmounting during re-renders.
+ */
+const VolumeSlider = ({ label, value, icon: Icon, onChange, disabled }: { label: string, value: number, icon: any, onChange: (v: number) => void, disabled?: boolean }) => (
+    <div className={`flex flex-col gap-1.5 p-3 rounded-xl border transition-all w-full ${disabled ? 'bg-stone-900/40 border-stone-800/50 opacity-40 grayscale' : 'bg-stone-800/40 border-stone-700/50'}`}>
+        <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+                <Icon className={`w-3.5 h-3.5 ${!disabled && value > 0 ? 'text-amber-500' : 'text-stone-600'}`} />
+                <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{label}</span>
+            </div>
+            <span className="text-[9px] font-mono font-bold text-stone-500">{Math.round(value * 100)}%</span>
+        </div>
+        <CustomSlider 
+            value={value} 
+            onChange={onChange} 
+            disabled={disabled}
+        />
+    </div>
+);
+
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, onLoadRequest, isTitleView = false }) => {
     const { state, actions } = useGame();
     const [slModal, setSlModal] = useState<{ isOpen: boolean, mode: 'SAVE' | 'LOAD' }>({ isOpen: false, mode: 'SAVE' });
     const [loadConfirm, setLoadConfirm] = useState<{ isOpen: boolean, data: any, index: number | null }>({
@@ -43,29 +65,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         }
     };
 
-    const VolumeSlider = ({ label, value, icon: Icon, onChange, disabled }: { label: string, value: number, icon: any, onChange: (v: number) => void, disabled?: boolean }) => (
-        <div className={`flex flex-col gap-1.5 p-3 rounded-xl border transition-all w-full ${disabled ? 'bg-stone-900/40 border-stone-800/50 opacity-40 grayscale' : 'bg-stone-800/40 border-stone-700/50'}`}>
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <Icon className={`w-3.5 h-3.5 ${!disabled && value > 0 ? 'text-amber-500' : 'text-stone-600'}`} />
-                    <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{label}</span>
-                </div>
-                <span className="text-[9px] font-mono font-bold text-stone-500">{Math.round(value * 100)}%</span>
-            </div>
-            <input 
-                type="range" min="0" max="1" step="0.01" 
-                value={value} 
-                disabled={disabled}
-                onChange={(e) => !disabled && onChange(parseFloat(e.target.value))}
-                className={`w-full h-2.5 bg-stone-900 rounded-lg appearance-none cursor-pointer accent-amber-600 ${disabled ? 'cursor-not-allowed' : ''}`}
-            />
-        </div>
-    );
-
     return (
         <>
             <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-black/90 backdrop-blur-md px-[10%] py-[15%] animate-in fade-in duration-200 overflow-hidden">
-                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-[90vw] max-w-[420px] h-fit max-h-full min-h-[200px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto">
+                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-[90vw] max-w-[420px] h-fit max-h-full min-h-[200px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto text-left">
                     
                     <div className="flex items-center justify-between p-5 border-b border-stone-800 bg-stone-850 shrink-0">
                         <div className="flex items-center gap-3">
@@ -76,17 +79,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                     </div>
 
                     <div className="flex-1 p-5 space-y-6 overflow-y-auto custom-scrollbar">
-                        <div className="space-y-2">
-                            <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Persistence</h4>
-                            <div className="flex flex-col gap-2.5">
-                                <SfxButton onClick={() => setSlModal({ isOpen: true, mode: 'SAVE' })} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-stone-800 hover:border-amber-500 hover:bg-stone-750 text-stone-300 transition-all shadow-md active:scale-95">
-                                    <Save className="w-5 h-5 text-amber-500" /><div className="flex flex-col items-start leading-none"><span className="font-black text-[11px] uppercase tracking-widest">Manual Save</span><span className="text-[8px] text-stone-500 uppercase font-bold mt-1">Record progress</span></div>
-                                </SfxButton>
-                                <SfxButton onClick={() => setSlModal({ isOpen: true, mode: 'LOAD' })} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-stone-800 hover:border-stone-500 hover:bg-stone-750 text-stone-300 transition-all shadow-md active:scale-95">
-                                    <Upload className="w-5 h-5 text-indigo-400" /><div className="flex flex-col items-start leading-none"><span className="font-black text-[11px] uppercase tracking-widest">Restore Data</span><span className="text-[8px] text-stone-500 uppercase font-bold mt-1">Load records</span></div>
-                                </SfxButton>
+                        {!isTitleView && (
+                            <div className="space-y-2">
+                                <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Persistence</h4>
+                                <div className="flex flex-col gap-2.5">
+                                    <SfxButton onClick={() => setSlModal({ isOpen: true, mode: 'SAVE' })} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-stone-800 hover:border-amber-500 hover:bg-stone-750 text-stone-300 transition-all shadow-md active:scale-95">
+                                        <Save className="w-5 h-5 text-amber-500" /><div className="flex flex-col items-start leading-none"><span className="font-black text-[11px] uppercase tracking-widest">Manual Save</span><span className="text-[8px] text-stone-500 uppercase font-bold mt-1">Record progress</span></div>
+                                    </SfxButton>
+                                    <SfxButton onClick={() => setSlModal({ isOpen: true, mode: 'LOAD' })} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-stone-800 hover:border-stone-500 hover:bg-stone-750 text-stone-300 transition-all shadow-md active:scale-95">
+                                        <Upload className="w-5 h-5 text-indigo-400" /><div className="flex flex-col items-start leading-none"><span className="font-black text-[11px] uppercase tracking-widest">Restore Data</span><span className="text-[8px] text-stone-500 uppercase font-bold mt-1">Load records</span></div>
+                                    </SfxButton>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="space-y-3">
                             <div className="flex items-center justify-between px-1">
@@ -97,7 +102,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                                 </SfxButton>
                             </div>
                             <div className="flex flex-col gap-2.5">
-                                <VolumeSlider label="Master Output" value={audio.masterVolume} disabled={!audio.masterEnabled} icon={audio.masterEnabled && audio.masterVolume > 0 ? Volume2 : VolumeX} onChange={(v) => actions.updateSettings({ audio: { ...audio, masterVolume: v, masterEnabled: v > 0 } })} />
+                                <VolumeSlider 
+                                    label="Master Output" 
+                                    value={audio.masterVolume} 
+                                    disabled={false} // Always allow Master slider interaction to enable sound
+                                    icon={audio.masterEnabled && audio.masterVolume > 0 ? Volume2 : VolumeX} 
+                                    onChange={(v) => actions.updateSettings({ audio: { ...audio, masterVolume: v, masterEnabled: v > 0 } })} 
+                                />
                                 <VolumeSlider label="Music Tracks" value={audio.musicVolume} disabled={!audio.masterEnabled} icon={Music} onChange={(v) => actions.updateSettings({ audio: { ...audio, musicVolume: v, musicEnabled: v > 0 } })} />
                                 <VolumeSlider label="Sound Effects" value={audio.sfxVolume} disabled={!audio.masterEnabled} icon={Zap} onChange={(v) => actions.updateSettings({ audio: { ...audio, sfxVolume: v, sfxEnabled: v > 0 } })} />
                             </div>
@@ -111,11 +122,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                             </SfxButton>
                         </div>
 
-                        <div className="pt-2 pb-4">
-                            <SfxButton onClick={onQuit} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-red-950/10 hover:border-red-500 hover:bg-red-950/20 text-red-400 transition-all">
-                                <div className="text-red-500"><LogOut className="w-5 h-5" /></div><span className="font-black text-xs uppercase tracking-widest">Quit to Title</span>
-                            </SfxButton>
-                        </div>
+                        {!isTitleView && onQuit && (
+                            <div className="pt-2 pb-4">
+                                <SfxButton onClick={onQuit} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-red-950/10 hover:border-red-500 hover:bg-red-950/20 text-red-400 transition-all">
+                                    <div className="text-red-500"><LogOut className="w-5 h-5" /></div><span className="font-black text-xs uppercase tracking-widest">Quit to Title</span>
+                                </SfxButton>
+                            </div>
+                        )}
                     </div>
 
                     <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0"><span className="text-[10px] text-stone-600 font-mono uppercase tracking-[0.2em]">Build v{APP_VERSION}</span></div>
@@ -128,7 +141,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                 isOpen={loadConfirm.isOpen} 
                 title="Overwrite Progress?" 
                 message="Loading will discard unsaved progress." 
-                onConfirm={() => { setLoadConfirm({ ...loadConfirm, isOpen: false }); setSlModal({ ...slModal, isOpen: false }); onClose(); onLoadRequest(loadConfirm.data, loadConfirm.index!); }} 
+                onConfirm={() => { setLoadConfirm({ ...loadConfirm, isOpen: false }); setSlModal({ ...slModal, isOpen: false }); onClose(); if(onLoadRequest) onLoadRequest(loadConfirm.data, loadConfirm.index!); }} 
                 onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })} 
             />
         </>

@@ -17,15 +17,17 @@ const App = () => {
   const [view, setView] = useState<GameView>('INTRO');
   const [pendingLoadState, setPendingLoadState] = useState<GameState | null>(null);
   const [activeSlotIndex, setActiveSlotIndex] = useState<number>(0);
+  const [pendingSkipTutorial, setPendingSkipTutorial] = useState(false);
 
   const handleIntroComplete = () => {
       setView('TITLE');
   };
 
-  const handleNewGame = () => {
+  const handleNewGame = (skipTutorial: boolean) => {
       const nextSlot = getNextAvailableSlot();
       setActiveSlotIndex(nextSlot);
       setPendingLoadState(null);
+      setPendingSkipTutorial(skipTutorial);
       setView('GAME');
   };
 
@@ -33,6 +35,7 @@ const App = () => {
       if (data) {
           setActiveSlotIndex(slotIndex);
           setPendingLoadState(data);
+          setPendingSkipTutorial(false);
           setView('GAME');
       } else {
           alert("Failed to load save data!");
@@ -42,6 +45,7 @@ const App = () => {
   const handleQuitToTitle = () => {
       setView('TITLE');
       setPendingLoadState(null);
+      setPendingSkipTutorial(false);
   };
 
   // 게임 진행 중 로드 요청 시 호출되는 함수
@@ -65,7 +69,7 @@ const App = () => {
         {view === 'TITLE' && <TitleScreen onNewGame={handleNewGame} onLoadGame={handleLoadGame} />}
         
         {view === 'GAME' && (
-            <GameLoader initialData={pendingLoadState}>
+            <GameLoader initialData={pendingLoadState} skipTutorial={pendingSkipTutorial}>
                 <MainGameLayout onQuit={handleQuitToTitle} onLoadFromSettings={handleLoadFromSettings} />
             </GameLoader>
         )}
@@ -76,17 +80,25 @@ const App = () => {
 /**
  * GameLoader 컴포넌트:
  * GameProvider 내부에서 실행되어, 로드할 데이터가 있는 경우 상태를 즉시 교체합니다.
+ * 새 게임이면서 skipTutorial이 활성화된 경우 튜토리얼을 즉시 건너뜁니다.
  */
-const GameLoader: React.FC<{ initialData: GameState | null, children: React.ReactNode }> = ({ initialData, children }) => {
+const GameLoader: React.FC<{ initialData: GameState | null, skipTutorial: boolean, children: React.ReactNode }> = ({ initialData, skipTutorial, children }) => {
     const { actions } = useGame();
     const isFirstRun = React.useRef(true);
 
     useEffect(() => {
-        if (isFirstRun.current && initialData) {
-            actions.loadGame(initialData);
+        if (isFirstRun.current) {
+            if (initialData) {
+                actions.loadGame(initialData);
+            } else if (skipTutorial) {
+                // Fresh start + Tutorial Skip
+                actions.completeTutorial();
+                // We suppress the celebration modal when skipping from the title for a cleaner start
+                actions.dismissTutorialComplete();
+            }
         }
         isFirstRun.current = false;
-    }, [initialData, actions]);
+    }, [initialData, skipTutorial, actions]);
 
     return <>{children}</>;
 };

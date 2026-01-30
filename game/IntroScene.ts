@@ -370,17 +370,6 @@ export default class IntroScene extends Phaser.Scene {
           if (progress < 100) {
               this.skipHint.setText(`INITIALIZING... ${progress}%`);
               this.skipHint.setColor('#78716c');
-          } else {
-              if (this.skipHint.text !== 'TOUCH TO SKIP') {
-                  this.skipHint.setText('TOUCH TO SKIP');
-                  this.skipHint.setColor('#fbbf24');
-                  this.tweens.add({
-                      targets: this.skipHint,
-                      alpha: { from: 0, to: 1 },
-                      duration: 500,
-                      ease: 'Power2'
-                  });
-              }
           }
       }
   }

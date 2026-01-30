@@ -1,19 +1,21 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { Anvil, Play, Upload, User, Info, FastForward, X } from 'lucide-react';
+import { Anvil, Play, Upload, User, Info, FastForward, X, Settings, Sparkles, Zap, BookOpen } from 'lucide-react';
 import { getAssetUrl } from '../utils';
 import { getLatestSaveInfo, getSaveMetadataList, loadFromSlot } from '../utils/saveSystem';
 import SaveLoadModal from './modals/SaveLoadModal';
+import SettingsModal from './modals/SettingsModal';
 import { SfxButton } from './common/ui/SfxButton';
 
 interface TitleScreenProps {
-    onNewGame: () => void;
+    onNewGame: (skipTutorial: boolean) => void;
     onLoadGame: (data: any, slotIndex: number) => void;
 }
 
 const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showCredits, setShowCredits] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [showNewGameModal, setShowNewGameModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
     const VERSION = "0.1.43a";
 
@@ -93,7 +95,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         )}
 
                         <SfxButton 
-                            onClick={onNewGame}
+                            onClick={() => setShowNewGameModal(true)}
                             className="group relative px-4 md:px-8 py-1.5 md:py-4 bg-stone-900/80 border border-stone-700 hover:border-amber-500 rounded-lg overflow-hidden transition-all hover:bg-stone-800 shadow-lg"
                         >
                             <div className="absolute inset-0 w-1 bg-amber-500 transition-all group-hover:w-full opacity-10"></div>
@@ -115,6 +117,17 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         </SfxButton>
 
                         <SfxButton 
+                            sfx="switch"
+                            onClick={() => setShowSettings(true)}
+                            className="group px-4 md:px-8 py-1.5 md:py-4 bg-stone-900/80 border border-stone-700 hover:border-stone-500 rounded-lg transition-all hover:bg-stone-800 text-stone-300 flex items-center justify-center gap-2 md:gap-3"
+                        >
+                            <div className="flex items-center justify-center gap-2 md:gap-3">
+                                <Settings className="w-3 h-3 md:w-5 md:h-5" />
+                                <span className="font-serif font-black tracking-wide text-[10px] md:text-base">SETTINGS</span>
+                            </div>
+                        </SfxButton>
+
+                        <SfxButton 
                             onClick={() => setShowCredits(true)}
                             className="px-6 py-1 md:py-2 mt-0.5 md:mt-4 text-stone-600 hover:text-amber-600 text-[8px] md:text-xs font-black tracking-widest transition-colors flex items-center justify-center gap-2 font-sans"
                         >
@@ -123,11 +136,62 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                     </div>
                 </div>
 
+                {/* New Game Mode Selection Modal */}
+                {showNewGameModal && (
+                    <div className="fixed inset-0 z-[1600] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-200">
+                        <div className="bg-stone-900 border-2 border-stone-700 rounded-[2.5rem] w-full max-w-[420px] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ring-1 ring-white/10">
+                            <div className="p-6 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
+                                <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-base">Initialize Forge</h3>
+                                <SfxButton onClick={() => setShowNewGameModal(false)} className="p-2 hover:bg-stone-800 rounded-full text-stone-500"><X className="w-6 h-6" /></SfxButton>
+                            </div>
+                            
+                            <div className="p-8 space-y-4">
+                                <SfxButton 
+                                    onClick={() => onNewGame(false)}
+                                    className="w-full group relative p-6 bg-stone-800 border-2 border-stone-700 hover:border-amber-500 rounded-3xl transition-all text-left flex items-center gap-5 shadow-lg active:scale-95"
+                                >
+                                    <div className="w-14 h-14 bg-amber-900/20 rounded-2xl flex items-center justify-center border border-amber-700/30 group-hover:bg-amber-600/20 transition-colors">
+                                        <BookOpen className="w-7 h-7 text-amber-500" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="font-black text-stone-100 text-sm uppercase tracking-widest mb-1 group-hover:text-amber-400 transition-colors">Begin Narrative</span>
+                                        <span className="text-[10px] text-stone-500 font-bold uppercase tracking-tight leading-relaxed">Experience the tragedy and tutorial. Standard progression.</span>
+                                    </div>
+                                </SfxButton>
+
+                                <SfxButton 
+                                    onClick={() => onNewGame(true)}
+                                    className="w-full group relative p-6 bg-stone-800 border-2 border-stone-700 hover:border-indigo-500 rounded-3xl transition-all text-left flex items-center gap-5 shadow-lg active:scale-95"
+                                >
+                                    <div className="w-14 h-14 bg-indigo-900/20 rounded-2xl flex items-center justify-center border border-indigo-700/30 group-hover:bg-indigo-600/20 transition-colors">
+                                        <Zap className="w-7 h-7 text-indigo-400" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="font-black text-stone-100 text-sm uppercase tracking-widest mb-1 group-hover:text-indigo-300 transition-colors">Legacy Mode</span>
+                                        <span className="text-[10px] text-stone-500 font-bold uppercase tracking-tight leading-relaxed">Skip the tutorial. All basic facilities unlocked immediately.</span>
+                                    </div>
+                                    <div className="absolute top-2 right-4 text-[7px] font-black text-indigo-500/50 uppercase tracking-widest">Tutorial Skip</div>
+                                </SfxButton>
+                            </div>
+
+                            <div className="p-4 bg-stone-950 text-center border-t border-stone-800 shrink-0">
+                                <p className="text-[9px] text-stone-600 font-mono uppercase tracking-[0.2em]">Select your path to the Lockhart Legacy</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <SaveLoadModal 
                     isOpen={showLoadModal} 
                     mode="LOAD" 
                     onClose={() => setShowLoadModal(false)} 
                     onAction={handleLoadFromSlot} 
+                />
+
+                <SettingsModal 
+                    isOpen={showSettings}
+                    onClose={() => setShowSettings(false)}
+                    isTitleView={true}
                 />
 
                 {showCredits && (
@@ -137,7 +201,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                                 <X className="w-5 h-5" />
                             </SfxButton>
                             <h2 className="text-xl md:text-2xl font-bold text-amber-50 mb-6 font-serif">Credits</h2>
-                            <div className="space-y-4 text-stone-300">
+                            <div className="space-y-4 text-stone-300 text-left">
                                 <div><h3 className="text-[10px] md:text-xs text-stone-500 uppercase font-black tracking-widest mb-1 font-sans">Created By</h3><p className="font-serif font-bold text-sm md:text-lg">CryingDev</p></div>
                                 <div><h3 className="text-[10px] md:text-xs text-stone-500 uppercase font-black tracking-widest mb-1 font-sans">Assets</h3><p className="font-serif font-bold text-xs md:text-base">Pixel Art & Icons via AI/Open Source</p></div>
                             </div>
