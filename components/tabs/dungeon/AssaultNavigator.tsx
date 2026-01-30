@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import Phaser from 'phaser';
 import { useGame } from '../../../context/GameContext';
@@ -185,7 +184,6 @@ const AssaultNavigator = () => {
         
         // 위치가 변경되었을 때만 트랩 체크
         if (x !== oldPos.x || y !== oldPos.y) {
-            const currentTile = session.grid[y][x];
             if (session.lastActionMessage?.includes('springs')) {
                 // 이동이 끝난 후(300ms) 효과 재생
                 setTimeout(() => {
@@ -437,8 +435,11 @@ const AssaultNavigator = () => {
 
     const getDialogue = () => {
         if (isOnNPCTile) return { speaker: (rescueTarget?.name || "Survivor"), text: lastMsg };
+        // Priority check for boss defeat on boss tile
+        if (currentRoom === 'BOSS' && session.isBossDefeated) {
+            return { speaker: "The Fallen's Echo", text: "The terror has been silenced. A pile of artifacts and ancient steel remains... Will you claim the legacy of this lair and return to the forge?" };
+        }
         if (isEncountered) {
-            if (currentRoom === 'BOSS' && session.isBossDefeated) return { speaker: "Inner Voice", text: "The terror is gone, but the air still trembles. We've taken what we came for. Time to leave?" };
             return { speaker: "Inner Voice", text: session.lastActionMessage || lastMsg };
         }
         if (isVictory) return { speaker: "Frontline Shout", text: "They're all down! Sector secured, Lockhart!" };
@@ -615,11 +616,9 @@ const AssaultNavigator = () => {
                                         setLastMsg("We've marked the spot. Resuming exploration for now.");
                                         setHasInteractedWithNpc(true);
                                     }, variant: 'neutral' as const }
-                                ] : isEncountered ? [
-                                    ...(currentRoom === 'BOSS' && session.isBossDefeated ? [
-                                        { label: "CLAIM THE LOOT AND LEAVE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
-                                        { label: "CONTINUE EXPLORING", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
-                                    ] : [])
+                                ] : currentRoom === 'BOSS' && session.isBossDefeated ? [
+                                    { label: "CLAIM THE LOOT AND LEAVE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
+                                    { label: "CONTINUE EXPLORING", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
                                 ] : isStairs ? [
                                     { label: `INTO THE ABYSS (Sector ${session.currentFloor + 1})`, action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
                                     { label: "REACH THE SURFACE", action: () => actions.finishManualAssault(), variant: 'primary' as const },

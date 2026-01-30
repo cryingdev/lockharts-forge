@@ -139,7 +139,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6 space-y-2 md:space-y-3">
         {displayInventory.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-stone-800 italic p-12 text-center">
+          <div className="h-full flex flex-col items-center justify-center text-stone-800 italic p-12 text-center bg-stone-950/20 m-4 rounded-xl border-2 border-dashed border-stone-800">
             <Box className="w-12 h-12 opacity-10 mb-2" />
             <p className="text-xs">No suitable items found.</p>
             {selectedSlotFilter && (

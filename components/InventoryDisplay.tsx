@@ -177,10 +177,10 @@ export const InventoryDisplay = () => {
                     </div>
                 )}
                 {socketedSkill && (
-                    <div className="bg-indigo-900/30 border border-indigo-500/30 p-2 rounded-lg mt-2">
+                    <div className="bg-indigo-900/30 border border-indigo-500/30 p-2 rounded-lg mt-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <div className="flex items-center gap-2 mb-1">
                             <Wand2 className="w-3 h-3 text-indigo-400" />
-                            <span className="text-[10px] font-black text-indigo-200 uppercase tracking-widest">Socketed Skill</span>
+                            <span className="text-[10px] font-black text-indigo-200 uppercase tracking-widest">Imbued Skill</span>
                         </div>
                         <div className="text-xs font-bold text-white">{socketedSkill.name}</div>
                         <p className="text-[9px] text-stone-400 italic leading-tight mt-1">{socketedSkill.description}</p>

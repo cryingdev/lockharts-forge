@@ -135,7 +135,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
         
         setTimeout(() => {
             const skill = skillId ? SKILLS[skillId] : null;
-            const multiplier = skill?.multiplier ?? 1.0; // Fix TS18048: 기본값 보장
+            const multiplier = skill?.multiplier ?? 1.0; 
             const mpCost = skill?.mpCost ?? 0;
             const isHealUseCase = skill?.tags.includes('HEAL') || false;
 
@@ -240,7 +240,14 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
     }, [addLog, triggerDamagePopup]);
 
     const processLoop = useCallback(() => {
-        if (isPaused || activeActorId || attackingUnitId || inspectedMercId) return;
+        if (isPaused || activeActorId || attackingUnitId || inspectedMercId) {
+            // Auto-transition logic: if isAuto is enabled while activeActorId is set, clear activeActorId and let AI act.
+            if (isAuto && activeActorId && !attackingUnitId) {
+                setActiveActorId(null);
+                setPendingAction(null);
+            }
+            return;
+        }
 
         const enemiesDefeated = enemySquadState.every(e => e.currentHp <= 0);
         const partyDefeated = partyState.every(p => p.currentHp <= 0);
@@ -277,7 +284,6 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                     ];
 
                     let sid = undefined;
-                    // Fix TS2739: target 변수를 any 타입으로 명시적으로 선언하여 플레이어/몬스터 타입 혼용 허용
                     let target: any = livingEnemies[Math.floor(Math.random() * livingEnemies.length)];
 
                     if (availableSkillIds.length > 0) {
@@ -478,7 +484,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                         ))}
                     </div>
                 </div>
-                <SfxButton sfx="switch" onClick={() => { setIsAuto(!isAuto); setPendingAction(null); setShowSkillList(false); }} className={`px-4 py-1.5 rounded-lg border font-black text-[9px] tracking-widest transition-all ${isAuto ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-800 border-stone-600 text-stone-400'}`}>
+                <SfxButton sfx="switch" onClick={() => { setIsAuto(!isAuto); }} className={`px-4 py-1.5 rounded-lg border font-black text-[9px] tracking-widest transition-all ${isAuto ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-800 border-stone-600 text-stone-400'}`}>
                     {isAuto ? 'AUTO' : 'MANUAL'}
                 </SfxButton>
             </div>
