@@ -125,14 +125,14 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
 
     /**
      * executeAction: 전투의 핵심 Use Case 처리기
-     * 공격, 힐, 버프 등 모든 전투 행위를 기술의 태그에 따라 처리합니다.
+     * Fix: multipliers and MP costs now have safe defaults to resolve TS18048.
      */
     const executeAction = useCallback((attacker: any, target: any, isPlayerSide: boolean, skillId?: string) => {
         setAttackingUnitId(isPlayerSide ? attacker.id : attacker.instanceId);
         
         setTimeout(() => {
             const skill = skillId ? SKILLS[skillId] : null;
-            const multiplier = skill ? skill.multiplier : 1.0;
+            const multiplier = skill?.multiplier ?? 1.0;
             const mpCost = skill?.mpCost ?? 0;
             const isHealAction = skill?.tags.includes('HEAL') || false;
 
@@ -158,7 +158,6 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                     }));
                     addLog(`${attacker.name} used ${skill!.name} on ${target.name} for ${finalHeal} HP!`, 'PLAYER', isCrit, true, true);
                 } else {
-                    // 적이 자가 회복하거나 다른 적을 치유하는 경우
                     setEnemySquadState(prev => prev.map(e => {
                         if (e.instanceId === target.instanceId) {
                             const nextHp = Math.min(e.stats.maxHp, e.currentHp + finalHeal);
@@ -253,7 +252,6 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
             return;
         }
 
-        // 플레이어 턴 게이지 계산 및 행동 결정
         setPartyState(prev => {
             const next = [...prev];
             let readyMerc = null;
@@ -271,23 +269,18 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
 
                     const availableSkillIds = [
                         ...(readyMerc.skillIds || []),
-                        ...Object.values(readyReady(readyMerc)).filter(Boolean) as string[]
+                        ...Object.values(readyMerc.equipment || {}).map(i => (i as any)?.socketedSkillId).filter(Boolean) as string[]
                     ];
-
-                    // Helper to get socketed skills safely
-                    function readyReady(m: any) {
-                        return Object.values(m.equipment || {}).map(i => (i as any)?.socketedSkillId);
-                    }
 
                     let sid = undefined;
                     let target = livingEnemies[Math.floor(Math.random() * livingEnemies.length)];
 
                     if (availableSkillIds.length > 0) {
-                        const skill = SKILLS[availableSkillIds[0]];
+                        const skillId = availableSkillIds[0];
+                        const skill = SKILLS[skillId];
                         if (skill && readyMerc.currentMp >= (skill.mpCost ?? 0) && Math.random() < 0.3) {
-                            sid = skill.id;
+                            sid = skillId;
                             if (skill.tags.includes('HEAL')) {
-                                // AI: 힐 스킬인 경우 체력이 가장 낮은 아군 선택
                                 target = [...livingAllies].sort((a,b) => (a.currentHp/a.derived.maxHp) - (b.currentHp/b.derived.maxHp))[0];
                             }
                         }
@@ -302,7 +295,6 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
             return next;
         });
 
-        // 적군 턴 게이지 계산 및 행동 결정
         setEnemySquadState(prev => {
             const next = [...prev];
             let readyEnemy = null;
@@ -346,7 +338,8 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                             derived,
                             currentHp: updatedMercFromContext.currentHp,
                             currentMp: updatedMercFromContext.currentMp,
-                            gauge: Math.max(0, p.gauge - ACTION_THRESHOLD)
+                            gauge: Math.max(0, p.gauge - ACTION_THRESHOLD),
+                            lastDamaged: false // Reset local flag
                         };
                     }
                     return p;
@@ -381,18 +374,15 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
 
     /**
      * handleTargetClick: 타겟 지정 Use Case
-     * 공격 스킬/액션은 적을, 지원 스킬은 아군을 지정할 수 있습니다.
      */
     const handleTargetClick = (target: any, side: 'PLAYER' | 'ENEMY') => {
         if (!activeActorId || !pendingAction) return;
         
-        // 사망한 유닛은 타겟 불가 (일부 특수 스킬 제외)
         if (target.currentHp <= 0 && side === 'ENEMY') return;
         
         const skill = pendingAction.skillId ? SKILLS[pendingAction.skillId] : null;
         const isSupportive = skill?.tags.includes('HEAL') || skill?.tags.includes('BUFF');
 
-        // 공격 액션인데 아군 클릭 시 무시, 지원 스킬인데 적군 클릭 시 무시
         if (!isSupportive && side === 'PLAYER' && pendingAction.type === 'ATTACK') return;
         if (!isSupportive && side === 'PLAYER' && skill && !skill.tags.includes('DAMAGE')) return;
         if (isSupportive && side === 'ENEMY') return;
@@ -414,7 +404,10 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
             addLog("Escape failed!", 'SYSTEM');
             setActiveActorId(null);
             setPendingAction(null);
-            setPartyState(prev => prev.map(p => p.id === activeActorId ? { ...p, gauge: 0 } : p));
+            const actor = partyState.find(p => p.id === activeActorId);
+            if (actor) {
+                setPartyState(prev => prev.map(p => p.id === actor.id ? { ...p, gauge: 0 } : p));
+            }
         }
     };
 
@@ -427,6 +420,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
     };
 
     const activeActor = useMemo(() => partyState.find(p => p.id === activeActorId), [partyState, activeActorId]);
+    
     const activeActorSkills = useMemo(() => {
         if (!activeActor) return [];
         const learned = (activeActor.skillIds || []).map(id => ({ id, source: 'LEARNED' }));
@@ -434,7 +428,6 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
         return [...learned, ...fromGear as any];
     }, [activeActor]);
 
-    // 현재 선택된 행동이 아군 대상인지 여부
     const isSupportiveAction = useMemo(() => {
         if (!pendingAction || pendingAction.type === 'ATTACK') return false;
         if (!pendingAction.skillId) return false;
@@ -494,7 +487,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 {/* Enemies Area */}
                 <div className={`flex flex-1 items-center justify-center p-4 gap-6 md:gap-12 ${orientation === 'PORTRAIT' ? 'order-1' : 'order-2'}`}>
                     {enemySquadState.map(e => {
-                        const isTargetable = pendingAction && e.currentHp > 0 && !isSupportiveAction;
+                        const isTargetable = !!pendingAction && e.currentHp > 0 && !isSupportiveAction;
                         return (
                             <div key={e.instanceId} style={getUnitStyle(e.instanceId, 'ENEMY')} onClick={() => isTargetable && handleTargetClick(e, 'ENEMY')} className={`relative flex flex-col items-center transition-all ${e.currentHp <= 0 ? 'opacity-20 grayscale' : e.lastDamaged ? 'animate-hit' : ''}`}>
                                 <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-2xl border-2 flex items-center justify-center relative shadow-2xl ${e.lastDamaged ? 'border-red-500 bg-red-950/20' : 'border-stone-800'} ${isTargetable ? 'animate-target border-red-500 cursor-crosshair' : ''}`}>
@@ -532,13 +525,12 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                 <div className={`flex flex-1 items-center justify-center p-4 gap-6 md:gap-12 ${orientation === 'PORTRAIT' ? 'order-3 pt-0' : 'order-1'}`}>
                     {partyState.map(p => {
                         const isActive = activeActorId === p.id;
-                        const isTargetable = pendingAction && p.currentHp > 0 && isSupportiveAction;
+                        const isTargetable = !!pendingAction && p.currentHp > 0 && isSupportiveAction;
                         const hpPer = (p.currentHp / p.derived.maxHp) * 100;
                         const mpPer = (p.currentMp / (p.derived.maxMp || 1)) * 100;
 
                         return (
                             <div key={p.id} style={getUnitStyle(p.id, 'PLAYER')} onClick={() => isTargetable && handleTargetClick(p, 'PLAYER')} className={`relative flex flex-col items-center transition-all ${p.currentHp <= 0 ? 'opacity-20 grayscale' : isActive ? '-translate-y-4' : ''} ${p.lastDamaged ? 'animate-hit' : ''}`}>
-                                {/* Portrait Container */}
                                 <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900 rounded-2xl border-2 flex items-center justify-center relative shadow-2xl ${isActive ? 'border-amber-400 ring-4 ring-amber-500/20' : isTargetable ? 'animate-heal-target border-emerald-500 ring-4 ring-emerald-500/20 cursor-pointer' : 'border-stone-800'}`}>
                                     <MercenaryPortrait mercenary={p} className="w-[85%] h-[85%] rounded-xl" />
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -547,8 +539,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                                         ))}
                                     </div>
                                     
-                                    {/* Action indicator for targeting */}
-                                    {pendingAction && isActive && (
+                                    {!!pendingAction && isActive && (
                                         <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
                                             <div className={`bg-amber-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-lg border border-amber-400 whitespace-nowrap`}>
                                                 {pendingAction.skillId ? SKILLS[pendingAction.skillId].name : 'Striking'}
@@ -578,7 +569,6 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                                         </div>
                                     )}
 
-                                    {/* Skill List Overlay */}
                                     {isActive && showSkillList && (
                                         <div className="absolute -bottom-52 left-1/2 -translate-x-1/2 z-[310] bg-stone-900/98 border-2 border-indigo-500 p-3 rounded-2xl shadow-2xl animate-in zoom-in-95 backdrop-blur-xl w-64 md:w-80">
                                             <div className="flex justify-between items-center mb-2 px-1">
@@ -589,7 +579,8 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                                                 {activeActorSkills.map((ref, idx) => {
                                                     const skill = SKILLS[ref.id];
                                                     if (!skill) return null;
-                                                    const canCast = activeActor.currentMp >= (skill.mpCost ?? 0);
+                                                    const actor = partyState.find(ps => ps.id === activeActorId);
+                                                    const canCast = !!actor && actor.currentMp >= (skill.mpCost ?? 0);
                                                     const isHeal = skill.tags.includes('HEAL');
                                                     return (
                                                         <button 
@@ -618,7 +609,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                                                     <div className="py-8 text-center text-stone-600 text-[10px] font-black uppercase tracking-widest opacity-40 italic">No usable skills</div>
                                                 )}
                                             </div>
-                                            {pendingAction && (
+                                            {!!pendingAction && (
                                                 <div className="mt-3 pt-3 border-t border-indigo-500/30">
                                                     <SfxButton onClick={() => setPendingAction(null)} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-400 text-[10px] font-black uppercase rounded-lg">Cancel Selection</SfxButton>
                                                 </div>
@@ -629,29 +620,22 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                                 
                                 {p.currentHp > 0 && (
                                     <div className="mt-2 w-24 md:w-52 space-y-1">
-                                        {/* Full Name, Job, Level */}
                                         <div className="flex flex-col items-center leading-none mb-1">
                                             <span className="text-[9px] md:text-xs font-black text-stone-100 uppercase tracking-tighter truncate w-full text-center">{p.name}</span>
                                             <span className="text-[7px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest mt-0.5">{p.job} • Lv.{p.level}</span>
                                         </div>
-
-                                        {/* HP Bar & Value */}
                                         <div className="relative h-3 bg-black rounded-full overflow-hidden border border-white/5 shadow-inner">
                                             <div className={`h-full transition-all duration-500 ${hpPer < 30 ? 'bg-red-500 animate-pulse' : 'bg-red-600'}`} style={{ width: `${hpPer}%` }} />
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                                 <span className="text-[7px] md:text-[11px] font-mono font-black text-white drop-shadow-sm">{Math.floor(p.currentHp)} / {p.derived.maxHp}</span>
                                             </div>
                                         </div>
-
-                                        {/* MP Bar & Value */}
                                         <div className="relative h-2.5 bg-black rounded-full overflow-hidden border border-white/5 shadow-inner">
                                             <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${mpPer}%` }} />
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                                 <span className="text-[6px] md:text-[9px] font-mono font-black text-blue-100 drop-shadow-sm">{Math.floor(p.currentMp)} / {p.derived.maxMp}</span>
                                             </div>
                                         </div>
-
-                                        {/* ATB Gauge */}
                                         <div className="h-1 bg-black rounded-full overflow-hidden">
                                             <div className="h-full bg-amber-500 transition-all" style={{ width: `${(p.gauge/ACTION_THRESHOLD)*100}%` }} />
                                         </div>

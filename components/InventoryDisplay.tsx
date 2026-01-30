@@ -28,10 +28,10 @@ const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, clas
     const [imgSrc, setImgSrc] = useState(getAssetUrl(`${baseId}.png`, folder));
 
     useEffect(() => {
-        const targetFolder = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL' ? 'skills' : (item.type === 'EQUIPMENT' ? 'equipments' : 'materials');
+        const targetFolder = (item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL') ? 'skills' : (item.type === 'EQUIPMENT' ? 'equipments' : 'materials');
         const targetFile = item.image || (isEquip && item.equipmentData?.recipeId ? `${item.equipmentData.recipeId}.png` : `${item.id}.png`);
         setImgSrc(getAssetUrl(targetFile, targetFolder));
-    }, [item.id, item.image, item.type]);
+    }, [item.id, item.image, item.type, isEquip, item.equipmentData?.recipeId]);
 
     const handleImgError = () => {
         const fallbackPath = item.image || item.equipmentData?.image;
@@ -40,7 +40,7 @@ const AdaptiveInventoryImage = ({ item, className }: { item: InventoryItem, clas
         }
     };
 
-    return <img src={imgSrc} onError={handleImgError} className={className} />;
+    return <img src={imgSrc} onError={handleImgError} className={className} alt={item.name} />;
 };
 
 export const InventoryDisplay = () => {

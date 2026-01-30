@@ -164,8 +164,9 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
 
             const rarityClasses = (isConsumable || isSkillScroll) ? 'text-stone-400 border-stone-700 bg-stone-900/40' : getRarityClasses(item.equipmentData?.rarity);
             
-            // Skill icon folder mapping fix
-            const folder = (isSkillBook || isSkillScroll) ? 'skills' : (item.type === 'EQUIPMENT' ? 'equipments' : 'materials');
+            // Fix: Identify skill folder correctly
+            const isSkillAny = isSkillBook || isSkillScroll;
+            const folder = isSkillAny ? 'skills' : (item.type === 'EQUIPMENT' ? 'equipments' : 'materials');
             const targetFile = item.image || (item.type === 'EQUIPMENT' && item.equipmentData?.recipeId ? `${item.equipmentData.recipeId}.png` : `${item.id}.png`);
             const imageUrl = getAssetUrl(targetFile, folder);
 
