@@ -125,19 +125,22 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
 
     /**
      * executeAction: 전투의 핵심 Use Case 처리기
-     * Fix: multipliers and MP costs now have safe defaults to resolve TS18048.
+     * 스킬의 태그에 따른 동작 정의(Use Case)를 타겟에 적용합니다.
      */
     const executeAction = useCallback((attacker: any, target: any, isPlayerSide: boolean, skillId?: string) => {
+        if (!attacker || !target) return;
+        
+        // 공격자 식별 아이디 (연출용)
         setAttackingUnitId(isPlayerSide ? attacker.id : attacker.instanceId);
         
         setTimeout(() => {
             const skill = skillId ? SKILLS[skillId] : null;
-            const multiplier = skill?.multiplier ?? 1.0;
+            const multiplier = skill?.multiplier ?? 1.0; // Fix TS18048: 기본값 보장
             const mpCost = skill?.mpCost ?? 0;
-            const isHealAction = skill?.tags.includes('HEAL') || false;
+            const isHealUseCase = skill?.tags.includes('HEAL') || false;
 
             // USE CASE: HEALING
-            if (isHealAction) {
+            if (isHealUseCase) {
                 const baseHeal = Math.round((attacker.derived?.magicalAttack || attacker.stats.magicalAttack || 10) * multiplier);
                 const isCrit = Math.random() * 100 <= (attacker.derived?.critChance || 0);
                 const finalHeal = isCrit ? Math.round(baseHeal * 1.5) : baseHeal;
@@ -169,7 +172,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                     addLog(`${attacker.name} healed ${target.name} for ${finalHeal}!`, 'ENEMY', isCrit, true, true);
                 }
             } 
-            // USE CASE: DAMAGE
+            // USE CASE: DAMAGE (Standard Strike or Attack Skill)
             else {
                 const res = calculateCombatResult(
                     isPlayerSide ? attacker.derived : attacker.stats,
@@ -191,6 +194,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                             const next = { ...e, lastDamaged: res.isHit };
                             if (res.isHit) {
                                 let nextHp = Math.max(0, next.currentHp - res.damage);
+                                // Boss Phoenix Special Mechanic
                                 if (nextHp <= 0 && next.id === 'phoenix' && !next.hasUsedRevival) {
                                     nextHp = next.stats.maxHp;
                                     next.hasUsedRevival = true;
@@ -273,7 +277,8 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                     ];
 
                     let sid = undefined;
-                    let target = livingEnemies[Math.floor(Math.random() * livingEnemies.length)];
+                    // Fix TS2739: target 변수를 any 타입으로 명시적으로 선언하여 플레이어/몬스터 타입 혼용 허용
+                    let target: any = livingEnemies[Math.floor(Math.random() * livingEnemies.length)];
 
                     if (availableSkillIds.length > 0) {
                         const skillId = availableSkillIds[0];
@@ -339,7 +344,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                             currentHp: updatedMercFromContext.currentHp,
                             currentMp: updatedMercFromContext.currentMp,
                             gauge: Math.max(0, p.gauge - ACTION_THRESHOLD),
-                            lastDamaged: false // Reset local flag
+                            lastDamaged: false 
                         };
                     }
                     return p;
@@ -372,12 +377,8 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
         setPendingAction({ type, skillId });
     };
 
-    /**
-     * handleTargetClick: 타겟 지정 Use Case
-     */
     const handleTargetClick = (target: any, side: 'PLAYER' | 'ENEMY') => {
         if (!activeActorId || !pendingAction) return;
-        
         if (target.currentHp <= 0 && side === 'ENEMY') return;
         
         const skill = pendingAction.skillId ? SKILLS[pendingAction.skillId] : null;
@@ -580,6 +581,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = ({ session, party, e
                                                     const skill = SKILLS[ref.id];
                                                     if (!skill) return null;
                                                     const actor = partyState.find(ps => ps.id === activeActorId);
+                                                    // Fix TS18048: actor 존재 확인 및 mpCost 기본값 보장
                                                     const canCast = !!actor && actor.currentMp >= (skill.mpCost ?? 0);
                                                     const isHeal = skill.tags.includes('HEAL');
                                                     return (
