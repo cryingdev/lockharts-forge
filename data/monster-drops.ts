@@ -15,22 +15,27 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
   giant_rat: [
     { itemId: 'vermin_fang', minQuantity: 1, maxQuantity: 2, chance: 0.88 },
     { itemId: 'hide_patch', minQuantity: 1, maxQuantity: 1, chance: 0.22 },
+    { itemId: 'scroll_skill_bash', minQuantity: 1, maxQuantity: 1, chance: 0.05 },
   ],
   sewer_slime: [
     { itemId: 'slime_gel', minQuantity: 1, maxQuantity: 2, chance: 0.80 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 1, chance: 0.18 },
     { itemId: 'acidic_slime_core', minQuantity: 1, maxQuantity: 1, chance: 0.15 },
+    { itemId: 'potion_energy_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   cave_bat: [
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 1, chance: 0.28 },
     { itemId: 'bat_sonar_gland', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
     { itemId: 'cave_moss_pad', minQuantity: 1, maxQuantity: 2, chance: 0.20 },
+    { itemId: 'potion_health_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   rat_man: [
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 3, chance: 0.75 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 2, chance: 0.25 },
     { itemId: 'hide_patch', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
     { itemId: 'sewer_buckle', minQuantity: 1, maxQuantity: 1, chance: 0.14 },
+    { itemId: 'potion_health_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
+    { itemId: 'scroll_skill_cleave', minQuantity: 1, maxQuantity: 1, chance: 0.05 },
   ],
   mold_sporeling: [
     { itemId: 'oak_log', minQuantity: 1, maxQuantity: 1, chance: 0.18 },
@@ -54,6 +59,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'tin_ore', minQuantity: 1, maxQuantity: 1, chance: 0.18 },
     { itemId: 'sewer_buckle', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
     { itemId: 'rusty_amulet_fragment', minQuantity: 1, maxQuantity: 1, chance: 0.15 },
+    { itemId: 'potion_health_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   plague_rat_king: [
     { itemId: 'leather_strips', minQuantity: 2, maxQuantity: 4, chance: 1.00 },
@@ -61,6 +67,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
       // REPLACE molar with crown + scrap mace
     { itemId: 'rat_king_crown_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
     { itemId: 'scrap_mace_head', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
+    { itemId: 'potion_health_medium', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
 
   // ===== BAND 2: The Goblin Plains =====
@@ -68,20 +75,24 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 2, chance: 0.40 },
     { itemId: 'tin_ore', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
+    { itemId: 'potion_health_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   goblin_slinger: [
     { itemId: 'oak_log', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.25 },
     { itemId: 'goblin_sling_pouch', minQuantity: 1, maxQuantity: 1, chance: 0.22 },
+    { itemId: 'potion_health_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   goblin_shaman: [
     { itemId: 'wool_cloth', minQuantity: 1, maxQuantity: 2, chance: 0.45 },
     { itemId: 'fetish_totem_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
+    { itemId: 'potion_energy_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   goblin_brute: [
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.45 },
     { itemId: 'hard_leather', minQuantity: 1, maxQuantity: 1, chance: 0.12 },
     { itemId: 'brute_sinew', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
+    { itemId: 'potion_health_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   scavenger_hyena: [
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.45 },
@@ -100,17 +111,22 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 3, chance: 0.45 },
     { itemId: 'hard_leather', minQuantity: 1, maxQuantity: 1, chance: 0.18 },
     { itemId: 'rusty_amulet_fragment', minQuantity: 1, maxQuantity: 1, chance: 0.12 },
+    { itemId: 'potion_health_medium', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   bandit_archer: [
     { itemId: 'oak_log', minQuantity: 1, maxQuantity: 3, chance: 0.35 },
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
     { itemId: 'bowstring_bundle', minQuantity: 1, maxQuantity: 1, chance: 0.22 },
+    { itemId: 'potion_energy_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
+    { itemId: 'potion_health_medium', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   goblin_king: [
     { itemId: 'tin_ore', minQuantity: 2, maxQuantity: 4, chance: 0.85 },
     { itemId: 'copper_ore', minQuantity: 2, maxQuantity: 5, chance: 1.00 },
     { itemId: 'goblin_scrap_buckle', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
     { itemId: 'goblin_crown_gilded_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
+    { itemId: 'potion_health_medium', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
+    { itemId: 'potion_health_large', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
 
   // ===== BAND 3: The Deep Mines =====

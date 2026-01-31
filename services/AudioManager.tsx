@@ -127,6 +127,7 @@ const AudioManager: React.FC<AudioManagerProps> = ({ currentView }) => {
             gainNode.gain.setValueAtTime(0, ctx.currentTime);
             gainNode.gain.linearRampToValueAtTime(effectiveVolume, ctx.currentTime + 0.5);
 
+            // Fix: Removed redundant 'closed' check as 'suspended' state already implies it's not closed
             if (ctx.state === 'suspended') {
                 await ctx.resume().catch(() => {});
             }
@@ -159,6 +160,7 @@ const AudioManager: React.FC<AudioManagerProps> = ({ currentView }) => {
                 AssetCache.audio.set(filename, buffer);
             }
 
+            // Fix: Removed redundant 'closed' check as 'suspended' state already implies it's not closed
             if (ctx.state === 'suspended') {
                 await ctx.resume().catch(() => {});
             }
@@ -220,6 +222,7 @@ const AudioManager: React.FC<AudioManagerProps> = ({ currentView }) => {
     useEffect(() => {
         const handleInteraction = () => {
             const ctx = contextRef.current;
+            // Fix: Removed redundant 'closed' check as 'suspended' state already implies it's not closed
             if (ctx && ctx.state === 'suspended') {
                 ctx.resume().catch(() => {});
             }

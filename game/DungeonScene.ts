@@ -1,7 +1,7 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { ManualDungeonSession, RoomType } from '../types/game-state';
+import { materials } from '../data/materials';
 
 export type CameraMode = 'LOCKED' | 'ADAPTIVE' | 'FREE';
 
@@ -237,7 +237,13 @@ export default class DungeonScene extends Phaser.Scene {
         const x = this.playerMarker.x + (Math.random() * 40 - 20); // 약간의 위치 편차
         const y = this.playerMarker.y;
         
-        const key = `item_${itemId}`;
+        const item = materials[itemId];
+        const isSkill = item?.type === 'SKILL_BOOK' || item?.type === 'SKILL_SCROLL';
+        const folder = isSkill ? 'skills' : 'materials';
+        const fileName = item?.image || `${itemId}.png`;
+        const assetUrl = getAssetUrl(fileName, folder);
+
+        const key = `float_loot_${itemId}`;
         const renderFloating = () => {
             const container = this.add.container(x, y - 50).setDepth(310);
             
@@ -281,7 +287,7 @@ export default class DungeonScene extends Phaser.Scene {
             renderFloating();
         } else {
             // 텍스처가 없는 경우 동적으로 로드 후 렌더링
-            this.load.image(key, getAssetUrl(`${itemId}.png`, 'materials'));
+            this.load.image(key, assetUrl);
             this.load.once('complete', renderFloating);
             this.load.start();
         }

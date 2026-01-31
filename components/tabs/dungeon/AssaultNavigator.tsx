@@ -8,7 +8,7 @@ import {
     Key, Zap, LogOut, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, 
     Skull, Shield, Sword, Sparkles, Users, Activity, Heart, 
     Maximize, Minimize, Plus, Minus, Move, Ghost, Settings, Layers, Wrench,
-    Package, Coins, X
+    Package, Coins, X, TrendingUp
 } from 'lucide-react';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 import { calculateCombatPower, calculateMercenaryPower } from '../../../utils/combatLogic';
@@ -20,6 +20,7 @@ import { SPECIAL_RECRUITS_REGISTRY } from '../../../data/mercenaries';
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { EquipmentSlotType } from '../../../types/inventory';
 import { SfxButton } from '../../common/ui/SfxButton';
+import { materials } from '../../../data/materials';
 
 // DungeonScene.ts의 이동 애니메이션 시간과 일치시킵니다.
 const MOVE_DURATION = 300;
@@ -114,52 +115,63 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
 });
 
 // New Component: Loot View Overlay
-const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClose: () => void }) => (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 pointer-events-auto">
-        <div className="w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 flex flex-col items-center p-8 text-center ring-1 ring-white/10">
-            <div className="p-4 bg-stone-850 border-b border-stone-800 flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-3">
-                    <Package className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-black uppercase tracking-widest text-sm text-stone-200">Current Loot</h3>
-                </div>
-                <SfxButton sfx="switch" onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-5 h-5" /></SfxButton>
-            </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 min-h-[200px] max-h-[60vh]">
-                <div className="flex items-center justify-between bg-stone-950/60 p-3 rounded-xl border border-amber-900/30">
+const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClose: () => void }) => {
+    const getItemImageUrl = (itemId: string) => {
+        const item = materials[itemId];
+        if (!item) return getAssetUrl(`${itemId}.png`, 'materials');
+        const isSkill = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL';
+        const folder = isSkill ? 'skills' : 'materials';
+        const fileName = item.image || `${itemId}.png`;
+        return getAssetUrl(fileName, folder);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 pointer-events-auto">
+            <div className="w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 flex flex-col items-center p-8 text-center ring-1 ring-white/10">
+                <div className="p-4 bg-stone-850 border-b border-stone-800 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3">
-                        <Coins className="w-5 h-5 text-amber-500" />
-                        <span className="text-xs font-black text-stone-400 uppercase">Recovered Credits</span>
+                        <Package className="w-5 h-5 text-amber-500" />
+                        <h3 className="font-black uppercase tracking-widest text-sm text-stone-200">Current Loot</h3>
                     </div>
-                    <span className="text-lg font-mono font-black text-amber-400">{gold.toLocaleString()} G</span>
+                    <SfxButton sfx="switch" onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-5 h-5" /></SfxButton>
                 </div>
-                
-                <div className="space-y-1.5">
-                    <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Materials Found</span>
-                    {loot.length === 0 ? (
-                        <div className="text-center py-10 text-stone-600 italic text-xs border border-dashed border-stone-800 rounded-xl">No items recovered yet.</div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-2">
-                            {loot.map((item, i) => (
-                                <div key={i} className="flex items-center justify-between bg-stone-800/40 p-2 rounded-xl border border-stone-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-stone-950 rounded-lg flex items-center justify-center border border-stone-800 shrink-0">
-                                            <img src={getAssetUrl(`${item.id}.png`, 'materials')} className="w-5 h-5 object-contain" onError={e=>e.currentTarget.style.display='none'} />
-                                        </div>
-                                        <span className="text-xs font-black text-stone-200 truncate max-w-[140px]">{item.name}</span>
-                                    </div>
-                                    <span className="text-xs font-mono font-black text-amber-500">x{item.count}</span>
-                                </div>
-                            ))}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 min-h-[200px] max-h-[60vh]">
+                    <div className="flex items-center justify-between bg-stone-950/60 p-3 rounded-xl border border-amber-900/30">
+                        <div className="flex items-center gap-3">
+                            <Coins className="w-5 h-5 text-amber-500" />
+                            <span className="text-xs font-black text-stone-400 uppercase">Recovered Credits</span>
                         </div>
-                    )}
+                        <span className="text-lg font-mono font-black text-amber-400">{gold.toLocaleString()} G</span>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                        <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Materials Found</span>
+                        {loot.length === 0 ? (
+                            <div className="text-center py-10 text-stone-600 italic text-xs border border-dashed border-stone-800 rounded-xl">No items recovered yet.</div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-2">
+                                {loot.map((item, i) => (
+                                    <div key={i} className="flex items-center justify-between bg-stone-800/40 p-2 rounded-xl border border-stone-700">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-stone-950 rounded-lg flex items-center justify-center border border-stone-800 shrink-0">
+                                                <img src={getItemImageUrl(item.id)} className="w-5 h-5 object-contain" onError={e=>e.currentTarget.style.display='none'} />
+                                            </div>
+                                            <span className="text-xs font-black text-stone-200 truncate max-w-[140px]">{item.name}</span>
+                                        </div>
+                                        <span className="text-xs font-mono font-black text-amber-500">x{item.count}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
-            <div className="p-4 bg-stone-950 text-center border-t border-stone-800">
-                <SfxButton onClick={onClose} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all">Close</SfxButton>
+                <div className="p-4 bg-stone-950 text-center border-t border-stone-800">
+                    <SfxButton onClick={onClose} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all">Close</SfxButton>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const AssaultNavigator = () => {
     const { state, actions } = useGame();
@@ -459,11 +471,19 @@ const AssaultNavigator = () => {
 
             {/* Top Center: Floor Display */}
             {!isBattle && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-3 px-4 py-2 bg-stone-900/90 backdrop-blur-md border border-amber-500/30 rounded-2xl shadow-2xl">
-                    <Layers className="w-4 h-4 text-amber-50" />
-                    <span className="text-xs md:text-sm font-black text-amber-50 uppercase tracking-widest font-mono">
-                        Floor {session.currentFloor} / {session.maxFloors}
-                    </span>
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[110] flex flex-col items-center gap-1.5 px-4 py-2 bg-stone-900/90 backdrop-blur-md border border-amber-500/30 rounded-2xl shadow-2xl">
+                    <div className="flex items-center gap-3">
+                        <Layers className="w-4 h-4 text-amber-50" />
+                        <span className="text-xs md:text-sm font-black text-amber-50 uppercase tracking-widest font-mono">
+                            Floor {session.currentFloor} / {session.maxFloors}
+                        </span>
+                    </div>
+                    {session.floorBoost > 1 && (
+                        <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
+                            <TrendingUp className="w-2.5 h-2.5" />
+                            Momentum: +{Math.round((session.floorBoost - 1) * 100)}%
+                        </div>
+                    )}
                 </div>
             )}
 

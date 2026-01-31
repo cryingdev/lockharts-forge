@@ -29,6 +29,7 @@ export interface ManualDungeonSession {
     lastActionMessage?: string; 
     currentFloor: number;
     maxFloors: number;
+    floorBoost: number; // New: 5% stackable boost per consecutive floor
 }
 
 export interface DailyFinancials {

@@ -24,6 +24,7 @@ const createInitialInventory = (): InventoryItem[] => [
     { ...materials.potion_energy_small, quantity: 2 },
     { ...materials.potion_stamina_small, quantity: 2 },
     
+    { ...materials.affinity_debug_gift, quantity: 4 },
     { ...materials.emergency_gold, quantity: 4 },
 ];
 

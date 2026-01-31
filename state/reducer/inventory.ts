@@ -3,6 +3,7 @@ import { materials } from '../../data/materials';
 import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 import { SKILLS } from '../../data/skills';
+import { JobClass } from '../../models/JobClass';
 
 export const handleAcquireItem = (state: GameState, payload: { id: string; quantity: number }): GameState => {
     const { id, quantity } = payload;
@@ -291,8 +292,8 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
                 return { ...state, toastQueue: [...state.toastQueue, `${merc.name} already knows ${skill.name}.`] };
             }
 
-            // Check job compatibility (empty job list means universal)
-            const isCompatible = skill.job.length === 0 || skill.job.includes(merc.job);
+            // Check job compatibility (empty job list means universal, NOVICE in job list means any job can learn)
+            const isCompatible = skill.job.length === 0 || skill.job.includes(merc.job) || skill.job.includes(JobClass.NOVICE);
             if (!isCompatible) {
                 return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is not compatible with this skill type.`] };
             }

@@ -1,10 +1,9 @@
-
 import React from 'react';
-// Added missing ChevronRight import
 import { ChevronLeft, ChevronRight, Timer, Zap, Skull, Box } from 'lucide-react';
 import { getAssetUrl } from '../../../../utils';
 import { SfxButton } from '../../../common/ui/SfxButton';
 import { DungeonDefinition } from '../../../../models/Dungeon';
+import { materials } from '../../../../data/materials';
 
 interface DungeonInfoPanelProps {
     dungeon: DungeonDefinition;
@@ -25,6 +24,17 @@ export const DungeonInfoPanel: React.FC<DungeonInfoPanelProps> = ({
     dungeon, selectedFloor, potentialRewards, staminaCost, requiredPower, currentPower, powerHighlight,
     onBack, onPrevFloor, onNextFloor, canGoPrev, canGoNext
 }) => {
+    const getItemImageUrl = (itemId: string) => {
+        const item = materials[itemId];
+        if (!item) return getAssetUrl(`${itemId}.png`, 'materials');
+        
+        const isSkill = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL';
+        const folder = isSkill ? 'skills' : 'materials';
+        const fileName = item.image || `${itemId}.png`;
+        
+        return getAssetUrl(fileName, folder);
+    };
+
     return (
         <div className="w-full sm:w-[40%] h-[55%] sm:h-full flex flex-col border-b sm:border-b-0 sm:border-r border-stone-800 bg-stone-900/50 relative overflow-hidden shrink-0 min-h-0">
             <div className="absolute inset-0 opacity-20 pointer-events-none transition-all duration-1000">
@@ -62,7 +72,7 @@ export const DungeonInfoPanel: React.FC<DungeonInfoPanelProps> = ({
                         <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                             {potentialRewards.map((itemId, ridx) => (
                                 <div key={`${itemId}-${ridx}`} className="w-8 h-8 md:w-12 md:h-12 bg-stone-900 border border-stone-800 rounded-lg flex items-center justify-center shadow-inner group">
-                                    <img src={getAssetUrl(`${itemId}.png`, 'materials')} className="w-6 h-6 md:w-8 md:h-8 object-contain" onError={e=>e.currentTarget.style.display='none'} alt="loot" />
+                                    <img src={getItemImageUrl(itemId)} className="w-6 h-6 md:w-8 md:h-8 object-contain" onError={e=>e.currentTarget.style.display='none'} alt="loot" />
                                 </div>
                             ))}
                         </div>

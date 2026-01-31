@@ -55,7 +55,7 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
   const effectiveEqPrimaryStats = preview?.eqPrimaryStats || currentEqPrimaryStats;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-2 md:p-6 py-[10dvh] md:py-6 animate-in fade-in duration-300 overflow-hidden">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-2 md:p-12 animate-in fade-in duration-300 overflow-hidden">
       <SfxButton
         sfx="switch"
         onClick={onClose}
@@ -64,9 +64,9 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
         <X className="w-4 h-4 md:w-6 md:h-6" />
       </SfxButton>
 
-      <div className={`w-full h-full md:max-w-7xl md:h-[90dvh] bg-stone-950 border border-white/10 rounded-2xl md:rounded-[2rem] shadow-2xl flex flex-col md:flex-row overflow-hidden relative ring-1 ring-white/10 transition-all duration-500`}>
+      <div className={`w-full h-full md:max-w-5xl md:h-[82dvh] md:max-h-[720px] bg-stone-950 border border-white/10 rounded-2xl md:rounded-[2rem] shadow-2xl flex flex-col md:flex-row overflow-hidden relative ring-1 ring-white/10 transition-all duration-500`}>
         
-        <div className={`flex flex-col overflow-hidden transition-all duration-500 border-stone-800 ${isHired && isInventoryOpen ? 'w-full md:w-[45%] h-1/2 md:h-full border-b md:border-b-0 md:border-r' : 'w-full h-full'}`}>
+        <div className={`flex flex-col overflow-hidden transition-all duration-500 border-stone-800 ${isHired && isInventoryOpen ? 'w-full md:w-[40%] h-1/2 md:h-full border-b md:border-b-0 md:border-r' : 'w-full h-full'}`}>
           <div className="flex-1 overflow-y-auto custom-scrollbar bg-stone-900/20">
             <MercenaryPaperDoll
               mercenary={mercenary}

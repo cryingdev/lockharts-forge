@@ -161,7 +161,8 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         encounterStatus: 'NONE',
         lastActionMessage: `The air is thick with dampness. We've entered Sector ${startFloor}.`,
         currentFloor: startFloor,
-        maxFloors: dungeon.maxFloors
+        maxFloors: dungeon.maxFloors,
+        floorBoost: 1.0 // Start with base (0% boost)
     };
 
     return {
@@ -214,7 +215,8 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     let newGrid = [...session.grid.map(row => [...row])];
     let nextCollectedLoot = [...session.collectedLoot];
     let logMsg = '';
-    let actionMsg = session.lastActionMessage;
+    // FIXED: Reset actionMsg to a neutral default so old event messages don't persist
+    let actionMsg = isAlreadyVisited ? "Backtracking through a cleared path." : "Advancing through the shadows...";
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
     let newMaxFloorReached = { ...state.maxFloorReached };
 
@@ -308,9 +310,10 @@ export const handleProceedToNextFloorManual = (state: GameState): GameState => {
             pathHistory: [nextStartPos],
             currentFloor: nextFloor,
             encounterStatus: 'NONE',
+            floorBoost: session.floorBoost + 0.05, // 5% boost per floor
             lastActionMessage: `The stairs were long, but we've reached Sector ${nextFloor}. Stay alert.`
         },
-        logs: [`The squad has descended deeper into the abyss. Floor ${nextFloor}.`, ...state.logs]
+        logs: [`The squad has descended deeper into the abyss. Floor ${nextFloor}. Momentum Boost: +${Math.round((session.floorBoost + 0.05 - 1) * 100)}%`, ...state.logs]
     };
 };
 
@@ -353,7 +356,8 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             const drops = MONSTER_DROPS[enemy.id];
             if (drops) {
                 drops.forEach(drop => {
-                    if (Math.random() <= drop.chance) {
+                    // Apply floorBoost to drop chance
+                    if (Math.random() <= (drop.chance * session.floorBoost)) {
                         const qty = Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) + drop.minQuantity;
                         if (qty > 0) {
                             const mat = materials[drop.itemId];
@@ -381,12 +385,9 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
 
     const nextSessionXp = { ...session.sessionXp };
 
-    // Fix: Declared newKnownMercenaries with 'let'
     let newKnownMercenaries = state.knownMercenaries.map(m => {
         const combatant = payload.finalParty.find(p => p.id === m.id);
         if (combatant) {
-            // Fix: Initialized currentXp and nextLevel based on current mercenary state.
-            // Introduced xpToNext to handle threshold updates during potentially multiple level-ups.
             let currentXp = m.currentXp;
             let nextLevel = m.level;
             let xpToNext = m.xpToNextLevel || (nextLevel * 100);
@@ -398,12 +399,13 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             if (payload.win && combatant.currentHp > 0) {
                 const levelDiff = Math.max(0, m.level - Math.floor(avgEnemyLevel));
                 const penaltyMult = Math.max(0.1, 1 - (levelDiff * 0.1));
-                const xpToAdd = Math.floor(xpPerMemberBase * penaltyMult);
+                
+                // Apply floorBoost to XP gain
+                const xpToAdd = Math.floor(xpPerMemberBase * penaltyMult * session.floorBoost);
 
                 currentXp += xpToAdd;
                 nextSessionXp[m.id] = (nextSessionXp[m.id] || 0) + xpToAdd;
                 
-                // Fix: 'level' renamed to 'nextLevel', added local 'xpToNext' to fix 'Cannot find name' errors.
                 while (currentXp >= xpToNext) {
                     currentXp -= xpToNext;
                     nextLevel++;
