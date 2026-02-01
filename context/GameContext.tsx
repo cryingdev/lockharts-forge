@@ -9,7 +9,7 @@ import { PrimaryStats } from '../models/Stats';
 import { GAME_CONFIG } from '../config/game-config';
 import { getEnergyCost } from '../utils/craftingLogic';
 import { GameEvent } from '../types/events';
-import { saveToSlot } from '../utils/saveSystem';
+import { saveToSlot, saveGlobalSettings } from '../utils/saveSystem';
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -40,6 +40,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     }
     prevDayRef.current = state.stats.day;
   }, [state.stats.day, state]);
+
+  // 설정이 변경될 때마다 글로벌 설정 저장
+  useEffect(() => {
+    saveGlobalSettings(state.settings);
+  }, [state.settings]);
 
   // Debug: Tutorial Step Logging
   useEffect(() => {

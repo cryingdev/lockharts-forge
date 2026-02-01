@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Mercenary } from '../../../../models/Mercenary';
 import { Monster } from '../../../../models/Monster';
 import { ManualDungeonSession } from '../../../../types/game-state';
@@ -215,6 +215,7 @@ export const useDungeonCombat = (
                         setEnemySquadState(prev => prev.map(e => e.instanceId === target.instanceId ? { ...e, currentHp: Math.min(e.stats.maxHp, e.currentHp + finalHeal), lastHealed: true } : e));
                         setTimeout(() => setEnemySquadState(curr => curr.map(e => e.instanceId === target.instanceId ? { ...e, lastHealed: false } : e)), 800 / speedRef.current);
                     } else {
+                        // Fixed: Changed 'amount' to 'finalHeal' to resolve reference error
                         setPartyState(prev => prev.map(p => p.id === target.id ? { ...p, currentHp: Math.min(p.derived.maxHp, p.currentHp + finalHeal), lastHealed: true } : p));
                         setTimeout(() => setPartyState(curr => curr.map(p => p.id === target.id ? { ...p, lastHealed: false } : p)), 800 / speedRef.current);
                     }

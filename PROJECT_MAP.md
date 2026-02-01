@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.44b)
+# Project Map – Lockhart’s Forge (v0.1.43b)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -11,7 +11,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.44b`).
+- `metadata.json`: App metadata and versioning (`0.1.43b`).
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs (Repair, Shop, Craft).
@@ -92,6 +92,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `components/common/ui/SfxButton.tsx`: **Global standardized button** with integrated audio triggers.
 - `components/common/ui/AnimatedMercenary.tsx`: Handles eye-blinking and sprite rendering.
 - `components/common/ui/MercenaryPortrait.tsx`: Multi-mode face-cropping for sprites.
+- `components/common/ui/CustomSlider.tsx`: Precision input for audio levels.
 - `components/tutorial/TutorialScene.tsx`: Narrative-driven prologue and furnace restoration.
 
 ---
@@ -122,7 +123,7 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Logic Engines
 - `utils/craftingLogic.ts`: Level/EXP tables and equipment generation logic.
 - `utils/combatLogic.ts`: Hit resolution, DPS, and **Combat Power (CP)** formulas.
-- `utils/saveSystem.ts`: Version-validated LocalStorage persistence.
+- `utils/saveSystem.ts`: Version-validated LocalStorage persistence. (Global Settings support added).
 - `utils/shopUtils.ts`: Tier-matched request logic and recipe weightings.
 - `utils/mercenaryGenerator.ts`: Random trait and name assignment.
 - `utils/cacheManager.ts`: Automated web cache maintenance and version markers.
@@ -135,9 +136,9 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 🔄 Recent Updates (v0.1.44b)
-*   **Skill Enchantment**:
-    *   Implemented full enchantment workflow for Skill Scrolls in the Inventory tab.
-    *   Added visual highlighting and filtering for equipment targets during imbuement.
-    *   Added socketed skill display in the equipment inspection panel.
-    *   Initial inventory updated with testing skill items.
+## 🔄 Recent Updates (v0.1.43b)
+*   **Persistence Overhaul**:
+    *   Global settings (Audio, UI) now persist independently of save slots.
+    *   Save logic refined to ensure no transient UI state is leaked into persistent storage.
+*   **Skill Knowledge**:
+    *   Skill Manuals and Scrolls fully integrated into the economic and crafting cycles.
