@@ -34,7 +34,7 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
             <SfxButton 
                 sfx="switch"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl text-stone-300 hover:text-amber-400 transition-all w-fit group"
+                className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl shadow-black/80 text-stone-300 hover:text-amber-400 transition-all w-fit group"
             >
                 <div className="relative">
                    <Users className={`w-4 h-4 ${isExpanded ? 'text-amber-500' : 'text-stone-500'}`} />
@@ -127,7 +127,7 @@ const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClo
 
     return (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 pointer-events-auto">
-            <div className="w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 flex flex-col items-center p-8 text-center ring-1 ring-white/10">
+            <div className="w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 ring-1 ring-white/10">
                 <div className="p-4 bg-stone-850 border-b border-stone-800 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3">
                         <Package className="w-5 h-5 text-amber-500" />
@@ -139,7 +139,7 @@ const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClo
                     <div className="flex items-center justify-between bg-stone-950/60 p-3 rounded-xl border border-amber-900/30">
                         <div className="flex items-center gap-3">
                             <Coins className="w-5 h-5 text-amber-500" />
-                            <span className="text-xs font-black text-stone-400 uppercase">Recovered Credits</span>
+                            <span className="text-xs font-black text-stone-400 uppercase">Recovered Gold</span>
                         </div>
                         <span className="text-lg font-mono font-black text-amber-400">{gold.toLocaleString()} G</span>
                     </div>
@@ -454,7 +454,7 @@ const AssaultNavigator = () => {
         if (isEncountered) {
             return { speaker: "Inner Voice", text: session.lastActionMessage || lastMsg };
         }
-        if (isVictory) return { speaker: "Frontline Shout", text: "They're all down! Sector secured, Lockhart!" };
+        if (isVictory) return { speaker: "Frontline Shout", text: session.lastActionMessage || "The area is clear. Steel yourselves for what lies ahead." };
         if (isStairs) return { speaker: "The Path Ahead", text: lastMsg };
         return { speaker: "Exploration Log", text: lastMsg };
     };
@@ -489,12 +489,12 @@ const AssaultNavigator = () => {
 
             {/* Top Right: Vertical Control Stack */}
             <div className={`absolute top-4 right-4 z-[110] flex flex-col items-end gap-2 pointer-events-auto transition-opacity duration-500 ${isEncounterAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
-                <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
+                <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl shadow-black/80 transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
                     <Key className={`w-4 h-4 ${session.hasKey ? 'animate-pulse' : ''}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
                 </div>
                 
-                <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-black/80">
                     <SfxButton sfx="switch" onClick={() => handleZoom(0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-r border-white/5"><Plus className="w-4 h-4" /></SfxButton>
                     <div className="flex flex-col items-center justify-center px-2 min-w-[45px] select-none">
                         <span className="text-[8px] font-black text-stone-50 font-bold leading-none">ZOOM</span>
@@ -505,7 +505,7 @@ const AssaultNavigator = () => {
 
                 <SfxButton 
                     onClick={() => setShowRetreatConfirm(true)}
-                    className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/30 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl"
+                    className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/30 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-black/80"
                 >
                     <LogOut className="w-4 h-4" /> Retreat
                 </SfxButton>
@@ -513,7 +513,7 @@ const AssaultNavigator = () => {
                 <SfxButton 
                     sfx="switch"
                     onClick={() => setShowLootOverlay(true)}
-                    className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-amber-500/30 rounded-xl shadow-xl text-amber-400 hover:bg-stone-800 transition-all"
+                    className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-amber-500/30 rounded-xl shadow-xl shadow-black/80 text-amber-400 hover:bg-stone-800 transition-all"
                 >
                     <Package className="w-4 h-4" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Loot Bag</span>
@@ -561,7 +561,7 @@ const AssaultNavigator = () => {
                                 willChange: 'transform'
                             }}
                         >
-                            <div className="grid grid-cols-3 gap-2 bg-stone-900/90 backdrop-blur-xl p-3 rounded-3xl border border-white/10 shadow-2xl relative">
+                            <div className="grid grid-cols-3 gap-2 bg-stone-900/90 backdrop-blur-xl p-3 rounded-3xl border border-white/10 shadow-2xl shadow-black/95 relative">
                                 
                                 {showDpadMenu && (
                                     <div className="absolute -top-12 right-0 flex items-center gap-3 pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-300">

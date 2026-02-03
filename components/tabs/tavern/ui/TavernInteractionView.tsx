@@ -27,6 +27,9 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
     const isOnExpedition = mercenary.status === 'ON_EXPEDITION';
     const hasUnallocated = isHired && (mercenary.bonusStatPoints || 0) > 0;
 
+    // 버튼의 공통 스타일 (Grid 내에서 꽉 차도록 설정)
+    const btnBaseClass = "w-full h-12 md:h-16 flex items-center justify-center gap-1 md:gap-2 px-1 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 relative border";
+
     return (
         <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center px-safe">
             <style>{`
@@ -51,7 +54,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
                             <MercenaryPortrait mercenary={mercenary} className="w-7 h-7 md:w-9 md:h-9 rounded-lg border border-white/10 shrink-0" />
                             <div className="flex flex-col leading-tight min-w-0">
                                 <span className="font-black text-amber-50 text-[8px] md:text-[10px] tracking-widest uppercase truncate">{mercenary.job}</span>
-                                <span className="text-stone-500 text-[8px] md:text-[10px] font-mono">Lv.{mercenary.level}</span>
+                                <span className="text-stone-500 text-[8px] md:text-log font-mono">Lv.{mercenary.level}</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-1 text-pink-400 font-bold bg-pink-950/20 px-1 md:px-1.5 py-0.5 rounded border border-pink-900/30 shrink-0">
@@ -77,27 +80,38 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
             </div>
 
             <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center gap-[10px] pointer-events-none">
-                <div className={`flex flex-col items-end gap-2 w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
-                    <div className="flex wrap items-center justify-end gap-1.5 md:gap-3 w-full">
-                        <SfxButton onClick={handlers.handleTalk} className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0">
-                            <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-amber-500" /><span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
+                <div className={`w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
+                    {/* Fixed 4-column Grid with max-width to limit individual button size */}
+                    <div className="grid grid-cols-4 gap-2 md:gap-3 w-full max-w-2xl mx-auto">
+                        <SfxButton onClick={handlers.handleTalk} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${state.talkedToToday.includes(mercenary.id) ? 'opacity-50' : ''}`}>
+                            <MessageSquare className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-500" />
+                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
                         </SfxButton>
-                        <SfxButton onClick={() => setShowGiftMenu(true)} className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 hover:border-pink-500 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0">
-                            <Gift className="w-3 h-3 md:w-4 md:h-4 text-pink-500" /><span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
+
+                        <SfxButton onClick={() => setShowGiftMenu(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 hover:border-pink-500`}>
+                            <Gift className="w-3.5 h-3.5 md:w-5 md:h-5 text-pink-500" />
+                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
                         </SfxButton>
+
                         {isHired ? (
-                            <SfxButton onClick={handlers.handleTerminateInit} disabled={isOnExpedition} className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 border rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 text-white ${isOnExpedition ? 'bg-stone-900 border-stone-800 text-stone-600 cursor-not-allowed opacity-50' : 'bg-red-950/60 hover:bg-red-900/80 border border-red-800'}`}>
-                                <UserMinus className="w-3 h-3 md:w-4 md:h-4" /><span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Terminate</span>
+                            <SfxButton onClick={handlers.handleTerminateInit} disabled={isOnExpedition} className={`${btnBaseClass} text-white ${isOnExpedition ? 'bg-stone-900 border-stone-800 text-stone-600 cursor-not-allowed opacity-50' : 'bg-red-950/60 hover:bg-red-900/80 border-red-800'}`}>
+                                <UserMinus className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                                <span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Fire</span>
                             </SfxButton>
                         ) : (
-                            <SfxButton onClick={handlers.handleRecruitInit} disabled={!canAfford || !hasAffinity} className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 border rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 ${(!canAfford || !hasAffinity) ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'}`}>
-                                <UserPlus className="w-3 h-3 md:w-4 md:h-4" /><div className="flex flex-col items-start leading-none text-left"><span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Recruit</span>{hasAffinity && <span className="text-[7px] md:text-[8px] font-mono opacity-70">{hiringCost}G</span>}</div>
+                            <SfxButton onClick={handlers.handleRecruitInit} disabled={!canAfford || !hasAffinity} className={`${btnBaseClass} ${(!canAfford || !hasAffinity) ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'}`}>
+                                <UserPlus className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                                <div className="flex flex-col items-center leading-none">
+                                    <span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Hire</span>
+                                    {hasAffinity && <span className="text-[6px] md:text-[8px] font-mono opacity-80 mt-0.5">{hiringCost}G</span>}
+                                </div>
                             </SfxButton>
                         )}
-                        <SfxButton onClick={() => setShowDetail(true)} className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3.5 bg-stone-900/85 hover:bg-stone-800 border border-stone-700 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 relative ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}>
-                            {isHired ? <Wrench className="w-3 h-3 md:w-4 md:h-4 text-emerald-500" /> : <Search className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />}
-                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">{isHired ? 'Manage' : 'Inspect'}</span>
-                            {hasUnallocated && <div className="absolute -top-2 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-bounce border border-stone-950 z-10"><ChevronUp className="w-2.5 h-2.5 font-black" /></div>}
+
+                        <SfxButton onClick={() => setShowDetail(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}>
+                            {isHired ? <Wrench className="w-3.5 h-3.5 md:w-5 md:h-5 text-emerald-500" /> : <Search className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-500" />}
+                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">{isHired ? 'Manage' : 'Info'}</span>
+                            {hasUnallocated && <div className="absolute -top-1 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-bounce border border-stone-950 z-10"><ChevronUp className="w-2.5 h-2.5 font-black" /></div>}
                         </SfxButton>
                     </div>
                 </div>

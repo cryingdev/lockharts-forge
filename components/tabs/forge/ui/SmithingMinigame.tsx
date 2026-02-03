@@ -1,7 +1,6 @@
-
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Phaser from 'phaser';
-import { X } from 'lucide-react';
+import { X, Pointer } from 'lucide-react';
 import { useGame } from '../../../../context/GameContext';
 import { materials } from '../../../../data/materials';
 import SmithingScene from '../../../../game/SmithingScene';
@@ -26,6 +25,8 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   const containerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
   const [tutorialTarget, setTutorialTarget] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
+  const [heatBtnRect, setHeatBtnRect] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
+  const [currentTemp, setCurrentTemp] = useState(0);
 
   const charcoalCount = state.inventory.find((i) => i.id === materials.charcoal.id || i.id === 'charcoal')?.quantity || 0;
 
@@ -132,6 +133,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       charcoalCount: isTutorial ? '∞' : charcoalCount,
       isTutorial,
       onStatusUpdate: (t: number) => {
+          setCurrentTemp(t);
           // 풀무질 지시 단계에서 99% 달성 시 중간 다이얼로그로 전환
           const step = stateRef.current.tutorialStep;
           if (isTutorial && (step === 'SMITHING_MINIGAME_PUMP' || step === 'PRE_PUMP_INDICATE') && t >= 99) {
@@ -140,6 +142,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
           }
       },
       onHeatUpRequest: handleHeatUp,
+      onHeatBtnUpdate: (rect: any) => setHeatBtnRect(rect),
       onTutorialTargetUpdate: (rect: any) => setTutorialTarget(rect),
       onTutorialAction: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => {
           if (action === 'FIRST_HIT_DONE') {
@@ -188,8 +191,18 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     state.tutorialStep === 'FIRST_HIT_DIALOG'
   );
 
+  const showPointer = currentTemp < 26.2 && !isTutorial;
+
   return (
     <div className="absolute inset-0 z-50 bg-stone-950 animate-in fade-in duration-300 overflow-hidden">
+      <style>{`
+        @keyframes bounce-x-right {
+          0%, 100% { transform: translate(-100%, -50%) translateX(0); }
+          50% { transform: translate(-100%, -50%) translateX(12px); }
+        }
+        .animate-bounce-x-right { animation: bounce-x-right 0.8s infinite ease-in-out; }
+      `}</style>
+
       {showOverlay ? (
           <SmithingTutorialOverlay 
             step={state.tutorialStep || ''} 
@@ -197,6 +210,24 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
             onResume={handleResumeTutorialFromReact}
           />
       ) : null}
+
+      {showPointer && heatBtnRect && (
+        <div 
+          className="absolute z-[120] pointer-events-none animate-bounce-x-right"
+          style={{ 
+            left: heatBtnRect.x - (heatBtnRect.w / 2) - 10,
+            top: heatBtnRect.y,
+            transform: 'translate(-100%, -50%)'
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="bg-amber-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-2xl border-2 border-amber-400 whitespace-nowrap">
+              Forge is Cold!
+            </div>
+            <Pointer className="w-8 h-8 md:w-10 md:h-10 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)] rotate-90" />
+          </div>
+        </div>
+      )}
       
       <button
         onClick={handleCancel}

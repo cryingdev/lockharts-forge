@@ -106,16 +106,16 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = (props) => {
                 .animate-ailment { animation: aura-pulse 2s ease-in-out infinite; }
             `}</style>
 
-            {/* Background Layer */}
+            {/* Background Layer - Adjusted brightness and vignette for better clarity */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                 {dungeonDef?.tile && (
                     <img 
                         src={getAssetUrl(dungeonDef.tile, 'dungeons')} 
-                        className="w-full h-full object-cover grayscale brightness-[0.2] blur-[1px] opacity-70"
+                        className="w-full h-full object-cover brightness-[1.05] contrast-[1.05] blur-none opacity-100"
                         alt="Battle Background"
                     />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-b from-stone-950 via-transparent to-stone-950/80" />
+                <div className="absolute inset-0 bg-gradient-to-b from-stone-950/30 via-transparent to-stone-950/10" />
             </div>
 
             {/* Combat Field */}
@@ -126,7 +126,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = (props) => {
                         const isTargetable = !!pendingAction && e.currentHp > 0 && !isSupportiveAction;
                         return (
                             <div key={e.instanceId} style={getUnitStyle(e.instanceId, 'ENEMY')} onClick={() => isTargetable && handlers.handleTargetClick(e, 'ENEMY')} className={`relative flex flex-col items-center transition-all ${e.currentHp <= 0 ? 'opacity-10 grayscale blur-[2px]' : e.lastDamaged ? 'animate-hit' : ''}`}>
-                                <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900/40 rounded-3xl border-2 flex items-center justify-center relative shadow-2xl transition-all ${e.lastDamaged ? 'border-red-500 bg-red-950/20' : e.lastHealed ? 'border-emerald-400' : e.lastBuffed ? 'border-sky-400' : e.lastDebuffed ? 'border-purple-400' : e.id.includes('rat_king') ? 'border-amber-700' : 'border-stone-800/40'} ${isTargetable ? 'animate-target border-red-500 ring-4 ring-red-500/20 cursor-crosshair' : ''}`}>
+                                <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900/40 backdrop-blur-sm rounded-3xl border-2 flex items-center justify-center relative shadow-2xl transition-all ${e.lastDamaged ? 'border-red-500 bg-red-950/20' : e.lastHealed ? 'border-emerald-400' : e.lastBuffed ? 'border-sky-400' : e.lastDebuffed ? 'border-purple-400' : e.id.includes('rat_king') ? 'border-amber-700' : 'border-white/10'} ${isTargetable ? 'animate-target border-red-500 ring-4 ring-red-500/20 cursor-crosshair' : ''}`}>
                                     <img src={getAssetUrl(e.sprite || '', 'monsters')} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt={e.name} />
                                     <div className="absolute -bottom-2 flex gap-1 z-30">
                                         {e.statusAilments.map((ail, i) => (
@@ -162,9 +162,9 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = (props) => {
                                 {e.currentHp > 0 && (
                                     <div className="mt-3 w-24 md:w-52 space-y-1">
                                         <div className="flex flex-col items-center leading-none mb-1">
-                                            <span className="text-[9px] md:text-xs font-black text-stone-300 uppercase tracking-tighter truncate w-full text-center">{e.name}</span>
+                                            <span className="text-[9px] md:text-xs font-black text-stone-100 uppercase tracking-tighter truncate w-full text-center drop-shadow-md">{e.name}</span>
                                         </div>
-                                        <div className="relative h-1.5 bg-stone-950/60 rounded-full overflow-hidden border border-white/5">
+                                        <div className="relative h-1.5 bg-stone-950/80 rounded-full overflow-hidden border border-white/5">
                                             <div className="h-full bg-red-700 transition-all duration-500 shadow-glow-sm" style={{ width: `${(e.currentHp/e.stats.maxHp)*100}%` }} />
                                         </div>
                                     </div>
@@ -184,7 +184,7 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = (props) => {
 
                         return (
                             <div key={p.id} style={getUnitStyle(p.id, 'PLAYER')} onClick={() => isTargetable ? handlers.handleTargetClick(p, 'PLAYER') : setFocusedUnitId(prev => prev === p.id ? null : p.id)} className={`relative flex flex-col items-center transition-all ${p.currentHp <= 0 ? 'opacity-20 grayscale' : isActive ? '-translate-y-6 scale-105' : ''} ${p.lastDamaged ? 'animate-hit' : ''}`}>
-                                <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900/40 rounded-3xl border-2 flex items-center justify-center relative shadow-2xl transition-all ${p.lastDamaged ? 'border-red-500 bg-red-950/20' : p.lastHealed ? 'border-emerald-400' : p.lastBuffed ? 'border-sky-400' : p.lastDebuffed ? 'border-purple-400' : isActive ? 'border-amber-400 ring-4 ring-amber-500/20 z-50' : isTargetable ? 'animate-heal-target border-emerald-500 ring-4 ring-emerald-500/30 cursor-pointer' : focusedUnitId === p.id ? 'border-blue-500 shadow-blue-900/40' : 'border-stone-800/40'}`}>
+                                <div className={`w-24 h-24 md:w-48 md:h-48 bg-stone-900/40 backdrop-blur-sm rounded-3xl border-2 flex items-center justify-center relative shadow-2xl transition-all ${p.lastDamaged ? 'border-red-500 bg-red-950/20' : p.lastHealed ? 'border-emerald-400' : p.lastBuffed ? 'border-sky-400' : p.lastDebuffed ? 'border-purple-400' : isActive ? 'border-amber-400 ring-4 ring-amber-500/20 z-50' : isTargetable ? 'animate-heal-target border-emerald-500 ring-4 ring-emerald-500/30 cursor-pointer' : focusedUnitId === p.id ? 'border-blue-500 shadow-blue-900/40' : 'border-white/10'}`}>
                                     <MercenaryPortrait mercenary={p} className="w-[88%] h-[88%] rounded-2xl drop-shadow-2xl" />
                                     
                                     {queued && (
@@ -226,12 +226,12 @@ const DungeonCombatView: React.FC<DungeonCombatViewProps> = (props) => {
                                 {p.currentHp > 0 && (
                                     <div className="mt-3 w-24 md:w-52 space-y-1.5">
                                         <div className="flex flex-col items-center leading-none mb-1">
-                                            <span className="text-[10px] md:sm font-black text-stone-100 uppercase tracking-tight truncate w-full text-center">{p.name}</span>
+                                            <span className="text-[10px] md:sm font-black text-stone-100 uppercase tracking-tight truncate w-full text-center drop-shadow-md">{p.name}</span>
                                         </div>
-                                        <div className="relative h-1.5 bg-stone-950/60 rounded-full overflow-hidden border border-white/5">
+                                        <div className="relative h-1.5 bg-stone-950/80 rounded-full overflow-hidden border border-white/5">
                                             <div className={`h-full transition-all duration-500 ${hpPer < 30 ? 'bg-red-500 animate-pulse shadow-glow-red' : 'bg-red-700'}`} style={{ width: `${hpPer}%` }} />
                                         </div>
-                                        <div className="h-1 bg-stone-950/60 rounded-full overflow-hidden">
+                                        <div className="h-1 bg-stone-950/80 rounded-full overflow-hidden">
                                             <div className="h-full bg-amber-500 transition-all shadow-glow-amber" style={{ width: `${(p.gauge/ACTION_THRESHOLD)*100}%` }} />
                                         </div>
                                     </div>

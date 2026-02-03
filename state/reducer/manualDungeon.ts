@@ -462,6 +462,10 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
         });
     }
 
+    const lootSummary = gainedLootInCombat.length > 0 
+        ? `\nSalvaged: ${gainedLootInCombat.map(i => `${i.name} x${i.count}`).join(', ')}`
+        : "\nNo materials were salvaged from the remains.";
+
     return {
         ...state,
         knownMercenaries: newKnownMercenaries,
@@ -473,7 +477,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             encounterStatus: payload.win ? 'VICTORY' : (payload.flee ? 'NONE' : 'DEFEAT'),
             isBossDefeated,
             lastActionMessage: payload.win 
-                ? `Area neutralized. Squad, catch your breath.`
+                ? `Area neutralized. Squad, catch your breath.${lootSummary}`
                 : (payload.flee ? `We managed to pull back. Steel yourselves.` : `Everything's gone wrong... we need to get out.`)
         },
         logs: logMsg ? [logMsg, ...state.logs] : state.logs

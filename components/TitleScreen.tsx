@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Anvil, Play, Upload, User, Info, FastForward, X, Settings, Sparkles, Zap, BookOpen } from 'lucide-react';
 import { getAssetUrl } from '../utils';
@@ -5,6 +6,7 @@ import { getLatestSaveInfo, getSaveMetadataList, loadFromSlot } from '../utils/s
 import SaveLoadModal from './modals/SaveLoadModal';
 import SettingsModal from './modals/SettingsModal';
 import { SfxButton } from './common/ui/SfxButton';
+import { UI_MODAL_LAYOUT } from '../config/ui-config';
 
 interface TitleScreenProps {
     onNewGame: (skipTutorial: boolean) => void;
@@ -138,44 +140,44 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
 
                 {/* New Game Mode Selection Modal */}
                 {showNewGameModal && (
-                    <div className="fixed inset-0 z-[1600] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-200">
-                        <div className="bg-stone-900 border-2 border-stone-700 rounded-[2.5rem] w-full max-w-[420px] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ring-1 ring-white/10">
-                            <div className="p-6 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
-                                <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-base">Initialize Forge</h3>
-                                <SfxButton onClick={() => setShowNewGameModal(false)} className="p-2 hover:bg-stone-800 rounded-full text-stone-500"><X className="w-6 h-6" /></SfxButton>
+                    <div className={`${UI_MODAL_LAYOUT.OVERLAY} z-[1600] animate-in fade-in duration-200`}>
+                        <div className={`${UI_MODAL_LAYOUT.CONTAINER} border-stone-700 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-200 ring-1 ring-white/10`}>
+                            <div className="p-4 md:p-5 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
+                                <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm md:text-base ml-1">Initialize Forge</h3>
+                                <SfxButton onClick={() => setShowNewGameModal(false)} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500"><X className="w-5 h-5 md:w-6 md:h-6" /></SfxButton>
                             </div>
                             
-                            <div className="p-8 space-y-4">
+                            <div className="p-4 md:p-6 space-y-3 md:space-y-4 overflow-y-auto custom-scrollbar">
                                 <SfxButton 
                                     onClick={() => onNewGame(false)}
-                                    className="w-full group relative p-6 bg-stone-800 border-2 border-stone-700 hover:border-amber-500 rounded-3xl transition-all text-left flex items-center gap-5 shadow-lg active:scale-95"
+                                    className="w-full group relative p-4 bg-stone-800 border-2 border-stone-700 hover:border-amber-500 rounded-2xl transition-all text-left flex items-center gap-4 shadow-lg active:scale-[0.98]"
                                 >
-                                    <div className="w-14 h-14 bg-amber-900/20 rounded-2xl flex items-center justify-center border border-amber-700/30 group-hover:bg-amber-600/20 transition-colors">
-                                        <BookOpen className="w-7 h-7 text-amber-500" />
+                                    <div className="w-12 h-12 bg-amber-900/20 rounded-xl flex items-center justify-center border border-amber-700/30 group-hover:bg-amber-600/20 transition-colors shrink-0">
+                                        <BookOpen className="w-6 h-6 text-amber-500" />
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-black text-stone-100 text-sm uppercase tracking-widest mb-1 group-hover:text-amber-400 transition-colors">Begin Narrative</span>
-                                        <span className="text-[10px] text-stone-500 font-bold uppercase tracking-tight leading-relaxed">Experience the tragedy and tutorial. Standard progression.</span>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="font-black text-stone-100 text-[11px] md:text-sm uppercase tracking-widest mb-0.5 group-hover:text-amber-400 transition-colors">Begin Narrative</span>
+                                        <span className="text-[9px] md:text-[10px] text-stone-500 font-bold uppercase tracking-tight leading-tight">Standard progression with full tutorial.</span>
                                     </div>
                                 </SfxButton>
 
                                 <SfxButton 
                                     onClick={() => onNewGame(true)}
-                                    className="w-full group relative p-6 bg-stone-800 border-2 border-stone-700 hover:border-indigo-500 rounded-3xl transition-all text-left flex items-center gap-5 shadow-lg active:scale-95"
+                                    className="w-full group relative p-4 bg-stone-800 border-2 border-stone-700 hover:border-indigo-500 rounded-2xl transition-all text-left flex items-center gap-4 shadow-lg active:scale-[0.98]"
                                 >
-                                    <div className="w-14 h-14 bg-indigo-900/20 rounded-2xl flex items-center justify-center border border-indigo-700/30 group-hover:bg-indigo-600/20 transition-colors">
-                                        <Zap className="w-7 h-7 text-indigo-400" />
+                                    <div className="w-12 h-12 bg-indigo-900/20 rounded-xl flex items-center justify-center border border-indigo-700/30 group-hover:bg-indigo-600/20 transition-colors shrink-0">
+                                        <Zap className="w-6 h-6 text-indigo-400" />
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-black text-stone-100 text-sm uppercase tracking-widest mb-1 group-hover:text-indigo-300 transition-colors">Legacy Mode</span>
-                                        <span className="text-[10px] text-stone-500 font-bold uppercase tracking-tight leading-relaxed">Skip the tutorial. All basic facilities unlocked immediately.</span>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="font-black text-stone-100 text-[11px] md:text-sm uppercase tracking-widest mb-0.5 group-hover:text-indigo-300 transition-colors">Legacy Mode</span>
+                                        <span className="text-[9px] md:text-[10px] text-stone-500 font-bold uppercase tracking-tight leading-tight">Skip tutorial. Unlock all facilities immediately.</span>
                                     </div>
-                                    <div className="absolute top-2 right-4 text-[7px] font-black text-indigo-500/50 uppercase tracking-widest">Tutorial Skip</div>
+                                    <div className="absolute top-1.5 right-3 text-[6px] font-black text-indigo-500/50 uppercase tracking-widest">Tutorial Skip</div>
                                 </SfxButton>
                             </div>
 
-                            <div className="p-4 bg-stone-950 text-center border-t border-stone-800 shrink-0">
-                                <p className="text-[9px] text-stone-600 font-mono uppercase tracking-[0.2em]">Select your path to the Lockhart Legacy</p>
+                            <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0">
+                                <p className="text-[8px] md:text-[9px] text-stone-600 font-mono uppercase tracking-[0.2em]">Select your path to the Lockhart Legacy</p>
                             </div>
                         </div>
                     </div>

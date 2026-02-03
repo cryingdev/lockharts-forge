@@ -1,4 +1,3 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { SmithingTutorialHandler } from './SmithingTutorialHandler';
@@ -8,6 +7,7 @@ export interface SmithingSceneData {
   onComplete: (score: number, enhancementCount: number) => void;
   onStatusUpdate?: (temp: number) => void;
   onHeatUpRequest?: () => void;
+  onHeatBtnUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   onTutorialTargetUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => void;
   difficulty: number;
@@ -139,6 +139,7 @@ export default class SmithingScene extends Phaser.Scene {
   private onComplete?: (score: number, enhancementCount: number) => void;
   private onStatusUpdate?: (temp: number) => void;
   private onHeatUpRequest?: () => void;
+  private onHeatBtnUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   private onTutorialTargetUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   private onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => void;
   private isTutorial = false;
@@ -188,6 +189,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.onComplete = data.onComplete;
     this.onStatusUpdate = data.onStatusUpdate;
     this.onHeatUpRequest = data.onHeatUpRequest;
+    this.onHeatBtnUpdate = data.onHeatBtnUpdate;
     this.onTutorialTargetUpdate = data.onTutorialTargetUpdate;
     this.onTutorialAction = data.onTutorialAction;
     this.isTutorial = !!data.isTutorial;
@@ -481,6 +483,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.progBg = this.add.graphics(); this.progressBar = this.add.graphics();
     this.qualityText = this.add.text(0, 55, 'PRISTINE', { fontFamily: 'Grenze Gotisch', fontSize: '18px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add([this.progBg, this.progressBar, this.qualityText]);
+    this.qualityText.setDepth(25);
     this.tempBgGraphics = this.add.graphics(); this.tempBarGraphics = this.add.graphics();
     this.tempValueText = this.add.text(0, 0, '10°C', { fontFamily: 'Grenze', fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add([this.tempBgGraphics, this.tempBarGraphics, this.tempValueText]);
@@ -587,8 +590,10 @@ export default class SmithingScene extends Phaser.Scene {
       if (this.backgroundTile) this.backgroundTile.setSize(sw, sh);
       if (this.bgOverlay) this.bgOverlay.setSize(sw, sh);
       if (this.flashOverlay) this.flashOverlay.setSize(sw, sh);
-      const anvilW = sw * 1.2; const anvilScale = anvilW / this.anvilImage.width;
-      const forgeCenterX = sw * 0.4; this.anvilImage.setScale(anvilScale).setPosition(forgeCenterX, this.centerY);
+      const anvilW = sw * 1.2; 
+      const anvilScale = anvilW / this.anvilImage.width;
+      const forgeCenterX = sw * 0.35; 
+      this.anvilImage.setScale(anvilScale).setPosition(forgeCenterX, this.centerY);
       if (this.anvilImage) {
         if (this.ambientGlow) this.ambientGlow.setPosition(forgeCenterX, this.centerY);
       }
@@ -628,6 +633,12 @@ export default class SmithingScene extends Phaser.Scene {
     const btnScale = sideAreaWidth / 100; const btnH = 100 * btnScale;
     const heatUpY = panelEndY - (btnH / 2); const bellowsY = heatUpY - (btnH / 2) - this.UI_GAP - (btnH / 2);
     this.heatUpBtnContainer.setPosition(rightX, heatUpY).setScale(btnScale); this.bellowsContainer.setPosition(rightX, bellowsY).setScale(btnScale);
+    
+    // Always notify Heat button position
+    if (this.onHeatBtnUpdate) {
+        this.onHeatBtnUpdate({ x: rightX, y: heatUpY, w: 100 * btnScale, h: 100 * btnScale });
+    }
+
     const gaugeTopLimit = panelStartY + 35; const gaugeBottomLimit = bellowsY - (btnH / 2) - this.UI_GAP;
     const gaugeH = Math.max(this.TEMP_GAUGE_H_MIN, gaugeBottomLimit - gaugeTopLimit); const gaugeCenterY = gaugeTopLimit + (gaugeH / 2);
     this.tempValueText.setPosition(rightX, gaugeCenterY - gaugeH / 2 - 25).setFontSize(isCompact ? '12px' : '14px');
@@ -758,7 +769,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.refreshVisuals();
     if (this.onStatusUpdate) this.onStatusUpdate(this.temperature);
     if (!this.isPlaying && this.isReadyToStart && this.temperature <= floorVal + 0.1 && !this.isTutorial) {
-      this.isReadyToStart = false; this.infoText.setText('TOUCH TO START').setColor('#fbbf24');
+      this.isReadyToStart = false; this.infoText.setVisible(true).setText('TOUCH TO START').setColor('#fbbf24');
     }
     if (this.isTutorial && this.onTutorialTargetUpdate) {
         const activeRect = SmithingTutorialHandler.getHighlightRect(this.isTutorial, currentStep, this.isPlaying, {
@@ -815,11 +826,23 @@ export default class SmithingScene extends Phaser.Scene {
     const ringAlpha = 0.6 + (colorT * 0.3);
     this.approachRing.clear().lineStyle(6, ringColor, ringAlpha).fillStyle(ringColor, ringAlpha * 0.15).fillCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius)).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
     if (this.currentRadius < this.targetRadius - 30) { 
-        this.handleMiss(this.hitX, this.hitY, 'TOO LATE'); 
+        // Remove swing animation when too late
+        this.handleMiss(undefined, undefined, 'TOO LATE'); 
     }
   }
 
   private resetRing() {
+    // 400°C threshold: ratio 26.17 (approx 390/1490)
+    if (this.temperature < 26.2 && !this.isTutorial) {
+        if (this.isPlaying) {
+            this.isPlaying = false;
+            this.targetRing.clear();
+            this.approachRing.clear();
+            this.infoText.setVisible(true).setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6');
+            this.isReadyToStart = false;
+        }
+        return;
+    }
     if (this.temperature <= 0 || !this.spawnPoly) return; 
     this.targetRing.clear(); this.approachRing.clear(); this.currentRadius = this.startRadius; this.ringTimer = 0;
     const tutorialStep = (this.game as any).tutorialStep;
