@@ -140,7 +140,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         setIsCartOpen(false);
     };
 
-    const handleBackToForge = useCallback(() => {
+    const handleBackToMain = useCallback(() => {
         if (state.tutorialStep === 'LEAVE_MARKET_GUIDE') {
             actions.setTutorialScene('FURNACE_RESTORED');
             actions.setTutorialStep(null);
@@ -149,7 +149,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         setViewMode('INTERACTION');
         setIsCartOpen(false);
         setCart({});
-        onNavigate('FORGE');
+        onNavigate('MAIN');
     }, [state.tutorialStep, actions, onNavigate]);
 
     return {
@@ -175,7 +175,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
             },
             addToCart, removeFromCart, deleteFromCart: (id: string) => setCart(prev => { const n = {...prev}; delete n[id]; return n; }),
             handleBuy, 
-            handleBackToForge
+            handleBackToMain
         }
     };
 };

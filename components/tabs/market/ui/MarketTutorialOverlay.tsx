@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Pointer } from 'lucide-react';
 import DialogueBox from '../../../DialogueBox';
@@ -32,7 +31,7 @@ const SCENE_STEPS_CONFIG: Record<SequenceStep, StepConfig> = {
     CLOSE_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Close the Cart', direction: 'right' },
     PAY_NOW: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottom' },
     GARRICK_AFTER_PURCHASE_DIALOG: { targetId: 'GARRICK_TALK_BUTTON', label: 'Talk to Garrick', direction: 'top' },
-    LEAVE_MARKET_GUIDE: { targetId: 'MARKET_BACK_BUTTON', label: 'Return to Forge', direction: 'bottom' },
+    LEAVE_MARKET_GUIDE: { targetId: 'MARKET_BACK_BUTTON', label: 'Exit to Square', direction: 'bottom' },
 };
 
 const SCRIPTS: Record<SequenceStep, { speaker: string; text: string }> = {

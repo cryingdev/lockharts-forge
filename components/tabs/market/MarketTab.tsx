@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useMarket } from './hooks/useMarket';
 import { MarketLobbyView } from './ui/MarketLobbyView';
@@ -50,7 +49,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             {isLocalTutorial && currentMarketStep && <MarketTutorialOverlay step={currentMarketStep} />}
 
             {(!isLocalTutorial || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
-                <SfxButton sfx="switch" onClick={handlers.handleBackToForge} data-tutorial-id="MARKET_BACK_BUTTON" className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 shadow-2xl backdrop-blur-md transition-all active:scale-90 group">
+                <SfxButton sfx="switch" onClick={handlers.handleBackToMain} data-tutorial-id="MARKET_BACK_BUTTON" className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 shadow-2xl backdrop-blur-md transition-all active:scale-90 group">
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="text-xs font-black uppercase tracking-widest">Back</span>
                 </SfxButton>
             )}
