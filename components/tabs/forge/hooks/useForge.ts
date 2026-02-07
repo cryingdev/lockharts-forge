@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EquipmentCategory, EquipmentItem } from '../../../../types';
@@ -7,6 +6,7 @@ import { MASTERY_THRESHOLDS } from '../../../../config/mastery-config';
 import { materials } from '../../../../data/materials';
 import { getSmithingLevel, getUnlockedTier, getEnergyCost } from '../../../../utils/craftingLogic';
 import { getAssetUrl } from '../../../../utils';
+import { GAME_CONFIG } from '../../../../config/game-config';
 
 export const useForge = (onNavigate: (tab: any) => void) => {
   const { state, actions } = useGame();
@@ -15,7 +15,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
 
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isSkillsExpanded, setIsSkillsExpanded] = useState(false);
   const [expandedSubCat, setExpandedSubCat] = useState<string | null>('SWORD');
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -62,7 +62,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   }, [selectedItem, hasFurnace, hasWorkbench, currentResidualTemp, getInventoryCount, tutorialStep]);
 
   const requiredEnergy = useMemo(() => {
-    if (!selectedItem) return 20;
+    if (!selectedItem) return GAME_CONFIG.ENERGY_COST.CRAFT;
     const count = craftingMastery[selectedItem.id] || 0;
     return getEnergyCost(selectedItem, count);
   }, [selectedItem, craftingMastery]);
@@ -297,7 +297,6 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     selectedItem,
     isPanelOpen,
     isSkillsExpanded,
-    // Fix duplicate activeCategory property at line 300
     expandedSubCat,
     favorites,
     isFavExpanded,
@@ -314,7 +313,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     canEnterForge,
     isFuelShortage,
     isQuickFuelShortage,
-    requiredEnergy: selectedItem ? getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0) : 20,
+    requiredEnergy: selectedItem ? getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0) : GAME_CONFIG.ENERGY_COST.CRAFT,
     getInventoryCount,
     masteryInfo,
     getItemImageUrl,

@@ -22,6 +22,7 @@ const AssetManager: React.FC = () => {
         const bgms = AUDIO_MANIFEST.BGM;
         const sfxs = AUDIO_MANIFEST.SFX;
         const mercs = IMAGE_MANIFEST.MERCENARIES;
+        const mainAssets = (IMAGE_MANIFEST as any).MAIN || [];
         const misc = (IMAGE_MANIFEST as any).MISC || [];
         
         // 프리로드할 폰트 구성
@@ -32,7 +33,7 @@ const AssetManager: React.FC = () => {
             '900 1em "Grenze"'
         ];
         
-        const total = bgms.length + sfxs.length + mercs.length + misc.length + fontsToLoad.length;
+        const total = bgms.length + sfxs.length + mercs.length + mainAssets.length + misc.length + fontsToLoad.length;
         let loaded = 0;
 
         const reportProgress = (assetName: string, type: string) => {
@@ -109,6 +110,7 @@ const AssetManager: React.FC = () => {
             ...bgms.map((name: string) => loadAudio(name, 'BGM')),
             ...sfxs.map((name: string) => loadAudio(name, 'SFX')),
             ...mercs.map((name: string) => loadImage(name, 'mercenaries')),
+            ...mainAssets.map((name: string) => loadImage(name, 'main')),
             ...misc.map((name: string) => loadImage(name))
         ];
 

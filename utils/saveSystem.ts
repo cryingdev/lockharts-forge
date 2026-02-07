@@ -3,7 +3,7 @@ import { GameState, GameSettings } from '../types/game-state';
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 const META_KEY = 'lockharts_forge_save_metadata';
 const GLOBAL_SETTINGS_KEY = 'lockharts_forge_global_settings';
-const APP_VERSION = '0.1.43b';
+const APP_VERSION = '0.1.44a';
 
 export interface SaveMetadata {
     index: number;

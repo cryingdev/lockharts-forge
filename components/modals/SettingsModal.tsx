@@ -45,7 +45,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         index: null
     });
 
-    const APP_VERSION = "0.1.43b";
+    const APP_VERSION = "0.1.44a";
     if (!isOpen) return null;
 
     const audio = state.settings.audio;

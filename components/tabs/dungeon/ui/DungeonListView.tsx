@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LayoutList, Lock, ChevronRight, Layers, Skull } from 'lucide-react';
 import { DUNGEONS } from '../../../../data/dungeons';
@@ -14,13 +13,13 @@ interface DungeonListViewProps {
 
 export const DungeonListView: React.FC<DungeonListViewProps> = ({ tierLevel, maxFloorReached, dungeonClearCounts, onSelect }) => {
     return (
-        <div className="h-full w-full bg-stone-950 flex flex-col p-4 md:p-8 animate-in fade-in duration-500 overflow-hidden">
+        <div className="h-full w-full bg-stone-950 flex flex-col p-4 md:p-8 animate-in fade-in duration-500 overflow-hidden pt-16 md:pt-8">
             <div className="flex justify-between items-end border-b border-stone-800 pb-4 mb-6 shrink-0">
                 <div>
                     <h2 className="text-2xl md:text-4xl font-black text-amber-50 font-serif uppercase tracking-tighter">Tactical Deployment</h2>
                     <p className="text-stone-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">Select Engagement Zone</p>
                 </div>
-                <div className="flex items-center gap-2 bg-stone-900 px-3 py-1.5 rounded-lg border border-stone-800 text-[10px] font-mono text-stone-500">
+                <div className="hidden xs:flex items-center gap-2 bg-stone-900 px-3 py-1.5 rounded-lg border border-stone-800 text-[10px] font-mono text-stone-500">
                     <LayoutList className="w-3.5 h-3.5" /> Sector Overview
                 </div>
             </div>
@@ -49,7 +48,7 @@ export const DungeonListView: React.FC<DungeonListViewProps> = ({ tierLevel, max
                                     <div className="flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">Progression: <span className="text-amber-500">{completedFloors}/{d.maxFloors} Cleared</span></span></div>
                                     <div className="flex items-center gap-2"><Skull className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">Threat: <span className="text-red-500">POW {d.requiredPower}</span></span></div>
                                 </div>
-                                <div className="mt-3 w-full h-1.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800 shadow-inner"><div className="h-full bg-gradient-to-r from-amber-900 to-amber-500 transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div></div>
+                                <div className="mt-3 w-full h-1.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800 shadow-inner"><div className="h-full bg-gradient-to-r from-amber-900 to-amber-500 transition-all duration-1000" style={{ width: `${progressPercent}%` }} /></div>
                             </div>
                             <div className="absolute top-4 right-4 md:relative md:top-0 md:right-0">{isLocked ? <Lock className="w-6 h-6 text-stone-800" /> : <ChevronRight className="w-6 h-6 text-stone-700 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" />}</div>
                         </SfxButton>

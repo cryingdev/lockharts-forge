@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { PlusCircle, Users, UserRound, ShieldAlert } from 'lucide-react';
+import { PlusCircle, Users, UserRound, ShieldAlert, ArrowLeft } from 'lucide-react';
 import { MercenaryCard } from './MercenaryCard';
 import { SfxButton } from '../../../common/ui/SfxButton';
 import { getAssetUrl } from '../../../../utils';
@@ -16,16 +15,15 @@ export const TavernListView: React.FC<TavernListViewProps> = ({ hired, visitors,
     return (
         <div className="h-full w-full bg-stone-950 relative overflow-hidden">
             <div className="absolute inset-0 opacity-10"><img src={getAssetUrl('tavern_bg.jpeg', 'bg')} className="w-full h-full object-cover blur-[2px]" /></div>
+            
             <div className="relative z-10 h-full p-3 md:p-5 overflow-y-auto custom-scrollbar flex flex-col gap-6 pb-20">
-                <div className="flex justify-between items-end border-b border-stone-800 pb-3 shrink-0">
-                    <div>
-                        <h2 className="text-xl md:text-2xl font-black text-amber-500 font-serif leading-none uppercase tracking-tighter">The Broken Anvil</h2>
-                        <p className="text-stone-600 text-[8px] md:text-sm mt-1 uppercase tracking-widest font-bold">Wayfarers gather here.</p>
+                <div className="flex justify-end items-end border-b border-stone-800 pb-3 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <SfxButton onClick={onScout} className="bg-stone-900 border border-stone-700 px-4 py-1.5 rounded-lg text-stone-300 flex items-center gap-2 hover:border-amber-500 transition-all shadow-md active:scale-95 group">
+                            <PlusCircle className="w-3.5 h-3.5 text-amber-500 group-hover:rotate-90 transition-transform duration-300" />
+                            <span className="text-[10px] font-black uppercase tracking-tight">Scout (50G)</span>
+                        </SfxButton>
                     </div>
-                    <SfxButton onClick={onScout} className="bg-stone-900 border border-stone-700 px-4 py-1.5 rounded-lg text-stone-300 flex items-center gap-2 hover:border-amber-500 transition-all shadow-md active:scale-95 group">
-                        <PlusCircle className="w-3.5 h-3.5 text-amber-500 group-hover:rotate-90 transition-transform duration-300" />
-                        <span className="text-[10px] font-black uppercase tracking-tight">Scout (50G)</span>
-                    </SfxButton>
                 </div>
 
                 <section className="animate-in fade-in slide-in-from-left-2 duration-500">

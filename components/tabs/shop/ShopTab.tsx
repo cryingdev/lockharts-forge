@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { Store, Heart } from 'lucide-react';
+import { Store, Heart, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { useShop } from './hooks/useShop';
 
@@ -12,6 +12,7 @@ import { CustomerHUD } from './ui/CustomerHUD';
 import { ShopQueueBadge } from './ui/ShopQueueBadge';
 import { ShopClosedOverlay } from './ui/ShopClosedOverlay';
 import { InstanceSelectorPopup } from './ui/InstanceSelectorPopup';
+import { SfxButton } from '../../common/ui/SfxButton';
 
 interface ShopTabProps {
     onNavigate: (tab: any) => void;
@@ -29,7 +30,12 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const isGlobalTutorialDialogue = state.tutorialStep === 'SHOP_INTRO_DIALOG';
 
   return (
-    <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-[1000] bg-stone-900 overflow-hidden flex flex-col items-center justify-center px-safe">
+        <style>{`
+            @keyframes heartFloatUp { 0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-350px) translateX(var(--wobble)) scale(1.4); opacity: 0; } }
+            .animate-heart { animation: heartFloatUp 2.5s ease-out forwards; }
+        `}</style>
+
         {/* Background Layer */}
         <div className="absolute inset-0 z-0">
             <img 
@@ -38,6 +44,24 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                 onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.style.background = 'linear-gradient(to bottom, #292524, #1c1917)'; }}
             />
         </div>
+
+        {/* Back Button - Immersive navigation */}
+        {!shop.isTutorialActive && (
+            <SfxButton sfx="switch" onClick={() => onNavigate('MAIN')} className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group">
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="text-xs font-black uppercase tracking-widest">Back</span>
+            </SfxButton>
+        )}
+
+        {/* Paging Button - To Forge (오른쪽 중앙 배치) */}
+        {!shop.isTutorialActive && (
+            <SfxButton 
+                sfx="switch" 
+                onClick={() => onNavigate('FORGE')} 
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-[1050] w-8 h-24 bg-stone-900/60 hover:bg-amber-600/40 text-amber-500 rounded-l-2xl border-y border-l border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-95 group flex items-center justify-center"
+            >
+                <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+            </SfxButton>
+        )}
 
         {/* Floating Sign */}
         <ShopSign 
@@ -145,7 +169,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     <div className="w-20 h-20 md:w-28 md:h-28 bg-black/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 backdrop-blur-xl shadow-inner">
                         <Store className="w-10 h-10 md:w-12 md:h-12 text-stone-700 animate-pulse" />
                     </div>
-                    <h3 className="text-lg md:text-2xl font-black text-stone-500 uppercase tracking-[0.3em] opacity-40">Awaiting Customers</h3>
+                    <h3 className="text-lg md:text-2xl font-black text-stone-50 uppercase tracking-[0.3em] opacity-40">Awaiting Customers</h3>
                 </div>
             </div>
         )}

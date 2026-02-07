@@ -13,7 +13,6 @@ interface DungeonInfoPanelProps {
     requiredPower: number;
     currentPower: number;
     powerHighlight: boolean;
-    onBack: () => void;
     onPrevFloor: () => void;
     onNextFloor: () => void;
     canGoPrev: boolean;
@@ -22,7 +21,7 @@ interface DungeonInfoPanelProps {
 
 export const DungeonInfoPanel: React.FC<DungeonInfoPanelProps> = ({
     dungeon, selectedFloor, potentialRewards, staminaCost, requiredPower, currentPower, powerHighlight,
-    onBack, onPrevFloor, onNextFloor, canGoPrev, canGoNext
+    onPrevFloor, onNextFloor, canGoPrev, canGoNext
 }) => {
     const getItemImageUrl = (itemId: string) => {
         const item = materials[itemId];
@@ -37,18 +36,17 @@ export const DungeonInfoPanel: React.FC<DungeonInfoPanelProps> = ({
 
     return (
         <div className="w-full sm:w-[40%] h-[55%] sm:h-full flex flex-col border-b sm:border-b-0 sm:border-r border-stone-800 bg-stone-900/50 relative overflow-hidden shrink-0 min-h-0">
-            <div className="absolute inset-0 opacity-20 pointer-events-none transition-all duration-1000">
-                <img src={getAssetUrl(dungeon.image || 'dungeon_sewer.jpeg', 'dungeons')} className="w-full h-full object-cover grayscale" alt="bg" />
+            <div className="absolute inset-0 opacity-25 pointer-events-none transition-all duration-1000">
+                <img src={getAssetUrl(dungeon.image || 'dungeon_sewer.jpeg', 'dungeons')} className="w-full h-full object-cover grayscale brightness-75" alt="bg" />
             </div>
             <div className="flex-1 flex flex-col items-center z-10 min-h-0">
-                <SfxButton sfx="switch" onClick={onBack} className="absolute top-3 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 bg-stone-800 hover:bg-stone-700 rounded-lg border border-stone-700 text-stone-400 text-[10px] font-black uppercase transition-all shadow-xl active:scale-95"><ChevronLeft className="w-3.5 h-3.5" /> Back</SfxButton>
-                <div className="relative flex flex-col items-center pt-8 sm:pt-14 shrink-0 w-full">
+                <div className="relative flex flex-col items-center pt-14 sm:pt-20 shrink-0 w-full">
                     <div className="h-10 sm:h-20 flex flex-col items-center justify-center text-center px-10 mb-1 sm:mb-2">
-                        <h1 className="text-lg sm:text-2xl lg:text-3xl font-black text-white font-serif tracking-tighter uppercase leading-none">{dungeon.name}</h1>
+                        <h1 className="text-lg sm:text-2xl lg:text-3xl font-black text-white font-serif tracking-tighter uppercase leading-none drop-shadow-lg">{dungeon.name}</h1>
                         <div className="mt-1 px-3 py-0.5 rounded-full bg-amber-900/30 border border-amber-600/30 text-amber-500 text-[8px] font-black uppercase tracking-widest">Tier {dungeon.tier}</div>
                     </div>
                     <div className="relative w-full flex items-center justify-center h-20 sm:h-44 mb-1 sm:mb-4">
-                        <SfxButton sfx="switch" onClick={onPrevFloor} disabled={!canGoPrev} className={`absolute left-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${canGoPrev ? 'bg-stone-800 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`}><ChevronLeft className="w-5 h-5 sm:w-10 sm:h-10" /></SfxButton>
+                        <SfxButton sfx="switch" onClick={onPrevFloor} disabled={!canGoPrev} className={`absolute left-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${canGoPrev ? 'bg-stone-800/80 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`}><ChevronLeft className="w-5 h-5 sm:w-10 sm:h-10" /></SfxButton>
                         <div className="relative group animate-in fade-in zoom-in duration-300">
                             <div className="w-16 h-16 sm:w-36 lg:w-44 sm:h-36 lg:h-44 bg-stone-900 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 border-stone-700 flex flex-col items-center justify-center relative shadow-2xl ring-4 ring-white/5 overflow-hidden">
                                  <img src={getAssetUrl(dungeon.image || 'dungeon_sewer.jpeg', 'dungeons')} className="absolute inset-0 w-full h-full object-cover opacity-30 brightness-50" alt="bg" />
@@ -59,7 +57,7 @@ export const DungeonInfoPanel: React.FC<DungeonInfoPanelProps> = ({
                             </div>
                             {selectedFloor === dungeon.maxFloors && <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-600 border border-red-400 rounded-lg text-white font-black text-[8px] sm:text-[10px] shadow-2xl rotate-12 z-40">BOSS</div>}
                         </div>
-                        <SfxButton sfx="switch" onClick={onNextFloor} disabled={!canGoNext} className={`absolute right-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${canGoNext ? 'bg-stone-800 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`}><ChevronRight className="w-5 h-5 sm:w-10 sm:h-10" /></SfxButton>
+                        <SfxButton sfx="switch" onClick={onNextFloor} disabled={!canGoNext} className={`absolute right-4 z-30 p-2 sm:p-5 rounded-full border transition-all active:scale-90 ${canGoNext ? 'bg-stone-800/80 hover:bg-amber-600 border-stone-700 text-white' : 'bg-stone-900 border-stone-850 text-stone-800 opacity-20 cursor-not-allowed'}`}><ChevronRight className="w-5 h-5 sm:w-10 sm:h-10" /></SfxButton>
                     </div>
                 </div>
                 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowLeft, Heart, MessageSquare, Gift, UserPlus, UserMinus, Search, Wrench, ChevronUp, Package, X, Ban } from 'lucide-react';
 import DialogueBox from '../../../DialogueBox';
@@ -27,11 +26,10 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
     const isOnExpedition = mercenary.status === 'ON_EXPEDITION';
     const hasUnallocated = isHired && (mercenary.bonusStatPoints || 0) > 0;
 
-    // 버튼의 공통 스타일 (Grid 내에서 꽉 차도록 설정)
     const btnBaseClass = "w-full h-12 md:h-16 flex items-center justify-center gap-1 md:gap-2 px-1 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 relative border";
 
     return (
-        <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center px-safe">
+        <div className="absolute inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center">
             <style>{`
                 @keyframes heartFloatUp { 0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-300px) translateX(var(--wobble)) scale(1.2); opacity: 0; } }
                 .animate-heart { animation: heartFloatUp 2.5s ease-out forwards; }
@@ -42,12 +40,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            <SfxButton onClick={onBack} sfx="switch" className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group">
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                <span className="text-xs font-black uppercase tracking-widest">Back</span>
-            </SfxButton>
-
-            <div className="absolute top-20 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
+            <div className="absolute top-20 right-4 z-40 animate-in slide-in-from-right-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
                         <div className="flex items-center gap-2 min-w-0">
@@ -81,7 +74,6 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
 
             <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center gap-[10px] pointer-events-none">
                 <div className={`w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
-                    {/* Fixed 4-column Grid with max-width to limit individual button size */}
                     <div className="grid grid-cols-4 gap-2 md:gap-3 w-full max-w-2xl mx-auto">
                         <SfxButton onClick={handlers.handleTalk} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${state.talkedToToday.includes(mercenary.id) ? 'opacity-50' : ''}`}>
                             <MessageSquare className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-500" />
@@ -109,7 +101,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
                         )}
 
                         <SfxButton onClick={() => setShowDetail(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}>
-                            {isHired ? <Wrench className="w-3.5 h-3.5 md:w-5 md:h-5 text-emerald-500" /> : <Search className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-500" />}
+                            {isHired ? <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Search className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-500" />}
                             <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">{isHired ? 'Manage' : 'Info'}</span>
                             {hasUnallocated && <div className="absolute -top-1 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-bounce border border-stone-950 z-10"><ChevronUp className="w-2.5 h-2.5 font-black" /></div>}
                         </SfxButton>

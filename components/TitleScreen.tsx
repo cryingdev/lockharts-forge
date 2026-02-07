@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Anvil, Play, Upload, User, Info, FastForward, X, Settings, Sparkles, Zap, BookOpen } from 'lucide-react';
 import { getAssetUrl } from '../utils';
@@ -19,7 +18,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showSettings, setShowSettings] = useState(false);
     const [showNewGameModal, setShowNewGameModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
-    const VERSION = "0.1.43b";
+    const VERSION = "0.1.44a";
 
     const checkSaves = useCallback(() => {
         const metadata = getSaveMetadataList();

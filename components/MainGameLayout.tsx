@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
 import Header from './Header';
 import { InventoryDisplay } from './InventoryDisplay';
-import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, ChevronLeft, ChevronRight, Pointer, Lock as LockIcon, FastForward, AlertCircle, Library } from 'lucide-react';
+import { Anvil, Package, ShoppingBag, Coins, Beer, Map as MapIcon, Activity, ChevronLeft, ChevronRight, Pointer, Lock as LockIcon, FastForward, AlertCircle, Library, Home } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import { getAssetUrl } from '../utils';
 import { SfxButton } from './common/ui/SfxButton';
@@ -12,6 +11,7 @@ import { useShopService } from '../services/shop/shop-service';
 import { useDungeonService } from '../services/dungeon/dungeon-service';
 
 // Import Tab Components
+import MainScene from './tabs/main/MainScene';
 import ForgeTab from './tabs/forge/ForgeTab';
 import ShopTab from './tabs/shop/ShopTab';
 import TavernTab from './tabs/tavern/TavernTab';
@@ -161,8 +161,9 @@ const TutorialOverlay = ({ step }: { step: string }) => {
 
 const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSettings }) => {
   const { state, actions } = useGame();
-  const [activeTab, setActiveTab] = useState<'FORGE' | 'INVENTORY' | 'MARKET' | 'SHOP' | 'TAVERN' | 'DUNGEON' | 'SIMULATION'>('FORGE');
+  const [activeTab, setActiveTab] = useState<'MAIN' | 'FORGE' | 'MARKET' | 'SHOP' | 'TAVERN' | 'DUNGEON' | 'SIMULATION'>('MAIN');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const [isSleeping, setIsSleeping] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -177,7 +178,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   
   useEffect(() => {
     if (state.stats.day > prevDayRef.current) {
-        setIsSleeping(true); setIsFadingOut(false); setActiveTab('FORGE');
+        setIsSleeping(true); setIsFadingOut(false);
         const sleepTimer = setTimeout(() => {
             setIsFadingOut(true);
             setTimeout(() => { setIsSleeping(false); setIsFadingOut(false); actions.closeRest(); }, 1000); 
@@ -201,12 +202,24 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
   const completedExpeditionsCount = state.activeExpeditions.filter(exp => exp.status === 'COMPLETED').length;
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
-  const isFullscreenOverlay = state.isCrafting || (state.activeManualDungeon && state.showManualDungeonOverlay) || state.isResearchOpen;
+  
+  // Immersive views hide the standard Header/Navigation
+  const isFullscreenOverlay = state.isCrafting || 
+                             (state.activeManualDungeon && state.showManualDungeonOverlay) || 
+                             state.isResearchOpen || 
+                             isInventoryOpen ||
+                             activeTab === 'MAIN' ||
+                             activeTab === 'SHOP' || 
+                             activeTab === 'MARKET' ||
+                             activeTab === 'FORGE' ||
+                             activeTab === 'TAVERN' ||
+                             activeTab === 'DUNGEON';
+
   const unallocatedPointsCount = useMemo(() => state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status) && (m.bonusStatPoints || 0) > 0).length, [state.knownMercenaries]);
 
   const allTabs = [
+    { id: 'MAIN' as const, icon: Home, label: 'Main' },
     { id: 'FORGE' as const, icon: Anvil, label: 'Forge' },
-    { id: 'INVENTORY' as const, icon: Package, label: 'Storage' },
     { id: 'MARKET' as const, icon: ShoppingBag, label: 'Market' },
     { id: 'SHOP' as const, icon: Coins, label: 'Shop', badge: activeTab !== 'SHOP' ? totalShopVisitors : 0 },
     { id: 'TAVERN' as const, icon: Beer, label: 'Tavern', badge: unallocatedPointsCount },
@@ -296,15 +309,16 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       </div>
 
       <main className="flex-1 overflow-hidden relative bg-stone-925 flex flex-col min-h-0">
-        <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab onNavigate={setActiveTab} /></div>
-        <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab /></div>
+        <div className={`h-full w-full ${activeTab === 'MAIN' ? 'block' : 'hidden'}`}><MainScene onNavigate={setActiveTab} onSettingsClick={() => setIsSettingsOpen(true)} /></div>
+        <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab onNavigate={setActiveTab} onOpenInventory={() => setIsInventoryOpen(true)} /></div>
+        <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab onNavigate={setActiveTab} /></div>
         {activeTab === 'SHOP' && <ShopTab onNavigate={setActiveTab} />}
-        {activeTab === 'INVENTORY' && <InventoryDisplay />}
         {activeTab === 'MARKET' && <MarketTab onNavigate={setActiveTab} />}
-        {activeTab === 'TAVERN' && <TavernTab />}
+        {activeTab === 'TAVERN' && <TavernTab onNavigate={setActiveTab} />}
         {activeTab === 'SIMULATION' && <SimulationTab />}
       </main>
 
+      {isInventoryOpen && <InventoryDisplay onClose={() => setIsInventoryOpen(false)} />}
       {state.isResearchOpen && <div className="fixed inset-0 z-[100] bg-stone-950 animate-in fade-in duration-500"><ResearchTab onClose={() => actions.setResearchOpen(false)} /></div>}
       
       {state.toast?.visible && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-bottom-4 pointer-events-none"><div onClick={actions.hideToast} className="bg-stone-900 border-2 border-amber-600/50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto cursor-pointer"><span className="text-stone-100 font-black text-xs md:text-sm uppercase tracking-widest">{state.toast.message}</span></div></div>}

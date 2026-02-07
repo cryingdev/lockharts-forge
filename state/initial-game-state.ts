@@ -116,7 +116,7 @@ export const createInitialGameState = (): GameState => {
         // Progression
         craftingMastery: {},
         unlockedRecipes: [],
-        unlockedTabs: ['FORGE', 'MARKET'],
+        unlockedTabs: ['MAIN', 'FORGE', 'MARKET'],
         unlockedTierPopup: null,
         tutorialStep: 'PROLOGUE_DIALOG',
         activeTutorialScene: 'PROLOGUE',

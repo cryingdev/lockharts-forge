@@ -1,19 +1,20 @@
 # Lockhart's Forge
 
-> **Version**: 0.1.43b
+> **Version**: 0.1.44a
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
 
-## 🔄 Recent Updates (v0.1.43b)
+## 🔄 Recent Updates (v0.1.44a)
 
+*   **Immersive UI Overhaul**:
+    *   Removed fixed top navigation bars in major functional tabs (Dungeon, Tavern, Market).
+    *   Introduced a unified floating "Back" button overlay with backdrop-blur for a more immersive background experience.
+    *   Smart Visibility: Floating UI elements now automatically hide during squad selection or modal interactions to reduce visual clutter.
 *   **Global Settings Persistence**: 
     *   System settings (audio volumes, UI preferences) now persist across different save slots and sessions via `lockharts_forge_global_settings`.
 *   **Enhanced Save System**:
     *   Manual and auto-save blobs are now sanitized to clear temporary UI states (toasts, active events) before writing to storage.
-*   **Skill Knowledge System**:
-    *   Added **Skill Manuals**: Consumable items that allow mercenaries to permanently learn job-specific skills.
-    *   Added **Skill Scrolls**: Magic scrolls used in crafting to imbue equipment with special abilities (replaced Skill Runes).
 
 ## 🌟 Key Features
 

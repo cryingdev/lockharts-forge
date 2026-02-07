@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.43b)
+# Project Map – Lockhart’s Forge (v0.1.44a)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -11,7 +11,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.43b`).
+- `metadata.json`: App metadata and versioning (`0.1.44a`).
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs (Repair, Shop, Craft).
@@ -56,12 +56,12 @@ This document provides a comprehensive structural map of the project, detailing 
 - `components/DialogueBox.tsx`: The narrative engine. Handles typing effects and item tooltips.
 
 ### Functional Tabs (`components/tabs/`)
-- **Forge Tab**: `ForgeTab.tsx`, `hooks/useForge.ts`, and specialized UI components (`RecipeCard`, `MasteryRadialGauge`).
+- **Forge Tab**: `ForgeTab.tsx`, `hooks/useForge.ts`. Featuring **floating overlay controls** and immersive background rendering.
 - **Inventory Tab**: `InventoryDisplay.tsx`, `ItemSelectorList.tsx`. **Enchantment Mode implemented.**
-- **Shop Tab**: `ShopTab.tsx`, `hooks/useShop.ts`, and HUD/Overlay components.
-- **Market Tab**: `MarketTab.tsx`, `hooks/useMarket.ts`, MarketCatalog.tsx, ShoppingCartDrawer.tsx.
-- **Tavern Tab**: `TavernTab.tsx`, TavernInteraction.tsx (Character focus mode).
-- **Dungeon Tab**: `DungeonTab.tsx`, AssaultNavigator.tsx, DungeonCombatView.tsx (Manual battle).
+- **Shop Tab**: `ShopTab.tsx`, `hooks/useShop.ts`. Immersive counter-view with floating 3D sign.
+- **Market Tab**: `MarketTab.tsx`, `hooks/useMarket.ts`. Interaction view with **Garrick's animated sprite** and shopping cart drawer.
+- **Tavern Tab**: `TavernTab.tsx`, `TavernInteraction.tsx`. **Immersive floating back button** and character focus mode.
+- **Dungeon Tab**: `DungeonTab.tsx`. **Floating Back Overlay** (auto-hides during squad selection). Features `AssaultNavigator.tsx` and grid exploration.
 - **Research Tab**: `ResearchTab.tsx`, hooks/useResearch.ts.
 - **Simulation Tab**: SimulationTab.tsx.
 
@@ -136,9 +136,11 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 🔄 Recent Updates (v0.1.43b)
+## 🔄 Recent Updates (v0.1.44a)
+*   **Immersive Navigation Overhaul**:
+    *   Traditional top headers removed in functional tabs for a full-screen background experience.
+    *   Floating "Back" button overlay implemented with automatic visibility management during slot selection.
 *   **Persistence Overhaul**:
     *   Global settings (Audio, UI) now persist independently of save slots.
-    *   Save logic refined to ensure no transient UI state is leaked into persistent storage.
 *   **Skill Knowledge**:
     *   Skill Manuals and Scrolls fully integrated into the economic and crafting cycles.

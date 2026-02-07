@@ -1,6 +1,7 @@
 import { EquipmentItem } from '../types/inventory';
 import { Equipment, EquipmentRarity, EquipmentType, EquipmentStats } from '../models/Equipment';
 import { MASTERY_THRESHOLDS } from '../config/mastery-config';
+import { GAME_CONFIG } from '../config/game-config';
 
 const mapSubCategoryToType = (subCat: string): EquipmentType => {
     return subCat as EquipmentType; 
@@ -62,7 +63,7 @@ export function calcCraftExp(args: {
 }
 
 export const getEnergyCost = (item: EquipmentItem, masteryCount: number): number => {
-    let cost = 20; 
+    let cost = GAME_CONFIG.ENERGY_COST.CRAFT; 
     if (masteryCount >= MASTERY_THRESHOLDS.ARTISAN) {
         cost -= MASTERY_THRESHOLDS.ARTISAN_BONUS.energyDiscount;
     }

@@ -8,6 +8,6 @@ export const GAME_CONFIG = {
     ENERGY_COST: {
         REPAIR: 15,     // 대장간 수리 액션 시 소모 에너지
         OPEN_SHOP: 0,   // 상점 운영 시작 시 소모 에너지 (소모 없음으로 변경)
-        CRAFT: 20       // 아이템 제작 시 소모 에너지
+        CRAFT: 10       // 아이템 제작 시 소모 에너지
     }
 };

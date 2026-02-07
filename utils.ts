@@ -1,4 +1,3 @@
-
 const SESSION_VERSION = Date.now();
 
 /**
@@ -53,6 +52,15 @@ export const IMAGE_MANIFEST = {
         'sly_vargo_sprite.png', 'sly_vargo_profile.png',
         'jade_nightbinder_sprite.png', 'jade_nightbinder_profile.png',
         'sister_aria_sprite.png', 'sister_aria_profile.png'
+    ],
+    MAIN: [
+        'bg_ground_horizontal.png',
+        'bg_ground_vertical.png',
+        'poi_wall_gate.png',
+        'poi_forge.png',
+        'poi_material_store.png',
+        'poi_tavern.png',
+        'poi_trees.png',
     ],
     MISC: [
         'garrick_standing_sprite.png'
