@@ -8,7 +8,7 @@ interface CustomerHUDProps {
 
 export const CustomerHUD: React.FC<CustomerHUDProps> = ({ mercenary, refusalReaction }) => {
     return (
-        <div className="absolute top-4 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
+        <div className="absolute top-20 left-4 z-40 animate-in slide-in-from-left-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
             <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                 <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
                     <div className="flex flex-col leading-tight min-w-0">

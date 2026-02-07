@@ -173,9 +173,19 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [showRightArrow, setShowRightArrow] = useState(false);
   const prevDayRef = useRef(state.stats.day);
 
+  // 대장간 구역의 마지막 방문 하위 탭 기억 (기본값: SHOP)
+  const [lastForgeTab, setLastForgeTab] = useState<'SHOP' | 'FORGE'>('SHOP');
+
   useShopService();
   useDungeonService();
   
+  // 탭 변경 시 대장간 구역 탭 기록 업데이트
+  useEffect(() => {
+    if (activeTab === 'SHOP' || activeTab === 'FORGE') {
+        setLastForgeTab(activeTab);
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     if (state.stats.day > prevDayRef.current) {
         setIsSleeping(true); setIsFadingOut(false);
@@ -237,6 +247,15 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         default: return null;
     }
   }, [state.tutorialStep]);
+
+  // MainScene 등의 자식 컴포넌트에서 건물 클릭 시 호출할 지능형 내비게이션 핸들러
+  const handleSceneNavigation = useCallback((target: string) => {
+      if (target === 'FORGE_BUILDING') {
+          setActiveTab(lastForgeTab);
+      } else {
+          setActiveTab(target as any);
+      }
+  }, [lastForgeTab]);
 
   return (
     <div className="h-[100dvh] w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden px-safe selection:bg-amber-500/30">
@@ -309,7 +328,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       </div>
 
       <main className="flex-1 overflow-hidden relative bg-stone-925 flex flex-col min-h-0">
-        <div className={`h-full w-full ${activeTab === 'MAIN' ? 'block' : 'hidden'}`}><MainScene onNavigate={setActiveTab} onSettingsClick={() => setIsSettingsOpen(true)} /></div>
+        <div className={`h-full w-full ${activeTab === 'MAIN' ? 'block' : 'hidden'}`}><MainScene onNavigate={handleSceneNavigation} onSettingsClick={() => setIsSettingsOpen(true)} /></div>
         <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab onNavigate={setActiveTab} onOpenInventory={() => setIsInventoryOpen(true)} /></div>
         <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab onNavigate={setActiveTab} /></div>
         {activeTab === 'SHOP' && <ShopTab onNavigate={setActiveTab} />}

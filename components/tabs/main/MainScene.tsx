@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getAssetUrl } from '../../../utils';
-import { ChevronRight, ShieldAlert, ShoppingBag, Store, Beer, Coins, Zap, Calendar, BedDouble, BookOpen, Settings } from 'lucide-react';
+import { ChevronRight, ShieldAlert, ShoppingBag, Store, Beer, Coins, Zap, Calendar, BedDouble, BookOpen, Settings, Users } from 'lucide-react';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { useGame } from '../../../context/GameContext';
 
@@ -54,6 +54,10 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    const totalShopVisitors = useMemo(() => {
+        return (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
+    }, [state.activeCustomer, state.shopQueue]);
 
     const bgUrl = isPortrait 
         ? getAssetUrl('bg_ground_vertical.png', 'main') 
@@ -148,9 +152,22 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
 
                 {/* 5. Lockhart's Forge (Frontmost Building) */}
                 <div className="absolute top-[75%] left-[-20%] md:left-[-16%] w-[65%] md:w-[50%] z-[40] flex flex-col items-center -translate-y-1/2">
-                    <SfxButton sfx="switch" onClick={() => onNavigate('SHOP')} className="group relative pointer-events-auto w-full flex flex-col items-center">
+                    <SfxButton sfx="switch" onClick={() => onNavigate('FORGE_BUILDING')} className="group relative pointer-events-auto w-full flex flex-col items-center">
                         <div className="absolute inset-0 bg-amber-500/5 blur-[120px] opacity-0 group-hover:opacity-100 transition-opacity" />
                         <img src={poiForgeUrl} className="w-full h-auto object-contain drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)] group-hover:brightness-110 transition-all" alt="Forge Exterior" />
+                        
+                        {/* Shop Visitor Queue Badge */}
+                        {totalShopVisitors > 0 && (
+                            <div className="absolute top-[45%] right-[12%] z-50 pointer-events-none animate-in zoom-in duration-500">
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-red-600 blur-md opacity-40 animate-pulse"></div>
+                                    <div className="relative flex items-center gap-1 bg-red-600 border border-red-400 px-2 py-0.5 rounded-full shadow-2xl scale-75 md:scale-100 ring-2 ring-red-600/30">
+                                        <Users className="w-2.5 h-2.5 md:w-3 md:h-3 text-white fill-white/20" />
+                                        <span className="text-[10px] md:text-xs font-black font-mono text-white leading-none">{totalShopVisitors}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </SfxButton>
                 </div>
             </div>
@@ -199,7 +216,7 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
 
                 {/* Forge Label - Very base of the entrance */}
                 <div className="absolute top-[78%] left-[-20%] md:left-[-16%] w-[65%] md:w-[50%] flex flex-col items-center -translate-y-1/2">
-                    <SfxButton sfx="switch" onClick={() => onNavigate('SHOP')} className="mt-[55%] md:mt-[85%] translate-x-[20%] pointer-events-auto flex flex-row-reverse items-center gap-2 px-3 py-1 bg-stone-900/80 backdrop-blur-2xl border border-amber-600/30 hover:border-amber-500/60 rounded-full shadow-2xl transition-all scale-[0.8] md:scale-100">
+                    <SfxButton sfx="switch" onClick={() => onNavigate('FORGE_BUILDING')} className="mt-[55%] md:mt-[85%] translate-x-[20%] pointer-events-auto flex flex-row-reverse items-center gap-2 px-3 py-1 bg-stone-900/80 backdrop-blur-2xl border border-amber-600/30 hover:border-amber-500/60 rounded-full shadow-2xl transition-all scale-[0.8] md:scale-100">
                         <div className="w-6 h-6 bg-amber-950/30 border border-amber-900/20 rounded-full flex items-center justify-center shrink-0">
                             <Store className="w-3 h-3 text-amber-400/80" />
                         </div>

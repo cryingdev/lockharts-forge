@@ -217,7 +217,8 @@ export const useForge = (onNavigate: (tab: any) => void) => {
         actions.setTutorialStep('CRAFT_RESULT_DIALOG');
       }
     }
-    setIsPanelOpen(true);
+    // minigame 완료 후 레시피 목록을 열지 않고 워크스페이스(레시피 카드) 상태를 유지합니다.
+    setIsPanelOpen(false);
   }, [selectedItem, actions, tutorialStep]);
 
   const handleQuickCraft = useCallback((e?: React.MouseEvent) => {
