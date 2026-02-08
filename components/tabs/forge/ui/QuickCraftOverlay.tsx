@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Hammer, Sparkles, Flame } from 'lucide-react';
 
@@ -21,10 +20,12 @@ const QuickCraftOverlay: React.FC<QuickCraftOverlayProps> = ({ progress, extraFu
                     <div className="flex justify-between items-end">
                         <div className="flex flex-col">
                             <span className="text-[10px] md:text-xs font-black text-indigo-400 uppercase tracking-widest">Rapid Forging...</span>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <Flame className="w-3.5 h-3.5 text-orange-500 animate-pulse" />
-                                <span className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Consuming {extraFuel} Extra Fuel</span>
-                            </div>
+                            {extraFuel > 0 && (
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <Flame className="w-3.5 h-3.5 text-orange-500 animate-pulse" />
+                                    <span className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Consuming {extraFuel} Extra Fuel</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                     

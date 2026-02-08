@@ -1,4 +1,3 @@
-
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
@@ -111,6 +110,7 @@ export interface GameState {
   knownMercenaries: Mercenary[]; 
   
   activeCustomer: null | ShopCustomer; 
+  songQueue?: any; // Deprecated or unused but kept for compatibility if needed
   shopQueue: ShopCustomer[]; 
   visitorsToday: string[]; 
   talkedToToday: string[]; 
@@ -144,6 +144,7 @@ export interface GameState {
     | 'LEAVE_MARKET_GUIDE' 
     | 'CRAFT_START_DIALOG' 
     | 'FORGE_TAB_GUIDE' 
+    | 'OPEN_RECIPE_GUIDE'
     | 'SELECT_SWORD_GUIDE' 
     | 'START_FORGING_GUIDE' 
     | 'PRE_IGNITE_DIALOG_1' 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Hammer, FastForward, AlertCircle, Flame } from 'lucide-react';
 import MasteryRadialGauge from './MasteryRadialGauge';
@@ -77,10 +76,12 @@ export const ForgeWorkspaceView: React.FC<ForgeWorkspaceViewProps> = ({
                             {isQuickFuelShortage ? <AlertCircle className="w-4 h-4 text-red-500" /> : <FastForward className="w-4 h-4 md:w-5 md:h-5" />}
                             <span className="uppercase tracking-widest">Quick Craft</span>
                         </div>
-                        <div className={`flex items-center gap-1 text-[8px] md:text-[9px] font-bold uppercase tracking-tighter ${isQuickFuelShortage ? 'text-red-500' : 'text-indigo-400'}`}>
-                            <Flame className="w-2.5 h-2.5" />
-                            <span>-{extraFuelCost} Fuel</span>
-                        </div>
+                        {extraFuelCost > 0 && (
+                            <div className={`flex items-center gap-1 text-[8px] md:text-[9px] font-bold uppercase tracking-tighter ${isQuickFuelShortage ? 'text-red-500' : 'text-indigo-400'}`}>
+                                <Flame className="w-2.5 h-2.5" />
+                                <span>-{extraFuelCost} Fuel</span>
+                            </div>
+                        )}
                     </SfxButton>
                 )}
             </div>

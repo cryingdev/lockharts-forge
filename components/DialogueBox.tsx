@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { User, ChevronRight, Coins, Package, Lock } from 'lucide-react';
@@ -279,8 +278,6 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
           </div>
         )}
       </div>
-      
-      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] md:border-l-[12px] border-l-transparent border-r-[8px] md:border-r-[12px] border-r-transparent border-t-[8px] md:border-t-[12px] border-t-stone-900/98"></div>
     </div>,
     document.body
   );
@@ -290,7 +287,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       {tooltipElement}
 
       <div 
-        className="w-full h-[22dvh] min-h-[120px] md:h-[28vh] md:min-h-[160px] bg-stone-950/25 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/10"
+        className="w-full h-[22dvh] min-h-[120px] md:h-[28vh] md:min-h-[160px] bg-stone-900/90 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/5"
       >
         <div className="bg-stone-900/20 p-2 md:p-6 border-r border-white/5 flex flex-col items-center gap-1 md:gap-4 w-20 md:w-48 shrink-0 justify-center">
           <div className="w-9 h-9 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-amber-900/30 to-stone-800/40 border border-amber-600/30 flex items-center justify-center shadow-inner ring-1 ring-white/5 overflow-hidden">

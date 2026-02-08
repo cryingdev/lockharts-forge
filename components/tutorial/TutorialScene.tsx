@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useGame } from '../../context/GameContext';
 import DialogueBox from '../DialogueBox';
@@ -306,9 +305,9 @@ const TutorialScene: React.FC = () => {
                 .animate-flash-out { animation: flash-out 0.8s ease-out forwards; }
             `}</style>
 
-            <div className="absolute inset-0 z-0 pointer-events-none">
-                <img src={getAssetUrl(bgImage)} className="w-full h-full object-cover opacity-80" alt="Background" />
-                <div className="absolute inset-0 bg-black/30"></div>
+            <div className="absolute inset-0 z-0 pointer-events-none bg-stone-950">
+                <img src={getAssetUrl(bgImage)} className="w-full h-full object-cover" alt="Background" />
+                <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
             <div className="absolute top-4 right-4 z-[6000]">

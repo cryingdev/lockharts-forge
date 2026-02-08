@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap } from 'lucide-react';
 import { useForge } from './hooks/useForge';
 import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
@@ -17,15 +17,16 @@ import { UI_MODAL_LAYOUT } from '../../../config/ui-config';
 interface ForgeTabProps {
     onNavigate: (tab: any) => void;
     onOpenInventory: () => void;
+    isActive?: boolean;
 }
 
-const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory }) => {
+const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActive }) => {
   const forge = useForge(onNavigate);
   const { 
     state, handlers, actions, isCrafting, selectedItem, isPanelOpen, 
     activeCategory, expandedSubCat, favoriteItems, isFavExpanded, visibleSubCats, 
     groupedItems, hoveredItem, tooltipPos, quickCraftProgress, masteryInfo, 
-    isFuelShortage, isQuickFuelShortage, smithingLevel, workbenchLevel 
+    isFuelShortage, isQuickFuelShortage, extraQuickFuel, smithingLevel, workbenchLevel 
   } = forge;
 
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
@@ -36,13 +37,11 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const getExtraFuelCost = (tier: number) => {
-    if (tier === 1) return 3;
-    if (tier === 2) return 5;
-    return 8;
-  };
-
   const bgUrl = getAssetUrl('forge_start_bg.jpeg', 'tutorial');
+  const energyPercent = (state.stats.energy / state.stats.maxEnergy) * 100;
+
+  // Reposition logic for tutorial: move buttons up if OPEN_RECIPE_GUIDE is active
+  const isRecipeTutorial = state.tutorialStep === 'OPEN_RECIPE_GUIDE';
 
   return (
     <div className="fixed inset-0 z-[50] bg-stone-950 overflow-hidden flex flex-col px-safe">
@@ -84,7 +83,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory }) => {
         {quickCraftProgress !== null && selectedItem && (
             <QuickCraftOverlay 
                 progress={quickCraftProgress} 
-                extraFuel={getExtraFuelCost(selectedItem.tier)}
+                extraFuel={extraQuickFuel}
             />
         )}
 
@@ -101,10 +100,16 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory }) => {
         )}
 
         {/* Paging Button - To Shop (좌측 중앙 배치) */}
-        {!isCrafting && !state.tutorialStep && (
+        {!isCrafting && (!state.tutorialStep || state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE') && (
             <SfxButton 
                 sfx="switch" 
-                onClick={() => onNavigate('SHOP')} 
+                onClick={() => {
+                    if (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE') {
+                        actions.setTutorialStep('OPEN_SHOP_SIGN_GUIDE');
+                    }
+                    onNavigate('SHOP');
+                }} 
+                data-tutorial-id="NAV_TO_SHOP"
                 className="absolute left-0 top-1/2 -translate-y-1/2 z-[1050] w-8 h-24 bg-stone-900/60 hover:bg-amber-600/40 text-amber-500 rounded-r-2xl border-y border-r border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-95 group flex items-center justify-center"
             >
                 <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
@@ -113,8 +118,29 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory }) => {
 
         {/* Global Skill/Research UI - Moved to Top-Right and Always Expanded */}
         {!isCrafting && (
-            <div className="absolute top-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2 transition-all">
+            <div className={`absolute top-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2 transition-all duration-500 ${isRecipeTutorial ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
                 <div className="flex flex-col gap-2">
+                    {/* Energy Widget */}
+                    <div className="bg-stone-900/60 border border-stone-800 rounded-xl p-2 md:p-3 flex items-center gap-3 md:gap-4 shadow-inner min-w-[150px] md:min-w-[220px] backdrop-blur-sm">
+                        <div className="p-1.5 md:p-2 bg-stone-950 rounded-lg border border-stone-800 shadow-md flex items-center justify-center">
+                            <Zap className={`w-3.5 h-3.5 md:w-5 md:h-5 ${state.stats.energy < 20 ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-end mb-1">
+                                <span className="text-[8px] md:text-[10px] font-black uppercase text-stone-500 tracking-widest">Energy</span>
+                                <span className={`font-mono text-[10px] md:text-xs font-bold ${state.stats.energy < 20 ? 'text-red-400' : 'text-stone-300'}`}>
+                                    {state.stats.energy} / {state.stats.maxEnergy}
+                                </span>
+                            </div>
+                            <div className="w-full h-1 md:h-1.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
+                                <div 
+                                    className={`h-full transition-all duration-700 ${state.stats.energy < 20 ? 'bg-red-600' : 'bg-emerald-600'}`} 
+                                    style={{ width: `${energyPercent}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <ForgeSkillHeader exp={state.stats.smithingExp} label="Smithing" icon={Hammer} />
                     <ForgeSkillHeader exp={state.stats.workbenchExp} label="Workbench" icon={Activity} />
                 </div>
@@ -149,21 +175,23 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory }) => {
                     isFuelShortage={isFuelShortage}
                     isQuickFuelShortage={isQuickFuelShortage}
                     quickCraftProgress={quickCraftProgress}
-                    extraFuelCost={selectedItem ? getExtraFuelCost(selectedItem.tier) : 0}
+                    extraFuelCost={extraQuickFuel}
                     onStartCrafting={handlers.startCrafting}
                     onQuickCraft={handlers.handleQuickCraft}
                 />
             </div>
         </div>
 
-        {/* Action Button Row */}
+        {/* Action Button Row - Elevated during tutorial to stay above DialogueBox */}
         {!isCrafting && (
-            <div className="absolute bottom-6 right-6 z-[60] flex items-center gap-3">
+            <div 
+              className={`absolute right-6 z-[60] flex items-center gap-3 transition-all duration-500 ${isRecipeTutorial ? 'bottom-[35dvh]' : 'bottom-6'}`}
+            >
                 {/* Floating Toggle for Inventory Modal */}
                 <SfxButton 
                     sfx="switch"
                     onClick={onOpenInventory}
-                    className="w-16 h-16 md:w-20 md:h-20 bg-stone-800 hover:bg-stone-700 text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-2 border-stone-600 flex flex-col items-center justify-center transition-all active:scale-90 group"
+                    className={`w-16 h-16 md:w-20 md:h-20 bg-stone-800 hover:bg-stone-700 text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-2 border-stone-600 flex flex-col items-center justify-center transition-all active:scale-90 group ${isRecipeTutorial ? 'opacity-20 scale-90' : 'opacity-100'}`}
                 >
                     <Package className="w-7 h-7 md:w-9 md:h-9 group-hover:scale-110 transition-transform" />
                     <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-0.5">Storage</span>
@@ -172,9 +200,14 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory }) => {
                 {/* Floating Toggle for Recipe Modal */}
                 <SfxButton 
                     sfx="switch"
-                    onClick={() => handlers.setIsPanelOpen(true)}
-                    data-tutorial-id="FORGE_TAB"
-                    className="w-16 h-16 md:w-20 md:h-20 bg-amber-600 hover:bg-amber-500 text-white rounded-full shadow-[0_10px_40px_rgba(180,83,9,0.5)] border-2 border-amber-400 flex flex-col items-center justify-center transition-all active:scale-90 group"
+                    onClick={() => {
+                        if (isRecipeTutorial) {
+                            actions.setTutorialStep('SELECT_SWORD_GUIDE');
+                        }
+                        handlers.setIsPanelOpen(true);
+                    }}
+                    data-tutorial-id="RECIPE_TOGGLE"
+                    className="w-16 h-16 md:w-20 md:h-20 bg-amber-600 hover:bg-amber-500 text-white rounded-full shadow-[0_10px_40px_rgba(180,83,9,0.5)] border-2 border-amber-400 flex flex-col items-center justify-center transition-all active:scale-90 group ring-4 ring-amber-500/20"
                 >
                     <Book className="w-7 h-7 md:w-9 md:h-9 group-hover:rotate-12 transition-transform" />
                     <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-0.5">Recipes</span>
@@ -189,7 +222,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory }) => {
                     <div className="p-4 md:p-6 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="bg-amber-900/20 p-2 rounded-xl border border-amber-800/30">
-                                <Book className="w-6 h-6 text-amber-500" />
+                                <Book className="w-6 h-6 text-amber-50" />
                             </div>
                             <div>
                                 <h3 className="text-xl md:text-2xl font-black text-stone-100 font-serif uppercase tracking-tight leading-none">Ancient Patterns</h3>

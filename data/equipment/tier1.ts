@@ -34,7 +34,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'copper_dagger_viper.png',
     description: 'A copper dagger with an acidic edge-coat. Nasty in close quarters.',
     subCategoryId: 'DAGGER',
-    baseValue: 520,
+    baseValue: 750,
     requirements: [
       { id: 'copper_ore', count: 2 },
       { id: 'leather_strips', count: 1 },
@@ -80,7 +80,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'bronze_long_sword.png',
     description: 'A reach-optimized bronze blade. Standard issue for village guards.',
     subCategoryId: 'SWORD',
-    baseValue: 650,
+    baseValue: 800,
     requirements: [
       { id: 'copper_ore', count: 3 },
       { id: 'tin_ore', count: 2 },
@@ -149,7 +149,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'hooked_copper_axe.png',
     description: 'A hooked axe head that catches shields and straps.',
     subCategoryId: 'AXE',
-    baseValue: 610,
+    baseValue: 700,
     requirements: [
       { id: 'copper_ore', count: 2 },
       { id: 'oak_log', count: 2 },
@@ -172,7 +172,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'reinforced_club.png',
     description: 'An oak branch studded with copper nails.',
     subCategoryId: 'MACE',
-    baseValue: 490,
+    baseValue: 590,
     requirements: [
       { id: 'copper_ore', count: 1 },
       { id: 'tin_ore', count: 1 },
@@ -218,7 +218,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'apprentice_staff.png',
     description: 'Helps channel basic magical energy.',
     subCategoryId: 'STAFF',
-    baseValue: 390,
+    baseValue: 450,
     requirements: [
       { id: 'oak_log', count: 2 },
       { id: 'copper_ore', count: 1 },
@@ -241,7 +241,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'silkbound_oak_staff.png',
     description: 'Spider silk bindings stabilize mana flow and grip.',
     subCategoryId: 'STAFF',
-    baseValue: 620,
+    baseValue: 800,
     requirements: [
       { id: 'oak_log', count: 2 },
       { id: 'copper_ore', count: 1 },
@@ -269,7 +269,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'leather_tunic.png',
     description: 'Lightweight protection for scouts.',
     subCategoryId: 'CHESTPLATE',
-    baseValue: 400,
+    baseValue: 500,
     requirements: [
       { id: 'leather_strips', count: 3 },
       { id: 'wool_cloth', count: 1 }
@@ -290,7 +290,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'leather_tunic_patched.png',
     description: 'A leather tunic reinforced with hide patches. Better in dirty fights.',
     subCategoryId: 'CHESTPLATE',
-    baseValue: 560,
+    baseValue: 700,
     requirements: [
       { id: 'leather_strips', count: 3 },
       { id: 'wool_cloth', count: 1 },
@@ -312,7 +312,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'leather_leggings.png',
     description: 'Light leggings that protect against scrapes and bites.',
     subCategoryId: 'PANTS',
-    baseValue: 340,
+    baseValue: 400,
     requirements: [
       { id: 'leather_strips', count: 2 },
       { id: 'wool_cloth', count: 1 }
@@ -333,14 +333,14 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'patched_leggings.png',
     description: 'Reinforced leggings with extra hide patches and bone splints.',
     subCategoryId: 'PANTS',
-    baseValue: 560,
+    baseValue: 850,
     requirements: [
       { id: 'leather_strips', count: 2 },
       { id: 'wool_cloth', count: 1 },
       { id: 'hide_patch', count: 1 },
       { id: 'bone_splint', count: 1 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 6, magicalAttack: 0, magicalDefense: 0, vit: 1, dex: 1 },
+    baseStats: { physicalAttack: 0, physicalDefense: 7, magicalAttack: 0, magicalDefense: 2, vit: 1, dex: 1 },
     slotType: 'LEGS',
     craftingType: 'WORKBENCH',
     maxDurability: 70,
@@ -356,7 +356,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'leather_gloves.png',
     description: 'Protects hands from blisters and minor cuts.',
     subCategoryId: 'GLOVES',
-    baseValue: 200,
+    baseValue: 300,
     requirements: [
       { id: 'leather_strips', count: 2 }
     ],
@@ -376,7 +376,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'silkgrip_gloves.png',
     description: 'Spider silk lining improves grip and finesse.',
     subCategoryId: 'GLOVES',
-    baseValue: 420,
+    baseValue: 650,
     requirements: [
       { id: 'leather_strips', count: 2 },
       { id: 'spider_silk_bundle', count: 1 }
@@ -417,7 +417,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'copper_helm_mosspad.png',
     description: 'Cave moss padding softens impacts and reduces fatigue.',
     subCategoryId: 'HELMET',
-    baseValue: 520,
+    baseValue: 600,
     requirements: [
       { id: 'copper_ore', count: 3 },
       { id: 'cave_moss_pad', count: 1 }
@@ -438,7 +438,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'leather_boots.png',
     description: 'Simple boots for long marches.',
     subCategoryId: 'BOOTS',
-    baseValue: 240,
+    baseValue: 400,
     requirements: [
       { id: 'leather_strips', count: 2 },
       { id: 'wool_cloth', count: 1 }
@@ -459,7 +459,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'bone_splinted_boots.png',
     description: 'Reinforced with bone splints for better stability.',
     subCategoryId: 'BOOTS',
-    baseValue: 460,
+    baseValue: 650,
     requirements: [
       { id: 'leather_strips', count: 2 },
       { id: 'wool_cloth', count: 1 },
@@ -485,7 +485,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'oak_buckler.png',
     description: 'Good for deflecting light blows.',
     subCategoryId: 'SHIELD',
-    baseValue: 360,
+    baseValue: 450,
     requirements: [
       { id: 'oak_log', count: 2 },
       { id: 'leather_strips', count: 1 },
@@ -507,7 +507,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'strap_buckler.png',
     description: 'A buckler with a better strap and buckle. Easier to control in combat.',
     subCategoryId: 'SHIELD',
-    baseValue: 520,
+    baseValue: 700,
     requirements: [
       { id: 'oak_log', count: 2 },
       { id: 'leather_strips', count: 1 },
@@ -534,7 +534,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'scavenger_belt.png',
     description: 'A belt that keeps tools and pouches snug. Simple but practical.',
     subCategoryId: 'BELT',
-    baseValue: 320,
+    baseValue: 550,
     requirements: [
       { id: 'leather_strips', count: 2 },
       { id: 'goblin_scrap_buckle', count: 1 }
@@ -555,7 +555,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'moss_padded_belt.png',
     description: 'A belt padded with cave moss to reduce strain and stabilize posture.',
     subCategoryId: 'BELT',
-    baseValue: 480,
+    baseValue: 700,
     requirements: [
       { id: 'leather_strips', count: 2 },
       { id: 'goblin_scrap_buckle', count: 1 },
@@ -579,7 +579,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     description: 'A cheap copper ring that slightly focuses mana.',
     subCategoryId: 'RING',
     baseValue: 280,
-    requirements: [{ id: 'copper_ore', count: 1 }],
+    requirements: [{ id: 'copper_ore', count: 2 }],
     baseStats: { physicalAttack: 0, physicalDefense: 0, magicalAttack: 2, magicalDefense: 1, luk: 1 },
     slotType: 'ACCESSORY',
     craftingType: 'FORGE',
@@ -595,7 +595,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'tarnished_ring.png',
     description: 'A crude ring made from a salvaged amulet fragment. Slightly boosts focus.',
     subCategoryId: 'RING',
-    baseValue: 380,
+    baseValue: 450,
     requirements: [
       { id: 'copper_ore', count: 1 },
       { id: 'rusty_amulet_fragment', count: 1 }
@@ -616,13 +616,13 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     image: 'emberward_ring.png',
     description: 'A warm ring that steadies the wearer near heat and flames.',
     subCategoryId: 'RING',
-    baseValue: 560,
+    baseValue: 900,
     requirements: [
       { id: 'copper_ore', count: 1 },
       { id: 'rusty_amulet_fragment', count: 1 },
       { id: 'ember_beetle_gland', count: 1 }
     ],
-    baseStats: { physicalAttack: 0, physicalDefense: 0, magicalAttack: 2, magicalDefense: 2, vit: 1, int: 1 },
+    baseStats: { physicalAttack: 0, physicalDefense: 0, magicalAttack: 4, magicalDefense: 2, vit: 1, int: 1 },
     slotType: 'ACCESSORY',
     craftingType: 'FORGE',
     maxDurability: 40,

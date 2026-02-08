@@ -68,7 +68,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   }, [selectedItem, craftingMastery]);
 
   const extraQuickFuel = useMemo(() => {
-    if (!selectedItem) return 0;
+    if (!selectedItem || selectedItem.craftingType !== 'FORGE') return 0;
     return selectedItem.tier === 1 ? 3 : selectedItem.tier === 2 ? 5 : 8;
   }, [selectedItem]);
 
@@ -253,7 +253,9 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       setQuickCraftProgress(prev => {
         if (prev === null || prev >= 100) {
           clearInterval(timer);
-          actions.consumeItem('charcoal', extraQuickFuel);
+          if (extraQuickFuel > 0) {
+            actions.consumeItem('charcoal', extraQuickFuel);
+          }
           actions.startCrafting(selectedItem);
           actions.finishCrafting(selectedItem, 80, 0, 0.7);
           return null;
@@ -304,6 +306,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     hoveredItem,
     tooltipPos,
     quickCraftProgress,
+    extraQuickFuel,
     smithingLevel,
     workbenchLevel,
     unlockedSmithingTier,
