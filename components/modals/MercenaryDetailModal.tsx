@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
@@ -19,6 +18,7 @@ interface MercenaryDetailModalProps {
   onEquip?: (mercId: string, itemId: string) => void; 
   onConsume?: (mercId: string, itemId: string) => void; 
   isReadOnly?: boolean;
+  hideCloseButton?: boolean;
 }
 
 export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({ 
@@ -27,7 +27,8 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
   onUnequip, 
   onEquip,
   onConsume,
-  isReadOnly = false 
+  isReadOnly = false,
+  hideCloseButton = false
 }) => {
   const { state, actions } = useGame();
   const {
@@ -60,13 +61,15 @@ export const MercenaryDetailModal: React.FC<MercenaryDetailModalProps> = ({
     <div className={`${UI_MODAL_LAYOUT.OVERLAY} z-[1100] animate-in fade-in duration-300`}>
       <div className={`relative w-[95%] sm:w-[92%] max-w-4xl h-full max-h-[90dvh] bg-stone-950 border-2 border-stone-700 rounded-3xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9)] flex flex-col md:flex-row overflow-hidden ring-1 ring-white/10 transition-all duration-500`}>
         
-        <SfxButton
-          sfx="switch"
-          onClick={onClose}
-          className="absolute top-4 right-4 z-[1050] p-1.5 md:p-2 bg-stone-900/80 hover:bg-red-900/80 rounded-full text-stone-500 hover:text-white border border-stone-700 transition-all shadow-xl backdrop-blur-md active:scale-90"
-        >
-          <X className="w-5 h-5 md:w-6 md:h-6" />
-        </SfxButton>
+        {!hideCloseButton && (
+          <SfxButton
+            sfx="switch"
+            onClick={onClose}
+            className="absolute top-4 right-4 z-[1050] p-1.5 md:p-2 bg-stone-900/80 hover:bg-red-900/80 rounded-full text-stone-500 hover:text-white border border-stone-700 transition-all shadow-xl backdrop-blur-md active:scale-90"
+          >
+            <X className="w-5 h-5 md:w-6 md:h-6" />
+          </SfxButton>
+        )}
 
         {/* Left Side: Avatar & Stats */}
         <div className={`flex flex-col overflow-hidden transition-all duration-500 border-stone-800 ${isHired && isInventoryOpen ? 'w-full md:w-[45%] h-1/2 md:h-full border-b md:border-b-0 md:border-r' : 'w-full h-full'}`}>

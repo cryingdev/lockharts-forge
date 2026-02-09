@@ -3,6 +3,7 @@ import { ArrowLeft, Heart, MessageSquare, Gift, UserPlus, UserMinus, Search, Wre
 import DialogueBox from '../../../DialogueBox';
 import { AnimatedMercenary } from '../../../common/ui/AnimatedMercenary';
 import { MercenaryPortrait } from '../../../common/ui/MercenaryPortrait';
+import { MercenaryPortrait as PortraitWithStyle } from '../../../common/ui/MercenaryPortrait'; // Alias if needed
 import { MercenaryDetailModal } from '../../../modals/MercenaryDetailModal';
 import { ItemSelectorList } from '../../../ItemSelectorList';
 import { SfxButton } from '../../../common/ui/SfxButton';
@@ -13,12 +14,19 @@ import { Mercenary } from '../../../../models/Mercenary';
 interface TavernInteractionViewProps {
     mercenary: Mercenary;
     onBack: () => void;
+    isDetailOpen: boolean;
+    setIsDetailOpen: (open: boolean) => void;
 }
 
-export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ mercenary, onBack }) => {
+export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ 
+    mercenary, 
+    onBack,
+    isDetailOpen,
+    setIsDetailOpen
+}) => {
     const inter = useTavernInteraction(mercenary);
     const { 
-        state, actions, dialogue, showGiftMenu, setShowGiftMenu, showDetail, setShowDetail, 
+        state, actions, dialogue, showGiftMenu, setShowGiftMenu,
         pendingGiftItem, floatingHearts, step, hiringCost, canAfford, hasAffinity, handlers 
     } = inter;
 
@@ -40,6 +48,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
+            {/* Mercenary Mini HUD */}
             <div className="absolute top-20 right-4 z-40 animate-in slide-in-from-right-4 duration-500 w-[32%] max-w-[180px] md:max-w-[240px]">
                 <div className="bg-stone-900/90 border border-stone-700 p-2.5 md:p-4 rounded-xl backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-1.5 md:mb-2.5">
@@ -63,15 +72,36 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
                 </div>
             </div>
 
+            {/* Character Stage - Optimized for wide sprites by removing max-w-4xl */}
             <div className="absolute inset-0 z-10 w-full h-full pointer-events-none flex items-end justify-center">
-                <div className="relative w-full h-full flex items-end justify-center animate-in fade-in zoom-in-95 duration-700 ease-out">
-                    <div className="relative h-[90dvh] max-h-[110dvh] flex items-end justify-center">
-                        <AnimatedMercenary mercenary={mercenary} className="h-full w-auto filter drop-shadow-[0_0_100px_rgba(0,0,0,1)]" />
-                        {floatingHearts.map(h => <Heart key={h.id} className="absolute animate-heart fill-pink-500 text-pink-400" style={{ left: `${h.left}%`, bottom: '30%', width: h.size, height: h.size, animationDelay: `${h.delay}s`, '--wobble': `${(Math.random()-0.5)*40}px` } as any} />)}
+                <div className="relative w-full h-full flex items-end justify-center px-4 animate-in fade-in zoom-in-95 duration-700 ease-out">
+                    <div className="relative h-[85dvh] max-h-[100dvh] flex items-end justify-center">
+                        {floatingHearts.map(h => (
+                            <Heart 
+                                key={h.id} 
+                                className="absolute animate-heart fill-pink-500 text-pink-400 z-20" 
+                                style={{ 
+                                    left: `${h.left}%`, 
+                                    bottom: '45%', 
+                                    width: h.size, 
+                                    height: h.size, 
+                                    animationDelay: `${h.delay}s`, 
+                                    '--wobble': `${(Math.random()-0.5)*80}px` 
+                                } as React.CSSProperties} 
+                            />
+                        ))}
+                        
+                        <AnimatedMercenary 
+                            mercenary={mercenary} 
+                            className="h-full w-auto max-w-full object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10" 
+                        />
+                        
+                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-black/60 blur-3xl rounded-full -z-10"></div>
                     </div>
                 </div>
             </div>
 
+            {/* Control Bar & Dialogue */}
             <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center gap-[10px] pointer-events-none">
                 <div className={`w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
                     <div className="grid grid-cols-4 gap-2 md:gap-3 w-full max-w-2xl mx-auto">
@@ -100,7 +130,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
                             </SfxButton>
                         )}
 
-                        <SfxButton onClick={() => setShowDetail(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}>
+                        <SfxButton onClick={() => setIsDetailOpen(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}>
                             {isHired ? <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Search className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-500" />}
                             <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">{isHired ? 'Manage' : 'Info'}</span>
                             {hasUnallocated && <div className="absolute -top-1 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-bounce border border-stone-950 z-10"><ChevronUp className="w-2.5 h-2.5 font-black" /></div>}
@@ -120,6 +150,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
                 />
             </div>
 
+            {/* Modals */}
             {showGiftMenu && (
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl h-[60vh] min-h-[400px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95">
@@ -134,8 +165,14 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({ me
                 </div>
             )}
 
-            {showDetail && (
-                <MercenaryDetailModal mercenary={mercenary} onClose={() => setShowDetail(false)} onUnequip={(mercId, slot) => actions.unequipItem(mercId, slot)} isReadOnly={!isHired || isOnExpedition} />
+            {isDetailOpen && (
+                <MercenaryDetailModal 
+                    mercenary={mercenary} 
+                    onClose={() => setIsDetailOpen(false)} 
+                    onUnequip={(mercId, slot) => actions.unequipItem(mercId, slot)} 
+                    isReadOnly={!isHired || isOnExpedition} 
+                    hideCloseButton={true}
+                />
             )}
         </div>
     );

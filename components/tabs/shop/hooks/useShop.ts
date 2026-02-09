@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
@@ -36,12 +35,17 @@ export const useShop = () => {
     }, [activeCustomer]);
 
     const spawnHearts = useCallback((count: number) => {
-        const newHearts = Array.from({ length: count }).map((_, i) => ({
-            id: Date.now() + i,
-            left: 40 + Math.random() * 20,
-            delay: Math.random() * 0.5,
-            size: 16 + Math.random() * 12
-        }));
+        const newHearts = Array.from({ length: count }).map((_, i) => {
+            // 캐릭터 중앙(50%)을 피해 좌우로 분산 생성
+            const side = i % 2 === 0 ? -1 : 1; 
+            const offset = 18 + Math.random() * 12; // 중앙에서 18%~30% 떨어진 위치
+            return {
+                id: Date.now() + i,
+                left: 50 + (side * offset),
+                delay: Math.random() * 0.6,
+                size: 14 + Math.random() * 12
+            };
+        });
         setFloatingHearts(prev => [...prev, ...newHearts]);
         setTimeout(() => setFloatingHearts([]), 3500);
     }, []);

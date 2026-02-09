@@ -1,4 +1,3 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -63,7 +62,7 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   private interactables: Interactable[] = [];
   private cursor!: Phaser.GameObjects.Container;
-  private cursorSprite!: Phaser.GameObjects.Image;
+  private cursorSprite!: Phaser.GameObjects.Sprite; 
   private cursorBar!: Phaser.GameObjects.Rectangle;
   private hammerSprite!: Phaser.GameObjects.Image;
   private comboText!: Phaser.GameObjects.Text;
@@ -133,6 +132,10 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.load.image('hammer', getAssetUrl('hammer.png'));
     this.load.image('saw', getAssetUrl('saw.png', 'minigame'));
     this.load.image('spark', getAssetUrl('particle_spark1.png', 'minigame'));
+    
+    // 가위 이미지를 일반 이미지로 로드
+    this.load.image('scissors_source', getAssetUrl('scissor_sprite.png', 'minigame'));
+
     if (this.itemImage) this.load.image('item_source', getAssetUrl(this.itemImage, 'equipments'));
   }
 
@@ -157,6 +160,40 @@ export default class WorkbenchScene extends Phaser.Scene {
   create() {
     this.root = this.add.container(0, 0);
     this.bgImage = this.add.image(0, 0, 'workbench_bg').setAlpha(0.6).setOrigin(0.5); this.root.add(this.bgImage);
+
+    // 가위 텍스트 분할 및 프레임 생성
+    const scissorsSource = this.textures.get('scissors_source');
+    const sourceImage = scissorsSource.getSourceImage() as HTMLImageElement;
+    const frameWidth = sourceImage.width / 3;
+    const frameHeight = sourceImage.height;
+
+    // 'scissors'라는 이름으로 동적 프레임 추가
+    // Fix: TextureManager does not have a clone method. Use addImage and then add frames manually.
+    if (!this.textures.exists('scissors')) {
+        this.textures.addImage('scissors', sourceImage);
+        const scissorsTex = this.textures.get('scissors');
+        if (scissorsTex) {
+            scissorsTex.add(0, 0, 0, 0, frameWidth, frameHeight);
+            scissorsTex.add(1, 0, frameWidth, 0, frameWidth, frameHeight);
+            scissorsTex.add(2, 0, frameWidth * 2, 0, frameWidth, frameHeight);
+        }
+    }
+
+    // 가위 가이드 애니메이션 생성 (동적 프레임 사용)
+    if (!this.anims.exists('scissors_cut')) {
+      this.anims.create({
+        key: 'scissors_cut',
+        frames: [
+          { key: 'scissors', frame: 0 },
+          { key: 'scissors', frame: 1 },
+          { key: 'scissors', frame: 2 },
+          { key: 'scissors', frame: 1 }
+        ],
+        frameRate: 10,
+        repeat: -1
+      });
+    }
+
     this.silhouetteGraphics = this.add.graphics().setAlpha(0.2); this.root.add(this.silhouetteGraphics);
     if (this.textures.exists('item_source')) { this.itemSprite = this.add.image(0, 0, 'item_source').setAlpha(0.15); this.root.add(this.itemSprite); }
     this.pathGraphics = this.add.graphics(); this.dragPathGraphics = this.add.graphics(); this.root.add([this.pathGraphics, this.dragPathGraphics]);
@@ -178,7 +215,7 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.tweens.add({ targets: this.infoText, alpha: 0.4, duration: 800, yoyo: true, repeat: -1 });
 
     this.cursor = this.add.container(0, 0).setDepth(10);
-    this.cursorSprite = this.add.image(0, 0, 'niddle').setOrigin(0.5, 0.98).setScale(0.18);
+    this.cursorSprite = this.add.sprite(0, 0, 'niddle').setOrigin(0.5, 0.98).setScale(0.18);
     this.cursorBar = this.add.rectangle(0, 0, 6, 40, 0xfbbf24).setOrigin(0.5, 1).setStrokeStyle(2, 0xffffff, 0.8);
     this.cursor.add([this.cursorBar, this.cursorSprite]); this.root.add(this.cursor);
     
@@ -239,14 +276,25 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   private updateCursorTool() {
     if (!this.cursor) return; this.hammerSprite.setAlpha(0);
+    this.cursorSprite.stop();
+    this.cursorSprite.clearTint();
+
     if (this.isLeatherWork) { 
-        this.cursorSprite.setVisible(true).setTexture('niddle').setOrigin(0.5, 0.98).setScale(0.18); 
-        this.cursorBar.setVisible(false); 
+        if (this.currentPhase === 1 || this.currentPhase === 3) {
+          // 가위: 날 끝 중심 (0.5, 0.95), 스케일 조정
+          this.cursorSprite.setVisible(true).setTexture('scissors', 0).setOrigin(0.5, 0.95).setScale(0.5 * this.uiScale);
+          this.cursorBar.setVisible(false);
+          this.cursorSprite.play('scissors_cut');
+        } else {
+          // 바느질 단계
+          this.cursorSprite.setVisible(true).setTexture('niddle').setOrigin(0.5, 0.98).setScale(0.18 * this.uiScale); 
+          this.cursorBar.setVisible(false); 
+        }
     }
     else {
-        // 톱질(P1) -> 망치질(P2) -> 톱질(P3) 순서
+        // 목공
         if (this.currentPhase === 1 || this.currentPhase === 3) { 
-            this.cursorSprite.setVisible(true).setTexture('saw').setOrigin(0.05, 0.5).setScale(0.25); 
+            this.cursorSprite.setVisible(true).setTexture('saw').setOrigin(0.05, 0.5).setScale(0.25 * this.uiScale); 
             this.cursorBar.setVisible(false);
         }
         else { 
@@ -358,7 +406,6 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.interactables.forEach(obj => { this.destroyTapGraphics(obj); }); this.interactables = [];
     const isNovice = this.masteryCount < 10;
 
-    // 톱질(P1, P3) vs 망치질(P2)
     if (this.currentPhase === 2) {
         let count = 4;
         if (this.masteryCount >= 30) count = 8;
@@ -370,7 +417,6 @@ export default class WorkbenchScene extends Phaser.Scene {
             this.addTap(((i * sectorWidth) + Phaser.Math.FloatBetween(sectorWidth * 0.2, sectorWidth * 0.8)) % 1.0); 
         }
     } else {
-        // P1, P3 (Sawing - DRAG)
         if (isNovice) {
             const start = Phaser.Math.FloatBetween(0.2, 0.3);
             this.addDrag(start, start + 0.4);
@@ -482,11 +528,28 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.handleDragLogic(time, delta); if (this.cursorProgress >= 1.0) this.finishPhase();
     const pos = this.getPathPosition(this.cursorProgress); this.cursor.setPosition(pos.x, pos.y);
     
-    // 회전 오프셋: 톱질(P1, P3)일 때와 아닐 때 구분
+    // 회전 오프셋 계산
     const isSawing = !this.isLeatherWork && (this.currentPhase === 1 || this.currentPhase === 3);
-    const rotationOffset = isSawing ? 0 : -Math.PI / 2;
+    const isScissoring = this.isLeatherWork && (this.currentPhase === 1 || this.currentPhase === 3);
+    
+    let rotationOffset = -Math.PI / 2; // 기본 수직 도구
+    if (isSawing) rotationOffset = 0; // 톱은 가로
+    if (isScissoring) rotationOffset = -Math.PI / 2; // 가위: 하단 날 끝이 이동 방향을 향하도록
     
     this.cursor.angle += Phaser.Math.Angle.ShortestBetween(Phaser.Math.RadToDeg(this.cursor.rotation), Phaser.Math.RadToDeg(pos.angle + rotationOffset)) * 0.15;
+
+    // 가위 애니메이션 동적 제어
+    if (isScissoring) {
+      if (!this.cursorSprite.anims.isPlaying) {
+          this.cursorSprite.play('scissors_cut');
+      }
+    } else {
+      if (this.cursorSprite.anims.isPlaying) {
+          this.cursorSprite.stop();
+          this.cursorSprite.setFrame(0); // 멈췄을 땐 열린 상태
+      }
+    }
+
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
     if (this.itemSprite) this.itemSprite.setAlpha(0.15 + (this.confirmedProgress / 100) * 0.7);
     this.drawGuidePath(time);
@@ -500,7 +563,11 @@ export default class WorkbenchScene extends Phaser.Scene {
             obj.totalTicksInRange += delta; const pointer = this.input.activePointer;
             if (pointer.isDown && Phaser.Math.Distance.Between(pointer.x, pointer.y, this.cursor.x, this.cursor.y) < 60 * this.uiScale) {
                 if (!obj.startHit) { obj.startHit = true; if (!obj.tracedSegments) obj.tracedSegments = []; obj.tracedSegments.push({ start: p, end: p }); }
-                obj.dragSuccessTicks += delta; this.dragPenaltyTimer = 0; if (this.cursorSprite.visible) this.cursorSprite.setTint(0xfbbf24); if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfcd34d);
+                obj.dragSuccessTicks += delta; this.dragPenaltyTimer = 0; 
+                
+                if (this.cursorSprite.visible) this.cursorSprite.setTint(0xfbbf24); 
+                if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfcd34d);
+                
                 if (time % 100 < 20) this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 1);
                 const lastSeg = obj.tracedSegments![obj.tracedSegments!.length - 1]; if (lastSeg && Math.abs(lastSeg.end - p) < 0.05) lastSeg.end = p; else obj.tracedSegments!.push({ start: p, end: p });
             } else if (obj.startHit) {
@@ -579,12 +646,10 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   private finishPhase() {
     this.isTransitioning = true; 
-    // 3페이즈이므로 진행률 34%씩 증가
     this.confirmedProgress = Math.min(100, this.confirmedProgress + 34); 
     this.updateProgressBar();
     this.interactables.forEach(obj => { if (obj.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 400 }); if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 400 }); });
     
-    // 마지막 페이즈 체크 (3페이즈)
     const isLastPhase = this.currentPhase >= 3;
     
     if (isLastPhase) {

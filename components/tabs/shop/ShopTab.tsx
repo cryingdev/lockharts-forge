@@ -32,7 +32,12 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   return (
     <div className="fixed inset-0 z-[1000] bg-stone-900 overflow-hidden flex flex-col items-center justify-center px-safe">
         <style>{`
-            @keyframes heartFloatUp { 0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-350px) translateX(var(--wobble)) scale(1.4); opacity: 0; } }
+            @keyframes heartFloatUp { 
+                0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; } 
+                15% { opacity: 1; } 
+                80% { opacity: 0.8; }
+                100% { transform: translateY(-350px) translateX(var(--wobble)) scale(1.4); opacity: 0; } 
+            }
             .animate-heart { animation: heartFloatUp 2.5s ease-out forwards; }
         `}</style>
 
@@ -87,18 +92,19 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none">
         {shop.isShopOpen && shop.activeCustomer && shop.dialogueState && (
             <div className="relative flex justify-center items-end w-full h-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                <div className="relative w-full h-[80%] flex items-end justify-center">
+                <div className="relative h-[80dvh] max-h-[100dvh] flex items-end justify-center">
+                    {/* 하트가 캐릭터 앞쪽에서 떠오르도록 z-20 설정, y축 시작점 bottom 상향 조정 */}
                     {shop.floatingHearts.map((heart) => (
                     <Heart
                         key={heart.id}
-                        className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)] z-0"
+                        className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)] z-20"
                         style={{
                         left: `${heart.left}%`,
-                        bottom: '40%',
+                        bottom: '55%',
                         width: heart.size,
                         height: heart.size,
                         animationDelay: `${heart.delay}s`,
-                        '--wobble': `${(Math.random() - 0.5) * 60}px`,
+                        '--wobble': `${(Math.random() - 0.5) * 80}px`,
                         } as React.CSSProperties}
                     />
                     ))}
@@ -117,7 +123,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         </div>
 
         {/* Shop Counter */}
-        <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 flex items-end justify-center pointer-events-none">
+        <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-30 flex items-end justify-center pointer-events-none">
             {!counterImgError ? (
                 <img 
                     src={getAssetUrl('shop_counter.png', 'bg')} 

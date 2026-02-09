@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap } from 'lucide-react';
 import { useForge } from './hooks/useForge';
@@ -26,7 +27,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
     state, handlers, actions, isCrafting, selectedItem, isPanelOpen, 
     activeCategory, expandedSubCat, favoriteItems, isFavExpanded, visibleSubCats, 
     groupedItems, hoveredItem, tooltipPos, quickCraftProgress, masteryInfo, 
-    isFuelShortage, isQuickFuelShortage, extraQuickFuel, smithingLevel, workbenchLevel 
+    isFuelShortage, isQuickFuelShortage, isEnergyShortage, requiredEnergy, extraQuickFuel, smithingLevel, workbenchLevel 
   } = forge;
 
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
@@ -121,20 +122,20 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
             <div className={`absolute top-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2 transition-all duration-500 ${isRecipeTutorial ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
                 <div className="flex flex-col gap-2">
                     {/* Energy Widget */}
-                    <div className="bg-stone-900/60 border border-stone-800 rounded-xl p-2 md:p-3 flex items-center gap-3 md:gap-4 shadow-inner min-w-[150px] md:min-w-[220px] backdrop-blur-sm">
+                    <div className={`bg-stone-900/60 border border-stone-800 rounded-xl p-2 md:p-3 flex items-center gap-3 md:gap-4 shadow-inner min-w-[150px] md:min-w-[220px] backdrop-blur-sm transition-all duration-300 ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
                         <div className="p-1.5 md:p-2 bg-stone-950 rounded-lg border border-stone-800 shadow-md flex items-center justify-center">
-                            <Zap className={`w-3.5 h-3.5 md:w-5 md:h-5 ${state.stats.energy < 20 ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
+                            <Zap className={`w-3.5 h-3.5 md:w-5 md:h-5 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-end mb-1">
                                 <span className="text-[8px] md:text-[10px] font-black uppercase text-stone-500 tracking-widest">Energy</span>
-                                <span className={`font-mono text-[10px] md:text-xs font-bold ${state.stats.energy < 20 ? 'text-red-400' : 'text-stone-300'}`}>
+                                <span className={`font-mono text-[10px] md:text-xs font-bold ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-400' : 'text-stone-300'}`}>
                                     {state.stats.energy} / {state.stats.maxEnergy}
                                 </span>
                             </div>
                             <div className="w-full h-1 md:h-1.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
                                 <div 
-                                    className={`h-full transition-all duration-700 ${state.stats.energy < 20 ? 'bg-red-600' : 'bg-emerald-600'}`} 
+                                    className={`h-full transition-all duration-700 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'bg-red-600' : 'bg-emerald-600'}`} 
                                     style={{ width: `${energyPercent}%` }}
                                 ></div>
                             </div>
@@ -174,6 +175,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                     canEnterForge={forge.canEnterForge}
                     isFuelShortage={isFuelShortage}
                     isQuickFuelShortage={isQuickFuelShortage}
+                    isEnergyShortage={isEnergyShortage}
                     quickCraftProgress={quickCraftProgress}
                     extraFuelCost={extraQuickFuel}
                     onStartCrafting={handlers.startCrafting}

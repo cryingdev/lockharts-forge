@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Trophy, Check, Star, Heart, Sparkles, Coins, Award, User, XCircle, AlertTriangle, Skull } from 'lucide-react';
@@ -110,6 +109,20 @@ const DungeonResultModal = () => {
 
     const isDefeat = !!dungeonResult.isDefeat;
 
+    const getItemImageUrl = (itemId: string) => {
+        const item = materials[itemId];
+        if (!item) return getAssetUrl(`${itemId}.png`, 'materials');
+        
+        // 스킬 아이템(스킬북, 스크롤)은 전용 폴더 사용
+        const isSkill = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL';
+        const folder = isSkill ? 'skills' : 'materials';
+        
+        // 아이템에 정의된 image 속성 우선 사용 (ex: book_fighter.png), 없으면 id.png 사용
+        const fileName = item.image || `${itemId}.png`;
+        
+        return getAssetUrl(fileName, folder);
+    };
+
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 backdrop-blur-md px-[10%] py-[15%] animate-in fade-in duration-500 overflow-hidden">
             <div className={`relative w-fit max-w-[600px] h-fit max-h-full min-h-[200px] min-w-[280px] bg-stone-900 border-2 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 ${isDefeat ? 'border-red-900 shadow-red-900/20' : 'border-amber-600'}`}>
@@ -177,7 +190,7 @@ const DungeonResultModal = () => {
                                 {dungeonResult.rewards.map((reward, idx) => (
                                     <div key={idx} className="flex gap-2 bg-stone-800/40 p-2 rounded-lg border border-stone-700 items-center min-w-[120px]">
                                         <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 bg-stone-950 rounded border border-stone-700 flex items-center justify-center relative">
-                                            <img src={getAssetUrl(`${reward.id}.png`, 'materials')} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
+                                            <img src={getItemImageUrl(reward.id)} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="text-[10px] md:text-xs font-black text-stone-200 truncate">{reward.name}</div>

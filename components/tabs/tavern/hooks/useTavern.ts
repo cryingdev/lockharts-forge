@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useCallback } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { createRandomMercenary, getUnmetNamedMercenary } from '../../../../utils/mercenaryGenerator';
@@ -6,6 +5,7 @@ import { createRandomMercenary, getUnmetNamedMercenary } from '../../../../utils
 export const useTavern = () => {
     const { state, actions } = useGame();
     const [selectedMercId, setSelectedMercId] = useState<string | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     const handleScout = useCallback(() => {
         if (state.stats.gold < 50) {
@@ -26,6 +26,16 @@ export const useTavern = () => {
         state.knownMercenaries.find(m => m.id === selectedMercId) || null,
     [state.knownMercenaries, selectedMercId]);
 
+    const handleSelectMercenary = useCallback((id: string) => {
+        setSelectedMercId(id);
+        setIsDetailOpen(false); // Reset detail when changing mercenary
+    }, []);
+
+    const handleCloseInteraction = useCallback(() => {
+        setSelectedMercId(null);
+        setIsDetailOpen(false);
+    }, []);
+
     return {
         state,
         actions,
@@ -33,10 +43,12 @@ export const useTavern = () => {
         setSelectedMercId,
         selectedMercenary,
         groupedMercs,
+        isDetailOpen,
+        setIsDetailOpen,
         handlers: {
             handleScout,
-            handleSelectMercenary: (id: string) => setSelectedMercId(id),
-            handleCloseInteraction: () => setSelectedMercId(null)
+            handleSelectMercenary,
+            handleCloseInteraction
         }
     };
 };

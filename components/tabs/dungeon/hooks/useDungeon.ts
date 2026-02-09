@@ -1,10 +1,10 @@
-
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { DUNGEONS } from '../../../../data/dungeons';
 import { calculatePartyPower } from '../../../../utils/combatLogic';
-import { formatDuration } from '../../../../utils';
+import { formatDuration, getAssetUrl } from '../../../../utils';
 import { MONSTER_DROPS } from '../../../../data/monster-drops';
+import { materials } from '../../../../data/materials';
 
 export const useDungeon = () => {
     const { state, actions } = useGame();
@@ -19,6 +19,7 @@ export const useDungeon = () => {
     const [failedPowerHighlight, setFailedPowerHighlight] = useState(false);
     const [showRecallConfirm, setShowRecallConfirm] = useState<'AUTO' | 'MANUAL' | null>(null);
     const [isPickerOpen, setIsPickerOpen] = useState(false);
+    const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
 
     const selectedDungeon = useMemo(() => 
         DUNGEONS.find(d => d.id === selectedDungeonId) || DUNGEONS[0], 
@@ -194,6 +195,7 @@ export const useDungeon = () => {
         requiredPowerForFloor, staminaCostForFloor, currentPartyPower, timeLeft,
         failedMercs, lowHpMercs, failedPowerHighlight, showRecallConfirm, setShowRecallConfirm,
         isPickerOpen, setIsPickerOpen, currentExpedition, hasActiveMission, isOngoingManual,
+        inspectedMercId, setInspectedMercId,
         handlers: {
             handleDungeonSelect,
             handlePrevFloor: () => setSelectedFloor(prev => Math.max(1, prev - 1)),

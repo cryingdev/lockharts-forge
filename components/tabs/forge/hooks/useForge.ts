@@ -1,3 +1,5 @@
+
+// Fix: Import React to resolve 'Cannot find namespace React' errors for React.MouseEvent
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EquipmentCategory, EquipmentItem } from '../../../../types';
@@ -42,6 +44,17 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     return Math.max(0, (forgeTemperature || 0) - (timeDiffSec * GLOBAL_COOLING_RATE_PER_SEC));
   }, [forgeTemperature, lastForgeTime]);
 
+  const requiredEnergy = useMemo(() => {
+    if (!selectedItem) return GAME_CONFIG.ENERGY_COST.CRAFT;
+    const count = craftingMastery[selectedItem.id] || 0;
+    return getEnergyCost(selectedItem, count);
+  }, [selectedItem, craftingMastery]);
+
+  const isEnergyShortage = useMemo(() => {
+    if (!selectedItem) return false;
+    return stats.energy < requiredEnergy;
+  }, [selectedItem, stats.energy, requiredEnergy]);
+
   const isFuelShortage = useMemo(() => {
     if (!selectedItem || selectedItem.craftingType !== 'FORGE') return false;
     const hasHeat = currentResidualTemp > 0;
@@ -56,16 +69,10 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       const hasHeat = currentResidualTemp > 0;
       const hasFuel = getInventoryCount('charcoal') > 0;
       const isTutorialForging = tutorialStep === 'START_FORGING_GUIDE';
-      return hasFurnace && (hasFuel || hasHeat || isTutorialForging);
+      return hasFurnace && (hasFuel || hasHeat || isTutorialForging) && !isEnergyShortage;
     }
-    return hasWorkbench;
-  }, [selectedItem, hasFurnace, hasWorkbench, currentResidualTemp, getInventoryCount, tutorialStep]);
-
-  const requiredEnergy = useMemo(() => {
-    if (!selectedItem) return GAME_CONFIG.ENERGY_COST.CRAFT;
-    const count = craftingMastery[selectedItem.id] || 0;
-    return getEnergyCost(selectedItem, count);
-  }, [selectedItem, craftingMastery]);
+    return hasWorkbench && !isEnergyShortage;
+  }, [selectedItem, hasFurnace, hasWorkbench, currentResidualTemp, getInventoryCount, tutorialStep, isEnergyShortage]);
 
   const extraQuickFuel = useMemo(() => {
     if (!selectedItem || selectedItem.craftingType !== 'FORGE') return 0;
@@ -186,6 +193,11 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       return;
     }
     
+    if (isEnergyShortage) {
+        actions.triggerEnergyHighlight();
+        return;
+    }
+
     const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
     if (missing.length > 0 || isFuelShortage) {
       if (e) updateTooltipPosition(e.clientX, e.clientY);
@@ -200,15 +212,9 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       return;
     }
 
-    const energyCost = getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0);
-    if (stats.energy < energyCost) {
-      actions.triggerEnergyHighlight();
-      return;
-    }
-
     actions.startCrafting(selectedItem);
     setIsPanelOpen(false);
-  }, [selectedItem, hasFurnace, hasWorkbench, getInventoryCount, stats.energy, craftingMastery, actions, onNavigate, isFuelShortage, updateTooltipPosition, clearTooltipRef]);
+  }, [selectedItem, hasFurnace, hasWorkbench, getInventoryCount, stats.energy, craftingMastery, actions, onNavigate, isFuelShortage, isEnergyShortage, updateTooltipPosition, clearTooltipRef]);
 
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
@@ -224,6 +230,11 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   const handleQuickCraft = useCallback((e?: React.MouseEvent) => {
     if (!selectedItem) return;
 
+    if (isEnergyShortage) {
+        actions.triggerEnergyHighlight();
+        return;
+    }
+
     const missing = selectedItem.requirements.filter(req => getInventoryCount(req.id) < req.count);
     if (missing.length > 0 || isQuickFuelShortage) {
       if (e) updateTooltipPosition(e.clientX, e.clientY);
@@ -236,12 +247,6 @@ export const useForge = (onNavigate: (tab: any) => void) => {
         tooltipTimerRef.current = null;
       }, 1000);
       return;
-    }
-
-    const energyCost = getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0);
-    if (stats.energy < energyCost) {
-        actions.triggerEnergyHighlight();
-        return;
     }
 
     setQuickCraftProgress(0);
@@ -263,7 +268,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
         return prev + step;
       });
     }, interval);
-  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery, isQuickFuelShortage, extraQuickFuel, updateTooltipPosition, clearTooltipRef]);
+  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery, isEnergyShortage, isQuickFuelShortage, extraQuickFuel, updateTooltipPosition, clearTooltipRef]);
 
   const handleSelectItem = useCallback((item: EquipmentItem) => {
       setSelectedItem(item);
@@ -317,7 +322,8 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     canEnterForge,
     isFuelShortage,
     isQuickFuelShortage,
-    requiredEnergy: selectedItem ? getEnergyCost(selectedItem, craftingMastery[selectedItem.id] || 0) : GAME_CONFIG.ENERGY_COST.CRAFT,
+    isEnergyShortage,
+    requiredEnergy,
     getInventoryCount,
     masteryInfo,
     getItemImageUrl,

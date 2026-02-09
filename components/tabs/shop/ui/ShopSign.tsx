@@ -8,7 +8,7 @@ interface ShopSignProps {
 
 export const ShopSign: React.FC<ShopSignProps> = ({ isOpen, onToggle, disabled }) => {
     return (
-        <div className="absolute top-2 md:top-4 right-2 md:right-4 z-50 flex flex-col items-center">
+        <div className="absolute top-20 md:top-24 right-2 md:right-4 z-50 flex flex-col items-center">
             <div className="flex justify-around w-16 md:w-24 h-4 md:h-6 px-4">
                 <div className="w-0.5 md:w-1 bg-stone-600 rounded-full"></div>
                 <div className="w-0.5 md:w-1 bg-stone-600 rounded-full"></div>

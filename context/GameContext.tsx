@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -75,7 +76,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
       dispatch({ type: 'SET_UI_EFFECT', payload: { effect: 'energyHighlight', value: true } });
       setTimeout(() => {
           dispatch({ type: 'SET_UI_EFFECT', payload: { effect: 'energyHighlight', value: false } });
-      }, 3000);
+      }, 1000); // 3000ms -> 1000ms로 단축
   };
 
   const showToast = (message: string) => {
@@ -89,6 +90,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     },
     rest: () => dispatch({ type: 'SLEEP' }),
     confirmSleep: () => dispatch({ type: 'CONFIRM_SLEEP' }),
+    onAction: (action: () => void) => { action(); dispatch({ type: 'CLOSE_EVENT' }); },
     closeRest: () => dispatch({ type: 'CLOSE_SLEEP_MODAL' }),
     triggerEvent: (event: GameEvent) => dispatch({ type: 'TRIGGER_EVENT', payload: event }),
     handleEventOption: (action: () => void) => { action(); dispatch({ type: 'CLOSE_EVENT' }); },

@@ -173,7 +173,12 @@ const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClo
     );
 };
 
-const AssaultNavigator = () => {
+interface AssaultNavigatorProps {
+    inspectedMercId: string | null;
+    setInspectedMercId: (id: string | null) => void;
+}
+
+const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, setInspectedMercId }) => {
     const { state, actions } = useGame();
     const session = state.activeManualDungeon;
     const gameRef = useRef<Phaser.Game | null>(null);
@@ -182,7 +187,6 @@ const AssaultNavigator = () => {
     const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
     const [showLootOverlay, setShowLootOverlay] = useState(false);
     const [lastMsg, setLastMsg] = useState("");
-    const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
     const [hasInteractedWithNpc, setHasInteractedWithNpc] = useState(false);
 
     // 함정 방이며 해당 메시지가 함정 발동을 알릴 때 효과 재생
@@ -505,7 +509,7 @@ const AssaultNavigator = () => {
 
                 <SfxButton 
                     onClick={() => setShowRetreatConfirm(true)}
-                    className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/30 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-black/80"
+                    className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-black/80"
                 >
                     <LogOut className="w-4 h-4" /> Retreat
                 </SfxButton>
@@ -663,6 +667,7 @@ const AssaultNavigator = () => {
                     onConsume={(mercId, itemId) => { actions.useItem(itemId, mercId); }}
                     onUnequip={(mercId, slot) => { actions.unequipItem(mercId, slot); }}
                     isReadOnly={false} 
+                    hideCloseButton={true}
                 />
             )}
 

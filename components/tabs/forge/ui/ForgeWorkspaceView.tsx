@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Hammer, FastForward, AlertCircle, Flame } from 'lucide-react';
+import { Hammer, FastForward, AlertCircle, Flame, Zap } from 'lucide-react';
 import MasteryRadialGauge from './MasteryRadialGauge';
 import ForgeStatsGrid from './ForgeStatsGrid';
 import { SfxButton } from '../../../common/ui/SfxButton';
@@ -12,6 +13,7 @@ interface ForgeWorkspaceViewProps {
     canEnterForge: boolean;
     isFuelShortage: boolean;
     isQuickFuelShortage: boolean;
+    isEnergyShortage: boolean;
     quickCraftProgress: number | null;
     extraFuelCost: number;
     onStartCrafting: (e?: React.MouseEvent) => void;
@@ -20,7 +22,7 @@ interface ForgeWorkspaceViewProps {
 
 export const ForgeWorkspaceView: React.FC<ForgeWorkspaceViewProps> = ({
     selectedItem, masteryInfo, imageUrl, canEnterForge, isFuelShortage, isQuickFuelShortage,
-    quickCraftProgress, extraFuelCost, onStartCrafting, onQuickCraft
+    isEnergyShortage, quickCraftProgress, extraFuelCost, onStartCrafting, onQuickCraft
 }) => {
     if (!selectedItem) {
         return (
@@ -48,16 +50,23 @@ export const ForgeWorkspaceView: React.FC<ForgeWorkspaceViewProps> = ({
                     className={`w-full max-w-[200px] h-14 md:h-20 rounded-xl font-black text-sm md:text-base shadow-xl transition-all flex flex-col items-center justify-center border-b-4 active:translate-y-0.5 ${
                         canEnterForge 
                             ? (selectedItem.craftingType === 'FORGE' ? 'bg-amber-700 hover:bg-amber-600 border-amber-500 border-b-amber-900' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500 border-b-emerald-900') 
-                            : isFuelShortage 
-                                ? 'bg-red-950/40 border-red-900/60 text-red-500 border-b-red-950' 
-                                : 'bg-stone-800 text-stone-500 border-stone-700 border-b-stone-950 grayscale opacity-70'
+                            : isEnergyShortage
+                                ? 'bg-red-900/60 border-red-500 border-b-red-950 text-red-100'
+                                : isFuelShortage 
+                                    ? 'bg-red-950/40 border-red-900/60 text-red-500 border-b-red-950' 
+                                    : 'bg-stone-800 text-stone-500 border-stone-700 border-b-stone-950 grayscale opacity-70'
                     }`}
                 >
                     <div className="flex items-center gap-3">
                         <Hammer className="w-4 h-4 md:w-6 md:h-6" />
                         <span className="uppercase tracking-widest">Start Work</span>
                     </div>
-                    {isFuelShortage && (
+                    {isEnergyShortage ? (
+                        <div className="flex items-center gap-1 mt-1 animate-pulse">
+                            <Zap className="w-2.5 h-2.5 text-red-400" />
+                            <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Low Energy</span>
+                        </div>
+                    ) : isFuelShortage && (
                         <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest mt-1 animate-pulse">Need Charcoal</span>
                     )}
                 </SfxButton>
@@ -67,16 +76,18 @@ export const ForgeWorkspaceView: React.FC<ForgeWorkspaceViewProps> = ({
                         onClick={(e) => onQuickCraft(e)}
                         disabled={quickCraftProgress !== null}
                         className={`w-full max-w-[200px] h-14 md:h-20 rounded-xl font-black text-sm md:text-base shadow-xl transition-all flex flex-col items-center justify-center gap-0.5 border-b-4 active:translate-y-0.5 ${
-                            isQuickFuelShortage
+                            isEnergyShortage || isQuickFuelShortage
                                 ? 'bg-red-950/20 border-red-900/40 text-red-400 border-b-red-950'
                                 : 'bg-indigo-900/40 hover:bg-indigo-800/60 border-indigo-500/50 text-indigo-100 border-b-indigo-950'
                         }`}
                     >
                         <div className="flex items-center gap-2">
-                            {isQuickFuelShortage ? <AlertCircle className="w-4 h-4 text-red-500" /> : <FastForward className="w-4 h-4 md:w-5 md:h-5" />}
+                            {(isEnergyShortage || isQuickFuelShortage) ? <AlertCircle className="w-4 h-4 text-red-500" /> : <FastForward className="w-4 h-4 md:w-5 md:h-5" />}
                             <span className="uppercase tracking-widest">Quick Craft</span>
                         </div>
-                        {extraFuelCost > 0 && (
+                        {isEnergyShortage ? (
+                            <span className="text-[8px] font-bold text-red-500 uppercase">Insufficient Energy</span>
+                        ) : extraFuelCost > 0 && (
                             <div className={`flex items-center gap-1 text-[8px] md:text-[9px] font-bold uppercase tracking-tighter ${isQuickFuelShortage ? 'text-red-500' : 'text-indigo-400'}`}>
                                 <Flame className="w-2.5 h-2.5" />
                                 <span>-{extraFuelCost} Fuel</span>

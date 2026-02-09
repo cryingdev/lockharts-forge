@@ -109,6 +109,13 @@
       }
       .animate-shake-hard { animation: shake-hard 0.2s ease-in-out infinite; }
 
+      @keyframes shake-soft {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-1px); }
+        75% { transform: translateX(1px); }
+      }
+      .animate-shake-soft { animation: shake-soft 0.1s ease-in-out infinite; }
+
       .preserve-3d { transform-style: preserve-3d; }
       .backface-hidden { backface-visibility: hidden; }
       .rotate-y-180 { transform: rotateY(180deg); }

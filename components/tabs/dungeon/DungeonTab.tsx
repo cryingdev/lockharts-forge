@@ -21,10 +21,17 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
         requiredPowerForFloor, staminaCostForFloor, currentPartyPower, timeLeft,
         failedMercs, lowHpMercs, failedPowerHighlight, showRecallConfirm, setShowRecallConfirm,
         isPickerOpen, setIsPickerOpen, currentExpedition, hasActiveMission, isOngoingManual,
+        inspectedMercId, setInspectedMercId,
         handlers
     } = dungeon;
 
     const handleBack = () => {
+        // If mercenary inspection is open, close it first
+        if (inspectedMercId) {
+            setInspectedMercId(null);
+            return;
+        }
+
         if (view === 'DETAIL') {
             setView('LIST');
         } else if (onNavigate) {
@@ -55,7 +62,12 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
                 />
             ) : (
                 <div className="h-full w-full bg-stone-950 text-stone-200 overflow-hidden font-sans relative flex flex-col sm:flex-row">
-                    {(!!state.activeManualDungeon && state.showManualDungeonOverlay) && <AssaultNavigator />}
+                    {(!!state.activeManualDungeon && state.showManualDungeonOverlay) && (
+                        <AssaultNavigator 
+                            inspectedMercId={inspectedMercId}
+                            setInspectedMercId={setInspectedMercId}
+                        />
+                    )}
 
                     <DungeonInfoPanel 
                         dungeon={selectedDungeon}
