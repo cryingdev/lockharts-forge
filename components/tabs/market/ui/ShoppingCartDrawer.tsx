@@ -11,11 +11,13 @@ const RomanTierOverlay = ({ id }: { id: string }) => {
 };
 
 const CartItemImage = ({ id, meta }: { id: string, meta: any }) => {
-    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${id}.png`, 'materials'));
+    const isSkillItem = meta?.type === 'SKILL_BOOK' || meta?.type === 'SKILL_SCROLL';
+    const folder = isSkillItem ? 'skills' : 'materials';
+    const [imgSrc, setImgSrc] = useState(getAssetUrl(`${id}.png`, folder));
     
     const handleImgError = () => {
-        if (meta?.image && imgSrc !== getAssetUrl(meta.image, 'materials')) {
-            setImgSrc(getAssetUrl(meta.image, 'materials'));
+        if (meta?.image && imgSrc !== getAssetUrl(meta.image, folder)) {
+            setImgSrc(getAssetUrl(meta.image, folder));
         }
     };
 

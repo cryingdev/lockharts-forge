@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
@@ -17,7 +16,7 @@ interface FloatingHeart {
 export const useShop = () => {
     const { state, actions } = useGame();
     const { isShopOpen } = state.forge;
-    const { activeCustomer, shopQueue, tutorialStep, inventory } = state;
+    const { activeCustomer, shopQueue, tutorialStep, inventory, unlockedRecipes } = state;
 
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     const [saleCompleted, setSaleCompleted] = useState(false);
@@ -36,12 +35,17 @@ export const useShop = () => {
     }, [activeCustomer]);
 
     const spawnHearts = useCallback((count: number) => {
-        const newHearts = Array.from({ length: count }).map((_, i) => ({
-            id: Date.now() + i,
-            left: 40 + Math.random() * 20,
-            delay: Math.random() * 0.5,
-            size: 16 + Math.random() * 12
-        }));
+        const newHearts = Array.from({ length: count }).map((_, i) => {
+            // 캐릭터 중앙(50%)을 피해 좌우로 분산 생성
+            const side = i % 2 === 0 ? -1 : 1; 
+            const offset = 18 + Math.random() * 12; // 중앙에서 18%~30% 떨어진 위치
+            return {
+                id: Date.now() + i,
+                left: 50 + (side * offset),
+                delay: Math.random() * 0.6,
+                size: 14 + Math.random() * 12
+            };
+        });
         setFloatingHearts(prev => [...prev, ...newHearts]);
         setTimeout(() => setFloatingHearts([]), 3500);
     }, []);
@@ -125,9 +129,12 @@ export const useShop = () => {
     }, [actions]);
 
     const handleToggleShop = useCallback(() => {
-        if (!isShopOpen && state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE') {
+        const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
+        
+        if (isOpeningStep && !isShopOpen) {
             actions.setTutorialStep('SELL_ITEM_GUIDE');
         }
+        
         actions.toggleShop();
     }, [isShopOpen, state.tutorialStep, actions]);
 
@@ -221,15 +228,26 @@ export const useShop = () => {
         const { request, mercenary } = activeCustomer;
         const inventoryMatch = matchingItems.length > 0;
         
+        const isEquip = request.type === 'EQUIPMENT';
+        const recipe = isEquip ? EQUIPMENT_ITEMS.find(e => e.id === request.requestedId) : null;
+        const material = !isEquip ? Object.values(materials).find(m => m.id === request.requestedId) : null;
+
+        // 해금 여부 판단: 장비 아이템인 경우 플레이어의 해금 레시피 목록이나 기본 해금 여부 확인
+        const isActuallyUnlocked = isEquip 
+            ? (recipe?.unlockedByDefault || unlockedRecipes.includes(request.requestedId))
+            : true; // 재료는 항상 해금된 것으로 간주
+
         return {
             speaker: mercenary.name,
             text: request.dialogue,
             highlightTerm: getItemName(request.requestedId),
             itemDetail: {
-                icon: '📦',
-                imageUrl: globalGetAssetUrl(`${request.requestedId}.png`, 'equipments'),
+                id: request.requestedId,
+                image: isEquip ? recipe?.image : material?.image,
+                icon: isEquip ? (recipe?.icon || '⚔️') : (material?.icon || '📦'),
                 price: request.price,
-                isUnlocked: true
+                requirements: recipe?.requirements,
+                isUnlocked: isActuallyUnlocked
             },
             options: [
                 { 
@@ -245,7 +263,7 @@ export const useShop = () => {
                 }
             ]
         };
-    }, [activeCustomer, saleCompleted, refusalReaction, matchingItems, tutorialContent, getThanksDialogue, getRefusalDialogue, handleFarewell, handleSellClick, handleRefuse, getItemName]);
+    }, [activeCustomer, saleCompleted, refusalReaction, matchingItems, tutorialContent, getThanksDialogue, getRefusalDialogue, handleFarewell, handleSellClick, handleRefuse, getItemName, unlockedRecipes]);
 
     return {
         state,
@@ -261,7 +279,6 @@ export const useShop = () => {
         showInstanceSelector,
         selectedInstance,
         isTutorialActive: !!tutorialStep,
-        canAffordOpen: state.stats.energy >= GAME_CONFIG.ENERGY_COST.OPEN_SHOP,
         handlers: {
             handleToggleShop,
             handleFarewell,

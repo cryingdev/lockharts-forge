@@ -1,4 +1,4 @@
-export type MarketItemType = 'RESOURCE' | 'SUPPLY' | 'FACILITY' | 'TECHNIQUE';
+export type MarketItemType = 'RESOURCE' | 'SUPPLY' | 'FACILITY' | 'TECHNIQUE' | 'SKILL';
 
 export interface MarketItemConfig {
   id: string;
@@ -11,6 +11,16 @@ export const MARKET_CATALOG: MarketItemConfig[] = [
   { id: 'furnace', maxStock: 1, type: 'FACILITY' }, 
   { id: 'workbench', maxStock: 1, type: 'FACILITY' },
   { id: 'research_table', maxStock: 1, type: 'FACILITY' },
+
+  // --- SKILL KNOWLEDGE ---
+  { id: 'book_bash', maxStock: 1, type: 'SKILL' },
+  { id: 'scroll_skill_bash', maxStock: 3, type: 'SKILL' },
+  { id: 'book_fireball', maxStock: 1, type: 'SKILL' },
+  { id: 'scroll_skill_fireball', maxStock: 3, type: 'SKILL' },
+  { id: 'book_backstab', maxStock: 1, type: 'SKILL' },
+  { id: 'scroll_skill_backstab', maxStock: 3, type: 'SKILL' },
+  { id: 'book_holy_light', maxStock: 1, type: 'SKILL' },
+  { id: 'scroll_skill_holy_light', maxStock: 3, type: 'SKILL' },
 
   // --- SUPPLIES: Potions & More ---
   { id: 'potion_health_small',  maxStock: 5, type: 'SUPPLY' },

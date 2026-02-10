@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { User, XCircle, CheckCircle, Flame, AlertCircle } from 'lucide-react';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const EventModal = () => {
   const { state, actions } = useGame();
@@ -49,9 +51,13 @@ const EventModal = () => {
             {activeEvent.options.map((option, idx) => {
               const affordable = canAfford(option);
               return (
-                <button
+                <SfxButton
                   key={idx}
-                  onClick={() => affordable && actions.handleEventOption(option.action)}
+                  onClick={() => {
+                      if (affordable) {
+                          actions.handleEventOption(option.action);
+                      }
+                  }}
                   disabled={!affordable}
                   className={`w-full text-left p-3 md:p-5 rounded-xl border transition-all flex justify-between items-center group ${
                     affordable 
@@ -65,7 +71,7 @@ const EventModal = () => {
                   ) : (
                      <XCircle className="w-4 h-4 md:w-5 md:h-5 text-red-900 shrink-0" />
                   )}
-                </button>
+                </SfxButton>
               );
             })}
           </div>

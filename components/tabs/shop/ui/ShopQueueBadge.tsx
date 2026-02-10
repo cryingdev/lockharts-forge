@@ -7,7 +7,7 @@ interface ShopQueueBadgeProps {
 
 export const ShopQueueBadge: React.FC<ShopQueueBadgeProps> = ({ count }) => {
     return (
-        <div className="absolute top-20 md:top-28 right-4 z-50 flex items-center gap-1.5 md:gap-2 bg-stone-900/90 px-2 md:px-4 py-1 md:py-1.5 rounded-xl border border-stone-700 text-stone-200 shadow-xl backdrop-blur-md">
+        <div className="absolute top-36 md:top-48 right-4 z-50 flex items-center gap-1.5 md:gap-2 bg-stone-900/90 px-2 md:px-4 py-1 md:py-1.5 rounded-xl border border-stone-700 text-stone-200 shadow-xl backdrop-blur-md transition-all duration-500">
             <div className="bg-stone-800 p-1 md:p-1.5 rounded-full">
                 <Users className="w-3 h-3 md:w-5 md:h-5 text-amber-500" />
             </div>

@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import { User, ChevronRight, Coins, Package, Lock } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import { materials } from '../data/materials';
+import { getAssetUrl } from '../utils';
+import { useAudio } from '../hooks/useAudio';
+import { SfxButton } from './common/ui/SfxButton';
 
 interface DialogueOption {
   label: string;
@@ -12,14 +15,14 @@ interface DialogueOption {
 }
 
 interface ItemDetail {
+  id: string;
+  image?: string; 
   icon: string;
-  imageUrl?: string;
   price: number;
   requirements?: { id: string; count: number }[];
   isUnlocked?: boolean;
 }
 
-// Added speakerAvatar to DialogueBoxProps to resolve TS error in AssaultNavigator.tsx
 interface DialogueBoxProps {
   speaker: string;
   text: string;
@@ -37,13 +40,15 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   highlightTerm,
   itemDetail,
   className = "relative w-full z-40",
-  speakerAvatar // Destructure speakerAvatar prop
+  speakerAvatar
 }) => {
   const { state } = useGame();
+  const { playClick } = useAudio();
   const [displayedIndex, setDisplayedIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [showItemTooltip, setShowItemTooltip] = useState(false);
   const [tooltipCoords, setTooltipCoords] = useState({ x: 0, y: 0 });
+  const [imgError, setImgError] = useState(false);
   
   const isMounted = useRef(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -54,8 +59,20 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     return () => { 
       isMounted.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
+      setShowItemTooltip(false);
     };
   }, []);
+
+  useEffect(() => {
+    if (!showItemTooltip) return;
+    const handleGlobalClick = () => setShowItemTooltip(false);
+    window.addEventListener('mousedown', handleGlobalClick);
+    window.addEventListener('touchstart', handleGlobalClick);
+    return () => {
+      window.removeEventListener('mousedown', handleGlobalClick);
+      window.removeEventListener('touchstart', handleGlobalClick);
+    };
+  }, [showItemTooltip]);
 
   useEffect(() => {
     if (textContainerRef.current) {
@@ -73,6 +90,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     setDisplayedIndex(0);
     setIsTyping(true);
     setShowItemTooltip(false);
+    setImgError(false);
     let index = 0;
     const speed = 25; 
 
@@ -99,6 +117,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       if (timerRef.current) clearInterval(timerRef.current);
       setDisplayedIndex(text.length);
       setIsTyping(false);
+      playClick();
     }
   };
 
@@ -133,13 +152,18 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       const visiblePart = part.slice(0, visibleCountInPart);
 
       if (part === highlightTerm) {
+        const isUnlocked = itemDetail?.isUnlocked ?? true;
         return (
           <span 
             key={i} 
-            className="text-amber-400 font-black underline decoration-amber-500/50 underline-offset-4 cursor-help relative inline-block pointer-events-auto"
-            onMouseEnter={(e) => { updateTooltipPosition(e); setShowItemTooltip(true); }}
-            onMouseLeave={() => setShowItemTooltip(false)}
-            onClick={(e) => { e.stopPropagation(); updateTooltipPosition(e); setShowItemTooltip(!showItemTooltip); }}
+            className={`text-amber-400 font-black underline decoration-amber-500/50 underline-offset-4 relative inline-block pointer-events-auto ${isUnlocked ? 'cursor-pointer' : 'cursor-default'}`}
+            onClick={(e) => { 
+                e.stopPropagation(); 
+                if (!isUnlocked) return;
+                updateTooltipPosition(e); 
+                setShowItemTooltip(!showItemTooltip); 
+                playClick();
+            }}
           >
             {visiblePart}
           </span>
@@ -150,24 +174,40 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     });
   };
 
-  // Tooltip content rendered via Portal
   const tooltipElement = showItemTooltip && itemDetail && createPortal(
     <div 
-      className="fixed z-[10000] pointer-events-none p-3 md:p-4 bg-stone-900/98 backdrop-blur-2xl border-2 border-stone-700 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] w-[80vw] max-w-[240px] md:max-w-[320px] animate-in fade-in zoom-in-95 duration-200"
+      className="fixed z-[10000] pointer-events-auto p-3 md:p-4 bg-stone-900/98 backdrop-blur-2xl border-2 border-stone-700 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] w-[80vw] max-w-[240px] md:max-w-[320px] animate-in fade-in zoom-in-95 duration-200 cursor-pointer"
       style={{ 
         left: `${Math.max(130, Math.min(window.innerWidth - 130, tooltipCoords.x))}px`, 
         top: `${tooltipCoords.y - 10}px`,
         transform: 'translate(-50%, -100%)'
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowItemTooltip(false);
+        playClick();
       }}
     >
       <div className="flex items-center gap-3 mb-2 md:mb-3 pb-2 md:pb-3 border-b border-white/10">
         <div className={`w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-xl border-2 flex items-center justify-center shadow-inner shrink-0 overflow-hidden ${!itemDetail.isUnlocked ? 'border-amber-600/50' : 'border-stone-800'}`}>
           {!itemDetail.isUnlocked ? (
             <span className="text-2xl md:text-4xl font-serif text-amber-500 font-black animate-pulse">?</span>
-          ) : itemDetail.imageUrl ? (
-            <img src={itemDetail.imageUrl} className="w-7 h-7 md:w-11 md:h-11 object-contain" alt="item" />
           ) : (
-            <span className="text-xl md:text-3xl">{itemDetail.icon}</span>
+            <>
+              {!imgError ? (
+                <img 
+                  src={getAssetUrl(itemDetail.image || `${itemDetail.id}.png`, 'equipments')} 
+                  onError={(e) => {
+                    console.error('[Tooltip Debug] Image Failed to Load:', (e.target as HTMLImageElement).src);
+                    setImgError(true);
+                  }}
+                  className="w-7 h-7 md:w-11 md:h-11 object-contain" 
+                  alt="item" 
+                />
+              ) : (
+                <span className="text-xl md:text-3xl">{itemDetail.icon}</span>
+              )}
+            </>
           )}
         </div>
         <div className="flex flex-col leading-none">
@@ -185,44 +225,48 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
         </h5>
         
         <div className="grid gap-1">
-          {itemDetail.requirements?.map((req, idx) => {
-            const isClue = idx === 0; // 첫 번째 재료만 단서로 노출
-            const shouldShow = itemDetail.isUnlocked || isClue;
-            
-            if (!shouldShow) {
+          {itemDetail.requirements && itemDetail.requirements.length > 0 ? (
+            itemDetail.requirements.map((req, idx) => {
+              const isClue = idx === 0; 
+              const shouldShow = itemDetail.isUnlocked || isClue;
+              
+              if (!shouldShow) {
+                return (
+                  <div key={req.id} className="flex justify-between items-center text-[8px] md:text-xs opacity-40">
+                    <span className="truncate mr-2 font-bold tracking-tight text-stone-600">
+                      ???
+                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="font-mono font-black text-stone-700">
+                        ? / ?
+                      </span>
+                      <div className="w-1 h-1 rounded-full bg-stone-800" />
+                    </div>
+                  </div>
+                );
+              }
+
+              const hasCount = getInventoryCount(req.id);
+              const isEnough = hasCount >= req.count;
+              const mat = Object.values(materials).find(m => m.id === req.id);
+              
               return (
-                <div key={req.id} className="flex justify-between items-center text-[8px] md:text-xs opacity-40">
-                  <span className="truncate mr-2 font-bold tracking-tight text-stone-600">
-                    ???
+                <div key={req.id} className="flex justify-between items-center text-[8px] md:text-xs">
+                  <span className={`truncate mr-2 font-bold tracking-tight ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>
+                    {mat?.name || req.id}
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="font-mono font-black text-stone-700">
-                      ? / ?
+                    <span className={`font-mono font-black ${isEnough ? 'text-stone-500' : 'text-red-500'}`}>
+                      {hasCount}/{req.count}
                     </span>
-                    <div className="w-1 h-1 rounded-full bg-stone-800" />
+                    <div className={`w-1 h-1 rounded-full ${isEnough ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`} />
                   </div>
                 </div>
               );
-            }
-
-            const hasCount = getInventoryCount(req.id);
-            const isEnough = hasCount >= req.count;
-            const mat = Object.values(materials).find(m => m.id === req.id);
-            
-            return (
-              <div key={req.id} className="flex justify-between items-center text-[8px] md:text-xs">
-                <span className={`truncate mr-2 font-bold tracking-tight ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>
-                  {mat?.name || req.id}
-                </span>
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className={`font-mono font-black ${isEnough ? 'text-stone-500' : 'text-red-500'}`}>
-                    {hasCount}/{req.count}
-                  </span>
-                  <div className={`w-1 h-1 rounded-full ${isEnough ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`} />
-                </div>
-              </div>
-            );
-          })}
+            })
+          ) : (
+            <div className="text-[8px] md:text-xs text-stone-600 italic">No specific requirements found.</div>
+          )}
         </div>
 
         {!itemDetail.isUnlocked && (
@@ -234,23 +278,19 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
           </div>
         )}
       </div>
-      
-      {/* Tooltip Arrow */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] md:border-l-[12px] border-l-transparent border-r-[8px] md:border-r-[12px] border-r-transparent border-t-[8px] md:border-t-[12px] border-t-stone-900/98"></div>
     </div>,
     document.body
   );
 
   return (
-    <div className={className}>
+    <div className={className} onClick={(e) => { if (showItemTooltip) { e.stopPropagation(); setShowItemTooltip(false); playClick(); } }}>
       {tooltipElement}
 
       <div 
-        className="w-full h-[22dvh] min-h-[120px] md:h-[28vh] md:min-h-[160px] bg-stone-950/25 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/10"
+        className="w-full h-[22dvh] min-h-[120px] md:h-[28vh] md:min-h-[160px] bg-stone-900/90 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/5"
       >
         <div className="bg-stone-900/20 p-2 md:p-6 border-r border-white/5 flex flex-col items-center gap-1 md:gap-4 w-20 md:w-48 shrink-0 justify-center">
           <div className="w-9 h-9 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-amber-900/30 to-stone-800/40 border border-amber-600/30 flex items-center justify-center shadow-inner ring-1 ring-white/5 overflow-hidden">
-             {/* Render speaker avatar if provided, otherwise use generic User icon */}
              {speakerAvatar ? (
                <img src={speakerAvatar} className="w-full h-full object-cover" alt={speaker} />
              ) : (
@@ -284,7 +324,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
           {!isTyping && options.length > 0 && (
             <div className="mt-auto pt-2 flex flex-wrap gap-1.5 md:gap-4 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
               {options.map((option, idx) => (
-                <button
+                <SfxButton
                   key={idx}
                   onClick={(e) => { e.stopPropagation(); option.action(); }}
                   disabled={option.disabled}
@@ -300,7 +340,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
                 >
                   <span className="whitespace-nowrap">{option.label}</span>
                   {!option.disabled && <ChevronRight className="hidden xs:block w-2.5 md:w-5 h-2.5 md:h-5 opacity-70 group-hover:translate-x-1 transition-transform" />}
-                </button>
+                </SfxButton>
               ))}
             </div>
           )}

@@ -1,4 +1,3 @@
-
 import { GameState, ManualDungeonSession, RoomType, DungeonResult, InventoryItem } from '../../types/index';
 import { DUNGEONS } from '../../data/dungeons';
 import { handleClaimExpedition } from './expedition';
@@ -162,7 +161,8 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         encounterStatus: 'NONE',
         lastActionMessage: `The air is thick with dampness. We've entered Sector ${startFloor}.`,
         currentFloor: startFloor,
-        maxFloors: dungeon.maxFloors
+        maxFloors: dungeon.maxFloors,
+        floorBoost: 1.0 // Start with base (0% boost)
     };
 
     return {
@@ -213,9 +213,10 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
 
     let extraGold = 0;
     let newGrid = [...session.grid.map(row => [...row])];
-    let newInventory = [...state.inventory];
+    let nextCollectedLoot = [...session.collectedLoot];
     let logMsg = '';
-    let actionMsg = session.lastActionMessage;
+    // FIXED: Reset actionMsg to a neutral default so old event messages don't persist
+    let actionMsg = isAlreadyVisited ? "Backtracking through a cleared path." : "Advancing through the shadows...";
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
     let newMaxFloorReached = { ...state.maxFloorReached };
 
@@ -229,11 +230,12 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
         const count = 1 + Math.floor(Math.random() * 2);
         const matDef = materials[resId];
         
-        const existing = newInventory.find(i => i.id === resId);
-        if (existing) {
-            newInventory = newInventory.map(i => i.id === resId ? { ...i, quantity: i.quantity + count } : i);
+        // 필드 자원도 세션 보관함(collectedLoot)에 추가하여 연출 및 결과 합산 처리
+        const existingLoot = nextCollectedLoot.find(l => l.id === resId);
+        if (existingLoot) {
+            existingLoot.count += count;
         } else {
-            newInventory.push({ ...matDef, quantity: count } as InventoryItem);
+            nextCollectedLoot.push({ id: resId, count: count, name: matDef.name });
         }
         
         newGrid[newY][newX] = 'EMPTY';
@@ -263,7 +265,6 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     return {
         ...state,
         knownMercenaries: updatedMercs,
-        inventory: newInventory,
         maxFloorReached: newMaxFloorReached,
         activeManualDungeon: {
             ...session,
@@ -274,6 +275,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
             hasKey: targetRoom === 'KEY' ? true : session.hasKey,
             encounterStatus,
             goldCollected: session.goldCollected + extraGold,
+            collectedLoot: nextCollectedLoot, // 수동 탐사 자원 업데이트 반영
             lastActionMessage: actionMsg
         },
         logs: logMsg ? [logMsg, ...state.logs] : state.logs
@@ -308,9 +310,10 @@ export const handleProceedToNextFloorManual = (state: GameState): GameState => {
             pathHistory: [nextStartPos],
             currentFloor: nextFloor,
             encounterStatus: 'NONE',
+            floorBoost: session.floorBoost + 0.05, // 5% boost per floor
             lastActionMessage: `The stairs were long, but we've reached Sector ${nextFloor}. Stay alert.`
         },
-        logs: [`The squad has descended deeper into the abyss. Floor ${nextFloor}.`, ...state.logs]
+        logs: [`The squad has descended deeper into the abyss. Floor ${nextFloor}. Momentum Boost: +${Math.round((session.floorBoost + 0.05 - 1) * 100)}%`, ...state.logs]
     };
 };
 
@@ -353,7 +356,8 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             const drops = MONSTER_DROPS[enemy.id];
             if (drops) {
                 drops.forEach(drop => {
-                    if (Math.random() <= drop.chance) {
+                    // Apply floorBoost to drop chance
+                    if (Math.random() <= (drop.chance * session.floorBoost)) {
                         const qty = Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) + drop.minQuantity;
                         if (qty > 0) {
                             const mat = materials[drop.itemId];
@@ -381,11 +385,12 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
 
     const nextSessionXp = { ...session.sessionXp };
 
-    const newKnownMercenaries = state.knownMercenaries.map(m => {
+    let newKnownMercenaries = state.knownMercenaries.map(m => {
         const combatant = payload.finalParty.find(p => p.id === m.id);
         if (combatant) {
-            let nextXp = m.currentXp;
+            let currentXp = m.currentXp;
             let nextLevel = m.level;
+            let xpToNext = m.xpToNextLevel || (nextLevel * 100);
             let nextMaxHp = m.maxHp;
             let nextMaxMp = m.maxMp;
             let nextCurrentHp = combatant.currentHp;
@@ -394,14 +399,17 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             if (payload.win && combatant.currentHp > 0) {
                 const levelDiff = Math.max(0, m.level - Math.floor(avgEnemyLevel));
                 const penaltyMult = Math.max(0.1, 1 - (levelDiff * 0.1));
-                const xpToAdd = Math.floor(xpPerMemberBase * penaltyMult);
+                
+                // Apply floorBoost to XP gain
+                const xpToAdd = Math.floor(xpPerMemberBase * penaltyMult * session.floorBoost);
 
-                nextXp += xpToAdd;
+                currentXp += xpToAdd;
                 nextSessionXp[m.id] = (nextSessionXp[m.id] || 0) + xpToAdd;
                 
-                while (nextXp >= m.xpToNextLevel) {
-                    nextXp -= m.xpToNextLevel;
+                while (currentXp >= xpToNext) {
+                    currentXp -= xpToNext;
                     nextLevel++;
+                    xpToNext = nextLevel * 100;
                     const merged = mergePrimaryStats(m.stats, m.allocatedStats);
                     nextMaxHp = calculateMaxHp(merged, nextLevel);
                     nextMaxMp = calculateMaxMp(merged, nextLevel);
@@ -414,12 +422,12 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
                 ...m, 
                 currentHp: nextCurrentHp, 
                 currentMp: combatant.currentMp,
-                currentXp: nextXp,
+                currentXp: currentXp,
                 level: nextLevel,
                 bonusStatPoints,
                 maxHp: nextMaxHp,
                 maxMp: nextMaxMp,
-                xpToNextLevel: nextLevel * 100
+                xpToNextLevel: xpToNext
             };
         }
         return m;
@@ -454,6 +462,10 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
         });
     }
 
+    const lootSummary = gainedLootInCombat.length > 0 
+        ? `\nSalvaged: ${gainedLootInCombat.map(i => `${i.name} x${i.count}`).join(', ')}`
+        : "\nNo materials were salvaged from the remains.";
+
     return {
         ...state,
         knownMercenaries: newKnownMercenaries,
@@ -465,7 +477,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             encounterStatus: payload.win ? 'VICTORY' : (payload.flee ? 'NONE' : 'DEFEAT'),
             isBossDefeated,
             lastActionMessage: payload.win 
-                ? `Area neutralized. Squad, catch your breath.`
+                ? `Area neutralized. Squad, catch your breath.${lootSummary}`
                 : (payload.flee ? `We managed to pull back. Steel yourselves.` : `Everything's gone wrong... we need to get out.`)
         },
         logs: logMsg ? [logMsg, ...state.logs] : state.logs

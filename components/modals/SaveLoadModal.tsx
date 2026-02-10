@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, Upload, X, Trash2, Clock, Coins, Calendar, ChevronRight } from 'lucide-react';
 import { getSaveMetadataList, SaveMetadata, deleteSlot } from '../../utils/saveSystem';
 import ConfirmationModal from './ConfirmationModal';
+import { SfxButton } from '../common/ui/SfxButton';
 
 interface SaveLoadModalProps {
     isOpen: boolean;
@@ -69,9 +70,9 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                 {mode === 'SAVE' ? 'Save Game' : 'Load Game'}
                             </h3>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 hover:text-stone-300 transition-colors ml-4">
+                        <SfxButton onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 hover:text-stone-300 transition-colors ml-4">
                             <X className="w-5 h-5" />
-                        </button>
+                        </SfxButton>
                     </div>
 
                     {/* Slot List */}
@@ -79,10 +80,10 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                         {slots.map(index => {
                             const meta = metaList.find(m => m.index === index);
                             return (
-                                <div 
+                                <SfxButton 
                                     key={index}
                                     onClick={() => (meta || mode === 'SAVE') && handleSlotClick(index)}
-                                    className={`group relative h-20 p-3 rounded-2xl border-2 transition-all flex flex-col justify-center gap-2 ${
+                                    className={`group relative h-20 p-3 rounded-2xl border-2 transition-all flex flex-col justify-center gap-2 w-full text-left ${
                                         meta 
                                         ? 'bg-stone-800 border-stone-700 hover:border-amber-500 hover:bg-stone-750 cursor-pointer' 
                                         : mode === 'SAVE' 
@@ -132,7 +133,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                             </div>
                                         </div>
                                     )}
-                                </div>
+                                </SfxButton>
                             );
                         })}
                     </div>

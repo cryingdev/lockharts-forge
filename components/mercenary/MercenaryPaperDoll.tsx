@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   X, Sword, Shield, Shirt, Hand, Footprints, Crown, Sparkles, Heart, Star, 
@@ -8,6 +9,7 @@ import { EquipmentSlotType } from '../../types/inventory';
 import { getAssetUrl } from '../../utils';
 import { calculateMercenaryPower } from '../../utils/combatLogic';
 import { StatDiff } from './StatDiff';
+import { SfxButton } from '../common/ui/SfxButton';
 
 interface MercenaryPaperDollProps {
   mercenary: Mercenary;
@@ -40,7 +42,7 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
   
   useEffect(() => {
       const sprite = mercenary.sprite;
-      if (!sprite) return; // Guard against undefined sprite
+      if (!sprite) return; 
 
       const img = new Image();
       img.src = getAssetUrl(sprite, 'mercenaries');
@@ -107,15 +109,15 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
           <div className="text-stone-600/80 scale-75 md:scale-100">{icon}</div>
         )}
         {equippedItem && !isReadOnly && (
-          <button
+          <SfxButton
             onClick={(e) => {
               e.stopPropagation();
               onUnequip(slot);
             }}
-            className="absolute -top-2 -right-2 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity text-white shadow-lg"
+            className="absolute -top-2 -right-2 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity text-white shadow-lg z-30"
           >
             <X className="w-3 h-3" />
-          </button>
+          </SfxButton>
         )}
       </div>
     );
@@ -132,14 +134,15 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
             <span className="text-stone-500 font-mono text-[10px] md:text-lg">Lv.{mercenary.level}</span>
           </h2>
           {isHired && (
-            <button
+            <SfxButton
+              sfx="switch"
               onClick={onToggleInventory}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-[10px] font-black uppercase tracking-widest ${isInventoryOpen ? 'bg-amber-600 border-amber-400 text-white shadow-glow-sm' : 'bg-stone-800 border-stone-700 text-stone-400 hover:text-stone-200'}`}
             >
               <Package className="w-3.5 h-3.5" />
               <span className="hidden xs:inline">{isInventoryOpen ? 'Close Gear' : 'Open Gear'}</span>
               {isInventoryOpen ? <ChevronLeft className="w-3 h-3 md:hidden" /> : <ChevronDown className="w-3 h-3 md:hidden" />}
-            </button>
+            </SfxButton>
           )}
         </div>
         

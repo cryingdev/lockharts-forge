@@ -1,16 +1,84 @@
 import { ItemType } from '../types/inventory';
+import { SKILLS } from './skills';
+import { JobClass } from '../models/JobClass';
+import { Skill } from '../models/Skill';
 
 export interface MaterialDefinition {
     id: string;
     name: string;
     type: ItemType;
-    category?: 'METAL' | 'WOOD' | 'LEATHER' | 'CLOTH' | 'FUEL' | 'MONSTER_PART' | 'GEM' | 'POTION' | 'TOOL' | 'SCROLL' | 'KEY_ITEM' | 'VENDOR_TRASH';
+    category?: 'METAL' | 'WOOD' | 'LEATHER' | 'CLOTH' | 'FUEL' | 'MONSTER_PART' | 'GEM' | 'POTION' | 'TOOL' | 'SCROLL' | 'KEY_ITEM' | 'VENDOR_TRASH' | 'SKILL';
     tier?: number;
     description: string;
     baseValue: number; // Single source of truth for item value (Buy/Sell base)
     icon?: string;
     image?: string;
+    skillId?: string;
 }
+
+/**
+ * Determines the visual suffix for skill-related items.
+ * Manuals use Job, Scrolls use Tags.
+ */
+const getSkillItemSuffix = (skill: Skill, type: ItemType): string => {
+    // 1. For Manuals (Books), prioritize Job Class
+    if (type === 'SKILL_BOOK') {
+        if (skill.job.includes(JobClass.FIGHTER)) return 'fighter';
+        if (skill.job.includes(JobClass.MAGE)) return 'mage';
+        if (skill.job.includes(JobClass.ROGUE)) return 'rogue';
+        if (skill.job.includes(JobClass.CLERIC)) return 'healer';
+        if (skill.job.includes(JobClass.NOVICE)) return 'novice';
+    }
+
+    // 2. For Scrolls (and fallback for books), use Tag names
+    if (skill.tags.length > 0) {
+        return skill.tags[0].toLowerCase(); // damage, heal, buff, etc.
+    }
+
+    return 'normal';
+};
+
+// Generate Skill Books and Scrolls for existing player skills
+const skillItems: Record<string, MaterialDefinition> = {};
+
+Object.values(SKILLS).forEach(skill => {
+    // Only for player skills
+    if (skill.job.length > 0) {
+        const bookId = `book_${skill.id}`;
+        const scrollId = `scroll_skill_${skill.id}`;
+        
+        // Manuals use Job-based icons
+        const bookSuffix = getSkillItemSuffix(skill, 'SKILL_BOOK');
+        // Scrolls use Tag-based icons as requested
+        const scrollSuffix = getSkillItemSuffix(skill, 'SKILL_SCROLL');
+
+        skillItems[bookId] = {
+            id: bookId,
+            name: `Manual: ${skill.name}`,
+            type: 'SKILL_BOOK',
+            category: 'SKILL',
+            tier: Math.ceil(skill.minLevel / 5) || 1,
+            description: `A detailed tome on ${skill.name}. Can be consumed by a mercenary to learn the skill permanently.`,
+            baseValue: 1000 + (skill.minLevel * 200),
+            icon: 'BookType',
+            image: `book_${bookSuffix}.png`,
+            skillId: skill.id
+        };
+
+        skillItems[scrollId] = {
+            id: scrollId,
+            name: `Scroll of ${skill.name}`,
+            type: 'SKILL_SCROLL',
+            category: 'SKILL',
+            tier: Math.ceil(skill.minLevel / 5) || 1,
+            description: `A magical scroll containing the essence of ${skill.name}. Used to imbue equipment with this power.`,
+            baseValue: 400 + (skill.minLevel * 100),
+            icon: 'Scroll',
+            image: `scroll_${scrollSuffix}.png`,
+            skillId: skill.id
+        };
+    }
+});
 
 export const materials: Record<string, MaterialDefinition> = {
     // --- 1. METALS ---
@@ -80,62 +148,53 @@ export const materials: Record<string, MaterialDefinition> = {
     },
 
     // ===== BAND 1: The Sewer Cellars =====
-    // giant_rat
     vermin_fang: {
         id: 'vermin_fang', name: 'Vermin Fang', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
-        description: 'A grimy vermin fang. Traders buy them as proof of pest control.', baseValue: 15, icon: '🦷'
+        description: 'A grimy vermin fang. Traders buy them as proof of pest control.', baseValue: 70, icon: '🦷'
     },
     hide_patch: {
         id: 'hide_patch', name: 'Hide Patch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A tough patch cut from rat hide. Good for light armor seams.', baseValue: 140, icon: '🧷'
     },
-    // sewer_slime
     slime_gel: {
         id: 'slime_gel', name: 'Slime Gel', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'Sticky goo. Useful for coating.', baseValue: 80
     },
     acidic_slime_core: {
         id: 'acidic_slime_core', name: 'Acidic Slime Core', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
-        description: 'A pulsing core that correodes metal. Used for edge coating and poisons.', baseValue: 240, icon: '🧪'
+        description: 'A pulsing core that correodes metal. Used for edge coatings and poisons.', baseValue: 240, icon: '🧪'
     },
-    // cave_bat
     bat_sonar_gland: {
         id: 'bat_sonar_gland', name: 'Bat Sonar Gland', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
-        description: 'A strange gland that still twitches. Alchemists will pay a little for it.', baseValue: 18, icon: '👂'
+        description: 'A strange gland that still twitches. Alchemists will pay a little for it.', baseValue: 180, icon: '👂'
     },
     cave_moss_pad: {
         id: 'cave_moss_pad', name: 'Cave Moss Pad', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A damp cushion-like moss. Helps reduce friction and impact.', baseValue: 120, icon: '🌿'
     },
-    // rat_man
     sewer_buckle: {
         id: 'sewer_buckle', name: 'Sewer Buckle', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1,
-        description: 'A rusted buckle pulled from the muck. Worth a few coins as scrap.', baseValue: 12, icon: '🪝'
+        description: 'A rusted buckle pulled from the muck. Worth a few coins as scrap.', baseValue: 120, icon: '🪝'
     },
-    // mold_sporeling
     mold_spore_sac: {
         id: 'mold_spore_sac', name: 'Mold Spore Sac', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A swollen sac packed with caustic spores. Handle with care.', baseValue: 45, icon: '🍄'
     },
-    // carrion_beetle
     beetle_carapace_shard: {
         id: 'beetle_carapace_shard', name: 'Carapace Shard', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A hard carapace shard. Tough, but not yet refined into usable plates.', baseValue: 40, icon: '🪲'
     },
-    // ember_beetle
     ember_beetle_gland: {
         id: 'ember_beetle_gland', name: 'Ember Beetle Gland', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A warm gland from ember beetles. Adds minor heat resistance.', baseValue: 260, icon: '🔥'
     },
-    // sewer_thief
     rusty_amulet_fragment: {
         id: 'rusty_amulet_fragment', name: 'Rusty Amulet Fragment', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A fragment of a cursed trinket. Useful for simple rings and charms.', baseValue: 200, icon: '🧿'
     },
-    // plague_rat_king
     rat_king_crown_shard: {
         id: 'rat_king_crown_shard', name: 'Rat King Crown Shard', type: 'RESOURCE', category: 'VENDOR_TRASH', tier: 1, 
-        description: 'A jagged piece of the Rat King’s crown. Proof of a filthy victory.', baseValue: 60, icon: '👑'    
+        description: 'A jagged piece of the Rat King’s crown. Proof of a filthy victory.', baseValue: 600, icon: '👑'    
     },
     scrap_mace_head: {
         id: 'scrap_mace_head', name: 'Scrap Mace Head', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
@@ -143,40 +202,30 @@ export const materials: Record<string, MaterialDefinition> = {
     },
 
     // ===== BAND 2: The Goblin Plains =====
-    // goblin_grunt: 'copper_ore','tin_ore', 'leather_strips'
-    // goblin_slinger
     goblin_sling_pouch: {
         id: 'goblin_sling_pouch', name: 'Goblin Sling Pouch', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'A leather pouch used by slingers. Handy for belt accessory slots.', baseValue: 340, icon: '👑'
     },
-    // goblin_shaman
     fetish_totem_shard: {
         id: 'fetish_totem_shard', name: 'Totem Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
         description: 'A shard of a goblin shaman\'s focus. Resonates with minor spells.', baseValue: 380, icon: '🪵'
     },
-    // goblin_brute
     brute_sinew: {
         id: 'brute_sinew', name: 'Brute Sinew', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'Incredibly tough sinew. Ideal for heavy-duty reinforcement.', baseValue: 400, icon: '🎗️'
     },
-    // scavenger_hyena
     hyena_pelt_strip: {
         id: 'hyena_pelt_strip', name: 'Hyena Pelt Strip', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'Coarse fur strip. Used for warm armor linings.', baseValue: 370, icon: '🐕'
     },
-    // dire_wolf
     wolf_fang: {
         id: 'wolf_fang', name: 'Wolf Fang', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'Sharp fang used for jagged edges.', baseValue: 120
     },
-    // werewolf : wolf_fang, hard_leather
-    // bandit_cutthroat: 'wool_cloth', 'leather_strips', 'hard_leather', 'rusty_amulet_fragment'
-    // bandit_archer
     bowstring_bundle: {
         id: 'bowstring_bundle', name: 'Bowstring Bundle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'High-tension strings. Excellent for DEX-focused equipment.', baseValue: 410, icon: '🧵'
     },
-    // goblin_king
     goblin_crown_gilded_shard: {
         id: 'goblin_crown_gilded_shard', name: 'Gilded Crown Shard', type: 'RESOURCE', category: 'GEM', tier: 2,
         description: 'A piece of the Goblin King\'s crown. Highly sought by collectors.', baseValue: 600, icon: '👑'
@@ -185,6 +234,7 @@ export const materials: Record<string, MaterialDefinition> = {
         id: 'goblin_scrap_buckle', name: 'Goblin Scrap Buckle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'A crude but sturdy buckle. Perfect for belts and straps.', baseValue: 160, icon: '🪝'
     },
+
     // ===== BAND 3: The Deep Mines =====
     kobold_scale: {
         id: 'kobold_scale', name: 'Kobold Scale', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
@@ -226,21 +276,16 @@ export const materials: Record<string, MaterialDefinition> = {
         id: 'queen_thread_spool', name: 'Queen\'s Thread', type: 'RESOURCE', category: 'MONSTER_PART', tier: 2,
         description: 'Luminous thread from the Brood Mother. Increases rarity chances.', baseValue: 580, icon: '🧶'
     },
-    // ===== BAND 3: The Deep Mines =====
-    // cave_spider
     spider_silk_bundle: {
         id: 'spider_silk_bundle', name: 'Spider Silk Bundle', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'Fine silk thread. Used to reinforce cloth and bindings.', baseValue: 220, icon: '🕸️'
     },
 
     // ===== BAND 4: The Cursed Ruins =====
-    // skeleton_soldier
     bone_splint: {
         id: 'bone_splint', name: 'Bone Splint', type: 'RESOURCE', category: 'MONSTER_PART', tier: 1,
         description: 'Small bones shaped as splints. Good for reinforcing leggings and boots.', baseValue: 150, icon: '🦴'
     },
-
-    // --- TIER 3 SPECIAL & DROPS ---
     etched_arrowhead: {
         id: 'etched_arrowhead', name: 'Etched Arrowhead', type: 'RESOURCE', category: 'MONSTER_PART', tier: 3,
         description: 'A bone arrowhead etched with accuracy runes.', baseValue: 680, icon: '🏹'
@@ -369,7 +414,7 @@ export const materials: Record<string, MaterialDefinition> = {
     },
     wyrm_blessing_seal: {
         id: 'wyrm_blessing_seal', name: 'Wyrm Blessing Seal', type: 'RESOURCE', category: 'GEM', tier: 4,
-        description: 'A sacred seal. Increases rarity outcome significantly.', baseValue: 2400, icon: '🜁'
+        description: 'A sacred seal. Increases rarity chances significantly.', baseValue: 2400, icon: '🜁'
     },
     wyvern_talon: {
         id: 'wyvern_talon', name: 'Wyvern Talon', type: 'RESOURCE', category: 'MONSTER_PART', tier: 4,
@@ -455,4 +500,7 @@ export const materials: Record<string, MaterialDefinition> = {
         id: 'emergency_gold', name: 'Emergency Fund', type: 'RESOURCE', category: 'METAL', tier: 1,
         description: 'A hidden pouch of gold.', baseValue: 10000
     },
+
+    // Include dynamically generated skill items
+    ...skillItems
 } as const;

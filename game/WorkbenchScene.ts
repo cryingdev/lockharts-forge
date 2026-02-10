@@ -1,4 +1,3 @@
-
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 
@@ -63,10 +62,11 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   private interactables: Interactable[] = [];
   private cursor!: Phaser.GameObjects.Container;
-  private cursorSprite!: Phaser.GameObjects.Image;
+  private cursorSprite!: Phaser.GameObjects.Sprite; 
   private cursorBar!: Phaser.GameObjects.Rectangle;
   private hammerSprite!: Phaser.GameObjects.Image;
   private comboText!: Phaser.GameObjects.Text;
+  private infoText!: Phaser.GameObjects.Text;
   private progBg!: Phaser.GameObjects.Rectangle;
   private progressBar!: Phaser.GameObjects.Rectangle;
   private qualityText!: Phaser.GameObjects.Text;
@@ -84,6 +84,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   private combo = 0;
   private enhancementCount = 0; 
   private isFinished = false;
+  private isPlaying = false;
   private isTransitioning = false; 
   private currentPhase = 1;
   private masteryCount = 0;
@@ -107,20 +108,34 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.onComplete = data.onComplete; this.difficulty = data.difficulty;
     this.masteryCount = data.masteryCount || 0;
     this.itemImage = data.itemImage || ''; this.subCategoryId = data.subCategoryId || '';
-    const leatherCategories = ['CHESTPLATE', 'GLOVES', 'BOOTS'];
+    
+    const leatherCategories = ['CHESTPLATE', 'GLOVES', 'BOOTS', 'PANTS'];
     this.isLeatherWork = leatherCategories.includes(this.subCategoryId.toUpperCase());
     this.cursorSpeed = 0.00012 + data.difficulty * 0.000020; 
-    this.isFinished = false; this.isTransitioning = false; this.cursorProgress = 0; this.confirmedProgress = 0; this.currentQuality = 100; this.combo = 0; this.enhancementCount = 0; this.currentPhase = 1; this.interactables = [];
+    this.isFinished = false; 
+    this.isPlaying = false;
+    this.isTransitioning = false; 
+    this.cursorProgress = 0; 
+    this.confirmedProgress = 0; 
+    this.currentQuality = 100; 
+    this.combo = 0; 
+    this.enhancementCount = 0; 
+    this.currentPhase = 1; 
+    this.interactables = [];
   }
 
   preload() {
-    this.load.image('workbench_bg', getAssetUrl('workbench_bg.png', 'minigame'));
+    this.load.image('workbench_bg', getAssetUrl('workbench_bg.jpeg', 'minigame'));
     this.load.image('niddle', getAssetUrl('niddle.png', 'minigame'));
     this.load.image('nail', getAssetUrl('nail.png', 'minigame'));
     this.load.image('nail_head', getAssetUrl('nail_head.png', 'minigame'));
     this.load.image('hammer', getAssetUrl('hammer.png'));
     this.load.image('saw', getAssetUrl('saw.png', 'minigame'));
     this.load.image('spark', getAssetUrl('particle_spark1.png', 'minigame'));
+    
+    // 가위 이미지를 일반 이미지로 로드
+    this.load.image('scissors_source', getAssetUrl('scissor_sprite.png', 'minigame'));
+
     if (this.itemImage) this.load.image('item_source', getAssetUrl(this.itemImage, 'equipments'));
   }
 
@@ -145,22 +160,81 @@ export default class WorkbenchScene extends Phaser.Scene {
   create() {
     this.root = this.add.container(0, 0);
     this.bgImage = this.add.image(0, 0, 'workbench_bg').setAlpha(0.6).setOrigin(0.5); this.root.add(this.bgImage);
+
+    // 가위 텍스트 분할 및 프레임 생성
+    const scissorsSource = this.textures.get('scissors_source');
+    const sourceImage = scissorsSource.getSourceImage() as HTMLImageElement;
+    const frameWidth = sourceImage.width / 3;
+    const frameHeight = sourceImage.height;
+
+    // 'scissors'라는 이름으로 동적 프레임 추가
+    // Fix: TextureManager does not have a clone method. Use addImage and then add frames manually.
+    if (!this.textures.exists('scissors')) {
+        this.textures.addImage('scissors', sourceImage);
+        const scissorsTex = this.textures.get('scissors');
+        if (scissorsTex) {
+            scissorsTex.add(0, 0, 0, 0, frameWidth, frameHeight);
+            scissorsTex.add(1, 0, frameWidth, 0, frameWidth, frameHeight);
+            scissorsTex.add(2, 0, frameWidth * 2, 0, frameWidth, frameHeight);
+        }
+    }
+
+    // 가위 가이드 애니메이션 생성 (동적 프레임 사용)
+    if (!this.anims.exists('scissors_cut')) {
+      this.anims.create({
+        key: 'scissors_cut',
+        frames: [
+          { key: 'scissors', frame: 0 },
+          { key: 'scissors', frame: 1 },
+          { key: 'scissors', frame: 2 },
+          { key: 'scissors', frame: 1 }
+        ],
+        frameRate: 10,
+        repeat: -1
+      });
+    }
+
     this.silhouetteGraphics = this.add.graphics().setAlpha(0.2); this.root.add(this.silhouetteGraphics);
     if (this.textures.exists('item_source')) { this.itemSprite = this.add.image(0, 0, 'item_source').setAlpha(0.15); this.root.add(this.itemSprite); }
     this.pathGraphics = this.add.graphics(); this.dragPathGraphics = this.add.graphics(); this.root.add([this.pathGraphics, this.dragPathGraphics]);
+    
     this.progBg = this.add.rectangle(0, 0, 300, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e);
     this.progressBar = this.add.rectangle(0, 0, 0.1, 12, 0x10b981).setOrigin(0, 0.5);
     this.qualityText = this.add.text(0, 0, 'PRISTINE', { fontFamily: 'Grenze Gotisch', fontSize: '20px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
     this.root.add([this.progBg, this.progressBar, this.qualityText]);
+
+    this.infoText = this.add.text(0, 0, 'TOUCH TO START', { 
+        fontFamily: 'Grenze Gotisch', 
+        fontSize: '32px', 
+        color: '#fbbf24', 
+        fontStyle: 'bold',
+        stroke: '#000',
+        strokeThickness: 6
+    }).setOrigin(0.5).setDepth(100).setAlpha(1);
+    this.root.add(this.infoText);
+    this.tweens.add({ targets: this.infoText, alpha: 0.4, duration: 800, yoyo: true, repeat: -1 });
+
     this.cursor = this.add.container(0, 0).setDepth(10);
-    this.cursorSprite = this.add.image(0, 0, 'niddle').setOrigin(0.5, 0.98).setScale(0.4);
+    this.cursorSprite = this.add.sprite(0, 0, 'niddle').setOrigin(0.5, 0.98).setScale(0.18);
     this.cursorBar = this.add.rectangle(0, 0, 6, 40, 0xfbbf24).setOrigin(0.5, 1).setStrokeStyle(2, 0xffffff, 0.8);
     this.cursor.add([this.cursorBar, this.cursorSprite]); this.root.add(this.cursor);
+    
     this.hammerSprite = this.add.image(0, 0, 'hammer').setOrigin(0.5, 0.9).setScale(0.35).setAlpha(0).setDepth(25); this.root.add(this.hammerSprite);
     this.comboText = this.add.text(0, 0, '', { fontFamily: 'Grenze Gotisch', fontSize: '42px', color: '#fcd34d', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setAlpha(0).setDepth(20); this.root.add(this.comboText);
-    this.generatePathFromTexture(); this.handleResize(this.scale.gameSize); this.scale.on('resize', this.handleResize, this);
+    
+    this.generatePathFromTexture(); 
+    this.handleResize(this.scale.gameSize); 
+    this.scale.on('resize', this.handleResize, this);
+
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (this.isFinished || this.isTransitioning) return;
+      
+      if (!this.isPlaying) {
+          this.isPlaying = true;
+          this.infoText.setVisible(false);
+          return;
+      }
+
       for (let i = 0; i < this.interactables.length; i++) {
         const obj = this.interactables[i]; const nodePos = this.getPathPosition(obj.p);
         const d = Phaser.Math.Distance.Between(p.x, p.y, nodePos.x, nodePos.y); const diff = Math.abs(this.cursorProgress - obj.p);
@@ -187,70 +261,46 @@ export default class WorkbenchScene extends Phaser.Scene {
         }
       }
     });
+
     this.startPhase(1);
   }
 
-  private runCountdown(callback: () => void) {
-    this.isTransitioning = true;
-    const labels = ['3', '2', '1', 'START!'];
-    let idx = 0;
-    const txt = this.add.text(this.centerX, this.centerY, '', {
-        fontFamily: 'Grenze Gotisch',
-        fontSize: '120px',
-        color: '#fbbf24',
-        stroke: '#000',
-        strokeThickness: 12,
-        shadow: { color: '#000', fill: true, blur: 20 }
-    }).setOrigin(0.5).setDepth(1000).setAlpha(0);
-
-    const showNext = () => {
-        if (idx >= labels.length) {
-            txt.destroy();
-            this.isTransitioning = false;
-            callback();
-            return;
-        }
-        txt.setText(labels[idx]).setScale(2.5).setAlpha(0);
-        if (labels[idx] === 'START!') txt.setColor('#10b981');
-
-        this.tweens.add({
-            targets: txt,
-            scale: 1,
-            alpha: 1,
-            duration: 350,
-            ease: 'Back.easeOut',
-            onComplete: () => {
-                this.time.delayedCall(400, () => {
-                    this.tweens.add({
-                        targets: txt,
-                        alpha: 0,
-                        scale: 0.8,
-                        duration: 200,
-                        onComplete: () => {
-                            idx++;
-                            showNext();
-                        }
-                    });
-                });
-            }
-        });
-    };
-    showNext();
-  }
-
   private startPhase(phase: number) {
-    this.currentPhase = phase; this.cursorProgress = 0; this.updateCursorTool(); this.spawnInteractablesForPhase();
-    const pos = this.getPathPosition(0); this.cursor.setPosition(pos.x, pos.y);
-    this.runCountdown(() => {
-    });
+    this.currentPhase = phase; 
+    this.cursorProgress = 0; 
+    this.updateCursorTool(); 
+    this.spawnInteractablesForPhase();
+    const pos = this.getPathPosition(0); 
+    this.cursor.setPosition(pos.x, pos.y);
   }
 
   private updateCursorTool() {
     if (!this.cursor) return; this.hammerSprite.setAlpha(0);
-    if (this.isLeatherWork) { this.cursorSprite.setVisible(true).setTexture('niddle').setOrigin(0.5, 0.98).setScale(0.4); this.cursorBar.setVisible(false); }
+    this.cursorSprite.stop();
+    this.cursorSprite.clearTint();
+
+    if (this.isLeatherWork) { 
+        if (this.currentPhase === 1 || this.currentPhase === 3) {
+          // 가위: 날 끝 중심 (0.5, 0.95), 스케일 조정
+          this.cursorSprite.setVisible(true).setTexture('scissors', 0).setOrigin(0.5, 0.95).setScale(0.5 * this.uiScale);
+          this.cursorBar.setVisible(false);
+          this.cursorSprite.play('scissors_cut');
+        } else {
+          // 바느질 단계
+          this.cursorSprite.setVisible(true).setTexture('niddle').setOrigin(0.5, 0.98).setScale(0.18 * this.uiScale); 
+          this.cursorBar.setVisible(false); 
+        }
+    }
     else {
-        if (this.currentPhase === 1 || this.currentPhase === 3) { this.cursorSprite.setVisible(false); this.cursorBar.setVisible(true).setFillStyle(0xfbbf24).setAlpha(1); }
-        else { this.cursorSprite.setVisible(true).setTexture('saw').setOrigin(0.05, 0.5).setScale(0.45); this.cursorBar.setVisible(false); }
+        // 목공
+        if (this.currentPhase === 1 || this.currentPhase === 3) { 
+            this.cursorSprite.setVisible(true).setTexture('saw').setOrigin(0.05, 0.5).setScale(0.25 * this.uiScale); 
+            this.cursorBar.setVisible(false);
+        }
+        else { 
+            this.cursorSprite.setVisible(false);
+            this.cursorBar.setVisible(true).setFillStyle(0xfbbf24).setAlpha(1); 
+        }
     }
   }
 
@@ -292,6 +342,7 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.bgImage.setPosition(this.centerX, this.centerY).setDisplaySize(Math.max(w, h * 1.5), Math.max(h, w / 1.5));
     const pbY = isPortrait ? 80 : 40; this.progBg.setPosition(this.centerX, pbY * this.uiScale).setSize(Math.min(w * 0.7, 400), 18 * this.uiScale);
     this.progressBar.setPosition(this.progBg.x - this.progBg.width / 2, this.progBg.y); this.qualityText.setPosition(this.centerX, (pbY + 35) * this.uiScale);
+    this.infoText.setPosition(this.centerX, this.centerY);
     this.recalculateWorldPath(); this.drawGuidePath(); this.updateInteractablesVisuals(); this.updateProgressBar();
   }
 
@@ -355,19 +406,21 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.interactables.forEach(obj => { this.destroyTapGraphics(obj); }); this.interactables = [];
     const isNovice = this.masteryCount < 10;
 
-    if (this.currentPhase === 1 || this.currentPhase === 3) {
+    if (this.currentPhase === 2) {
         let count = 4;
-        if (this.currentPhase === 3) {
-            if (this.masteryCount >= 30) count = 8;
-            else if (this.masteryCount >= 10) count = 6;
-            else count = 4;
+        if (this.masteryCount >= 30) count = 8;
+        else if (this.masteryCount >= 10) count = 6;
+        else count = 4;
+        
+        for (let i = 0; i < count; i++) { 
+            const sectorWidth = 1.0 / count; 
+            this.addTap(((i * sectorWidth) + Phaser.Math.FloatBetween(sectorWidth * 0.2, sectorWidth * 0.8)) % 1.0); 
         }
-        for (let i = 0; i < count; i++) { const sectorWidth = 1.0 / count; this.addTap(((i * sectorWidth) + Phaser.Math.FloatBetween(sectorWidth * 0.2, sectorWidth * 0.8)) % 1.0); }
     } else {
         if (isNovice) {
             const start = Phaser.Math.FloatBetween(0.2, 0.3);
             this.addDrag(start, start + 0.4);
-        } else if (this.currentPhase === 4) {
+        } else if (this.currentPhase === 3) {
             this.addDrag(0.05, 0.45);
             this.addDrag(0.55, 0.95);
         } else {
@@ -439,7 +492,6 @@ export default class WorkbenchScene extends Phaser.Scene {
 
   private updateInteractablesVisuals() {
     this.interactables.forEach((obj) => {
-      // FIX: Ensure obj.graphic is not hitting null while it's being hit or being destroyed
       if (obj.type === 'TAP' && !obj.hit && !obj.missed && obj.graphic) {
         const pos = this.getPathPosition(obj.p);
         const ringRadius = this.getRingRadius(obj.ringType);
@@ -457,7 +509,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number) {
-    if (this.isFinished || this.isTransitioning || this.worldPoints.length < 2) return;
+    if (this.isFinished || this.isTransitioning || !this.isPlaying || this.worldPoints.length < 2) return;
     
     const acceleration = 1 + (this.cursorProgress * 0.5);
     let currentTickSpeed = this.cursorSpeed * acceleration;
@@ -475,8 +527,29 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.interactables.forEach((obj) => { if (!obj.hit && !obj.missed) { if (this.cursorProgress > (obj.endP ?? obj.p) + 0.1) { if (obj.type === 'TAP') { obj.missed = true; const pos = this.getPathPosition(obj.p); this.handleMiss(pos.x, pos.y, obj); } else if (obj.type === 'DRAG' && !obj.startHit && !obj.missedStart) obj.missedStart = true; } } });
     this.handleDragLogic(time, delta); if (this.cursorProgress >= 1.0) this.finishPhase();
     const pos = this.getPathPosition(this.cursorProgress); this.cursor.setPosition(pos.x, pos.y);
-    const rotationOffset = (!this.isLeatherWork && (this.currentPhase === 2 || this.currentPhase === 4)) ? 0 : -Math.PI / 2;
+    
+    // 회전 오프셋 계산
+    const isSawing = !this.isLeatherWork && (this.currentPhase === 1 || this.currentPhase === 3);
+    const isScissoring = this.isLeatherWork && (this.currentPhase === 1 || this.currentPhase === 3);
+    
+    let rotationOffset = -Math.PI / 2; // 기본 수직 도구
+    if (isSawing) rotationOffset = 0; // 톱은 가로
+    if (isScissoring) rotationOffset = -Math.PI / 2; // 가위: 하단 날 끝이 이동 방향을 향하도록
+    
     this.cursor.angle += Phaser.Math.Angle.ShortestBetween(Phaser.Math.RadToDeg(this.cursor.rotation), Phaser.Math.RadToDeg(pos.angle + rotationOffset)) * 0.15;
+
+    // 가위 애니메이션 동적 제어
+    if (isScissoring) {
+      if (!this.cursorSprite.anims.isPlaying) {
+          this.cursorSprite.play('scissors_cut');
+      }
+    } else {
+      if (this.cursorSprite.anims.isPlaying) {
+          this.cursorSprite.stop();
+          this.cursorSprite.setFrame(0); // 멈췄을 땐 열린 상태
+      }
+    }
+
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
     if (this.itemSprite) this.itemSprite.setAlpha(0.15 + (this.confirmedProgress / 100) * 0.7);
     this.drawGuidePath(time);
@@ -490,7 +563,11 @@ export default class WorkbenchScene extends Phaser.Scene {
             obj.totalTicksInRange += delta; const pointer = this.input.activePointer;
             if (pointer.isDown && Phaser.Math.Distance.Between(pointer.x, pointer.y, this.cursor.x, this.cursor.y) < 60 * this.uiScale) {
                 if (!obj.startHit) { obj.startHit = true; if (!obj.tracedSegments) obj.tracedSegments = []; obj.tracedSegments.push({ start: p, end: p }); }
-                obj.dragSuccessTicks += delta; this.dragPenaltyTimer = 0; if (this.cursorSprite.visible) this.cursorSprite.setTint(0xfbbf24); if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfcd34d);
+                obj.dragSuccessTicks += delta; this.dragPenaltyTimer = 0; 
+                
+                if (this.cursorSprite.visible) this.cursorSprite.setTint(0xfbbf24); 
+                if (this.cursorBar.visible) this.cursorBar.setFillStyle(0xfcd34d);
+                
                 if (time % 100 < 20) this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 1);
                 const lastSeg = obj.tracedSegments![obj.tracedSegments!.length - 1]; if (lastSeg && Math.abs(lastSeg.end - p) < 0.05) lastSeg.end = p; else obj.tracedSegments!.push({ start: p, end: p });
             } else if (obj.startHit) {
@@ -568,14 +645,18 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   private finishPhase() {
-    this.isTransitioning = true; this.confirmedProgress = Math.min(100, this.confirmedProgress + 25); this.updateProgressBar();
+    this.isTransitioning = true; 
+    this.confirmedProgress = Math.min(100, this.confirmedProgress + 34); 
+    this.updateProgressBar();
     this.interactables.forEach(obj => { if (obj.graphic) this.tweens.add({ targets: obj.graphic, alpha: 0, duration: 400 }); if (obj.nailHead) this.tweens.add({ targets: obj.nailHead, alpha: 0, duration: 400 }); });
-    const isLastPhase = this.currentPhase >= 4;
+    
+    const isLastPhase = this.currentPhase >= 3;
     
     if (isLastPhase) {
         this.win();
     } else {
         this.time.delayedCall(400, () => {
+            this.isTransitioning = false;
             this.startPhase(this.currentPhase + 1);
         });
     }

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import Phaser from 'phaser';
 import { useGame } from '../../../context/GameContext';
@@ -9,7 +8,7 @@ import {
     Key, Zap, LogOut, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, 
     Skull, Shield, Sword, Sparkles, Users, Activity, Heart, 
     Maximize, Minimize, Plus, Minus, Move, Ghost, Settings, Layers, Wrench,
-    Package, Coins, X
+    Package, Coins, X, TrendingUp
 } from 'lucide-react';
 import ConfirmationModal from '../../modals/ConfirmationModal';
 import { calculateCombatPower, calculateMercenaryPower } from '../../../utils/combatLogic';
@@ -20,6 +19,11 @@ import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 import { SPECIAL_RECRUITS_REGISTRY } from '../../../data/mercenaries';
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { EquipmentSlotType } from '../../../types/inventory';
+import { SfxButton } from '../../common/ui/SfxButton';
+import { materials } from '../../../data/materials';
+
+// DungeonScene.ts의 이동 애니메이션 시간과 일치시킵니다.
+const MOVE_DURATION = 300;
 
 // Memoized to prevent re-renders during D-pad dragging
 const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onSelectMercenary: (id: string) => void }) => {
@@ -27,14 +31,17 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
 
     return (
         <div className="absolute top-4 left-4 z-[110] flex flex-col gap-2 pointer-events-auto max-w-[180px] md:max-w-[240px]">
-            <button 
+            <SfxButton 
+                sfx="switch"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl text-stone-300 hover:text-amber-400 transition-all w-fit group"
+                className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl shadow-black/80 text-stone-300 hover:text-amber-400 transition-all w-fit group"
             >
-                <Users className={`w-4 h-4 ${isExpanded ? 'text-amber-500' : 'text-stone-500'}`} />
+                <div className="relative">
+                   <Users className={`w-4 h-4 ${isExpanded ? 'text-amber-500' : 'text-stone-500'}`} />
+                </div>
                 <span className="text-[10px] font-black uppercase tracking-widest hidden xs:block">Squad Status</span>
                 {isExpanded ? <ChevronUp className="w-3 h-3 opacity-50" /> : <ChevronDown className="w-3 h-3 opacity-50" />}
-            </button>
+            </SfxButton>
 
             <div className={`flex flex-col gap-1.5 transition-all duration-300 origin-top ${isExpanded ? 'scale-y-100 opacity-100' : 'scale-y-0 opacity-0 h-0 pointer-events-none'}`}>
                 {party.map((merc) => {
@@ -45,10 +52,10 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                     const hasPoints = (merc.bonusStatPoints || 0) > 0;
 
                     return (
-                        <div 
+                        <SfxButton 
                             key={merc.id} 
                             onClick={() => onSelectMercenary(merc.id)}
-                            className={`bg-stone-900/90 backdrop-blur-xl border border-white/5 p-2 rounded-xl shadow-xl flex flex-col gap-1.5 cursor-pointer hover:bg-stone-800 hover:border-amber-500/30 transition-all group active:scale-[0.98] ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}
+                            className={`bg-stone-900/90 backdrop-blur-xl border border-white/5 p-2 rounded-xl shadow-xl flex flex-col gap-1.5 cursor-pointer hover:bg-stone-800 hover:border-amber-500/30 transition-all group active:scale-[0.98] text-left ${merc.status === 'DEAD' ? 'opacity-40 grayscale' : ''}`}
                         >
                             {/* Header: Portrait, Name & Job/Level, Stamina */}
                             <div className="flex justify-between items-center px-0.5 border-b border-white/5 pb-1 mb-0.5">
@@ -99,7 +106,7 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                                 </div>
                                 <Wrench className="absolute -bottom-1 -right-1 w-2 h-2 text-stone-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
-                        </div>
+                        </SfxButton>
                     );
                 })}
             </div>
@@ -108,54 +115,70 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
 });
 
 // New Component: Loot View Overlay
-const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClose: () => void }) => (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 pointer-events-auto">
-        <div className="w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            <div className="p-4 bg-stone-850 border-b border-stone-800 flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-3">
-                    <Package className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-black uppercase tracking-widest text-sm text-stone-200">Current Loot</h3>
-                </div>
-                <button onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 min-h-[200px] max-h-[60vh]">
-                <div className="flex items-center justify-between bg-stone-950/60 p-3 rounded-xl border border-amber-900/30">
+const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClose: () => void }) => {
+    const getItemImageUrl = (itemId: string) => {
+        const item = materials[itemId];
+        if (!item) return getAssetUrl(`${itemId}.png`, 'materials');
+        const isSkill = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL';
+        const folder = isSkill ? 'skills' : 'materials';
+        const fileName = item.image || `${itemId}.png`;
+        return getAssetUrl(fileName, folder);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 pointer-events-auto">
+            <div className="w-full max-w-sm bg-stone-900 border-2 border-stone-700 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 ring-1 ring-white/10">
+                <div className="p-4 bg-stone-850 border-b border-stone-800 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3">
-                        <Coins className="w-5 h-5 text-amber-500" />
-                        <span className="text-xs font-black text-stone-400 uppercase">Recovered Credits</span>
+                        <Package className="w-5 h-5 text-amber-500" />
+                        <h3 className="font-black uppercase tracking-widest text-sm text-stone-200">Current Loot</h3>
                     </div>
-                    <span className="text-lg font-mono font-black text-amber-400">{gold.toLocaleString()} G</span>
+                    <SfxButton sfx="switch" onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-5 h-5" /></SfxButton>
                 </div>
-                
-                <div className="space-y-1.5">
-                    <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Materials Found</span>
-                    {loot.length === 0 ? (
-                        <div className="text-center py-10 text-stone-600 italic text-xs border border-dashed border-stone-800 rounded-xl">No items recovered yet.</div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-2">
-                            {loot.map((item, i) => (
-                                <div key={i} className="flex items-center justify-between bg-stone-800/40 p-2 rounded-xl border border-stone-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-stone-950 rounded-lg flex items-center justify-center border border-stone-800 shrink-0">
-                                            <img src={getAssetUrl(`${item.id}.png`, 'materials')} className="w-5 h-5 object-contain" onError={e=>e.currentTarget.style.display='none'} />
-                                        </div>
-                                        <span className="text-xs font-black text-stone-200 truncate max-w-[140px]">{item.name}</span>
-                                    </div>
-                                    <span className="text-xs font-mono font-black text-amber-500">x{item.count}</span>
-                                </div>
-                            ))}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 min-h-[200px] max-h-[60vh]">
+                    <div className="flex items-center justify-between bg-stone-950/60 p-3 rounded-xl border border-amber-900/30">
+                        <div className="flex items-center gap-3">
+                            <Coins className="w-5 h-5 text-amber-500" />
+                            <span className="text-xs font-black text-stone-400 uppercase">Recovered Gold</span>
                         </div>
-                    )}
+                        <span className="text-lg font-mono font-black text-amber-400">{gold.toLocaleString()} G</span>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                        <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Materials Found</span>
+                        {loot.length === 0 ? (
+                            <div className="text-center py-10 text-stone-600 italic text-xs border border-dashed border-stone-800 rounded-xl">No items recovered yet.</div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-2">
+                                {loot.map((item, i) => (
+                                    <div key={i} className="flex items-center justify-between bg-stone-800/40 p-2 rounded-xl border border-stone-700">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-stone-950 rounded-lg flex items-center justify-center border border-stone-800 shrink-0">
+                                                <img src={getItemImageUrl(item.id)} className="w-5 h-5 object-contain" onError={e=>e.currentTarget.style.display='none'} />
+                                            </div>
+                                            <span className="text-xs font-black text-stone-200 truncate max-w-[140px]">{item.name}</span>
+                                        </div>
+                                        <span className="text-xs font-mono font-black text-amber-500">x{item.count}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
-            <div className="p-4 bg-stone-950 text-center border-t border-stone-800">
-                <button onClick={onClose} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all">Close</button>
+                <div className="p-4 bg-stone-950 text-center border-t border-stone-800">
+                    <SfxButton onClick={onClose} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all">Close</SfxButton>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
-const AssaultNavigator = () => {
+interface AssaultNavigatorProps {
+    inspectedMercId: string | null;
+    setInspectedMercId: (id: string | null) => void;
+}
+
+const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, setInspectedMercId }) => {
     const { state, actions } = useGame();
     const session = state.activeManualDungeon;
     const gameRef = useRef<Phaser.Game | null>(null);
@@ -164,7 +187,71 @@ const AssaultNavigator = () => {
     const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
     const [showLootOverlay, setShowLootOverlay] = useState(false);
     const [lastMsg, setLastMsg] = useState("");
-    const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
+    const [hasInteractedWithNpc, setHasInteractedWithNpc] = useState(false);
+
+    // 함정 방이며 해당 메시지가 함정 발동을 알릴 때 효과 재생
+    const lastPosRef = useRef(session?.playerPos ? { ...session.playerPos } : { x: -1, y: -1 });
+
+    useEffect(() => {
+        if (!session) return;
+        
+        const { x, y } = session.playerPos;
+        const oldPos = lastPosRef.current;
+        
+        // 위치가 변경되었을 때만 트랩 체크
+        if (x !== oldPos.x || y !== oldPos.y) {
+            if (session.lastActionMessage?.includes('springs')) {
+                // 이동이 끝난 후(300ms) 효과 재생
+                setTimeout(() => {
+                    const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
+                    if (scene) scene.playTrapEffect();
+                    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'trap_triggered.mp3' } }));
+                }, MOVE_DURATION);
+            }
+            lastPosRef.current = { x, y };
+        }
+    }, [session?.playerPos, session?.lastActionMessage]);
+
+    // 골드 및 아이템 획득 상태 추적
+    const prevGoldRef = useRef(session?.goldCollected || 0);
+    const prevLootRef = useRef<any[]>(session?.collectedLoot || []);
+
+    useEffect(() => {
+        if (!session) return;
+
+        const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
+
+        // 1. 골드 획득 처리
+        if (session.goldCollected > prevGoldRef.current) {
+            const diff = session.goldCollected - prevGoldRef.current;
+            // 이동 완료 후 실행
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'get_coin.mp3' } }));
+                if (scene) scene.showFloatingGold(diff);
+            }, MOVE_DURATION);
+        }
+        prevGoldRef.current = session.goldCollected;
+
+        // 2. 아이템 획득 처리 (정밀 대조)
+        const currentLoot = session.collectedLoot || [];
+        const prevLoot = prevLootRef.current;
+
+        currentLoot.forEach(item => {
+            const prevItem = prevLoot.find(p => p.id === item.id);
+            const diff = item.count - (prevItem?.count || 0);
+            
+            if (diff > 0) {
+                // 새로운 아이템이나 수량 증가 발견 -> 이동 완료 후 실행
+                setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'found_item.mp3' } }));
+                    if (scene) scene.showFloatingItem(item.id, diff);
+                }, MOVE_DURATION);
+            }
+        });
+        
+        prevLootRef.current = [...currentLoot.map(i => ({ ...i }))];
+        
+    }, [session?.goldCollected, session?.collectedLoot]);
 
     // --- D-pad & Camera Zoom State ---
     const [dpadTransform, setDpadTransform] = useState(() => {
@@ -203,26 +290,33 @@ const AssaultNavigator = () => {
     const isVictory = session?.encounterStatus === 'VICTORY';
     const currentRoom = session ? session.grid[session.playerPos.y][session.playerPos.x] : null;
 
-    // 조우 시 자동 전투 진입 및 연출 로직
+    useEffect(() => {
+        setHasInteractedWithNpc(false);
+    }, [session?.playerPos.x, session?.playerPos.y]);
+
     useEffect(() => {
         if (isEncountered && currentRoom && (currentRoom === 'ENEMY' || (currentRoom === 'BOSS' && !session.isBossDefeated))) {
             const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
-            if (scene) {
-                scene.playEncounterEffect();
-            }
-
-            const timer = setTimeout(() => {
-                actions.startCombatManual();
-            }, 2000); // 2초 대기 후 전투 시작
             
-            return () => clearTimeout(timer);
+            // 이동이 끝난 후 조우 연출 시작
+            const effectTimer = setTimeout(() => {
+                if (scene) scene.playEncounterEffect();
+                window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'ambush.mp3' } }));
+            }, MOVE_DURATION);
+
+            const combatTimer = setTimeout(() => {
+                actions.startCombatManual();
+            }, 2000 + MOVE_DURATION); 
+            
+            return () => {
+                clearTimeout(effectTimer);
+                clearTimeout(combatTimer);
+            };
         }
     }, [isEncountered, currentRoom, session?.isBossDefeated, actions]);
 
-    // 전투 종료 후 화면 복구 로직
     const prevIsBattleRef = useRef(false);
     useEffect(() => {
-        // BATTLE 상태였다가 해제된 경우 (승리/후퇴 등)
         if (prevIsBattleRef.current && !isBattle) {
             const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
             if (scene) {
@@ -357,18 +451,20 @@ const AssaultNavigator = () => {
 
     const getDialogue = () => {
         if (isOnNPCTile) return { speaker: (rescueTarget?.name || "Survivor"), text: lastMsg };
-        if (isEncountered) {
-            if (currentRoom === 'BOSS' && session.isBossDefeated) return { speaker: "Inner Voice", text: "The terror is gone, but the air still trembles. We've taken what we came for. Time to leave?" };
-            return { speaker: "Inner Voice", text: lastMsg };
+        // Priority check for boss defeat on boss tile
+        if (currentRoom === 'BOSS' && session.isBossDefeated) {
+            return { speaker: "The Fallen's Echo", text: "The terror has been silenced. A pile of artifacts and ancient steel remains... Will you claim the legacy of this lair and return to the forge?" };
         }
-        if (isVictory) return { speaker: "Frontline Shout", text: "They're all down! Sector secured, Lockhart!" };
+        if (isEncountered) {
+            return { speaker: "Inner Voice", text: session.lastActionMessage || lastMsg };
+        }
+        if (isVictory) return { speaker: "Frontline Shout", text: session.lastActionMessage || "The area is clear. Steel yourselves for what lies ahead." };
         if (isStairs) return { speaker: "The Path Ahead", text: lastMsg };
         return { speaker: "Exploration Log", text: lastMsg };
     };
 
-    const { speaker, text } = getDialogue();
+    const { speaker, text: dialogueText } = getDialogue();
 
-    // 몬스터 조우 중에는 다이얼로그 박스를 가립니다. (연출 집중)
     const isEncounterAnimationActive = isEncountered && currentRoom && (currentRoom === 'ENEMY' || (currentRoom === 'BOSS' && !session.isBossDefeated));
 
     return (
@@ -379,44 +475,53 @@ const AssaultNavigator = () => {
 
             {/* Top Center: Floor Display */}
             {!isBattle && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-3 px-4 py-2 bg-stone-900/90 backdrop-blur-md border border-amber-500/30 rounded-2xl shadow-2xl">
-                    <Layers className="w-4 h-4 text-amber-50" />
-                    <span className="text-xs md:text-sm font-black text-amber-50 uppercase tracking-widest font-mono">
-                        Floor {session.currentFloor} / {session.maxFloors}
-                    </span>
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[110] flex flex-col items-center gap-1.5 px-4 py-2 bg-stone-900/90 backdrop-blur-md border border-amber-500/30 rounded-2xl shadow-2xl">
+                    <div className="flex items-center gap-3">
+                        <Layers className="w-4 h-4 text-amber-50" />
+                        <span className="text-xs md:text-sm font-black text-amber-50 uppercase tracking-widest font-mono">
+                            Floor {session.currentFloor} / {session.maxFloors}
+                        </span>
+                    </div>
+                    {session.floorBoost > 1 && (
+                        <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
+                            <TrendingUp className="w-2.5 h-2.5" />
+                            Momentum: +{Math.round((session.floorBoost - 1) * 100)}%
+                        </div>
+                    )}
                 </div>
             )}
 
             {/* Top Right: Vertical Control Stack */}
             <div className={`absolute top-4 right-4 z-[110] flex flex-col items-end gap-2 pointer-events-auto transition-opacity duration-500 ${isEncounterAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
-                <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
+                <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl shadow-black/80 transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
                     <Key className={`w-4 h-4 ${session.hasKey ? 'animate-pulse' : ''}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
                 </div>
                 
-                <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl">
-                    <button onClick={() => handleZoom(0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-r border-white/5"><Plus className="w-4 h-4" /></button>
+                <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-black/80">
+                    <SfxButton sfx="switch" onClick={() => handleZoom(0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-r border-white/5"><Plus className="w-4 h-4" /></SfxButton>
                     <div className="flex flex-col items-center justify-center px-2 min-w-[45px] select-none">
-                        <span className="text-[8px] font-black text-stone-500 font-bold leading-none">ZOOM</span>
+                        <span className="text-[8px] font-black text-stone-50 font-bold leading-none">ZOOM</span>
                         <span className="text-[10px] font-mono font-bold text-amber-500">{mapZoom.toFixed(1)}x</span>
                     </div>
-                    <button onClick={() => handleZoom(-0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-l border-white/5"><Minus className="w-4 h-4" /></button>
+                    <SfxButton sfx="switch" onClick={() => handleZoom(-0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-l border-white/5"><Minus className="w-4 h-4" /></SfxButton>
                 </div>
 
-                <button 
+                <SfxButton 
                     onClick={() => setShowRetreatConfirm(true)}
-                    className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/30 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl"
+                    className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-black/80"
                 >
                     <LogOut className="w-4 h-4" /> Retreat
-                </button>
+                </SfxButton>
 
-                <button 
+                <SfxButton 
+                    sfx="switch"
                     onClick={() => setShowLootOverlay(true)}
-                    className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-amber-500/30 rounded-xl shadow-xl text-amber-400 hover:bg-stone-800 transition-all"
+                    className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-amber-500/30 rounded-xl shadow-xl shadow-black/80 text-amber-400 hover:bg-stone-800 transition-all"
                 >
                     <Package className="w-4 h-4" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Loot Bag</span>
-                </button>
+                </SfxButton>
             </div>
 
             {/* NPC Discovery Scene */}
@@ -447,7 +552,7 @@ const AssaultNavigator = () => {
             {!isBattle && (
                 <>
                     {/* Draggable D-pad Container */}
-                    {!isOnNPCTile && (
+                    {(!isOnNPCTile || hasInteractedWithNpc) && (
                         <div 
                             className={`pointer-events-auto transition-all z-[200] select-none ${isDraggingDpad ? 'shadow-glow-amber cursor-grabbing' : 'cursor-default'} ${isEncounterAnimationActive ? 'opacity-0 scale-95' : 'opacity-100'}`}
                             style={{
@@ -460,12 +565,12 @@ const AssaultNavigator = () => {
                                 willChange: 'transform'
                             }}
                         >
-                            <div className="grid grid-cols-3 gap-2 bg-stone-900/90 backdrop-blur-xl p-3 rounded-3xl border border-white/10 shadow-2xl relative">
+                            <div className="grid grid-cols-3 gap-2 bg-stone-900/90 backdrop-blur-xl p-3 rounded-3xl border border-white/10 shadow-2xl shadow-black/95 relative">
                                 
                                 {showDpadMenu && (
                                     <div className="absolute -top-12 right-0 flex items-center gap-3 pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div className="flex items-center gap-2 bg-stone-900/80 border border-white/10 px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md">
-                                            <Ghost className="w-3.5 h-3.5 text-stone-500" />
+                                            <Ghost className="w-3.5 h-3.5 text-stone-50" />
                                             <input 
                                                 type="range" min="0.1" max="1.0" step="0.1"
                                                 value={dpadTransform.opacity}
@@ -482,48 +587,48 @@ const AssaultNavigator = () => {
                                             >
                                                 <Move className="w-4 h-4" />
                                             </div>
-                                            <button 
+                                            <SfxButton 
                                                 onClick={cycleDpadScale}
                                                 className="w-9 h-9 bg-stone-800 border border-white/20 rounded-full flex items-center justify-center text-stone-300 hover:text-white transition-all shadow-lg active:scale-90"
                                             >
                                                 {dpadTransform.scale >= 1.2 ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                                            </button>
+                                            </SfxButton>
                                         </div>
                                     </div>
                                 )}
 
                                 <div />
-                                <button onClick={() => handleDpadMove(0,-1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronUp /></button>
+                                <SfxButton onClick={() => handleDpadMove(0,-1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronUp /></SfxButton>
                                 
-                                <button 
+                                <SfxButton 
                                     onClick={() => setShowDpadMenu(!showDpadMenu)}
                                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${showDpadMenu ? 'bg-amber-600 text-white shadow-glow-amber' : 'bg-stone-800 text-stone-500 hover:text-stone-300'}`}
                                 >
                                     <Settings className={`w-6 h-6 ${showDpadMenu ? 'animate-spin-slow' : ''}`} />
-                                </button>
+                                </SfxButton>
 
-                                <button onClick={() => handleDpadMove(-1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronLeft /></button>
+                                <SfxButton onClick={() => handleDpadMove(-1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronLeft /></SfxButton>
                                 
                                 <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-stone-100/40">
                                     <Zap className="w-6 h-6" />
                                 </div>
 
-                                <button onClick={() => handleDpadMove(1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronRight /></button>
+                                <SfxButton onClick={() => handleDpadMove(1,0)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronRight /></SfxButton>
                                 
                                 <div />
-                                <button onClick={() => handleDpadMove(0,1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronDown /></button>
+                                <SfxButton onClick={() => handleDpadMove(0,1)} className="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-white active:bg-stone-700 shadow-lg"><ChevronDown /></SfxButton>
                                 <div />
                             </div>
                         </div>
                     )}
 
-                    {/* Bottom dialogue box container */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[95vw] max-w-5xl z-50 pointer-events-none">
+                    {/* Bottom dialogue box container - Unified 규격 적용 */}
+                    <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 pointer-events-none">
                         <div className={`flex flex-col items-end gap-4 relative transition-all duration-500 ${isEncounterAnimationActive ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
                             <DialogueBox 
                                 speaker={speaker}
                                 speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.profileImage || 'default.png', 'mercenaries') : undefined}
-                                text={text}
+                                text={dialogueText}
                                 options={isOnNPCTile ? [
                                     { label: "GET THEM TO SAFETY", action: () => { 
                                         if (dungeon?.rescueMercenaryId) {
@@ -531,12 +636,13 @@ const AssaultNavigator = () => {
                                             actions.showToast(`${rescueTarget?.name} has been secured!`); 
                                         }
                                     }, variant: 'primary' as const },
-                                    { label: "WE'LL BE BACK FOR YOU", action: () => setLastMsg("We've marked the spot. Resuming exploration for now."), variant: 'neutral' as const }
-                                ] : isEncountered ? [
-                                    ...(currentRoom === 'BOSS' && session.isBossDefeated ? [
-                                        { label: "CLAIM THE LOOT AND LEAVE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
-                                        { label: "CONTINUE EXPLORING", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
-                                    ] : [])
+                                    { label: "WE'LL BE BACK FOR YOU", action: () => {
+                                        setLastMsg("We've marked the spot. Resuming exploration for now.");
+                                        setHasInteractedWithNpc(true);
+                                    }, variant: 'neutral' as const }
+                                ] : currentRoom === 'BOSS' && session.isBossDefeated ? [
+                                    { label: "CLAIM THE LOOT AND LEAVE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
+                                    { label: "CONTINUE EXPLORING", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
                                 ] : isStairs ? [
                                     { label: `INTO THE ABYSS (Sector ${session.currentFloor + 1})`, action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
                                     { label: "REACH THE SURFACE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
@@ -557,8 +663,11 @@ const AssaultNavigator = () => {
                 <MercenaryDetailModal 
                     mercenary={inspectedMercenary}
                     onClose={() => setInspectedMercId(null)}
-                    onUnequip={(mercId, slot) => actions.unequipItem(mercId, slot)}
+                    onEquip={(mercId, itemId) => { actions.equipItem(mercId, itemId); }}
+                    onConsume={(mercId, itemId) => { actions.useItem(itemId, mercId); }}
+                    onUnequip={(mercId, slot) => { actions.unequipItem(mercId, slot); }}
                     isReadOnly={false} 
+                    hideCloseButton={true}
                 />
             )}
 

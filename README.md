@@ -1,25 +1,20 @@
-
 # Lockhart's Forge
 
-> **Version**: 0.1.42a
+> **Version**: 0.1.44a
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
 
-## 🔄 Recent Updates (v0.1.42a)
+## 🔄 Recent Updates (v0.1.44a)
 
-*   **Manual Dungeon Immersion Upgrade**:
-    *   Rewrote dungeon status and encounter messages to be narrative-driven (e.g., "The air is thick with dampness," "Shadows shift ahead...").
-    *   Updated dialogue system speakers: `Tactical AI` → `Inner Voice`, `Comms` → `Exploration Log`, `Squad Comms` → `Frontline Shout`.
-*   **Mercenary Casualty UI**:
-    *   Added visual indicators for "Injured" and "K.I.A" (Killed in Action) statuses in the Squad Assembly and Unit Picker.
-    *   Wounded or dead mercenaries are now clearly marked with grayscale filters and alert icons.
-
-## 🔄 Recent Updates (v0.1.41b)
-
-*   **Scholars Desk (Research System)**:
-    *   Introduced the Research Bench where players can experiment with materials.
-    *   Combining correct proportions of resources allows discovery of lost equipment blueprints.
+*   **Immersive UI Overhaul**:
+    *   Removed fixed top navigation bars in major functional tabs (Dungeon, Tavern, Market).
+    *   Introduced a unified floating "Back" button overlay with backdrop-blur for a more immersive background experience.
+    *   Smart Visibility: Floating UI elements now automatically hide during squad selection or modal interactions to reduce visual clutter.
+*   **Global Settings Persistence**: 
+    *   System settings (audio volumes, UI preferences) now persist across different save slots and sessions via `lockharts_forge_global_settings`.
+*   **Enhanced Save System**:
+    *   Manual and auto-save blobs are now sanitized to clear temporary UI states (toasts, active events) before writing to storage.
 
 ## 🌟 Key Features
 

@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.42a)
+# Project Map – Lockhart’s Forge (v0.1.44a)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -10,8 +10,8 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.html`: Entry HTML. Defines **Grenze/Gotisch** font integration and Tailwind configuration.
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
-- `utils.ts`: Global utilities. Asset URL generation and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.42a`).
+- `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
+- `metadata.json`: App metadata and versioning (`0.1.44a`).
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs (Repair, Shop, Craft).
@@ -29,12 +29,12 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ### Core Logic
 - `state/gameReducer.ts`: Primary state machine. Routes actions to modular handlers.
-- `state/initial-game-state.ts`: Initial data structure for new saves.
+- `state/initial-game-state.ts`: Initial data structure for new saves. (Includes testing items).
 - `state/actions.ts`: TypeScript definitions for all game actions.
 
 ### Reducer Modules (`state/reducer/`)
 - `state/reducer/crafting.ts`: Start/Finish crafting, exp gain, and mastery tracking.
-- `state/reducer/inventory.ts`: Item acquisition, consumption, selling, and locking.
+- `state/reducer/inventory.ts`: Item acquisition, consumption, selling, locking, and **Skill Application**.
 - `state/reducer/mercenary.ts`: Scouting, hiring, stat allocation, and gifting.
 - `state/reducer/expedition.ts`: Auto-expedition lifecycle and reward claiming.
 - `state/reducer/manualDungeon.ts`: Grid movement, floor transitions, and **Immersive Narrative Logic**.
@@ -56,14 +56,14 @@ This document provides a comprehensive structural map of the project, detailing 
 - `components/DialogueBox.tsx`: The narrative engine. Handles typing effects and item tooltips.
 
 ### Functional Tabs (`components/tabs/`)
-- **Forge Tab**: `ForgeTab.tsx`, `hooks/useForge.ts`, and specialized UI components (`RecipeCard`, `MasteryRadialGauge`, `QuickCraftOverlay`).
-- **Inventory Tab**: `InventoryDisplay.tsx`, `ItemSelectorList.tsx`.
-- **Shop Tab**: `ShopTab.tsx`, `hooks/useShop.ts`, and HUD/Overlay components.
-- **Market Tab**: `MarketTab.tsx`, `hooks/useMarket.ts`, `MarketCatalog.tsx`, `ShoppingCartDrawer.tsx`.
-- **Tavern Tab**: `TavernTab.tsx`, `TavernInteraction.tsx` (Character focus mode).
-- **Dungeon Tab**: `DungeonTab.tsx`, `AssaultNavigator.tsx`, `DungeonCombatView.tsx` (Manual battle).
-- **Research Tab**: `ResearchTab.tsx`, `hooks/useResearch.ts`, `ResearchSlots.tsx`.
-- **Simulation Tab**: `SimulationTab.tsx`.
+- **Forge Tab**: `ForgeTab.tsx`, `hooks/useForge.ts`. Featuring **floating overlay controls** and immersive background rendering.
+- **Inventory Tab**: `InventoryDisplay.tsx`, `ItemSelectorList.tsx`. **Enchantment Mode implemented.**
+- **Shop Tab**: `ShopTab.tsx`, `hooks/useShop.ts`. Immersive counter-view with floating 3D sign.
+- **Market Tab**: `MarketTab.tsx`, `hooks/useMarket.ts`. Interaction view with **Garrick's animated sprite** and shopping cart drawer.
+- **Tavern Tab**: `TavernTab.tsx`, `TavernInteraction.tsx`. **Immersive floating back button** and character focus mode.
+- **Dungeon Tab**: `DungeonTab.tsx`. **Floating Back Overlay** (auto-hides during squad selection). Features `AssaultNavigator.tsx` and grid exploration.
+- **Research Tab**: `ResearchTab.tsx`, hooks/useResearch.ts.
+- **Simulation Tab**: SimulationTab.tsx.
 
 ### Modals (`components/modals/`)
 - `modals/CraftingResultModal.tsx`: Mastery progress and stat gain display.
@@ -74,6 +74,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `modals/SettingsModal.tsx`: System preferences and data controls.
 - `modals/JournalModal.tsx`: Narrative log history.
 - `modals/TierUnlockModal.tsx`: New crafting tier celebrations.
+- `modals/ConfirmationModal.tsx`: Shared decision UI.
 
 ---
 
@@ -87,9 +88,11 @@ This document provides a comprehensive structural map of the project, detailing 
 - `game/DungeonScene.ts`: Grid-based exploration engine with dynamic fog and Red Focus FX.
 - `game/SmithingTutorialHandler.ts`: Minigame-specific tutorial logic.
 
-### UI Animation Components
+### UI Animation & Core Components (`components/common/ui/`)
+- `components/common/ui/SfxButton.tsx`: **Global standardized button** with integrated audio triggers.
 - `components/common/ui/AnimatedMercenary.tsx`: Handles eye-blinking and sprite rendering.
 - `components/common/ui/MercenaryPortrait.tsx`: Multi-mode face-cropping for sprites.
+- `components/common/ui/CustomSlider.tsx`: Precision input for audio levels.
 - `components/tutorial/TutorialScene.tsx`: Narrative-driven prologue and furnace restoration.
 
 ---
@@ -98,18 +101,19 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ### Business Models (`models/`)
 - `models/Mercenary.ts`: Character definition and **Status Types (Injured/K.I.A)**.
-- `models/Equipment.ts`: Item stats, rarity, and slot types.
+- `models/Equipment.ts`: Item stats, rarity, and **Skill Slots (socketedSkillId)**.
 - `models/Stats.ts`: Calculation logic for Primary and Derived combat attributes.
 - `models/Monster.ts`: Enemy archetypes.
 - `models/Dungeon.ts`: Map definitions and reward pools.
+- `models/Skill.ts`: Combat skill definitions.
 
 ### Static Data (`data/`)
-- `data/materials.ts`: The global material registry (single source of truth for values).
+- `data/materials.ts`: The global material registry (including **Skill Manuals** and **Skill Scrolls**).
 - `data/equipment/`: Tier-based recipe files (Tier 1-4).
 - `data/monsters.ts`: Combat stat snapshots for all enemies.
 - `data/monster-drops.ts`: Loot tables for manual/auto expeditions.
 - `data/mercenaries.ts`: Named character data (Pip, Adeline, Sister Aria).
-- `data/skills.ts`: Combat skill registry.
+- `data/skills.ts`: Combat skill registry (Players & Monsters).
 - `data/market/market-catalog.ts`: Garrick’s base stock configuration.
 
 ---
@@ -119,27 +123,24 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Logic Engines
 - `utils/craftingLogic.ts`: Level/EXP tables and equipment generation logic.
 - `utils/combatLogic.ts`: Hit resolution, DPS, and **Combat Power (CP)** formulas.
-- `utils/saveSystem.ts`: Version-validated LocalStorage persistence.
+- `utils/saveSystem.ts`: Version-validated LocalStorage persistence. (Global Settings support added).
 - `utils/shopUtils.ts`: Tier-matched request logic and recipe weightings.
 - `utils/mercenaryGenerator.ts`: Random trait and name assignment.
 - `utils/cacheManager.ts`: Automated web cache maintenance and version markers.
 
-### Background Services
+### Core Services (`services/`)
+- `services/AssetManager.tsx`: Centralized asset loading and memory cache management.
+- `services/AudioManager.tsx`: Headless Web Audio API controller for BGM/SFX.
 - `services/shop/shop-service.ts`: Handles customer arrival intervals and queue processing.
 - `services/dungeon/dungeon-service.ts`: Monitors auto-expedition completion timers.
 
 ---
 
-## 🔄 Recent Updates (v0.1.42a)
-*   **Narrative Immersion**:
-    *   Shifted Manual Dungeon feedback from technical AI logs to "Inner Voice" and "Exploration Logs".
-    *   Environmental descriptions added to movement and interaction events.
-*   **Casualty UI**:
-    *   Implemented "Injured" and "K.I.A" status overlays in squad slots and mercenary picker.
-*   **Shop Optimization**:
-    *   Updated request logic to match mercenary level with equipment tier.
-    *   Prioritized unlocked recipes (85% chance) in shop requests.
-*   **Scholars Desk**:
-    *   Full implementation of the Research Bench for blueprint discovery.
-*   **Version Sync**:
-    *   Unified all systems to Build `0.1.42a`.
+## 🔄 Recent Updates (v0.1.44a)
+*   **Immersive Navigation Overhaul**:
+    *   Traditional top headers removed in functional tabs for a full-screen background experience.
+    *   Floating "Back" button overlay implemented with automatic visibility management during slot selection.
+*   **Persistence Overhaul**:
+    *   Global settings (Audio, UI) now persist independently of save slots.
+*   **Skill Knowledge**:
+    *   Skill Manuals and Scrolls fully integrated into the economic and crafting cycles.

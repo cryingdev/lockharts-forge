@@ -3,7 +3,7 @@ import { PrimaryStats } from '../models/Stats';
 
 export type { EquipmentSlotType };
 
-export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT' | 'SCROLL' | 'CONSUMABLE' | 'GIFT';
+export type ItemType = 'RESOURCE' | 'TOOL' | 'KEY_ITEM' | 'PRODUCT' | 'EQUIPMENT' | 'SCROLL' | 'CONSUMABLE' | 'GIFT' | 'SKILL_BOOK' | 'SKILL_SCROLL';
 
 export interface ItemDefinition {
   id: string;
@@ -15,6 +15,7 @@ export interface ItemDefinition {
   baseValue: number;
   icon?: string; 
   image?: string;
+  skillId?: string; // Links item to a specific skill in data/skills.ts
 }
 
 export interface InventoryItem extends ItemDefinition {

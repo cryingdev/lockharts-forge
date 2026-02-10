@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Layers, Zap, BookOpen, Wrench, ChevronDown, ChevronUp } from 'lucide-react';
+import { Layers, Zap, BookOpen, Wrench, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { MarketItemCard } from './MarketItemCard';
 
 interface MarketCatalogProps {
@@ -19,7 +18,8 @@ interface MarketCatalogProps {
 
 const ICONS: Record<string, any> = {
     tier1: <Layers className="w-3 h-3"/>, tier2: <Layers className="w-3 h-3"/>, tier3: <Layers className="w-3 h-3"/>, tier4: <Layers className="w-3 h-3"/>,
-    sup: <Zap className="w-3 h-3"/>, tech: <BookOpen className="w-3 h-3"/>, fac: <Wrench className="w-3 h-3"/>
+    sup: <Zap className="w-3 h-3"/>, tech: <BookOpen className="w-3 h-3"/>, fac: <Wrench className="w-3 h-3"/>,
+    skill: <Sparkles className="w-3 h-3"/>
 };
 
 export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed, onToggle, stock, cart, inventory, multipliers, affinity, gold, onAdd, onSetMultiplier }) => {

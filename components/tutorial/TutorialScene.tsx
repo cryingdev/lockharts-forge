@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useGame } from '../../context/GameContext';
 import DialogueBox from '../DialogueBox';
@@ -6,6 +5,7 @@ import { getAssetUrl } from '../../utils';
 import { TutorialSceneMode } from '../../types/game-state';
 import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
 import ConfirmationModal from '../modals/ConfirmationModal';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const MAX_TEMP = 1500;
 const IDLE_TEMP = 10;
@@ -33,11 +33,8 @@ const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
 };
 
 const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
-    PROLOGUE_0: { text: "I have just returned from the hill after burying my family... My hands, stained with earth, are still trembling." },
-    PROLOGUE_1: { text: "The forge has been ruthlessly trampled by their hands. Everything I built... gone in a single night of fire and blood." },
-    PROLOGUE_2: { text: "But the fury within me burns hotter than any flame. For the sake of vengeance, I will rekindle the embers of this forge once more." },
-    PROLOGUE_3: { text: "Wait... the furnace is completely beyond repair. I cannot melt ore without a steady flame." },
-    PROLOGUE_4: { text: "I must head to the Market immediately to find a replacement. The hammer of the Lockhart lineage will not be silenced." },
+    PROLOGUE_0: { text: "The Lockhart forge lies in ashes, and my family is gone. But the fury in my blood burns hotter than any dragon's fire. I will rebuild." },
+    PROLOGUE_1: { text: "The furnace is cold as death and beyond repair. I must head to the Market immediately to find a replacement and light the hearth once more." },
     
     FURNACE_0: { text: "The furnace is finally in place. The air in the forge doesn't feel so heavy and cold anymore." },
     FURNACE_1: { text: "It's a sturdy unit. I've managed to seal the connections, but I should check if the flue is drawing correctly. Striking the flint now..." },
@@ -155,7 +152,6 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
                 />
             </svg>
 
-            {/* Click-blocking overlay around the target */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full pointer-events-auto bg-transparent" style={{ height: top }} />
                 <div className="absolute left-0 w-full pointer-events-auto bg-transparent" style={{ top: top + height, bottom: 0 }} />
@@ -192,7 +188,6 @@ const TutorialScene: React.FC = () => {
     
     const mode = state.activeTutorialScene || 'PROLOGUE';
 
-    // Reset internal state whenever the tutorial mode changes
     useEffect(() => {
         setIsStarted(false);
         setHasPumpedOnce(false);
@@ -215,12 +210,12 @@ const TutorialScene: React.FC = () => {
     }, [seq]);
 
     const bgImage = useMemo(() => {
-        if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'tutorial/forge_ruined_bg.png';
-        if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'tutorial/forge_fixed_bg.png';
+        if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'tutorial/forge_ruined_bg.jpeg';
+        if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'tutorial/forge_fixed_bg.jpeg';
         const currentDegrees = Math.round(IDLE_TEMP + (temp / 100) * (MAX_TEMP - IDLE_TEMP));
-        if (currentDegrees >= 1490) return 'tutorial/forge_hot_bg.png';
-        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'tutorial/forge_start_bg.png';
-        return 'tutorial/forge_fixed_bg.png';
+        if (currentDegrees >= 1490) return 'tutorial/forge_hot_bg.jpeg';
+        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'tutorial/forge_start_bg.jpeg';
+        return 'tutorial/forge_fixed_bg.jpeg';
     }, [mode, seq, temp, isStarted]);
 
     const handleStart = () => {
@@ -270,7 +265,7 @@ const TutorialScene: React.FC = () => {
 
     const handleNext = () => {
         if (mode === 'PROLOGUE') {
-            if (currentStep < 4) setCurrentStep(prev => prev + 1);
+            if (currentStep < 1) setCurrentStep(prev => prev + 1);
             else actions.completePrologue();
         } else {
             if (seq === 'POST_REPLACE_TALK') {
@@ -295,8 +290,6 @@ const TutorialScene: React.FC = () => {
     };
 
     const promptText = mode === 'FURNACE_RESTORED' ? "REPLACE FURNACE" : "TAP TO BEGIN";
-
-    // 지시 단계(Spotlight가 활성화되는 단계)인지 확인
     const isIndicateStep = seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP';
 
     return (
@@ -312,15 +305,15 @@ const TutorialScene: React.FC = () => {
                 .animate-flash-out { animation: flash-out 0.8s ease-out forwards; }
             `}</style>
 
-            <div className="absolute inset-0 z-0 pointer-events-none">
-                <img src={getAssetUrl(bgImage)} className="w-full h-full object-cover opacity-80" alt="Background" />
-                <div className="absolute inset-0 bg-black/30"></div>
+            <div className="absolute inset-0 z-0 pointer-events-none bg-stone-950">
+                <img src={getAssetUrl(bgImage)} className="w-full h-full object-cover" alt="Background" />
+                <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
             <div className="absolute top-4 right-4 z-[6000]">
-                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[10px] font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group">
+                <SfxButton sfx="switch" onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[10px] font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group">
                     <FastForward className="w-3 h-3 group-hover:animate-pulse" /> Skip Tutorial
-                </button>
+                </SfxButton>
             </div>
 
             {showFlash && <div className="absolute inset-0 z-[4000] bg-white animate-flash-out pointer-events-none"></div>}
@@ -335,7 +328,6 @@ const TutorialScene: React.FC = () => {
                 <LocalSpotlight step={seq} hasPumpedOnce={hasPumpedOnce} />
             )}
             
-            {/* 다이얼로그는 지시 단계가 아닐 때만 렌더링 (설명 -> 클릭 -> 다이얼로그 숨김 -> 인터랙션 지시) */}
             {isStarted && !isIndicateStep && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto z-[5000]">
                     <DialogueBox 
@@ -360,15 +352,15 @@ const TutorialScene: React.FC = () => {
                         </div>
                     </div>
 
-                    <button id="tutorial-bellows" onClick={(e) => { e.stopPropagation(); handlePump(); }} disabled={seq !== 'WAIT_PUMP'} className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group ${seq === 'WAIT_PUMP' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'} ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}`}>
+                    <SfxButton id="tutorial-bellows" sfx="bellows.wav" onClick={(e) => { e.stopPropagation(); handlePump(); }} disabled={seq !== 'WAIT_PUMP'} className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group ${seq === 'WAIT_PUMP' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'} ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}`}>
                         <Zap className={`w-6 h-6 md:w-10 md:h-10 ${seq === 'WAIT_PUMP' ? 'text-amber-400' : 'text-stone-600'}`} />
                         <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-1">Pump</span>
-                    </button>
+                    </SfxButton>
 
-                    <button id="tutorial-heat" onClick={(e) => { e.stopPropagation(); handleHeatUp(); }} disabled={seq !== 'WAIT_HEAT'} className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl ${seq === 'WAIT_HEAT' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}`}>
+                    <SfxButton id="tutorial-heat" sfx="fire_up.mp3" onClick={(e) => { e.stopPropagation(); handleHeatUp(); }} disabled={seq !== 'WAIT_HEAT'} className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl ${seq === 'WAIT_HEAT' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}`}>
                         <Flame className={`w-5 h-5 md:w-8 md:h-8 ${seq === 'WAIT_HEAT' ? 'text-orange-400' : 'text-stone-600'}`} />
                         <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest mt-1">Ignite</span>
-                    </button>
+                    </SfxButton>
                 </div>
             )}
 

@@ -1,8 +1,10 @@
+
 import React, { useMemo, useRef } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Moon, BedDouble, ChevronRight, X, Coins, ShoppingBag, Users, Map } from 'lucide-react';
 import { calculateDailyWage } from '../../config/contract-config';
 import { UI_MODAL_LAYOUT } from '../../config/ui-config';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const SleepModal = () => {
   const { state, actions } = useGame();
@@ -51,7 +53,7 @@ const SleepModal = () => {
                 </div>
                 <h2 className="text-base md:text-2xl font-bold text-indigo-100 font-serif tracking-wide uppercase leading-none">End of Day</h2>
             </div>
-            <button onClick={actions.closeRest} className="p-1.5 hover:bg-indigo-900 rounded-full text-indigo-400 transition-colors ml-2"><X className="w-5 h-5 md:w-6 md:h-6" /></button>
+            <SfxButton onClick={actions.closeRest} className="p-1.5 hover:bg-indigo-900 rounded-full text-indigo-400 transition-colors ml-2"><X className="w-5 h-5 md:w-6 md:h-6" /></SfxButton>
         </div>
 
         {/* Content - Summary with scrolling */}
@@ -78,14 +80,14 @@ const SleepModal = () => {
 
         {/* Footer */}
         <div className="p-3 md:p-5 bg-indigo-950/40 border-t border-indigo-500/20 shrink-0">
-            <button 
+            <SfxButton 
                 onClick={actions.confirmSleep}
                 className="w-full py-2.5 md:py-4 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl md:rounded-2xl shadow-2xl transition-all flex items-center justify-center gap-2 md:gap-3 active:scale-95 border-b-4 border-amber-800 group text-[10px] md:text-base uppercase tracking-[0.2em]"
             >
                 <BedDouble className="w-4 h-4 md:w-6 md:h-6 text-amber-100 group-hover:animate-bounce" />
                 <span className="font-serif italic">Rest for the Day</span>
                 <ChevronRight className="w-3 h-3 md:w-5 md:h-5 opacity-50 hidden xs:block" />
-            </button>
+            </SfxButton>
         </div>
       </div>
     </div>

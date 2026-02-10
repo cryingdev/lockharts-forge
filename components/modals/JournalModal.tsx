@@ -1,6 +1,8 @@
+
 import React, { useRef, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { X, BookOpen, Scroll, History, Sparkles } from 'lucide-react';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const JournalModal = () => {
     const { state, actions } = useGame();
@@ -33,12 +35,12 @@ const JournalModal = () => {
                             <p className="text-[10px] md:text-xs text-stone-500 font-black uppercase tracking-[0.2em] mt-1">Chronicles of the Lockhart Lineage</p>
                         </div>
                     </div>
-                    <button 
+                    <SfxButton 
                         onClick={actions.toggleJournal}
                         className="p-2.5 bg-stone-800 hover:bg-red-900/40 border border-stone-700 rounded-full text-stone-500 hover:text-red-200 transition-all active:scale-90"
                     >
                         <X className="w-6 h-6" />
-                    </button>
+                    </SfxButton>
                 </div>
 
                 {/* Body - Logs */}

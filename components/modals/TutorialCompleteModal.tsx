@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { 
     Award, Anvil, ShoppingBag, Package, Coins, Beer, Map, Activity, Sparkles, Check
 } from 'lucide-react';
 import { UI_MODAL_LAYOUT } from '../../config/ui-config';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const TutorialCompleteModal = () => {
     const { state, actions } = useGame();
@@ -84,13 +86,13 @@ const TutorialCompleteModal = () => {
 
                 {/* Footer Action */}
                 <div className="p-3 md:p-5 bg-stone-850 border-t border-stone-800 shrink-0">
-                    <button 
+                    <SfxButton 
                         onClick={actions.dismissTutorialComplete}
                         className="w-full py-2 md:py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 border-b-4 border-emerald-800 text-[9px] md:text-sm uppercase tracking-[0.2em]"
                     >
                         <Check className="w-3 h-3 md:w-4 md:h-4" />
                         Enter the Forge
-                    </button>
+                    </SfxButton>
                 </div>
             </div>
         </div>

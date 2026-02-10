@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { Store, Heart } from 'lucide-react';
+import { Store, Heart, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { useShop } from './hooks/useShop';
 
@@ -12,18 +12,35 @@ import { CustomerHUD } from './ui/CustomerHUD';
 import { ShopQueueBadge } from './ui/ShopQueueBadge';
 import { ShopClosedOverlay } from './ui/ShopClosedOverlay';
 import { InstanceSelectorPopup } from './ui/InstanceSelectorPopup';
+import { SfxButton } from '../../common/ui/SfxButton';
 
 interface ShopTabProps {
     onNavigate: (tab: any) => void;
 }
 
 const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
-  const { actions } = useGame();
+  const { state, actions } = useGame();
   const shop = useShop();
   const [counterImgError, setCounterImgError] = useState(false);
 
+  // 튜토리얼 중 상점 열기 단계인지 확인
+  const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
+  
+  // MainGameLayout에서 글로벌로 처리하는 튜토리얼 대화 단계인지 확인 (Shop 인트로만 해당)
+  const isGlobalTutorialDialogue = state.tutorialStep === 'SHOP_INTRO_DIALOG';
+
   return (
-    <div className="relative h-full w-full bg-stone-900 overflow-hidden flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-[1000] bg-stone-900 overflow-hidden flex flex-col items-center justify-center px-safe">
+        <style>{`
+            @keyframes heartFloatUp { 
+                0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; } 
+                15% { opacity: 1; } 
+                80% { opacity: 0.8; }
+                100% { transform: translateY(-350px) translateX(var(--wobble)) scale(1.4); opacity: 0; } 
+            }
+            .animate-heart { animation: heartFloatUp 2.5s ease-out forwards; }
+        `}</style>
+
         {/* Background Layer */}
         <div className="absolute inset-0 z-0">
             <img 
@@ -33,11 +50,29 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             />
         </div>
 
+        {/* Back Button - Immersive navigation */}
+        {!shop.isTutorialActive && (
+            <SfxButton sfx="switch" onClick={() => onNavigate('MAIN')} className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group">
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="text-xs font-black uppercase tracking-widest">Back</span>
+            </SfxButton>
+        )}
+
+        {/* Paging Button - To Forge (오른쪽 중앙 배치) */}
+        {!shop.isTutorialActive && (
+            <SfxButton 
+                sfx="switch" 
+                onClick={() => onNavigate('FORGE')} 
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-[1050] w-8 h-24 bg-stone-900/60 hover:bg-amber-600/40 text-amber-500 rounded-l-2xl border-y border-l border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-95 group flex items-center justify-center"
+            >
+                <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+            </SfxButton>
+        )}
+
         {/* Floating Sign */}
         <ShopSign 
             isOpen={shop.isShopOpen} 
             onToggle={shop.handlers.handleToggleShop} 
-            disabled={(!shop.isShopOpen && !shop.canAffordOpen) || shop.isTutorialActive}
+            disabled={shop.isTutorialActive && !isOpeningStep}
         />
 
         {/* UI Elements: Queue & HUD */}
@@ -57,24 +92,23 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none">
         {shop.isShopOpen && shop.activeCustomer && shop.dialogueState && (
             <div className="relative flex justify-center items-end w-full h-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                {/* ✅ ShopTab(=h-full) 기준 80% 스테이지 */}
-                <div className="relative w-full h-[80%] flex items-end justify-center">
+                <div className="relative h-[80dvh] max-h-[100dvh] flex items-end justify-center">
+                    {/* 하트가 캐릭터 앞쪽에서 떠오르도록 z-20 설정, y축 시작점 bottom 상향 조정 */}
                     {shop.floatingHearts.map((heart) => (
                     <Heart
                         key={heart.id}
-                        className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)] z-0"
+                        className="absolute animate-heart fill-pink-500 text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)] z-20"
                         style={{
                         left: `${heart.left}%`,
-                        bottom: '40%',
+                        bottom: '55%',
                         width: heart.size,
                         height: heart.size,
                         animationDelay: `${heart.delay}s`,
-                        '--wobble': `${(Math.random() - 0.5) * 60}px`,
+                        '--wobble': `${(Math.random() - 0.5) * 80}px`,
                         } as React.CSSProperties}
                     />
                     ))}
 
-                    {/* ✅ height prop 제거 + h-full로 스테이지에 정확히 맞춤 */}
                     <AnimatedMercenary
                         mercenary={shop.activeCustomer.mercenary}
                         className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${
@@ -89,7 +123,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         </div>
 
         {/* Shop Counter */}
-        <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-20 flex items-end justify-center pointer-events-none">
+        <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-30 flex items-end justify-center pointer-events-none">
             {!counterImgError ? (
                 <img 
                     src={getAssetUrl('shop_counter.png', 'bg')} 
@@ -103,16 +137,15 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             )}
         </div>
 
-        {/* Dialogue Box */}
+        {/* Dialogue Box Container - Unified 표준 규격 적용 */}
         <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center pointer-events-auto">
-            {shop.isShopOpen && shop.dialogueState && (
+            {/* 튜토리얼 전역 대화창이 떠있을 때는 로컬 대화창을 숨김 */}
+            {shop.isShopOpen && shop.dialogueState && !isGlobalTutorialDialogue && (
                  <DialogueBox 
                     speaker={shop.dialogueState.speaker}
                     text={shop.dialogueState.text}
                     options={shop.dialogueState.options}
-                    // Fix: Use type assertion to access optional properties in union type
                     highlightTerm={(shop.dialogueState as any).highlightTerm}
-                    // Fix: Use type assertion to access optional properties in union type
                     itemDetail={(shop.dialogueState as any).itemDetail}
                     className="w-full relative pointer-events-auto"
                 />
@@ -133,7 +166,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
         <ShopClosedOverlay 
             isOpen={shop.isShopOpen}
-            canAffordOpen={shop.canAffordOpen}
             onNavigate={onNavigate}
         />
 
@@ -143,7 +175,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     <div className="w-20 h-20 md:w-28 md:h-28 bg-black/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 backdrop-blur-xl shadow-inner">
                         <Store className="w-10 h-10 md:w-12 md:h-12 text-stone-700 animate-pulse" />
                     </div>
-                    <h3 className="text-lg md:text-2xl font-black text-stone-500 uppercase tracking-[0.3em] opacity-40">Awaiting Customers</h3>
+                    <h3 className="text-lg md:text-2xl font-black text-stone-50 uppercase tracking-[0.3em] opacity-40">Awaiting Customers</h3>
                 </div>
             </div>
         )}

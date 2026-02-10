@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { materials } from '../../../../data/materials';
@@ -71,15 +70,15 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
             return config ? [{ id: 'fac', name: 'Facilities', items: [{ ...config, meta: materials['furnace'] }] }] : [];
         }
 
-        const groups: Record<string, any[]> = { t1: [], t2: [], t3: [], t4: [], sup: [], tech: [], fac: [] };
+        const groups: Record<string, any[]> = { t1: [], t2: [], t3: [], t4: [], sup: [], tech: [], fac: [], skill: [] };
         MARKET_CATALOG.forEach(config => {
             const meta = materials[config.id];
             if (!meta) return;
             const isOwned = (config.id === 'furnace' && hasFurnace) || (config.id === 'workbench' && hasWorkbench);
             if (config.type === 'FACILITY' && isOwned) return;
             
-            // 티어 제한이 있는 아이템들 (RESOURCE, SUPPLY, TECHNIQUE) 필터링
-            const isTierRestricted = config.type === 'RESOURCE' || config.type === 'SUPPLY' || config.type === 'TECHNIQUE';
+            // 티어 제한이 있는 아이템들 (RESOURCE, SUPPLY, TECHNIQUE, SKILL) 필터링
+            const isTierRestricted = config.type === 'RESOURCE' || config.type === 'SUPPLY' || config.type === 'TECHNIQUE' || config.type === 'SKILL';
             if (isTierRestricted && (meta.tier || 1) > currentTier) return;
 
             const payload = { ...config, meta };
@@ -87,6 +86,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
             else if (config.type === 'SUPPLY') groups.sup.push(payload);
             else if (config.type === 'TECHNIQUE') groups.tech.push(payload);
             else if (config.type === 'FACILITY') groups.fac.push(payload);
+            else if (config.type === 'SKILL') groups.skill.push(payload);
         });
 
         return [
@@ -95,6 +95,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
             { id: 'tier3', name: 'Tier 3 Resources', items: groups.t3 },
             { id: 'tier4', name: 'Tier 4 Resources', items: groups.t4 },
             { id: 'sup', name: 'Potions & Supplies', items: groups.sup },
+            { id: 'skill', name: 'Skill Knowledge', items: groups.skill },
             { id: 'tech', name: 'Techniques', items: groups.tech },
             { id: 'fac', name: 'Facilities', items: groups.fac },
         ].filter(g => g.items.length > 0);
@@ -139,7 +140,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         setIsCartOpen(false);
     };
 
-    const handleBackToForge = useCallback(() => {
+    const handleBackToMain = useCallback(() => {
         if (state.tutorialStep === 'LEAVE_MARKET_GUIDE') {
             actions.setTutorialScene('FURNACE_RESTORED');
             actions.setTutorialStep(null);
@@ -148,7 +149,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         setViewMode('INTERACTION');
         setIsCartOpen(false);
         setCart({});
-        onNavigate('FORGE');
+        onNavigate('MAIN');
     }, [state.tutorialStep, actions, onNavigate]);
 
     return {
@@ -174,7 +175,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
             },
             addToCart, removeFromCart, deleteFromCart: (id: string) => setCart(prev => { const n = {...prev}; delete n[id]; return n; }),
             handleBuy, 
-            handleBackToForge
+            handleBackToMain
         }
     };
 };

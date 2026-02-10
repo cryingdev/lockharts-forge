@@ -31,6 +31,7 @@ export default class IntroScene extends Phaser.Scene {
 
   private lastPortrait?: boolean;
   private isRelayouting = false;
+  private isSkipTriggered = false;
 
   constructor() {
     super('IntroScene');
@@ -83,12 +84,32 @@ export default class IntroScene extends Phaser.Scene {
         g.fillStyle(0xffaa00, 1).fillCircle(4, 4, 4).generateTexture('intro_ember', 8, 8).destroy();
     }
 
-    this.input.once('pointerdown', () => {
+    // 스킵 로직: 진행률 확인 후 실행
+    this.input.on('pointerdown', () => {
+      if (this.isSkipTriggered) return;
+      
+      const progress = this.game.registry.get('loadingProgress') || 0;
+      if (progress < 100) {
+          // 로딩 중일 때 터치 시 피드백
+          this.cameras.main.shake(100, 0.005);
+          if (this.skipHint) {
+              this.tweens.add({
+                  targets: this.skipHint,
+                  scale: 1.2,
+                  duration: 100,
+                  yoyo: true,
+                  ease: 'Sine.easeInOut'
+              });
+          }
+          return;
+      }
+
+      this.isSkipTriggered = true;
       this.game.events.emit('intro-complete');
     });
 
     this.skipHint = this.add
-      .text(0, 0, 'TOUCH TO SKIP', {
+      .text(0, 0, 'INITIALIZING...', {
         fontFamily: '"Grenze"',
         fontSize: '14px',
         color: '#a8a29e',
@@ -118,7 +139,7 @@ export default class IntroScene extends Phaser.Scene {
     this.root.add(this.dragonGlow);
 
     this.devText = this.add
-      .text(0, 0, '', { //CRYINGDEV STUDIO\nPRESENTS
+      .text(0, 0, '', {
         fontFamily: '"Grenze Gotisch"',
         fontSize: '48px',
         color: '#f5f5f4',
@@ -146,7 +167,6 @@ export default class IntroScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD);
     this.root.add(this.breathOverlay);
 
-    // 드래곤 브레스 파티클 (집중적)
     this.fireEmitter = this.add.particles(0, 0, 'intro_flame', {
       speedY: { min: 1400, max: 3200 },
       speedX: { min: -1800, max: 1800 },
@@ -160,7 +180,6 @@ export default class IntroScene extends Phaser.Scene {
     this.fireEmitter.setDepth(4);
     this.root.add(this.fireEmitter);
 
-    // 화면 전체 불길 이미터 (들끓는 효과)
     this.boilingFireEmitter = this.add.particles(0, 0, 'intro_flame', {
         x: { min: 0, max: 1280 },
         y: 720,
@@ -176,7 +195,6 @@ export default class IntroScene extends Phaser.Scene {
     this.boilingFireEmitter.setDepth(4.5);
     this.root.add(this.boilingFireEmitter);
 
-    // 화면 전체 불씨 이미터
     this.embersEmitter = this.add.particles(0, 0, 'intro_ember', {
         x: { min: 0, max: 1280 },
         y: { min: 0, max: 720 },
@@ -198,7 +216,6 @@ export default class IntroScene extends Phaser.Scene {
     });
 
     this.handleResize(this.scale.gameSize);
-
     this.startSequence(n1, n2, n3, nD, nV);
   }
 
@@ -277,12 +294,10 @@ export default class IntroScene extends Phaser.Scene {
     }
     this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
 
-    // 일반 서사 텍스트 정렬
     this.narrativeTexts.forEach((t, i) => {
-      // 마지막 두 문장(nD, nV)은 겹치지 않게 분리 정렬
-      if (i === 3) { // nD: "NEVER FORGET..."
+      if (i === 3) { 
         t.setPosition(cx, cy - 50 * uiScale);
-      } else if (i === 4) { // nV: "AND FORGED A VENGEANCE."
+      } else if (i === 4) { 
         t.setPosition(cx, cy + 50 * uiScale);
       } else {
         t.setPosition(cx, cy);
@@ -336,9 +351,9 @@ export default class IntroScene extends Phaser.Scene {
     this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
     
     this.narrativeTexts.forEach((t, i) => {
-      if (i === 3) { // nD
+      if (i === 3) { 
         t.setPosition(cx, cy - 70 * uiScale);
-      } else if (i === 4) { // nV
+      } else if (i === 4) { 
         t.setPosition(cx, cy + 70 * uiScale);
       } else {
         t.setPosition(cx, cy);
@@ -346,6 +361,17 @@ export default class IntroScene extends Phaser.Scene {
       t.setFontSize(Math.round(36 * uiScale));
       t.setWordWrapWidth(w * 0.9);
     });
+  }
+
+  update() {
+      // 실시간 로딩 텍스트 업데이트
+      if (this.skipHint) {
+          const progress = this.game.registry.get('loadingProgress') || 0;
+          if (progress < 100) {
+              this.skipHint.setText(`INITIALIZING... ${progress}%`);
+              this.skipHint.setColor('#78716c');
+          }
+      }
   }
 
   private startSequence(n1: any, n2: any, n3: any, nD: any, nV: any) {
@@ -393,11 +419,9 @@ export default class IntroScene extends Phaser.Scene {
             this.fireEmitter!.stop();
             this.dragon!.setVisible(false);
             
-            // "들끓는 불길" 효과 시작
             this.boilingFireEmitter!.start();
             this.embersEmitter!.start();
             
-            // 오버레이가 사라지지 않고 미세하게 펄스하며 열기 유도
             this.tweens.add({
                 targets: this.breathOverlay,
                 alpha: { from: 0.2, to: 0.4 },
@@ -407,8 +431,15 @@ export default class IntroScene extends Phaser.Scene {
                 ease: 'Sine.easeInOut'
             });
 
-            // 지속적인 미세 진동
             this.cameras.main.shake(60000, 0.002);
+            
+            // 힌트 텍스트 페이드인
+            this.tweens.add({
+                targets: this.skipHint,
+                alpha: 0.5,
+                duration: 1000,
+                ease: 'Power2'
+            });
           },
         },
         {
@@ -444,7 +475,17 @@ export default class IntroScene extends Phaser.Scene {
           onComplete: () => {
             this.boilingFireEmitter!.stop();
             this.embersEmitter!.stop();
-            this.game.events.emit('intro-complete');
+            
+            // 로딩이 완료될 때까지 대기 후 종료 이벤트 발행
+            const checkReady = () => {
+                const progress = this.game.registry.get('loadingProgress') || 0;
+                if (progress >= 100) {
+                    this.game.events.emit('intro-complete');
+                } else {
+                    this.time.delayedCall(500, checkReady);
+                }
+            };
+            checkReady();
           },
         },
       ],

@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { LayoutGrid, List, Lock, Unlock, Star, Sword, Shield, Coins, Package, Sparkles, Check } from 'lucide-react';
 import { InventoryItem } from '../types/inventory';
 import { getAssetUrl } from '../utils';
 import { useGame } from '../context/GameContext';
+import { useAudio } from '../hooks/useAudio';
 
 const RomanTierOverlay = ({ id, isList = false }: { id: string, isList?: boolean }) => {
     const sizeClasses = isList ? "text-[10px] md:text-lg" : "text-xs md:text-2xl";
@@ -17,7 +17,8 @@ const RomanTierOverlay = ({ id, isList = false }: { id: string, isList?: boolean
 
 const AdaptiveItemImage = ({ item, className }: { item: InventoryItem, className?: string }) => {
     const isEquip = item.type === 'EQUIPMENT';
-    const folder = isEquip ? 'equipments' : 'materials';
+    const isSkill = item.type === 'SKILL_BOOK' || item.type === 'SKILL_SCROLL';
+    const folder = isEquip ? 'equipments' : isSkill ? 'skills' : 'materials';
     const baseId = (isEquip && item.equipmentData?.recipeId) 
         ? item.equipmentData.recipeId 
         : item.id;
@@ -56,6 +57,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
     emptyMessage = "No items available."
 }) => {
     const { state, actions } = useGame();
+    const { playClick } = useAudio();
     
     const viewMode = state.settings?.inventoryViewMode || 'LIST';
 
@@ -131,7 +133,12 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                             return (
                                 <div key={item.id} className="relative group aspect-square">
                                     <button
-                                        onClick={() => !isLocked && onSelect(item)}
+                                        onClick={() => {
+                                            if (!isLocked) {
+                                                playClick();
+                                                onSelect(item);
+                                            }
+                                        }}
                                         disabled={isLocked}
                                         className={`w-full h-full rounded-xl border-2 transition-all flex flex-col items-center justify-center p-1 relative overflow-hidden shadow-2xl ${
                                             isSelected ? 'border-indigo-400 bg-indigo-900/20 ring-2 ring-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 
@@ -222,7 +229,12 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                         return (
                             <div key={item.id} className="relative group shrink-0">
                                 <button
-                                    onClick={() => !isLocked && onSelect(item)}
+                                    onClick={() => {
+                                        if (!isLocked) {
+                                            playClick();
+                                            onSelect(item);
+                                        }
+                                    }}
                                     disabled={isLocked}
                                     className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl border-2 transition-all text-left shadow-lg relative overflow-hidden ${
                                         isSelected ? 'border-indigo-400 bg-indigo-900/20 ring-2 ring-indigo-500/10 shadow-[inset_0_0_10px_rgba(99,102,241,0.1)]' : 
@@ -253,7 +265,6 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                             {isEquip ? (
                                                 <>
                                                     <div className="flex items-center gap-1">
-                                                        <Sparkles className="w-3 h-3 text-amber-500" />
                                                         <span className="text-[9px] font-black text-amber-500 uppercase italic tracking-tight">{getQualityLabel(item.equipmentData!.quality)} Grade</span>
                                                     </div>
                                                     <div className="flex items-center gap-2 text-[8px] font-mono font-bold text-stone-500 border-l border-stone-700 pl-2">

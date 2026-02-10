@@ -28,6 +28,7 @@ export interface ManualDungeonSession {
     lastActionMessage?: string; 
     currentFloor: number;
     maxFloors: number;
+    floorBoost: number; // New: 5% stackable boost per consecutive floor
 }
 
 export interface DailyFinancials {
@@ -85,9 +86,19 @@ export interface GameToast {
 
 export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED' | 'MARKET' | 'SMITHING';
 
+export interface AudioSettings {
+    masterVolume: number;
+    musicVolume: number;
+    sfxVolume: number;
+    masterEnabled: boolean;
+    musicEnabled: boolean;
+    sfxEnabled: boolean;
+}
+
 export interface GameSettings {
     showLogTicker: boolean;
     inventoryViewMode: 'GRID' | 'LIST';
+    audio: AudioSettings;
 }
 
 export interface GameState {
@@ -99,6 +110,7 @@ export interface GameState {
   knownMercenaries: Mercenary[]; 
   
   activeCustomer: null | ShopCustomer; 
+  songQueue?: any; // Deprecated or unused but kept for compatibility if needed
   shopQueue: ShopCustomer[]; 
   visitorsToday: string[]; 
   talkedToToday: string[]; 
@@ -132,6 +144,7 @@ export interface GameState {
     | 'LEAVE_MARKET_GUIDE' 
     | 'CRAFT_START_DIALOG' 
     | 'FORGE_TAB_GUIDE' 
+    | 'OPEN_RECIPE_GUIDE'
     | 'SELECT_SWORD_GUIDE' 
     | 'START_FORGING_GUIDE' 
     | 'PRE_IGNITE_DIALOG_1' 

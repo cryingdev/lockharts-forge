@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { ManualDungeonSession, RoomType } from '../types/game-state';
+import { materials } from '../data/materials';
 
 export type CameraMode = 'LOCKED' | 'ADAPTIVE' | 'FREE';
 
@@ -37,6 +38,9 @@ export default class DungeonScene extends Phaser.Scene {
     private fxLayer!: Phaser.GameObjects.Container;
     
     private playerMarker!: Phaser.GameObjects.Container;
+    private playerCircle!: Phaser.GameObjects.Arc;
+    private playerVisual!: Phaser.GameObjects.Container;
+    
     private revealedTiles: Set<string> = new Set();
     private contentByCoord: Map<string, Phaser.GameObjects.Text> = new Map();
     
@@ -89,7 +93,8 @@ export default class DungeonScene extends Phaser.Scene {
         this.playerLayer = this.add.container(0, 0);
         this.fxLayer = this.add.container(0, 0).setDepth(100);
         
-        this.root.add([this.mapLayer, this.contentLayer, this.playerLayer]);
+        // Add layers to root so they move together
+        this.root.add([this.mapLayer, this.contentLayer, this.playerLayer, this.fxLayer]);
 
         this.vignette = this.add.graphics().setDepth(200).setScrollFactor(0);
         this.redFocusOverlay = this.add.graphics().setDepth(210).setScrollFactor(0);
@@ -162,14 +167,9 @@ export default class DungeonScene extends Phaser.Scene {
         this.redFocusOverlay.fillRect(width - thickness, 0, thickness, height);
     }
 
-    /**
-     * 전투 진입 시 줌인 및 모자이크 효과 실행 (2초)
-     */
     public playEncounterEffect() {
-        // 1. 카메라 줌인
         this.cameras.main.zoomTo(2.5, 2000, 'Cubic.easeInOut');
         
-        // 2. 모자이크 FX (Phaser 3.60+ Pixelate)
         if (this.cameras.main.postFX) {
             this.pixelateFX = this.cameras.main.postFX.addPixelate(2);
             this.tweens.add({
@@ -180,18 +180,12 @@ export default class DungeonScene extends Phaser.Scene {
             });
         }
 
-        // 3. 화면 떨림
         this.cameras.main.shake(2000, 0.005);
     }
 
-    /**
-     * 전투 종료 시 화면 연출 초기화
-     */
     public resetEncounterEffect(targetZoom: number) {
-        // 1. 카메라 줌 복구
         this.cameras.main.zoomTo(targetZoom, 1000, 'Cubic.easeOut');
 
-        // 2. 모자이크 제거
         if (this.pixelateFX) {
             this.tweens.add({
                 targets: this.pixelateFX,
@@ -206,6 +200,131 @@ export default class DungeonScene extends Phaser.Scene {
                 }
             });
         }
+    }
+
+    public showFloatingGold(amount: number) {
+        const x = this.playerMarker.x;
+        const y = this.playerMarker.y;
+
+        const floatText = this.add.text(x, y - 40, `💰 +${amount}G`, {
+            fontFamily: 'Grenze Gotisch',
+            fontSize: '32px',
+            color: '#fbbf24',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 5,
+            shadow: { color: '#000', fill: true, blur: 10 }
+        }).setOrigin(0.5).setDepth(300);
+
+        // Add to root so it moves with the map
+        this.root.add(floatText);
+
+        this.tweens.add({
+            targets: floatText,
+            y: y - 140,
+            alpha: 0,
+            scale: 1.2,
+            duration: 1200,
+            ease: 'Cubic.easeOut',
+            onComplete: () => floatText.destroy()
+        });
+    }
+
+    /**
+     * 아이템 획득 시 이미지와 수량이 머리 위로 떠오르는 효과
+     */
+    public showFloatingItem(itemId: string, amount: number) {
+        const x = this.playerMarker.x + (Math.random() * 40 - 20); // 약간의 위치 편차
+        const y = this.playerMarker.y;
+        
+        const item = materials[itemId];
+        const isSkill = item?.type === 'SKILL_BOOK' || item?.type === 'SKILL_SCROLL';
+        const folder = isSkill ? 'skills' : 'materials';
+        const fileName = item?.image || `${itemId}.png`;
+        const assetUrl = getAssetUrl(fileName, folder);
+
+        const key = `float_loot_${itemId}`;
+        const renderFloating = () => {
+            const container = this.add.container(x, y - 50).setDepth(310);
+            
+            // Add to root so it moves with the map
+            this.root.add(container);
+
+            const icon = this.add.image(0, 0, key).setDisplaySize(42, 42);
+            const text = this.add.text(25, 0, `x${amount}`, {
+                fontFamily: 'Grenze Gotisch',
+                fontSize: '24px',
+                color: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 4,
+                fontStyle: 'bold'
+            }).setOrigin(0, 0.5);
+            
+            container.add([icon, text]);
+            container.setAlpha(0).setScale(0.5);
+
+            this.tweens.add({
+                targets: container,
+                y: y - 160,
+                alpha: { from: 0, to: 1 },
+                scale: 1.2,
+                duration: 400,
+                ease: 'Back.out'
+            });
+
+            this.tweens.add({
+                targets: container,
+                y: y - 220,
+                alpha: 0,
+                delay: 800,
+                duration: 600,
+                ease: 'Cubic.in',
+                onComplete: () => container.destroy()
+            });
+        };
+
+        if (this.textures.exists(key)) {
+            renderFloating();
+        } else {
+            // 텍스처가 없는 경우 동적으로 로드 후 렌더링
+            this.load.image(key, assetUrl);
+            this.load.once('complete', renderFloating);
+            this.load.start();
+        }
+    }
+
+    /**
+     * 함정 밟았을 때 빨간색 깜빡임 및 흔들림 효과
+     */
+    public playTrapEffect() {
+        if (!this.playerCircle || !this.playerVisual) return;
+
+        // 원 색상을 빨간색으로 변경
+        this.playerCircle.setFillStyle(0xef4444, 1);
+        
+        // 흔들림 효과 (더 빠르게 조정하여 타격감 개선)
+        this.tweens.add({
+            targets: this.playerVisual,
+            x: { from: -8, to: 8 },
+            duration: 50,
+            yoyo: true,
+            repeat: 2,
+            ease: 'Sine.easeInOut',
+            onComplete: () => {
+                // 위치 즉시 초기화
+                this.playerVisual.setX(0);
+            }
+        });
+
+        // 0.1초(100ms) 후 즉시 색상 복구 시작
+        this.time.delayedCall(100, () => {
+            this.tweens.add({
+                targets: this.playerCircle,
+                fillColor: 0x6366f1,
+                duration: 100,
+                ease: 'Linear'
+            });
+        });
     }
 
     private setupDragControls() {
@@ -309,13 +428,23 @@ export default class DungeonScene extends Phaser.Scene {
         const { x, y } = this.session.playerPos;
         const px = x * (this.tileWidth + this.tileGap);
         const py = y * (this.tileWidth + this.tileGap);
-        const visual = this.add.container(0, 0);
-        const circle = this.add.circle(0, 0, 26, 0x6366f1, 0.9).setStrokeStyle(3, 0xffffff);
+        
+        this.playerVisual = this.add.container(0, 0);
+        this.playerCircle = this.add.circle(0, 0, 26, 0x6366f1, 0.9).setStrokeStyle(3, 0xffffff);
         const icon = this.add.text(0, 0, '👤', { fontSize: '24px' }).setOrigin(0.5);
-        visual.add([circle, icon]);
-        this.playerMarker = this.add.container(px, py, [visual]);
+        
+        this.playerVisual.add([this.playerCircle, icon]);
+        this.playerMarker = this.add.container(px, py, [this.playerVisual]);
         this.playerLayer.add(this.playerMarker);
-        this.tweens.add({ targets: visual, y: -8, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        
+        this.tweens.add({ 
+            targets: this.playerVisual, 
+            y: -8, 
+            duration: 800, 
+            yoyo: true, 
+            repeat: -1, 
+            ease: 'Sine.easeInOut' 
+        });
     }
 
     private alignViewToPlayer() {

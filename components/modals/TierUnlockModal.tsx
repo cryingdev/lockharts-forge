@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { Sparkles, Check, Star, Hammer, Wrench } from 'lucide-react';
 import { UI_MODAL_LAYOUT } from '../../config/ui-config';
+import { SfxButton } from '../common/ui/SfxButton';
 
 const TierUnlockModal = () => {
     const { state, actions } = useGame();
@@ -70,13 +72,13 @@ const TierUnlockModal = () => {
 
                 {/* Footer Action */}
                 <div className="p-4 md:p-5 bg-stone-850 border-t border-stone-800 shrink-0">
-                    <button 
-                        onClick={() => actions.dismissTierUnlock()}
+                    <SfxButton 
+                        onClick={actions.dismissTierUnlock}
                         className="w-full py-2.5 md:py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 border-b-4 border-emerald-800 text-[10px] md:text-sm uppercase tracking-[0.2em]"
                     >
                         <Check className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         Master New Skills
-                    </button>
+                    </SfxButton>
                 </div>
             </div>
         </div>

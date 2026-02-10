@@ -1,9 +1,9 @@
-
-import { GameState } from '../types/game-state';
+import { GameState, GameSettings } from '../types/game-state';
 
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 const META_KEY = 'lockharts_forge_save_metadata';
-const APP_VERSION = '0.1.42a';
+const GLOBAL_SETTINGS_KEY = 'lockharts_forge_global_settings';
+const APP_VERSION = '0.1.44a';
 
 export interface SaveMetadata {
     index: number;
@@ -14,15 +14,37 @@ export interface SaveMetadata {
     version: string;
 }
 
+/**
+ * 전역 설정(오디오, UI 취향 등)을 별도로 저장합니다.
+ */
+export const saveGlobalSettings = (settings: GameSettings) => {
+    try {
+        localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(settings));
+    } catch (err) {
+        console.error('Failed to save global settings:', err);
+    }
+};
+
+/**
+ * 전역 설정을 로드합니다.
+ */
+export const loadGlobalSettings = (): GameSettings | null => {
+    try {
+        const data = localStorage.getItem(GLOBAL_SETTINGS_KEY);
+        return data ? JSON.parse(data) : null;
+    } catch {
+        return null;
+    }
+};
+
 export const getSaveMetadataList = (): SaveMetadata[] => {
     try {
         const metaData = localStorage.getItem(META_KEY);
         if (!metaData) return [];
         const parsed = JSON.parse(metaData);
-        // CRITICAL: metaList.map is not a function 에러 방지를 위해 배열인지 확인
         return Array.isArray(parsed) ? parsed : [];
     } catch {
-        return [];
+        return [] as SaveMetadata[];
     }
 };
 
@@ -32,25 +54,31 @@ export const getNextAvailableSlot = (): number => {
     for (let i = 0; i < 3; i++) {
         if (!usedIndices.includes(i)) return i;
     }
-    return 0; // 모두 차있으면 첫 번째 슬롯 리턴
+    return 0;
 };
 
 export const saveToSlot = (slotIndex: number, state: GameState) => {
     try {
+        // 저장 시 UI의 일시적인 상태들을 제거하여 데이터 오염 방지
         const dataToSave = {
             ...state,
-            version: APP_VERSION, // 데이터 본체에 버전 정보 추가
+            version: APP_VERSION,
             activeEvent: null,
             showSleepModal: false,
             showJournal: false,
             isCrafting: false,
-            lastCraftedItem: null
+            lastCraftedItem: null,
+            unlockedTierPopup: null,
+            showTutorialCompleteModal: false,
+            toast: null,
+            toastQueue: [],
+            // 수동 던전 진행 중이라면 상태 보존 (필요 시)
+            // 단, 오버레이는 꺼진 상태로 로드되게 유도
+            showManualDungeonOverlay: false 
         };
         
-        // 1. Save main data
         localStorage.setItem(`${SAVE_PREFIX}${slotIndex}`, JSON.stringify(dataToSave));
         
-        // 2. Update metadata
         const currentMeta = getSaveMetadataList();
         const newMeta: SaveMetadata = {
             index: slotIndex,
@@ -63,7 +91,7 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
         
         const filteredMeta = currentMeta.filter(m => m.index !== slotIndex);
         filteredMeta.push(newMeta);
-        filteredMeta.sort((a, b) => b.timestamp - a.timestamp); // 최근순 정렬
+        filteredMeta.sort((a, b) => b.timestamp - a.timestamp);
         
         localStorage.setItem(META_KEY, JSON.stringify(filteredMeta));
         return true;
@@ -71,11 +99,6 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
         console.error('Failed to save to slot:', err);
         return false;
     }
-};
-
-// 특정 슬롯을 지정하지 않았을 때 사용하는 기본 저장 (이제 context에서 관리됨)
-export const saveToStorage = (state: GameState) => {
-    return saveToSlot(0, state);
 };
 
 export const loadFromSlot = (slotIndex: number): (GameState & { version?: string }) | null => {
@@ -87,18 +110,12 @@ export const loadFromSlot = (slotIndex: number): (GameState & { version?: string
     }
 };
 
-// 불러올 때 마지막 저장된 데이터와 그 인덱스를 함께 리턴하는 헬퍼
 export const getLatestSaveInfo = (): { data: GameState & { version?: string }, index: number } | null => {
     const meta = getSaveMetadataList();
     if (meta.length === 0) return null;
     const index = meta[0].index;
     const data = loadFromSlot(index);
     return data ? { data, index } : null;
-};
-
-export const loadFromStorage = (): GameState | null => {
-    const info = getLatestSaveInfo();
-    return info ? info.data : null;
 };
 
 export const deleteSlot = (slotIndex: number) => {

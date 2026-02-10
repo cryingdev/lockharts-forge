@@ -52,9 +52,10 @@ export const useShopService = () => {
                 }
 
                 // Normal Candidate filtering
+                // status check corrected from 'IN_JURED' to 'INJURED' and includes 'ON_EXPEDITION', 'DEAD'
                 const validCandidates = state.knownMercenaries.filter(m => 
                     !visitorsToday.includes(m.id) && 
-                    !['ON_EXPEDITION', 'IN_JURED', 'DEAD'].includes(m.status)
+                    !['ON_EXPEDITION', 'INJURED', 'DEAD'].includes(m.status)
                 );
 
                 if (validCandidates.length === 0) {

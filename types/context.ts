@@ -63,6 +63,8 @@ export interface GameContextType {
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => void;
 
     useItem: (itemId: string, mercenaryId?: string) => void;
+    // Added applySkillScroll to fix property access error in InventoryDisplay.tsx
+    applySkillScroll: (scrollItemId: string, targetEquipmentId: string) => void;
     toggleLockItem: (itemId: string) => void;
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => void;
     updateMercenaryStats: (mercenaryId: string, stats: PrimaryStats) => void;

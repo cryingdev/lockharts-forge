@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { GameContextType, GameState } from '../types/index';
 import { gameReducer } from '../state/gameReducer';
@@ -9,7 +10,7 @@ import { PrimaryStats } from '../models/Stats';
 import { GAME_CONFIG } from '../config/game-config';
 import { getEnergyCost } from '../utils/craftingLogic';
 import { GameEvent } from '../types/events';
-import { saveToSlot } from '../utils/saveSystem';
+import { saveToSlot, saveGlobalSettings } from '../utils/saveSystem';
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -41,6 +42,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     prevDayRef.current = state.stats.day;
   }, [state.stats.day, state]);
 
+  // 설정이 변경될 때마다 글로벌 설정 저장
+  useEffect(() => {
+    saveGlobalSettings(state.settings);
+  }, [state.settings]);
+
   // Debug: Tutorial Step Logging
   useEffect(() => {
       const scene = state.activeTutorialScene || 'NONE';
@@ -70,7 +76,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
       dispatch({ type: 'SET_UI_EFFECT', payload: { effect: 'energyHighlight', value: true } });
       setTimeout(() => {
           dispatch({ type: 'SET_UI_EFFECT', payload: { effect: 'energyHighlight', value: false } });
-      }, 3000);
+      }, 1000); // 3000ms -> 1000ms로 단축
   };
 
   const showToast = (message: string) => {
@@ -84,6 +90,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     },
     rest: () => dispatch({ type: 'SLEEP' }),
     confirmSleep: () => dispatch({ type: 'CONFIRM_SLEEP' }),
+    onAction: (action: () => void) => { action(); dispatch({ type: 'CLOSE_EVENT' }); },
     closeRest: () => dispatch({ type: 'CLOSE_SLEEP_MODAL' }),
     triggerEvent: (event: GameEvent) => dispatch({ type: 'TRIGGER_EVENT', payload: event }),
     handleEventOption: (action: () => void) => { action(); dispatch({ type: 'CLOSE_EVENT' }); },
@@ -109,7 +116,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     sellItem: (itemId: string, count: number, price: number, equipmentInstanceId?: string, customer?: Mercenary) =>
         dispatch({ type: 'SELL_ITEM', payload: { itemId, count, price, equipmentInstanceId, customer } }),
     toggleShop: () => {
-        if (!stateRef.current.forge.isShopOpen && stateRef.current.stats.energy < GAME_CONFIG.ENERGY_COST.OPEN_SHOP) { triggerEnergyHighlight(); return; }
+        // 에너지 소모가 0이므로 체크 로직 제거
         dispatch({ type: 'TOGGLE_SHOP' });
     },
     addMercenary: (merc: Mercenary) => dispatch({ type: 'ADD_KNOWN_MERCENARY', payload: merc }),
@@ -139,6 +146,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     equipItem: (mercenaryId: string, inventoryItemId: string) => dispatch({ type: 'EQUIP_ITEM', payload: { mercenaryId, inventoryItemId } }),
     unequipItem: (mercenaryId: string, slot: EquipmentSlotType) => dispatch({ type: 'UNEQUIP_ITEM', payload: { mercenaryId, slot } }),
     useItem: (itemId: string, mercenaryId?: string) => dispatch({ type: 'USE_ITEM', payload: { itemId, mercenaryId } }),
+    // Added applySkillScroll to actions to fix dispatch property access error in InventoryDisplay.tsx
+    applySkillScroll: (scrollItemId: string, targetEquipmentId: string) => dispatch({ type: 'APPLY_SKILL_SCROLL', payload: { scrollItemId, targetEquipmentId } }),
     toggleLockItem: (itemId: string) => dispatch({ type: 'TOGGLE_LOCK_ITEM', payload: { itemId } }),
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
     startManualAssault: (dungeonId: string, partyIds: string[], startFloor?: number) => 
