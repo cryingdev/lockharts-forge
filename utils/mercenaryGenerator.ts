@@ -1,3 +1,4 @@
+
 import { Mercenary, Gender } from '../models/Mercenary';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { JobClass, JOB_STAT_WEIGHTS } from '../models/JobClass';
@@ -5,6 +6,21 @@ import { calculateMaxHp, calculateMaxMp, PrimaryStats, mergePrimaryStats } from 
 import { generateFullName } from './nameGenerator';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
 import { Equipment, EquipmentSlotType } from '../models/Equipment';
+
+/**
+ * MERCENARY_ASSETS
+ * 성별과 직업 조합에 따른 가용 이미지 리소스 설정입니다.
+ * 신규 이미지가 추가될 경우 이 매핑 테이블만 업데이트하면 생성 로직에 즉시 반영됩니다.
+ */
+const MERCENARY_ASSETS: Record<string, Partial<Record<JobClass, { count: number; prefix: string }>>> = {
+    Male: {
+        [JobClass.FIGHTER]: { count: 32, prefix: 'male_fighter' },
+    },
+    Female: {
+        [JobClass.FIGHTER]: { count: 24, prefix: 'female_fighter' },
+        [JobClass.MAGE]: { count: 9, prefix: 'female_mage' },
+    }
+};
 
 const distributeRandomPoints = (weights: PrimaryStats, points: number): PrimaryStats => {
     const stats = { str: 0, vit: 0, dex: 0, int: 0, luk: 0 };
@@ -70,21 +86,29 @@ const calculateLevelDataFromTotalXp = (totalXp: number) => {
 export const createRandomMercenary = (currentDay: number): Mercenary => {
     const jobKeys = Object.values(JobClass);
     const job = jobKeys[Math.floor(Math.random() * jobKeys.length)];
+    const gender: Gender = Math.random() < 0.5 ? 'Male' : 'Female';
     
     const randomFactor = Math.random(); 
     const totalXp = Math.floor(Math.pow(randomFactor, 2) * 2500); 
 
     const { level, currentXp, xpToNextLevel } = calculateLevelDataFromTotalXp(totalXp);
-
     const baseStats = generateBaseStats(job);
     
     const merged = mergePrimaryStats(baseStats, { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
     const maxHp = calculateMaxHp(merged, level);
     const maxMp = calculateMaxMp(merged, level);
     
-    const gender: Gender = Math.random() < 0.5 ? 'Male' : 'Female';
     const fullName = generateFullName(gender, job);
+
+    // --- 무작위 외형(이미지) 할당 로직 ---
+    const assetConfig = MERCENARY_ASSETS[gender]?.[job];
+    let sprite = '';
     
+    if (assetConfig) {
+        const variantNum = Math.floor(Math.random() * assetConfig.count) + 1;
+        sprite = `${assetConfig.prefix}_${variantNum.toString().padStart(2, '0')}.png`;
+    }
+
     return {
         id: `rnd_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         name: fullName,
@@ -93,7 +117,7 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
         level: level,
         stats: baseStats,
         allocatedStats: { str: 0, vit: 0, dex: 0, int: 0, luk: 0 },
-        bonusStatPoints: (level - 1) * 3, // All level up points given as spendable bonus
+        bonusStatPoints: (level - 1) * 3,
         currentHp: maxHp,
         maxHp: maxHp,
         currentMp: maxMp,
@@ -103,6 +127,7 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
         isUnique: false,
         lastVisitDay: currentDay,
         icon: '👤',
+        sprite: sprite || undefined, // 설정이 없는 경우 undefined로 두어 기본 처리
         expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: currentXp,
         xpToNextLevel: xpToNextLevel,
@@ -111,7 +136,6 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
     };
 };
 
-// Added missing export required by TavernTab.tsx
 export const getUnmetNamedMercenary = (knownMercenaries: Mercenary[]): Mercenary | null => {
     const unknownNamed = NAMED_MERCENARIES.filter(
         named => !knownMercenaries.some(known => known.id === named.id)
