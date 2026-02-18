@@ -15,10 +15,12 @@ import { Equipment, EquipmentSlotType } from '../models/Equipment';
 const MERCENARY_ASSETS: Record<string, Partial<Record<JobClass, { count: number; prefix: string }>>> = {
     Male: {
         [JobClass.FIGHTER]: { count: 32, prefix: 'male_fighter' },
+        [JobClass.CLERIC]: { count: 28, prefix: 'male_healer' },
     },
     Female: {
         [JobClass.FIGHTER]: { count: 24, prefix: 'female_fighter' },
         [JobClass.MAGE]: { count: 9, prefix: 'female_mage' },
+        [JobClass.CLERIC]: { count: 22, prefix: 'female_healer' },
     }
 };
 
