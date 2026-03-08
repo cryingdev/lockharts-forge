@@ -49,6 +49,7 @@ export interface PlayerStats {
   tierLevel: number; 
   smithingExp: number; 
   workbenchExp: number; 
+  inviteCount: number; // New: Track number of invites today
   dailyFinancials: DailyFinancials; 
 }
 

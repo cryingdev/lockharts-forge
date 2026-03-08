@@ -106,7 +106,17 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
     const fullName = generateFullName(gender, job);
 
     // --- 무작위 외형(이미지) 할당 로직 ---
-    const assetConfig = MERCENARY_ASSETS[gender]?.[job];
+    let assetConfig = MERCENARY_ASSETS[gender]?.[job];
+
+    // Novice인 경우 전체 에셋 중 무작위 선택
+    if (!assetConfig && job === JobClass.NOVICE) {
+        const genders = Object.keys(MERCENARY_ASSETS);
+        const randomGender = genders[Math.floor(Math.random() * genders.length)];
+        const availableJobs = Object.keys(MERCENARY_ASSETS[randomGender]) as unknown as JobClass[];
+        const randomJob = availableJobs[Math.floor(Math.random() * availableJobs.length)];
+        assetConfig = MERCENARY_ASSETS[randomGender][randomJob];
+    }
+
     let sprite = '';
     
     if (assetConfig) {

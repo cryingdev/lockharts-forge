@@ -105,6 +105,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
             day: nextDay,
             gold: newGold,
             energy: state.stats.maxEnergy,
+            inviteCount: 0,
             dailyFinancials: {
                 incomeShop: 0,
                 incomeInventory: 0,

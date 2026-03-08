@@ -10,6 +10,7 @@ import { getAssetUrl } from '../../utils';
 import { calculateMercenaryPower } from '../../utils/combatLogic';
 import { StatDiff } from './StatDiff';
 import { SfxButton } from '../common/ui/SfxButton';
+import { MercenaryPortrait } from '../common/ui/MercenaryPortrait';
 
 interface MercenaryPaperDollProps {
   mercenary: Mercenary;
@@ -40,19 +41,23 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
 }) => {
   const [spriteRatio, setSpriteRatio] = useState<number>(1 / 2.15);
   
+  const isSpriteSheet = !!mercenary.sprite && mercenary.sprite.includes('_sprite');
+  const isFullImage = !!mercenary.profileImage || (!!mercenary.sprite && !isSpriteSheet);
+  const displayImage = mercenary.profileImage || mercenary.sprite || 'default.png';
+  
   useEffect(() => {
-      const sprite = mercenary.sprite;
+      const sprite = displayImage;
       if (!sprite) return; 
 
       const img = new Image();
       img.src = getAssetUrl(sprite, 'mercenaries');
       img.onload = () => {
-        const ratio = (img.naturalWidth / 3) / img.naturalHeight;
+        const ratio = isFullImage ? (img.naturalWidth / img.naturalHeight) : (img.naturalWidth / 3) / img.naturalHeight;
         if (!isNaN(ratio) && ratio > 0) {
           setSpriteRatio(ratio);
         }
       };
-  }, [mercenary.sprite]);
+  }, [displayImage, isFullImage]);
 
   const renderSlot = ({
     slot,
@@ -129,10 +134,24 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
     <div className="w-full flex flex-col shrink-0">
       <div className="p-4 md:p-6 flex flex-col gap-0.5 md:gap-1 shrink-0 bg-stone-950/40 border-b border-white/5 backdrop-blur-md z-30">
         <div className="flex justify-between items-start mb-1">
-          <h2 className="text-sm md:text-2xl font-black text-stone-100 font-serif truncate leading-none flex items-center gap-2">
-            <span>{mercenary.name}</span>
-            <span className="text-stone-500 font-mono text-[10px] md:text-lg">Lv.{mercenary.level}</span>
-          </h2>
+          <div className="flex items-center gap-3">
+            <MercenaryPortrait 
+              mercenary={mercenary} 
+              className="w-10 h-10 md:w-14 md:h-14 rounded-xl border border-white/10"
+              showBg={false}
+            />
+            <h2 className="text-sm md:text-2xl font-black text-stone-100 font-serif truncate leading-none flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span>{mercenary.name}</span>
+                <span className="text-stone-500 font-mono text-[10px] md:text-lg">Lv.{mercenary.level}</span>
+              </div>
+              <div className="flex wrap items-center gap-1">
+                <span className="text-[7px] md:text-[8px] font-black text-amber-500 uppercase tracking-widest bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/20">
+                  {mercenary.job}
+                </span>
+              </div>
+            </h2>
+          </div>
           {isHired && (
             <SfxButton
               sfx="switch"
@@ -148,9 +167,6 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
         
         <div className="flex justify-between items-end">
           <div className="flex wrap items-center gap-1">
-            <span className="text-[7px] md:text-xs font-black text-amber-50 uppercase tracking-widest bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/20">
-              {mercenary.job}
-            </span>
             <div
               className={`flex items-center gap-0.5 text-[8px] md:text-sm ${showAffinityGain ? 'text-pink-400 animate-pulse' : 'text-stone-500 font-bold'}`}
             >
@@ -181,11 +197,11 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
               className="h-[90%]" 
               style={{ 
                 aspectRatio: `${spriteRatio}`,
-                backgroundImage: `url(${getAssetUrl(mercenary.sprite || 'default.png', 'mercenaries')})`,
-                backgroundSize: '300% 100%',
-                backgroundPosition: '0% 0%',
+                backgroundImage: `url(${getAssetUrl(displayImage, 'mercenaries')})`,
+                backgroundSize: isFullImage ? 'contain' : '300% 100%',
+                backgroundPosition: isFullImage ? 'center' : '0% 0%',
                 backgroundRepeat: 'no-repeat',
-                imageRendering: 'pixelated',
+                imageRendering: isFullImage ? 'auto' : 'pixelated',
                 filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.5))'
               }} 
             />

@@ -64,6 +64,7 @@ export const createInitialGameState = (): GameState => {
             tierLevel: 0,
             smithingExp: 0,
             workbenchExp: 0,
+            inviteCount: 0,
             dailyFinancials: {
                 incomeShop: 0,
                 incomeInventory: 0,

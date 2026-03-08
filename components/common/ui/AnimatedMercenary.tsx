@@ -21,25 +21,25 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
     const [aspectRatio, setAspectRatio] = useState<number>(1 / 2.15); // 초기 기본값
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const isSpriteSheet = mercenary?.sprite?.includes('_sprite');
-    const spriteUrl = mercenary?.sprite 
-        ? getAssetUrl(mercenary.sprite, 'mercenaries') 
-        : getAssetUrl('default.png', 'mercenaries');
+    const isSpriteSheet = !!mercenary?.sprite && mercenary.sprite.includes('_sprite');
+    const isFullImage = !!mercenary?.profileImage || (!!mercenary?.sprite && !isSpriteSheet);
+    const displayImage = mercenary?.profileImage || mercenary?.sprite || 'default.png';
+    const imageUrl = getAssetUrl(displayImage, 'mercenaries');
 
     // 이미지 로드 시 실제 해상도를 측정하여 가로세로비 계산 (프레임 단위 비율)
     useEffect(() => {
-        if (isSpriteSheet && mercenary?.sprite) {
-            const img = new Image();
-            img.src = spriteUrl;
-            img.onload = () => {
-                const singleFrameWidth = img.naturalWidth / 3;
-                const ratio = singleFrameWidth / img.naturalHeight;
-                if (!isNaN(ratio) && ratio > 0) {
-                    setAspectRatio(ratio);
-                }
-            };
-        }
-    }, [spriteUrl, isSpriteSheet, mercenary?.sprite]);
+        if (!displayImage) return;
+        
+        const img = new Image();
+        img.src = imageUrl;
+        img.onload = () => {
+            const singleFrameWidth = isSpriteSheet ? (img.naturalWidth / 3) : img.naturalWidth;
+            const ratio = singleFrameWidth / img.naturalHeight;
+            if (!isNaN(ratio) && ratio > 0) {
+                setAspectRatio(ratio);
+            }
+        };
+    }, [imageUrl, isSpriteSheet, isFullImage]);
 
     const blink = useCallback(() => {
         setFrame(1);
@@ -82,7 +82,7 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
                 <div 
                     className="h-full w-full transition-transform duration-75 ease-linear"
                     style={{
-                        backgroundImage: `url(${spriteUrl})`,
+                        backgroundImage: `url(${imageUrl})`,
                         backgroundSize: '300% 100%',
                         backgroundPosition: `${frame * 50}% 0%`,
                         imageRendering: 'pixelated'
@@ -94,9 +94,13 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
 
     return (
         <img 
-            src={spriteUrl} 
+            src={imageUrl} 
             className={className}
-            style={{ height: height || '100%', objectFit: 'contain' }}
+            style={{ 
+                height: height || '100%', 
+                objectFit: 'contain',
+                imageRendering: isFullImage ? 'auto' : 'pixelated'
+            }}
             alt={mercenary.name}
         />
     );

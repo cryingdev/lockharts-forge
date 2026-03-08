@@ -40,6 +40,7 @@ export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mer
         stats: {
             ...state.stats,
             gold: state.stats.gold - cost,
+            inviteCount: state.stats.inviteCount + 1,
             dailyFinancials: {
                 ...state.stats.dailyFinancials,
                 expenseScout: state.stats.dailyFinancials.expenseScout + cost
