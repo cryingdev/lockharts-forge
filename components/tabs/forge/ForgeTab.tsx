@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap } from 'lucide-react';
 import { useForge } from './hooks/useForge';
 import { getAssetUrl } from '../../../utils';
@@ -11,9 +11,20 @@ import { ForgeListView } from './ui/ForgeListView';
 import { ForgeWorkspaceView } from './ui/ForgeWorkspaceView';
 import QuickCraftOverlay from './ui/QuickCraftOverlay';
 import RecipeTooltip from './ui/RecipeTooltip';
-import SmithingMinigame from './ui/SmithingMinigame';
-import WorkbenchMinigame from './ui/WorkbenchMinigame';
 import { UI_MODAL_LAYOUT } from '../../../config/ui-config';
+
+// Lazy Import Minigames
+const SmithingMinigame = lazy(() => import('./ui/SmithingMinigame'));
+const WorkbenchMinigame = lazy(() => import('./ui/WorkbenchMinigame'));
+
+const MinigameLoading = () => (
+    <div className="absolute inset-0 flex items-center justify-center bg-stone-950 z-[200]">
+        <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 border-4 border-amber-500/10 border-t-amber-500 rounded-full animate-spin" />
+            <span className="text-amber-500 font-serif italic text-xl animate-pulse">Igniting the Forge...</span>
+        </div>
+    </div>
+);
 
 interface ForgeTabProps {
     onNavigate: (tab: any) => void;
@@ -61,23 +72,25 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
 
         {isCrafting && selectedItem && (
             <div className="absolute inset-0 z-[100] bg-stone-950">
-                {selectedItem.craftingType === 'FORGE' ? (
-                    <SmithingMinigame 
-                        onComplete={handlers.handleMinigameComplete}
-                        onClose={() => actions.cancelCrafting(selectedItem)}
-                        difficulty={selectedItem.tier}
-                        isTutorial={state.activeTutorialScene === 'SMITHING'}
-                    />
-                ) : (
-                    <WorkbenchMinigame 
-                        onComplete={handlers.handleMinigameComplete}
-                        onClose={() => actions.cancelCrafting(selectedItem)}
-                        difficulty={selectedItem.tier}
-                        masteryCount={masteryInfo?.count || 0}
-                        subCategoryId={selectedItem.subCategoryId}
-                        itemImage={selectedItem.image}
-                    />
-                )}
+                <Suspense fallback={<MinigameLoading />}>
+                    {selectedItem.craftingType === 'FORGE' ? (
+                        <SmithingMinigame 
+                            onComplete={handlers.handleMinigameComplete}
+                            onClose={() => actions.cancelCrafting(selectedItem)}
+                            difficulty={selectedItem.tier}
+                            isTutorial={state.activeTutorialScene === 'SMITHING'}
+                        />
+                    ) : (
+                        <WorkbenchMinigame 
+                            onComplete={handlers.handleMinigameComplete}
+                            onClose={() => actions.cancelCrafting(selectedItem)}
+                            difficulty={selectedItem.tier}
+                            masteryCount={masteryInfo?.count || 0}
+                            subCategoryId={selectedItem.subCategoryId}
+                            itemImage={selectedItem.image}
+                        />
+                    )}
+                </Suspense>
             </div>
         )}
 

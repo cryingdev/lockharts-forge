@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { InventoryDisplay } from './InventoryDisplay';
+import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Pointer, FastForward } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import { SfxButton } from './common/ui/SfxButton';
@@ -8,28 +7,38 @@ import { SfxButton } from './common/ui/SfxButton';
 import { useShopService } from '../services/shop/shop-service';
 import { useDungeonService } from '../services/dungeon/dungeon-service';
 
-// Import Tab Components
-import MainScene from './tabs/main/MainScene';
-import ForgeTab from './tabs/forge/ForgeTab';
-import ShopTab from './tabs/shop/ShopTab';
-import TavernTab from './tabs/tavern/TavernTab';
-import MarketTab from './tabs/market/MarketTab';
-import DungeonTab from './tabs/dungeon/DungeonTab';
-import SimulationTab from './tabs/Simulation/SimulationTab';
-import ResearchTab from './tabs/research/ResearchTab';
+// Lazy Import Tab Components
+const MainScene = lazy(() => import('./tabs/main/MainScene'));
+const ForgeTab = lazy(() => import('./tabs/forge/ForgeTab'));
+const ShopTab = lazy(() => import('./tabs/shop/ShopTab'));
+const TavernTab = lazy(() => import('./tabs/tavern/TavernTab'));
+const MarketTab = lazy(() => import('./tabs/market/MarketTab'));
+const DungeonTab = lazy(() => import('./tabs/dungeon/DungeonTab'));
+const SimulationTab = lazy(() => import('./tabs/Simulation/SimulationTab'));
+const ResearchTab = lazy(() => import('./tabs/research/ResearchTab'));
 
-// Import Modals
-import EventModal from './modals/EventModal';
-import SleepModal from './modals/SleepModal';
-import JournalModal from './modals/JournalModal';
-import DungeonResultModal from './modals/DungeonResultModal';
-import CraftingResultModal from './modals/CraftingResultModal';
-import TierUnlockModal from './modals/TierUnlockModal';
-import SettingsModal from './modals/SettingsModal';
-import TutorialScene from './tutorial/TutorialScene';
-import DialogueBox from './DialogueBox';
-import ConfirmationModal from './modals/ConfirmationModal';
-import TutorialCompleteModal from './modals/TutorialCompleteModal';
+// Lazy Import Modals
+const InventoryDisplay = lazy(() => import('./InventoryDisplay').then(m => ({ default: m.InventoryDisplay })));
+const EventModal = lazy(() => import('./modals/EventModal'));
+const SleepModal = lazy(() => import('./modals/SleepModal'));
+const JournalModal = lazy(() => import('./modals/JournalModal'));
+const DungeonResultModal = lazy(() => import('./modals/DungeonResultModal'));
+const CraftingResultModal = lazy(() => import('./modals/CraftingResultModal'));
+const TierUnlockModal = lazy(() => import('./modals/TierUnlockModal'));
+const SettingsModal = lazy(() => import('./modals/SettingsModal'));
+const TutorialScene = lazy(() => import('./tutorial/TutorialScene'));
+const DialogueBox = lazy(() => import('./DialogueBox'));
+const ConfirmationModal = lazy(() => import('./modals/ConfirmationModal'));
+const TutorialCompleteModal = lazy(() => import('./modals/TutorialCompleteModal'));
+
+const LoadingFallback = () => (
+    <div className="h-full w-full flex items-center justify-center bg-stone-950">
+        <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-amber-600/20 border-t-amber-600 rounded-full animate-spin" />
+            <span className="text-stone-500 font-black uppercase text-[10px] tracking-widest animate-pulse">Initializing...</span>
+        </div>
+    </div>
+);
 
 interface MainGameLayoutProps {
     onQuit: () => void;
@@ -325,21 +334,25 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-hidden relative bg-stone-950 flex flex-col min-h-0">
-        <div className={`h-full w-full ${activeTab === 'MAIN' ? 'block' : 'hidden'}`}><MainScene onNavigate={handleSceneNavigation} onSettingsClick={() => setIsSettingsOpen(true)} /></div>
-        <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab isActive={activeTab === 'FORGE'} onNavigate={setActiveTab} onOpenInventory={() => setIsInventoryOpen(true)} /></div>
-        <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab onNavigate={setActiveTab} /></div>
-        {activeTab === 'SHOP' && <ShopTab onNavigate={setActiveTab} />}
-        {activeTab === 'MARKET' && <MarketTab onNavigate={setActiveTab} />}
-        {activeTab === 'TAVERN' && <TavernTab onNavigate={setActiveTab} />}
-        {activeTab === 'SIMULATION' && <SimulationTab />}
+        <Suspense fallback={<LoadingFallback />}>
+          <div className={`h-full w-full ${activeTab === 'MAIN' ? 'block' : 'hidden'}`}><MainScene onNavigate={handleSceneNavigation} onSettingsClick={() => setIsSettingsOpen(true)} /></div>
+          <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab isActive={activeTab === 'FORGE'} onNavigate={setActiveTab} onOpenInventory={() => setIsInventoryOpen(true)} /></div>
+          <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab onNavigate={setActiveTab} /></div>
+          {activeTab === 'SHOP' && <ShopTab onNavigate={setActiveTab} />}
+          {activeTab === 'MARKET' && <MarketTab onNavigate={setActiveTab} />}
+          {activeTab === 'TAVERN' && <TavernTab onNavigate={setActiveTab} />}
+          {activeTab === 'SIMULATION' && <SimulationTab />}
+        </Suspense>
       </main>
 
       {/* Global Modals */}
-      {isInventoryOpen && <InventoryDisplay onClose={() => setIsInventoryOpen(false)} />}
-      {state.isResearchOpen && <div className="fixed inset-0 z-[100] bg-stone-950 animate-in fade-in duration-500"><ResearchTab onClose={() => actions.setResearchOpen(false)} /></div>}
-      
-      {state.toast?.visible && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-bottom-4 pointer-events-none"><div onClick={actions.hideToast} className="bg-stone-900 border-2 border-amber-600/50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto cursor-pointer"><span className="text-stone-100 font-black text-xs md:text-sm uppercase tracking-widest">{state.toast.message}</span></div></div>}
-      <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} /><TierUnlockModal /><TutorialCompleteModal /><ConfirmationModal isOpen={showSkipConfirm} title="Skip?" message="Unlock all systems immediately?" onConfirm={() => { actions.completeTutorial(); setShowSkipConfirm(false); }} onCancel={() => setShowSkipConfirm(false)} isDanger />
+      <Suspense fallback={null}>
+        {isInventoryOpen && <InventoryDisplay onClose={() => setIsInventoryOpen(false)} />}
+        {state.isResearchOpen && <div className="fixed inset-0 z-[100] bg-stone-950 animate-in fade-in duration-500"><ResearchTab onClose={() => actions.setResearchOpen(false)} /></div>}
+        
+        {state.toast?.visible && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-bottom-4 pointer-events-none"><div onClick={actions.hideToast} className="bg-stone-900 border-2 border-amber-600/50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto cursor-pointer"><span className="text-stone-100 font-black text-xs md:text-sm uppercase tracking-widest">{state.toast.message}</span></div></div>}
+        <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} /><TierUnlockModal /><TutorialCompleteModal /><ConfirmationModal isOpen={showSkipConfirm} title="Skip?" message="Unlock all systems immediately?" onConfirm={() => { actions.completeTutorial(); setShowSkipConfirm(false); }} onCancel={() => setShowSkipConfirm(false)} isDanger />
+      </Suspense>
     </div>
   );
 };
