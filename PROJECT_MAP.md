@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.44a)
+# Project Map – Lockhart’s Forge (v0.1.45a)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -16,6 +16,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `TECH_DESIGN.md`: Technical architecture and implementation details.
 - `COMBAT_FORMULA.md`: Official combat calculation sequence and formulas.
 - `PROBABILITY_SYSTEM.md`: RNG standardization rules.
+- `ARCHITECTURE_POLICIES.md`: Economic balance, state transitions, and save migration policies.
 - `PROJECT_MAP.md`: This document.
 
 ### Configuration (`config/`)
@@ -143,7 +144,11 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 🔄 Recent Updates (v0.1.44a)
+## 🔄 Recent Updates (v0.1.45a)
+*   **Architecture & Governance**:
+    *   `ARCHITECTURE_POLICIES.md` established for economic balance, state transitions, and save migration.
+    *   RNG standardization (seeded LCG) fully integrated across all game systems.
+    *   Save migration logic implemented to handle version upgrades and field injection.
 *   **Immersive Navigation Overhaul**:
     *   Traditional top headers removed in functional tabs for a full-screen background experience.
     *   Floating "Back" button overlay implemented with automatic visibility management during slot selection.

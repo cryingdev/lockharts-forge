@@ -38,7 +38,7 @@ const distributeRandomPoints = (weights: PrimaryStats, points: number): PrimaryS
     const keys = ['str', 'vit', 'dex', 'int', 'luk'] as const;
 
     while (remaining > 0) {
-        const rand = rng.next() * totalWeight;
+        const rand = rng.standard(0, totalWeight, 4);
         let cumulative = 0;
         for (const key of keys) {
             cumulative += weights[key];
@@ -94,7 +94,7 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
     const job = rng.pick(jobKeys);
     const gender: Gender = rng.chance(0.5) ? 'Male' : 'Female';
     
-    const randomFactor = rng.next(); 
+    const randomFactor = rng.standard(0, 1, 4); 
     const totalXp = Math.floor(Math.pow(randomFactor, 2) * 2500); 
 
     const { level, currentXp, xpToNextLevel } = calculateLevelDataFromTotalXp(totalXp);
@@ -161,7 +161,7 @@ export const getUnmetNamedMercenary = (knownMercenaries: Mercenary[]): Mercenary
 };
 
 export const generateMercenary = (knownMercenaries: Mercenary[], currentDay: number): Mercenary => {
-    const rand = rng.next();
+    const rand = rng.standard(0, 1, 4);
 
     if (knownMercenaries.length > 0 && rand < 0.3) {
         const potentialRegulars = knownMercenaries.filter(m => m.lastVisitDay !== currentDay);

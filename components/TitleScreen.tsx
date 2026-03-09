@@ -18,7 +18,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showSettings, setShowSettings] = useState(false);
     const [showNewGameModal, setShowNewGameModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
-    const VERSION = "0.1.44a";
+    const VERSION = "0.1.45a";
 
     const checkSaves = useCallback(() => {
         const metadata = getSaveMetadataList();

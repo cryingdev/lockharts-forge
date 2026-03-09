@@ -6,6 +6,10 @@ import { GAME_CONFIG } from '../../config/game-config';
 export const handleToggleShop = (state: GameState): GameState => {
     const willOpen = !state.forge.isShopOpen;
     
+    if (willOpen && state.activeManualDungeon) {
+        return { ...state, logs: ["You cannot open the shop while exploring a dungeon!", ...state.logs] };
+    }
+
     // 에너지 소모 로직 제거: 누구나 언제든 상점을 열고 닫을 수 있음
     return {
         ...state,

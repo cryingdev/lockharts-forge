@@ -4,8 +4,9 @@ import IntroScreen from './components/IntroScreen';
 import TitleScreen from './components/TitleScreen';
 // Fix: Use default import for MainGameLayout as it is exported as default in its source file
 import MainGameLayout from './components/MainGameLayout';
-import { getNextAvailableSlot } from './utils/saveSystem';
+import { getNextAvailableSlot, migrateSaveData } from './utils/saveSystem';
 import { GameState } from './types/game-state';
+import { createInitialGameState } from './state/initial-game-state';
 // Moved useGame import from line 72 to the top of the file
 import { useGame } from './context/GameContext';
 import AudioManager from './services/AudioManager';
@@ -32,10 +33,12 @@ const App = () => {
       setView('GAME');
   };
 
-  const handleLoadGame = useCallback((data: GameState, slotIndex: number) => {
+  const handleLoadGame = useCallback((data: any, slotIndex: number) => {
       if (data) {
+          const initialState = createInitialGameState();
+          const migratedData = migrateSaveData(data, initialState);
           setActiveSlotIndex(slotIndex);
-          setPendingLoadState(data);
+          setPendingLoadState(migratedData);
           setPendingSkipTutorial(false);
           setView('GAME');
       } else {

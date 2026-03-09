@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { ManualDungeonSession, RoomType } from '../types/game-state';
 import { materials } from '../data/materials';
+import { rng } from '../utils/random';
 
 export type CameraMode = 'LOCKED' | 'ADAPTIVE' | 'FREE';
 
@@ -234,7 +235,7 @@ export default class DungeonScene extends Phaser.Scene {
      * 아이템 획득 시 이미지와 수량이 머리 위로 떠오르는 효과
      */
     public showFloatingItem(itemId: string, amount: number) {
-        const x = this.playerMarker.x + (Math.random() * 40 - 20); // 약간의 위치 편차
+        const x = this.playerMarker.x + (rng.standard(-20, 20, 0)); // 약간의 위치 편차
         const y = this.playerMarker.y;
         
         const item = materials[itemId];
@@ -406,7 +407,7 @@ export default class DungeonScene extends Phaser.Scene {
                 content = this.add.text(x, y, '⚔️', { fontSize: '28px' }).setOrigin(0.5);
                 break;
             case 'RESOURCE':
-                content = this.add.text(x, y, Math.random() > 0.5 ? '💎' : '📦', { fontSize: '28px' }).setOrigin(0.5);
+                content = this.add.text(x, y, rng.chance(0.5) ? '💎' : '📦', { fontSize: '28px' }).setOrigin(0.5);
                 break;
             case 'STAIRS':
                 content = this.add.text(x, y, '🪜', { fontSize: '32px' }).setOrigin(0.5);

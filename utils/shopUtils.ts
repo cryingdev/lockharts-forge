@@ -29,7 +29,7 @@ export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] =
     let requestedId = '';
     let price = 0;
     let dialogue = '';
-    let markup = rng.range(1.1, 1.5);
+    let markup = rng.standard(1.1, 1.5, 2);
 
     // 1. Determine target tier based on mercenary level
     const targetTier = getTargetTierByLevel(merc.level);

@@ -34,7 +34,7 @@ export const useShopService = () => {
                 return;
             }
 
-            const interval = isTutorialSignStep ? 500 : rng.range(SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS, SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS + SHOP_CONFIG.ARRIVAL.VARIANCE_MS);
+            const interval = isTutorialSignStep ? 500 : Math.floor(rng.standard(SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS, SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS + SHOP_CONFIG.ARRIVAL.VARIANCE_MS, 0));
             
             arrivalTimerRef.current = setTimeout(() => {
                 // Tutorial logic: Only Pip the Green enters when waiting for the first sell

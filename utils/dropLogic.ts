@@ -20,7 +20,7 @@ export const calculateDrops = (monsterId: string): LootResult[] => {
 
     for (const entry of dropTable) {
         if (rng.chance(entry.chance)) {
-            const quantity = rng.rangeInt(entry.minQuantity, entry.maxQuantity);
+            const quantity = Math.floor(rng.standard(entry.minQuantity, entry.maxQuantity, 0));
             if (quantity > 0) {
                 results.push({
                     itemId: entry.itemId,

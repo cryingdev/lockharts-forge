@@ -3,7 +3,47 @@ import { GameState, GameSettings } from '../types/game-state';
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 const META_KEY = 'lockharts_forge_save_metadata';
 const GLOBAL_SETTINGS_KEY = 'lockharts_forge_global_settings';
-const APP_VERSION = '0.1.44a';
+const APP_VERSION = '0.1.45a';
+
+/**
+ * 마이그레이션 정책:
+ * 1. 버전이 다를 경우 필드 추가/삭제 규칙 적용
+ * 2. 필수 필드 누락 시 기본값 주입
+ * 3. 하위 호환성 실패 시 경고 후 복구 시도
+ */
+export const migrateSaveData = (loadedData: any, initialState: GameState): GameState => {
+    const savedVersion = loadedData.version || '0.0.0';
+    
+    // 1. 기본 구조 병합 (Deep Merge for critical objects)
+    const migrated: GameState = {
+        ...initialState,
+        ...loadedData,
+        stats: {
+            ...initialState.stats,
+            ...(loadedData.stats || {}),
+            dailyFinancials: {
+                ...initialState.stats.dailyFinancials,
+                ...(loadedData.stats?.dailyFinancials || {})
+            }
+        },
+        forge: {
+            ...initialState.forge,
+            ...(loadedData.forge || {})
+        },
+        settings: {
+            ...initialState.settings,
+            ...(loadedData.settings || {})
+        }
+    };
+
+    // 2. 버전별 특수 마이그레이션 로직 (필요 시)
+    if (savedVersion < '0.1.44a') {
+        // 예: 특정 필드 이름 변경이나 구조 변경 대응
+        console.log(`Migrating save from ${savedVersion} to ${APP_VERSION}`);
+    }
+
+    return migrated;
+};
 
 export interface SaveMetadata {
     index: number;
@@ -101,10 +141,15 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
     }
 };
 
-export const loadFromSlot = (slotIndex: number): (GameState & { version?: string }) | null => {
+export const loadFromSlot = (slotIndex: number, initialState?: GameState): (GameState & { version?: string }) | null => {
     try {
         const data = localStorage.getItem(`${SAVE_PREFIX}${slotIndex}`);
-        return data ? JSON.parse(data) : null;
+        if (!data) return null;
+        const parsed = JSON.parse(data);
+        if (initialState) {
+            return migrateSaveData(parsed, initialState);
+        }
+        return parsed;
     } catch {
         return null;
     }

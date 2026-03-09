@@ -4,6 +4,12 @@ import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 import { MARKET_CATALOG } from '../../data/market/index';
 
 export const handleSleep = (state: GameState): GameState => {
+    if (state.forge.isShopOpen) {
+        return { ...state, logs: ["You cannot sleep while the shop is open!", ...state.logs] };
+    }
+    if (state.activeManualDungeon) {
+        return { ...state, logs: ["You cannot sleep while exploring a dungeon!", ...state.logs] };
+    }
     return { ...state, showSleepModal: true };
 };
 
