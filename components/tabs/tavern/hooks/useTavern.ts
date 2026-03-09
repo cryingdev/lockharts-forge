@@ -15,7 +15,12 @@ export const useTavern = () => {
             actions.showToast("Not enough gold.");
             return;
         }
-        const newMerc = getUnmetNamedMercenary(state.knownMercenaries) || createRandomMercenary(state.stats.day);
+        
+        // 5% chance for a named mercenary (excluding Pip who is already known)
+        const isNamedEncounter = Math.random() < 0.05;
+        const namedMerc = isNamedEncounter ? getUnmetNamedMercenary(state.knownMercenaries) : null;
+        
+        const newMerc = namedMerc || createRandomMercenary(state.stats.day);
         setInvitingMercenary(newMerc);
     }, [state.stats.gold, inviteCost, state.knownMercenaries, state.stats.day, actions]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserPlus, Check, Sparkles } from 'lucide-react';
 import { Mercenary } from '../../models/Mercenary';
@@ -14,15 +14,18 @@ interface MercenaryInviteModalProps {
 export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ mercenary, onConfirm, onClose }) => {
     const [revealStage, setRevealStage] = useState<'hidden' | 'scanning' | 'revealed'>('hidden');
     const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50 });
+    const skipRef = useRef(false);
 
     useEffect(() => {
         if (!mercenary) {
             setRevealStage('hidden');
+            skipRef.current = false;
             return;
         }
 
         const runAnimation = async () => {
             setRevealStage('scanning');
+            skipRef.current = false;
             
             // Sequence: Center -> Up -> Down -> Left -> Right
             const sequence = [
@@ -35,6 +38,7 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
             ];
 
             for (const step of sequence) {
+                if (skipRef.current) break;
                 setSpotlightPos({ x: step.x, y: step.y });
                 await new Promise(resolve => setTimeout(resolve, step.delay));
             }
@@ -45,6 +49,13 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
         runAnimation();
     }, [mercenary]);
 
+    const handleSkip = () => {
+        if (revealStage === 'scanning') {
+            skipRef.current = true;
+            setRevealStage('revealed');
+        }
+    };
+
     if (!mercenary) return null;
 
     return (
@@ -53,7 +64,8 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
+                onClick={handleSkip}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm cursor-pointer"
             >
                 <motion.div 
                     initial={{ scale: 0.9, opacity: 0 }}
