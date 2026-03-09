@@ -41,7 +41,7 @@ export const MercenaryPortrait: React.FC<MercenaryPortraitProps> = ({
                         // 전용 프로필 이미지는 약간만 확대, 단일 스프라이트는 얼굴 위주로 크게 확대
                         transform: isDedicatedProfile 
                             ? 'scale(1.1) translateY(2%)' 
-                            : 'scale(2.5) translateY(20%)',
+                            : 'scale(2.5) translateY(25%)',
                     }}
                     referrerPolicy="no-referrer"
                 />
