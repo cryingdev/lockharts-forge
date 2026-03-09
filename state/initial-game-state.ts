@@ -150,6 +150,7 @@ export const createInitialGameState = (): GameState => {
         },
 
         // User Preferences
-        settings: finalSettings
+        settings: finalSettings,
+        seed: Date.now()
     };
 };

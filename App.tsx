@@ -10,6 +10,7 @@ import { GameState } from './types/game-state';
 import { useGame } from './context/GameContext';
 import AudioManager from './services/AudioManager';
 import AssetManager from './services/AssetManager';
+import { rng } from './utils/random';
 
 type GameView = 'INTRO' | 'TITLE' | 'GAME';
 
@@ -83,22 +84,26 @@ const App = () => {
  * 새 게임이면서 skipTutorial이 활성화된 경우 튜토리얼을 즉시 건너뜁니다.
  */
 const GameLoader: React.FC<{ initialData: GameState | null, skipTutorial: boolean, children: React.ReactNode }> = ({ initialData, skipTutorial, children }) => {
-    const { actions } = useGame();
+    const { state, actions } = useGame();
     const isFirstRun = React.useRef(true);
 
     useEffect(() => {
         if (isFirstRun.current) {
             if (initialData) {
                 actions.loadGame(initialData);
-            } else if (skipTutorial) {
-                // Fresh start + Tutorial Skip
-                actions.completeTutorial();
-                // We suppress the celebration modal when skipping from the title for a cleaner start
-                actions.dismissTutorialComplete();
+                rng.setSeed(initialData.seed);
+            } else {
+                rng.setSeed(state.seed);
+                if (skipTutorial) {
+                    // Fresh start + Tutorial Skip
+                    actions.completeTutorial();
+                    // We suppress the celebration modal when skipping from the title for a cleaner start
+                    actions.dismissTutorialComplete();
+                }
             }
         }
         isFirstRun.current = false;
-    }, [initialData, skipTutorial, actions]);
+    }, [initialData, skipTutorial, actions, state.seed]);
 
     return <>{children}</>;
 };

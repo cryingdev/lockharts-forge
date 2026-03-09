@@ -2,6 +2,7 @@ import { Mercenary } from '../models/Mercenary';
 import { ShopCustomer } from '../types/index';
 import { EQUIPMENT_ITEMS } from '../data/equipment';
 import { JobClass } from '../models/JobClass';
+import { rng } from './random';
 
 // Define what kind of equipment each job is interested in
 const JOB_PREFERENCES: Record<JobClass, string[]> = {
@@ -28,7 +29,7 @@ export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] =
     let requestedId = '';
     let price = 0;
     let dialogue = '';
-    let markup = 1.1 + Math.random() * 0.4;
+    let markup = rng.range(1.1, 1.5);
 
     // 1. Determine target tier based on mercenary level
     const targetTier = getTargetTierByLevel(merc.level);
@@ -57,12 +58,12 @@ export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] =
 
     let target;
     // 85% chance to pick from unlocked items if any exist.
-    if (unlockedCandidates.length > 0 && Math.random() < 0.85) {
-        target = unlockedCandidates[Math.floor(Math.random() * unlockedCandidates.length)];
+    if (unlockedCandidates.length > 0 && rng.chance(0.85)) {
+        target = rng.pick(unlockedCandidates);
     } else if (lockedCandidates.length > 0) {
-        target = lockedCandidates[Math.floor(Math.random() * lockedCandidates.length)];
+        target = rng.pick(lockedCandidates);
     } else if (validItems.length > 0) {
-        target = validItems[Math.floor(Math.random() * validItems.length)];
+        target = rng.pick(validItems);
     }
 
     if (target) {
@@ -88,7 +89,7 @@ export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] =
     }
 
     return {
-        id: `trans_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+        id: `trans_${Date.now()}_${rng.rangeInt(0, 999)}`,
         mercenary: merc,
         request: {
             type: 'EQUIPMENT',

@@ -3,6 +3,7 @@ import { useGame } from '../../context/GameContext';
 import { generateShopRequest } from '../../utils/shopUtils';
 import { calculateMaxHp, calculateMaxMp } from '../../models/Stats';
 import { SHOP_CONFIG } from '../../config/shop-config';
+import { rng } from '../../utils/random';
 
 /**
  * useShopService
@@ -33,7 +34,7 @@ export const useShopService = () => {
                 return;
             }
 
-            const interval = isTutorialSignStep ? 500 : (Math.random() * SHOP_CONFIG.ARRIVAL.VARIANCE_MS + SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS);
+            const interval = isTutorialSignStep ? 500 : rng.range(SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS, SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS + SHOP_CONFIG.ARRIVAL.VARIANCE_MS);
             
             arrivalTimerRef.current = setTimeout(() => {
                 // Tutorial logic: Only Pip the Green enters when waiting for the first sell
@@ -63,7 +64,7 @@ export const useShopService = () => {
                     return;
                 }
 
-                const selectedMerc = validCandidates[Math.floor(Math.random() * validCandidates.length)];
+                const selectedMerc = rng.pick(validCandidates);
                 const maxHp = calculateMaxHp(selectedMerc.stats, selectedMerc.level);
                 const maxMp = calculateMaxMp(selectedMerc.stats, selectedMerc.level);
                 

@@ -14,6 +14,8 @@ This document provides a comprehensive structural map of the project, detailing 
 - `metadata.json`: App metadata and versioning (`0.1.44a`).
 - `GAME_DESIGN.md`: Comprehensive game design document covering mechanics and world-building.
 - `TECH_DESIGN.md`: Technical architecture and implementation details.
+- `COMBAT_FORMULA.md`: Official combat calculation sequence and formulas.
+- `PROBABILITY_SYSTEM.md`: RNG standardization rules.
 - `PROJECT_MAP.md`: This document.
 
 ### Configuration (`config/`)
@@ -129,6 +131,8 @@ This document provides a comprehensive structural map of the project, detailing 
 - `utils/saveSystem.ts`: Version-validated LocalStorage persistence. (Global Settings support added).
 - `utils/shopUtils.ts`: Tier-matched request logic and recipe weightings.
 - `utils/mercenaryGenerator.ts`: Random trait and name assignment.
+- `utils/random.ts`: Seeded RNG utility (LCG implementation).
+- `utils/dropLogic.ts`: Standardized loot calculation engine.
 - `utils/cacheManager.ts`: Automated web cache maintenance and version markers.
 
 ### Core Services (`services/`)

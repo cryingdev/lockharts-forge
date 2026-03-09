@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { SmithingTutorialHandler } from './SmithingTutorialHandler';
 import { SMITHING_CONFIG } from '../config/smithing-config';
+import { rng } from '../utils/random';
 
 export interface SmithingSceneData {
   onComplete: (score: number, enhancementCount: number) => void;
@@ -472,7 +473,7 @@ export default class SmithingScene extends Phaser.Scene {
       if (!this.billetContainer) return;
       this.isSnapped = false;
       const posRange = intensity * 15; const angleRange = intensity * 8;
-      const dx = Phaser.Math.FloatBetween(-posRange, posRange); const dy = Phaser.Math.FloatBetween(-posRange, posRange); const da = Phaser.Math.FloatBetween(-angleRange, angleRange);
+      const dx = rng.range(-posRange, posRange); const dy = rng.range(-posRange, posRange); const da = rng.range(-angleRange, angleRange);
       this.tweens.add({ targets: this.billetContainer, x: this.billetContainer.x + dx, y: this.billetContainer.y + dy, angle: this.billetContainer.angle + da, duration: 150, ease: 'Cubic.easeOut', onUpdate: () => this.rebuildHitPoly() });
   }
 
@@ -853,7 +854,7 @@ export default class SmithingScene extends Phaser.Scene {
     } else {
         const bias = SMITHING_CONFIG.BALANCING;
         const redBias = Math.min(bias.MAX_RED_BIAS, this.combo * bias.BIAS_PER_COMBO); 
-        const randType = Math.random();
+        const randType = rng.next();
         const diffCfg = SMITHING_CONFIG.DIFFICULTY;
         const easyThreshold = Math.max(bias.MIN_GREEN_PROB, diffCfg.EASY.baseProbability - (redBias * bias.EASY_REDUCTION_FACTOR));
         const normalThreshold = easyThreshold + (1.0 - easyThreshold - redBias);
@@ -861,17 +862,17 @@ export default class SmithingScene extends Phaser.Scene {
         else if (randType < normalThreshold) { this.currentTargetColor = diffCfg.NORMAL.color; this.currentSpeedMult = diffCfg.NORMAL.speedMult; } 
         else { this.currentTargetColor = diffCfg.HARD.color; this.currentSpeedMult = diffCfg.HARD.speedMult; }
     }
-    this.targetRadius = this.startRadius * Phaser.Math.FloatBetween(0.18, 0.32);
+    this.targetRadius = this.startRadius * rng.range(0.18, 0.32);
     const rect = Phaser.Geom.Polygon.GetAABB(this.spawnPoly);
     let found = false; let attempts = 0;
     while (!found && attempts < 200) {
-        const tx = Phaser.Math.FloatBetween(rect.left, rect.right); 
-        const ty = Phaser.Math.FloatBetween(rect.top, rect.bottom);
+        const tx = rng.range(rect.left, rect.right); 
+        const ty = rng.range(rect.top, rect.bottom);
         if (Phaser.Geom.Polygon.Contains(this.spawnPoly, tx, ty)) { this.hitX = tx; this.hitY = ty; found = true; }
         attempts++;
     }
     if (!found && this.spawnPoly.points.length > 0) {
-        const p = this.spawnPoly.points[Math.floor(Math.random() * this.spawnPoly.points.length)];
+        const p = rng.pick(this.spawnPoly.points);
         this.hitX = p.x; this.hitY = p.y;
     }
     if (this.isPlaying && this.currentTool === 'HAMMER') { 

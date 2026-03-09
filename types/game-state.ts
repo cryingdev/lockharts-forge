@@ -191,4 +191,5 @@ export interface GameState {
   };
 
   settings: GameSettings;
+  seed: number;
 }
