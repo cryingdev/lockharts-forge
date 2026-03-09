@@ -12,6 +12,9 @@ This document provides a comprehensive structural map of the project, detailing 
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
 - `metadata.json`: App metadata and versioning (`0.1.44a`).
+- `GAME_DESIGN.md`: Comprehensive game design document covering mechanics and world-building.
+- `TECH_DESIGN.md`: Technical architecture and implementation details.
+- `PROJECT_MAP.md`: This document.
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs (Repair, Shop, Craft).
