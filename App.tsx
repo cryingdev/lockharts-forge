@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { GameProvider } from './context/GameContext';
-import IntroScreen from './components/IntroScreen';
-import TitleScreen from './components/TitleScreen';
+const IntroScreen = lazy(() => import('./components/IntroScreen'));
+const TitleScreen = lazy(() => import('./components/TitleScreen'));
 // Fix: Use default import for MainGameLayout as it is exported as default in its source file
-import MainGameLayout from './components/MainGameLayout';
-import { getNextAvailableSlot } from './utils/saveSystem';
+const MainGameLayout = lazy(() => import('./components/MainGameLayout'));
+import { getNextAvailableSlot, migrateSaveData } from './utils/saveSystem';
 import { GameState } from './types/game-state';
+import { createInitialGameState } from './state/initial-game-state';
 // Moved useGame import from line 72 to the top of the file
 import { useGame } from './context/GameContext';
 import AudioManager from './services/AudioManager';
 import AssetManager from './services/AssetManager';
+import { rng } from './utils/random';
 
 type GameView = 'INTRO' | 'TITLE' | 'GAME';
 
@@ -31,10 +33,12 @@ const App = () => {
       setView('GAME');
   };
 
-  const handleLoadGame = useCallback((data: GameState, slotIndex: number) => {
+  const handleLoadGame = useCallback((data: any, slotIndex: number) => {
       if (data) {
+          const initialState = createInitialGameState();
+          const migratedData = migrateSaveData(data, initialState);
           setActiveSlotIndex(slotIndex);
-          setPendingLoadState(data);
+          setPendingLoadState(migratedData);
           setPendingSkipTutorial(false);
           setView('GAME');
       } else {
@@ -64,15 +68,17 @@ const App = () => {
         <AssetManager />
         <AudioManager currentView={view} />
         
-        {view === 'INTRO' && <IntroScreen onComplete={handleIntroComplete} />}
-        
-        {view === 'TITLE' && <TitleScreen onNewGame={handleNewGame} onLoadGame={handleLoadGame} />}
-        
-        {view === 'GAME' && (
-            <GameLoader initialData={pendingLoadState} skipTutorial={pendingSkipTutorial}>
-                <MainGameLayout onQuit={handleQuitToTitle} onLoadFromSettings={handleLoadFromSettings} />
-            </GameLoader>
-        )}
+        <Suspense fallback={<div className="h-screen w-screen bg-stone-950" />}>
+          {view === 'INTRO' && <IntroScreen onComplete={handleIntroComplete} />}
+          
+          {view === 'TITLE' && <TitleScreen onNewGame={handleNewGame} onLoadGame={handleLoadGame} />}
+          
+          {view === 'GAME' && (
+              <GameLoader initialData={pendingLoadState} skipTutorial={pendingSkipTutorial}>
+                  <MainGameLayout onQuit={handleQuitToTitle} onLoadFromSettings={handleLoadFromSettings} />
+              </GameLoader>
+          )}
+        </Suspense>
       </GameProvider>
   );
 };
@@ -83,22 +89,26 @@ const App = () => {
  * 새 게임이면서 skipTutorial이 활성화된 경우 튜토리얼을 즉시 건너뜁니다.
  */
 const GameLoader: React.FC<{ initialData: GameState | null, skipTutorial: boolean, children: React.ReactNode }> = ({ initialData, skipTutorial, children }) => {
-    const { actions } = useGame();
+    const { state, actions } = useGame();
     const isFirstRun = React.useRef(true);
 
     useEffect(() => {
         if (isFirstRun.current) {
             if (initialData) {
                 actions.loadGame(initialData);
-            } else if (skipTutorial) {
-                // Fresh start + Tutorial Skip
-                actions.completeTutorial();
-                // We suppress the celebration modal when skipping from the title for a cleaner start
-                actions.dismissTutorialComplete();
+                rng.setSeed(initialData.seed);
+            } else {
+                rng.setSeed(state.seed);
+                if (skipTutorial) {
+                    // Fresh start + Tutorial Skip
+                    actions.completeTutorial();
+                    // We suppress the celebration modal when skipping from the title for a cleaner start
+                    actions.dismissTutorialComplete();
+                }
             }
         }
         isFirstRun.current = false;
-    }, [initialData, skipTutorial, actions]);
+    }, [initialData, skipTutorial, actions, state.seed]);
 
     return <>{children}</>;
 };

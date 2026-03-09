@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { InventoryItem } from '../types/index';
 import { getAssetUrl } from '../utils';
-import ConfirmationModal from './modals/ConfirmationModal';
+const ConfirmationModal = React.lazy(() => import('./modals/ConfirmationModal'));
 import { SKILLS } from '../data/skills';
 import { UI_MODAL_LAYOUT } from '../config/ui-config';
 import { SfxButton } from './common/ui/SfxButton';
@@ -420,15 +420,17 @@ export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) =
                 </div>
             )}
 
-            <ConfirmationModal 
-                isOpen={!!confirmEnchantTarget}
-                title="Seal Power"
-                message={`Permanently bind the essence to ${confirmEnchantTarget?.name}?`}
-                confirmLabel="Seal Steel"
-                cancelLabel="Cancel"
-                onConfirm={handleConfirmEnchant}
-                onCancel={() => setConfirmEnchantTarget(null)}
-            />
+            <React.Suspense fallback={null}>
+                <ConfirmationModal 
+                    isOpen={!!confirmEnchantTarget}
+                    title="Seal Power"
+                    message={`Permanently bind the essence to ${confirmEnchantTarget?.name}?`}
+                    confirmLabel="Seal Steel"
+                    cancelLabel="Cancel"
+                    onConfirm={handleConfirmEnchant}
+                    onCancel={() => setConfirmEnchantTarget(null)}
+                />
+            </React.Suspense>
         </div>
     );
 };

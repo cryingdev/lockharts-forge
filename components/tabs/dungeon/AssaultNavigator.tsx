@@ -10,7 +10,7 @@ import {
     Maximize, Minimize, Plus, Minus, Move, Ghost, Settings, Layers, Wrench,
     Package, Coins, X, TrendingUp
 } from 'lucide-react';
-import ConfirmationModal from '../../modals/ConfirmationModal';
+const ConfirmationModal = React.lazy(() => import('../../modals/ConfirmationModal'));
 import { calculateCombatPower, calculateMercenaryPower } from '../../../utils/combatLogic';
 import DungeonCombatView from './DungeonCombatView';
 import { getAssetUrl } from '../../../utils';
@@ -679,7 +679,9 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
                 />
             )}
 
-            <ConfirmationModal isOpen={showRetreatConfirm} title="Abort Mission?" message="Extraction will return the squad to safety. No rewards will be collected." onConfirm={() => actions.retreatFromManualDungeon()} onCancel={() => setShowRetreatConfirm(false)} isDanger={true} />
+            <React.Suspense fallback={null}>
+                <ConfirmationModal isOpen={showRetreatConfirm} title="Abort Mission?" message="Extraction will return the squad to safety. No rewards will be collected." onConfirm={() => actions.retreatFromManualDungeon()} onCancel={() => setShowRetreatConfirm(false)} isDanger={true} />
+            </React.Suspense>
         </div>
     );
 };

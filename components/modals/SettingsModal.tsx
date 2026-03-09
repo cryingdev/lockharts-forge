@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Save, Upload, Volume2, VolumeX, LogOut, X, Settings, Layout, Check, Music, Zap } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
-import SaveLoadModal from './SaveLoadModal';
+const SaveLoadModal = React.lazy(() => import('./SaveLoadModal'));
 import { loadFromSlot } from '../../utils/saveSystem';
-import ConfirmationModal from './ConfirmationModal';
+const ConfirmationModal = React.lazy(() => import('./ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
 import { CustomSlider } from '../common/ui/CustomSlider';
 
@@ -135,15 +135,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                 </div>
             </div>
 
-            <SaveLoadModal isOpen={slModal.isOpen} mode={slModal.mode} onClose={() => setSlModal({ ...slModal, isOpen: false })} onAction={handleSlotAction} />
+            <React.Suspense fallback={null}>
+                <SaveLoadModal isOpen={slModal.isOpen} mode={slModal.mode} onClose={() => setSlModal({ ...slModal, isOpen: false })} onAction={handleSlotAction} />
+            </React.Suspense>
             
-            <ConfirmationModal 
-                isOpen={loadConfirm.isOpen} 
-                title="Overwrite Progress?" 
-                message="Loading will discard unsaved progress." 
-                onConfirm={() => { setLoadConfirm({ ...loadConfirm, isOpen: false }); setSlModal({ ...slModal, isOpen: false }); onClose(); if(onLoadRequest) onLoadRequest(loadConfirm.data, loadConfirm.index!); }} 
-                onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })} 
-            />
+            <React.Suspense fallback={null}>
+                <ConfirmationModal 
+                    isOpen={loadConfirm.isOpen} 
+                    title="Overwrite Progress?" 
+                    message="Loading will discard unsaved progress." 
+                    onConfirm={() => { setLoadConfirm({ ...loadConfirm, isOpen: false }); setSlModal({ ...slModal, isOpen: false }); onClose(); if(onLoadRequest) onLoadRequest(loadConfirm.data, loadConfirm.index!); }} 
+                    onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })} 
+                />
+            </React.Suspense>
         </>
     );
 };

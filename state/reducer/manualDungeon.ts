@@ -6,6 +6,7 @@ import { materials } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
 import { Monster } from '../../models/Monster';
 import { MONSTER_DROPS } from '../../data/monster-drops';
+import { rng } from '../../utils/random';
 
 /**
  * 랜덤한 입구와 그에 따른 가장 먼 출구를 포함한 그리드를 생성합니다.
@@ -15,12 +16,12 @@ const generateManualGrid = (width: number, height: number, dungeonId: string, fl
     
     // 1. 입구 위치 랜덤 결정 (외곽 벽면 중 하나)
     let startX, startY;
-    if (Math.random() < 0.5) {
-        startX = Math.random() < 0.5 ? 0 : width - 1;
-        startY = Math.floor(Math.random() * height);
+    if (rng.chance(0.5)) {
+        startX = rng.chance(0.5) ? 0 : width - 1;
+        startY = Math.floor(rng.standard(0, height, 0));
     } else {
-        startX = Math.floor(Math.random() * width);
-        startY = Math.random() < 0.5 ? 0 : height - 1;
+        startX = Math.floor(rng.standard(0, width, 0));
+        startY = rng.chance(0.5) ? 0 : height - 1;
     }
     
     grid[startY][startX] = 'ENTRANCE';
@@ -40,8 +41,8 @@ const generateManualGrid = (width: number, height: number, dungeonId: string, fl
         let keyPlaced = false;
         let attempts = 0;
         while (!keyPlaced && attempts < 100) {
-            let kx = Math.floor(Math.random() * width);
-            let ky = Math.floor(Math.random() * height);
+            let kx = Math.floor(rng.standard(0, width, 0));
+            let ky = Math.floor(rng.standard(0, height, 0));
             if (grid[ky][kx] === 'EMPTY') {
                 grid[ky][kx] = 'KEY';
                 keyPlaced = true;
@@ -55,7 +56,7 @@ const generateManualGrid = (width: number, height: number, dungeonId: string, fl
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             if (grid[y][x] === 'EMPTY') {
-                const r = Math.random();
+                const r = rng.standard(0, 1, 4);
                 if (r < 0.18) grid[y][x] = 'ENEMY'; 
                 else if (r < 0.33) grid[y][x] = 'RESOURCE'; 
                 else if (r < 0.38) grid[y][x] = 'GOLD';
@@ -73,8 +74,8 @@ const generateManualGrid = (width: number, height: number, dungeonId: string, fl
     if (canSpawnNPC && !npcPlaced && floor === 1) {
         let attempts = 0;
         while (!npcPlaced && attempts < 50) {
-            const rx = Math.floor(Math.random() * width);
-            const ry = Math.floor(Math.random() * height);
+            const rx = Math.floor(rng.standard(0, width, 0));
+            const ry = Math.floor(rng.standard(0, height, 0));
             if (grid[ry][rx] === 'EMPTY') {
                 grid[ry][rx] = 'NPC';
                 npcPlaced = true;
@@ -101,12 +102,12 @@ const generateEnemiesForSession = (dungeonId: string, currentFloor: number, isBo
     } else {
         const pool = dungeon.monsterPools.find(p => currentFloor >= p.minFloor && currentFloor <= p.maxFloor);
         const mobIds = pool ? pool.monsterIds : ['giant_rat'];
-        let monsterCount = Math.floor(Math.random() * dungeon.tier) + 1;
+        let monsterCount = Math.floor(rng.standard(0, dungeon.tier, 0)) + 1;
         if (currentFloor > 3) monsterCount += 1;
         monsterCount = Math.min(4, Math.max(1, monsterCount));
 
         for (let i = 0; i < monsterCount; i++) {
-            const monsterId = mobIds[Math.floor(Math.random() * mobIds.length)];
+            const monsterId = rng.pick(mobIds);
             const monsterBase = MONSTERS[monsterId] || MONSTERS['giant_rat'];
             monsters.push({ ...monsterBase, currentHp: monsterBase.stats.maxHp });
         }
@@ -115,6 +116,9 @@ const generateEnemiesForSession = (dungeonId: string, currentFloor: number, isBo
 };
 
 export const handleStartManualDungeon = (state: GameState, payload: { dungeonId: string; partyIds: string[]; startFloor?: number }): GameState => {
+    if (state.forge.isShopOpen) {
+        return { ...state, logs: ["You cannot enter a dungeon while the shop is open!", ...state.logs] };
+    }
     const dungeon = DUNGEONS.find(d => d.id === payload.dungeonId);
     if (!dungeon) return state;
 
@@ -226,8 +230,8 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
         actionMsg = `Hidden amongst the debris, we found an old pouch containing ${extraGold} Gold!`;
     } else if (targetRoom === 'RESOURCE' && !isAlreadyVisited) {
         const possibleResources = ['copper_ore', 'tin_ore', 'leather_strips', 'charcoal', 'hide_patch'];
-        const resId = possibleResources[Math.floor(Math.random() * possibleResources.length)];
-        const count = 1 + Math.floor(Math.random() * 2);
+        const resId = rng.pick(possibleResources);
+        const count = 1 + Math.floor(rng.standard(0, 2, 0));
         const matDef = materials[resId];
         
         // 필드 자원도 세션 보관함(collectedLoot)에 추가하여 연출 및 결과 합산 처리
@@ -357,8 +361,8 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             if (drops) {
                 drops.forEach(drop => {
                     // Apply floorBoost to drop chance
-                    if (Math.random() <= (drop.chance * session.floorBoost)) {
-                        const qty = Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) + drop.minQuantity;
+                    if (rng.chance(drop.chance * session.floorBoost)) {
+                        const qty = Math.floor(rng.standard(drop.minQuantity, drop.maxQuantity, 0));
                         if (qty > 0) {
                             const mat = materials[drop.itemId];
                             if (mat) {
@@ -500,7 +504,7 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
             let statusChange: 'NONE' | 'INJURED' | 'DEAD' = 'NONE';
             
             if (isDefeat) {
-                const roll = Math.random();
+                const roll = rng.standard(0, 1, 4);
                 if (roll < 0.1) { nextStatus = 'DEAD'; statusChange = 'DEAD'; }
                 else { 
                     nextStatus = 'INJURED'; statusChange = 'INJURED'; 

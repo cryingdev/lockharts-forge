@@ -8,6 +8,7 @@ import { SPECIAL_RECRUITS_REGISTRY } from '../../data/mercenaries';
 import { MONSTER_DROPS } from '../../data/monster-drops';
 import { MONSTERS } from '../../data/monsters';
 import { MercenaryStatus } from '../../models/Mercenary';
+import { rng } from '../../utils/random';
 
 export const handleStartExpedition = (state: GameState, payload: { dungeonId: string; partyIds: string[] }): GameState => {
     const { dungeonId, partyIds } = payload;
@@ -128,17 +129,17 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     // 1. Roll for monster drops (Auto-expedition represents clearing many encounters)
     // Only roll for auto expeditions, as manual assault already collected drops during combat
     if (!isManualAssault) {
-        const encounterCount = Math.floor(Math.random() * 5) + 5; // Simulate 5-10 encounters
+        const encounterCount = Math.floor(rng.standard(5, 10, 0)); // Simulate 5-10 encounters
         const allMobIds = Array.from(new Set(dungeon.monsterPools.flatMap(p => p.monsterIds)));
         
         for (let i = 0; i < encounterCount; i++) {
-            const mobId = allMobIds[Math.floor(Math.random() * allMobIds.length)];
+            const mobId = rng.pick(allMobIds);
             const drops = MONSTER_DROPS[mobId];
             if (drops) {
                 drops.forEach(drop => {
                     const adjustedChance = drop.chance * luckMultiplier;
-                    if (Math.random() <= adjustedChance) {
-                        const quantity = Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) + drop.minQuantity;
+                    if (rng.chance(adjustedChance)) {
+                        const quantity = Math.floor(rng.standard(drop.minQuantity, drop.maxQuantity, 0));
                         processItemGain(drop.itemId, quantity);
                     }
                 });
@@ -199,7 +200,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
 
             if (currentHp < 1) {
                 nextStatus = 'INJURED' as const;
-                recoveryUntilDay = state.stats.day + Math.floor(Math.random() * 2) + 1;
+                recoveryUntilDay = state.stats.day + Math.floor(rng.standard(1, 2, 0)) + 1;
             }
 
             mercenaryResults.push({

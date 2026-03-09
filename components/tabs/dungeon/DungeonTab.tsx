@@ -1,13 +1,21 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useDungeon } from './hooks/useDungeon';
 import { DungeonListView } from './ui/DungeonListView';
 import { DungeonInfoPanel } from './ui/DungeonInfoPanel';
 import { SquadActionPanel } from './ui/SquadActionPanel';
 import { MercenaryPickerModal } from './ui/MercenaryPickerModal';
-import AssaultNavigator from './AssaultNavigator';
-import ConfirmationModal from '../../modals/ConfirmationModal';
+const ConfirmationModal = React.lazy(() => import('../../modals/ConfirmationModal'));
 import { SfxButton } from '../../common/ui/SfxButton';
 import { ArrowLeft } from 'lucide-react';
+
+const AssaultNavigator = lazy(() => import('./AssaultNavigator'));
+
+const NavigatorLoading = () => (
+    <div className="absolute inset-0 z-[1000] bg-stone-950 flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-red-900/20 border-t-red-600 rounded-full animate-spin mb-4" />
+        <span className="text-red-500 font-black uppercase tracking-[0.3em] animate-pulse">Entering Danger Zone...</span>
+    </div>
+);
 
 interface DungeonTabProps {
     onNavigate?: (tab: any) => void;
@@ -63,10 +71,12 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
             ) : (
                 <div className="h-full w-full bg-stone-950 text-stone-200 overflow-hidden font-sans relative flex flex-col sm:flex-row">
                     {(!!state.activeManualDungeon && state.showManualDungeonOverlay) && (
-                        <AssaultNavigator 
-                            inspectedMercId={inspectedMercId}
-                            setInspectedMercId={setInspectedMercId}
-                        />
+                        <Suspense fallback={<NavigatorLoading />}>
+                            <AssaultNavigator 
+                                inspectedMercId={inspectedMercId}
+                                setInspectedMercId={setInspectedMercId}
+                            />
+                        </Suspense>
                     )}
 
                     <DungeonInfoPanel 
@@ -116,20 +126,22 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
                 staminaCostForFloor={staminaCostForFloor}
             />
 
-            <ConfirmationModal 
-                isOpen={!!showRecallConfirm} 
-                title="Abort Mission?" 
-                message="Recalling the squad now will forfeit all progress and potential loot. Continue?" 
-                confirmLabel="Confirm Recall" 
-                cancelLabel="Stay Deployed" 
-                isDanger 
-                onConfirm={() => { 
-                    if(showRecallConfirm === 'AUTO') actions.abortExpedition(currentExpedition!.id); 
-                    else actions.retreatFromManualDungeon(); 
-                    setShowRecallConfirm(null); 
-                }} 
-                onCancel={() => setShowRecallConfirm(null)} 
-            />
+            <React.Suspense fallback={null}>
+                <ConfirmationModal 
+                    isOpen={!!showRecallConfirm} 
+                    title="Abort Mission?" 
+                    message="Recalling the squad now will forfeit all progress and potential loot. Continue?" 
+                    confirmLabel="Confirm Recall" 
+                    cancelLabel="Stay Deployed" 
+                    isDanger 
+                    onConfirm={() => { 
+                        if(showRecallConfirm === 'AUTO') actions.abortExpedition(currentExpedition!.id); 
+                        else actions.retreatFromManualDungeon(); 
+                        setShowRecallConfirm(null); 
+                    }} 
+                    onCancel={() => setShowRecallConfirm(null)} 
+                />
+            </React.Suspense>
         </div>
     );
 };

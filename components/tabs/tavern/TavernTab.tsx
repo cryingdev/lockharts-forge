@@ -2,6 +2,7 @@ import React from 'react';
 import { useTavern } from './hooks/useTavern';
 import { TavernListView } from './ui/TavernListView';
 import { TavernInteractionView } from './ui/TavernInteractionView';
+import { MercenaryInviteModal } from '../../modals/MercenaryInviteModal';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { ArrowLeft } from 'lucide-react';
 
@@ -16,6 +17,8 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
         groupedMercs, 
         isDetailOpen,
         setIsDetailOpen,
+        invitingMercenary,
+        inviteCost,
         handlers 
     } = tavern;
 
@@ -55,10 +58,17 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                 <TavernListView 
                     hired={groupedMercs.hired}
                     visitors={groupedMercs.visitors}
-                    onScout={handlers.handleScout}
+                    onInvite={handlers.handleInvite}
                     onSelect={handlers.handleSelectMercenary}
+                    inviteCost={inviteCost}
                 />
             )}
+
+            <MercenaryInviteModal 
+                mercenary={invitingMercenary}
+                onConfirm={handlers.confirmInvite}
+                onClose={handlers.cancelInvite}
+            />
         </div>
     );
 };

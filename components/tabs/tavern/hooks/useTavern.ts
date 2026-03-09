@@ -6,15 +6,35 @@ export const useTavern = () => {
     const { state, actions } = useGame();
     const [selectedMercId, setSelectedMercId] = useState<string | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [invitingMercenary, setInvitingMercenary] = useState<any | null>(null);
 
-    const handleScout = useCallback(() => {
-        if (state.stats.gold < 50) {
+    const inviteCost = useMemo(() => 50 * Math.pow(2, state.stats.inviteCount), [state.stats.inviteCount]);
+
+    const handleInvite = useCallback(() => {
+        if (state.stats.gold < inviteCost) {
             actions.showToast("Not enough gold.");
             return;
         }
-        const newMerc = getUnmetNamedMercenary(state.knownMercenaries) || createRandomMercenary(state.stats.day);
-        actions.scoutMercenary(newMerc, 50);
-    }, [state.stats.gold, state.knownMercenaries, state.stats.day, actions]);
+        
+        // 5% chance for a named mercenary (excluding Pip who is already known)
+        const isNamedEncounter = Math.random() < 0.05;
+        const namedMerc = isNamedEncounter ? getUnmetNamedMercenary(state.knownMercenaries) : null;
+        
+        const newMerc = namedMerc || createRandomMercenary(state.stats.day);
+        setInvitingMercenary(newMerc);
+    }, [state.stats.gold, inviteCost, state.knownMercenaries, state.stats.day, actions]);
+
+    const confirmInvite = useCallback(() => {
+        if (invitingMercenary) {
+            actions.scoutMercenary(invitingMercenary, inviteCost);
+            setInvitingMercenary(null);
+            actions.showToast(`${invitingMercenary.name} has arrived at the tavern!`);
+        }
+    }, [invitingMercenary, inviteCost, actions]);
+
+    const cancelInvite = useCallback(() => {
+        setInvitingMercenary(null);
+    }, []);
 
     const groupedMercs = useMemo(() => {
         const hired = state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
@@ -45,8 +65,12 @@ export const useTavern = () => {
         groupedMercs,
         isDetailOpen,
         setIsDetailOpen,
+        invitingMercenary,
+        inviteCost,
         handlers: {
-            handleScout,
+            handleInvite,
+            confirmInvite,
+            cancelInvite,
             handleSelectMercenary,
             handleCloseInteraction
         }

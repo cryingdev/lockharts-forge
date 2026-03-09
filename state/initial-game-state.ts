@@ -5,6 +5,7 @@ import { MARKET_CATALOG } from '../data/market/index';
 import { DUNGEON_CONFIG } from '../config/dungeon-config';
 import { DUNGEONS } from '../data/dungeons';
 import { loadGlobalSettings } from '../utils/saveSystem';
+import { createRandomMercenary } from '../utils/mercenaryGenerator';
 
 const createInitialInventory = (): InventoryItem[] => [
     { ...materials.anvil, type: 'TOOL', quantity: 1 },
@@ -64,6 +65,7 @@ export const createInitialGameState = (): GameState => {
             tierLevel: 0,
             smithingExp: 0,
             workbenchExp: 0,
+            inviteCount: 0,
             dailyFinancials: {
                 incomeShop: 0,
                 incomeInventory: 0,
@@ -84,14 +86,19 @@ export const createInitialGameState = (): GameState => {
         },
         activeEvent: null,
         logs: ['You stand amidst the ruins of Lockhart\'s Forge.', 'The equipment is cold and broken. You need to gather gold to rebuild.'],
-        knownMercenaries: [...NAMED_MERCENARIES].map(m => ({
-            ...m,
-            expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
-            currentXp: 0,
-            xpToNextLevel: m.level * 100,
-            status: 'VISITOR' as const,
-            bonusStatPoints: m.bonusStatPoints ?? Math.max(0, (m.level - 1) * 3)
-        })),
+        knownMercenaries: [
+            // Only Pip the Green initially from named ones
+            ...NAMED_MERCENARIES.filter(m => m.id === 'pip_green').map(m => ({
+                ...m,
+                expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
+                currentXp: 0,
+                xpToNextLevel: m.level * 100,
+                status: 'VISITOR' as const,
+                bonusStatPoints: m.bonusStatPoints ?? Math.max(0, (m.level - 1) * 3)
+            })),
+            // Plus 5 random mercenaries
+            ...Array.from({ length: 5 }).map(() => createRandomMercenary(1))
+        ],
 
         // Shop State
         activeCustomer: null,
@@ -143,6 +150,7 @@ export const createInitialGameState = (): GameState => {
         },
 
         // User Preferences
-        settings: finalSettings
+        settings: finalSettings,
+        seed: Date.now()
     };
 };

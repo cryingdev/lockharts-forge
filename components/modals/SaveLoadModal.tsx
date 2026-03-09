@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Upload, X, Trash2, Clock, Coins, Calendar, ChevronRight } from 'lucide-react';
 import { getSaveMetadataList, SaveMetadata, deleteSlot } from '../../utils/saveSystem';
-import ConfirmationModal from './ConfirmationModal';
+const ConfirmationModal = React.lazy(() => import('./ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
 
 interface SaveLoadModalProps {
@@ -144,15 +144,17 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                 </div>
             </div>
 
-            <ConfirmationModal 
-                isOpen={deleteConfirm.isOpen}
-                title="Delete Save Data"
-                message={`Are you sure you want to delete the data in Slot ${deleteConfirm.index !== null ? deleteConfirm.index + 1 : ''}? This action cannot be undone.`}
-                confirmLabel="Delete Forever"
-                onConfirm={handleConfirmDelete}
-                onCancel={() => setDeleteConfirm({ isOpen: false, index: null })}
-                isDanger={true}
-            />
+            <React.Suspense fallback={null}>
+                <ConfirmationModal 
+                    isOpen={deleteConfirm.isOpen}
+                    title="Delete Save Data"
+                    message={`Are you sure you want to delete the data in Slot ${deleteConfirm.index !== null ? deleteConfirm.index + 1 : ''}? This action cannot be undone.`}
+                    confirmLabel="Delete Forever"
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setDeleteConfirm({ isOpen: false, index: null })}
+                    isDanger={true}
+                />
+            </React.Suspense>
         </>
     );
 };

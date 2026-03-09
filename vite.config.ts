@@ -8,6 +8,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'phaser-vendor': ['phaser'],
+          'react-vendor': ['react', 'react-dom'],
+          'ui-vendor': ['lucide-react', 'motion/react'],
+        }
+      }
+    }
   },
   server: {
     port: 3000,
