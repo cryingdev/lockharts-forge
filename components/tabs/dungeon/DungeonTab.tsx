@@ -4,7 +4,7 @@ import { DungeonListView } from './ui/DungeonListView';
 import { DungeonInfoPanel } from './ui/DungeonInfoPanel';
 import { SquadActionPanel } from './ui/SquadActionPanel';
 import { MercenaryPickerModal } from './ui/MercenaryPickerModal';
-import ConfirmationModal from '../../modals/ConfirmationModal';
+const ConfirmationModal = React.lazy(() => import('../../modals/ConfirmationModal'));
 import { SfxButton } from '../../common/ui/SfxButton';
 import { ArrowLeft } from 'lucide-react';
 
@@ -126,20 +126,22 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
                 staminaCostForFloor={staminaCostForFloor}
             />
 
-            <ConfirmationModal 
-                isOpen={!!showRecallConfirm} 
-                title="Abort Mission?" 
-                message="Recalling the squad now will forfeit all progress and potential loot. Continue?" 
-                confirmLabel="Confirm Recall" 
-                cancelLabel="Stay Deployed" 
-                isDanger 
-                onConfirm={() => { 
-                    if(showRecallConfirm === 'AUTO') actions.abortExpedition(currentExpedition!.id); 
-                    else actions.retreatFromManualDungeon(); 
-                    setShowRecallConfirm(null); 
-                }} 
-                onCancel={() => setShowRecallConfirm(null)} 
-            />
+            <React.Suspense fallback={null}>
+                <ConfirmationModal 
+                    isOpen={!!showRecallConfirm} 
+                    title="Abort Mission?" 
+                    message="Recalling the squad now will forfeit all progress and potential loot. Continue?" 
+                    confirmLabel="Confirm Recall" 
+                    cancelLabel="Stay Deployed" 
+                    isDanger 
+                    onConfirm={() => { 
+                        if(showRecallConfirm === 'AUTO') actions.abortExpedition(currentExpedition!.id); 
+                        else actions.retreatFromManualDungeon(); 
+                        setShowRecallConfirm(null); 
+                    }} 
+                    onCancel={() => setShowRecallConfirm(null)} 
+                />
+            </React.Suspense>
         </div>
     );
 };

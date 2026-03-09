@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { GameProvider } from './context/GameContext';
-import IntroScreen from './components/IntroScreen';
-import TitleScreen from './components/TitleScreen';
+const IntroScreen = lazy(() => import('./components/IntroScreen'));
+const TitleScreen = lazy(() => import('./components/TitleScreen'));
 // Fix: Use default import for MainGameLayout as it is exported as default in its source file
-import MainGameLayout from './components/MainGameLayout';
+const MainGameLayout = lazy(() => import('./components/MainGameLayout'));
 import { getNextAvailableSlot, migrateSaveData } from './utils/saveSystem';
 import { GameState } from './types/game-state';
 import { createInitialGameState } from './state/initial-game-state';
@@ -68,15 +68,17 @@ const App = () => {
         <AssetManager />
         <AudioManager currentView={view} />
         
-        {view === 'INTRO' && <IntroScreen onComplete={handleIntroComplete} />}
-        
-        {view === 'TITLE' && <TitleScreen onNewGame={handleNewGame} onLoadGame={handleLoadGame} />}
-        
-        {view === 'GAME' && (
-            <GameLoader initialData={pendingLoadState} skipTutorial={pendingSkipTutorial}>
-                <MainGameLayout onQuit={handleQuitToTitle} onLoadFromSettings={handleLoadFromSettings} />
-            </GameLoader>
-        )}
+        <Suspense fallback={<div className="h-screen w-screen bg-stone-950" />}>
+          {view === 'INTRO' && <IntroScreen onComplete={handleIntroComplete} />}
+          
+          {view === 'TITLE' && <TitleScreen onNewGame={handleNewGame} onLoadGame={handleLoadGame} />}
+          
+          {view === 'GAME' && (
+              <GameLoader initialData={pendingLoadState} skipTutorial={pendingSkipTutorial}>
+                  <MainGameLayout onQuit={handleQuitToTitle} onLoadFromSettings={handleLoadFromSettings} />
+              </GameLoader>
+          )}
+        </Suspense>
       </GameProvider>
   );
 };

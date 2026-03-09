@@ -4,7 +4,7 @@ import DialogueBox from '../DialogueBox';
 import { getAssetUrl } from '../../utils';
 import { TutorialSceneMode } from '../../types/game-state';
 import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
-import ConfirmationModal from '../modals/ConfirmationModal';
+const ConfirmationModal = React.lazy(() => import('../modals/ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
 
 const MAX_TEMP = 1500;
@@ -364,7 +364,9 @@ const TutorialScene: React.FC = () => {
                 </div>
             )}
 
-            <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked." confirmLabel="Skip Everything" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
+            <React.Suspense fallback={null}>
+                <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked." confirmLabel="Skip Everything" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
+            </React.Suspense>
         </div>
     );
 };

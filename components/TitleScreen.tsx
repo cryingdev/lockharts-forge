@@ -3,7 +3,7 @@ import { Anvil, Play, Upload, User, Info, FastForward, X, Settings, Sparkles, Za
 import { getAssetUrl } from '../utils';
 import { getLatestSaveInfo, getSaveMetadataList, loadFromSlot } from '../utils/saveSystem';
 import SaveLoadModal from './modals/SaveLoadModal';
-import SettingsModal from './modals/SettingsModal';
+const SettingsModal = React.lazy(() => import('./modals/SettingsModal'));
 import { SfxButton } from './common/ui/SfxButton';
 import { UI_MODAL_LAYOUT } from '../config/ui-config';
 
@@ -189,11 +189,13 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                     onAction={handleLoadFromSlot} 
                 />
 
-                <SettingsModal 
-                    isOpen={showSettings}
-                    onClose={() => setShowSettings(false)}
-                    isTitleView={true}
-                />
+                <React.Suspense fallback={null}>
+                    <SettingsModal 
+                        isOpen={showSettings}
+                        onClose={() => setShowSettings(false)}
+                        isTitleView={true}
+                    />
+                </React.Suspense>
 
                 {showCredits && (
                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in">
