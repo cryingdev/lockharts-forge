@@ -189,6 +189,34 @@ export const handleTalkMercenary = (state: GameState, payload: { mercenaryId: st
     };
 };
 
+export const handleBuyDrink = (state: GameState, payload: { mercenaryId: string }): GameState => {
+    const { mercenaryId } = payload;
+    const DRINK_COST = 100;
+    const AFFINITY_GAIN = 3;
+
+    if (state.stats.gold < DRINK_COST) return state;
+    if (state.boughtDrinkToday.includes(mercenaryId)) return state;
+
+    const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
+    if (mercIndex === -1) return state;
+
+    const newMercenaries = [...state.knownMercenaries];
+    const merc = { ...newMercenaries[mercIndex] };
+    merc.affinity = Math.min(100, (merc.affinity || 0) + AFFINITY_GAIN);
+    newMercenaries[mercIndex] = merc;
+
+    return {
+        ...state,
+        stats: {
+            ...state.stats,
+            gold: state.stats.gold - DRINK_COST
+        },
+        knownMercenaries: newMercenaries,
+        boughtDrinkToday: [...state.boughtDrinkToday, mercenaryId],
+        logs: [`Bought a round of ale for ${merc.name}. Affinity +${AFFINITY_GAIN}.`, ...state.logs]
+    };
+};
+
 export const handleAllocateStat = (state: GameState, payload: { mercenaryId: string; stat: keyof PrimaryStats }): GameState => {
     const { mercenaryId, stat } = payload;
     const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);

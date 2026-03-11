@@ -8,7 +8,7 @@ import { handleTriggerEvent, handleCloseEvent, handleToggleJournal } from './red
 import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFurnace, handleSellItem, handleUseItem, handleToggleLockItem, handleApplySkillScroll } from './reducer/inventory';
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
 import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer, handleRefuseCustomer } from './reducer/shop';
-import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary } from './reducer/mercenary';
+import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary, handleBuyDrink } from './reducer/mercenary';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual } from './reducer/manualDungeon';
@@ -67,6 +67,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'FIRE_MERCENARY': return handleFireMercenary(state, action.payload);
     case 'GIVE_GIFT': return handleGiveGift(state, action.payload);
     case 'TALK_MERCENARY': return handleTalkMercenary(state, action.payload);
+    case 'BUY_DRINK': return handleBuyDrink(state, action.payload);
     case 'ALLOCATE_STAT': return handleAllocateStat(state, action.payload);
     case 'UPDATE_MERCENARY_STATS': return handleUpdateMercenaryStats(state, action.payload);
 

@@ -150,7 +150,7 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
                             }`}
                         >
                             <Check className="w-4 h-4" />
-                            Welcome to the Forge
+                            Welcome to the Town
                         </SfxButton>
                     </div>
                 </motion.div>

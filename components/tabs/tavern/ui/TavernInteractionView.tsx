@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Heart, MessageSquare, Gift, UserPlus, UserMinus, Search, Wrench, ChevronUp, Package, X, Ban } from 'lucide-react';
+import { ArrowLeft, Heart, MessageSquare, Gift, UserPlus, UserMinus, Search, Wrench, ChevronUp, Package, X, Ban, Beer } from 'lucide-react';
 import DialogueBox from '../../../DialogueBox';
 import { AnimatedMercenary } from '../../../common/ui/AnimatedMercenary';
 import { MercenaryPortrait } from '../../../common/ui/MercenaryPortrait';
@@ -103,27 +103,35 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
             {/* Control Bar & Dialogue */}
             <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center gap-[10px] pointer-events-none">
                 <div className={`w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
-                    <div className="grid grid-cols-4 gap-2 md:gap-3 w-full max-w-2xl mx-auto">
+                    <div className="grid grid-cols-5 gap-1.5 md:gap-3 w-full max-w-3xl mx-auto">
                         <SfxButton onClick={handlers.handleTalk} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${state.talkedToToday.includes(mercenary.id) ? 'opacity-50' : ''}`}>
                             <MessageSquare className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-500" />
-                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
+                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
+                        </SfxButton>
+
+                        <SfxButton onClick={handlers.handleBuyDrink} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 hover:border-amber-600 ${state.boughtDrinkToday.includes(mercenary.id) ? 'opacity-50' : ''}`}>
+                            <Beer className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-600" />
+                            <div className="flex flex-col items-center leading-none">
+                                <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">Drink</span>
+                                <span className="text-[6px] md:text-[8px] font-mono text-amber-600/80 mt-0.5">100G</span>
+                            </div>
                         </SfxButton>
 
                         <SfxButton onClick={() => setShowGiftMenu(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 hover:border-pink-500`}>
                             <Gift className="w-3.5 h-3.5 md:w-5 md:h-5 text-pink-500" />
-                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
+                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
                         </SfxButton>
 
                         {isHired ? (
                             <SfxButton onClick={handlers.handleTerminateInit} disabled={isOnExpedition} className={`${btnBaseClass} text-white ${isOnExpedition ? 'bg-stone-900 border-stone-800 text-stone-600 cursor-not-allowed opacity-50' : 'bg-red-950/60 hover:bg-red-900/80 border-red-800'}`}>
                                 <UserMinus className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                                <span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Fire</span>
+                                <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">Fire</span>
                             </SfxButton>
                         ) : (
                             <SfxButton onClick={handlers.handleRecruitInit} disabled={!canAfford || !hasAffinity} className={`${btnBaseClass} ${(!canAfford || !hasAffinity) ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'}`}>
                                 <UserPlus className="w-3.5 h-3.5 md:w-5 md:h-5" />
                                 <div className="flex flex-col items-center leading-none">
-                                    <span className="font-black text-[9px] md:text-xs uppercase tracking-widest">Hire</span>
+                                    <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">Hire</span>
                                     {hasAffinity && <span className="text-[6px] md:text-[8px] font-mono opacity-80 mt-0.5">{hiringCost}G</span>}
                                 </div>
                             </SfxButton>
@@ -131,7 +139,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
 
                         <SfxButton onClick={() => setIsDetailOpen(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}>
                             {isHired ? <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Search className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-500" />}
-                            <span className="font-black text-[9px] md:text-xs text-stone-200 uppercase tracking-widest">{isHired ? 'Manage' : 'Info'}</span>
+                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">{isHired ? 'Manage' : 'Info'}</span>
                             {hasUnallocated && <div className="absolute -top-1 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-bounce border border-stone-950 z-10"><ChevronUp className="w-2.5 h-2.5 font-black" /></div>}
                         </SfxButton>
                     </div>

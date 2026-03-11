@@ -128,6 +128,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         forge: { ...state.forge, isShopOpen: false },
         visitorsToday: [],
         talkedToToday: [],
+        boughtDrinkToday: [],
         talkedToGarrickToday: false,
         activeCustomer: null,
         shopQueue: [],
