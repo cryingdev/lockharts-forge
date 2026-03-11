@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { GameProvider } from './context/GameContext';
-const IntroScreen = lazy(() => import('./components/IntroScreen'));
-const TitleScreen = lazy(() => import('./components/TitleScreen'));
+import IntroScreen from './components/IntroScreen';
+import TitleScreen from './components/TitleScreen';
 // Fix: Use default import for MainGameLayout as it is exported as default in its source file
 const MainGameLayout = lazy(() => import('./components/MainGameLayout'));
 import { getNextAvailableSlot, migrateSaveData } from './utils/saveSystem';

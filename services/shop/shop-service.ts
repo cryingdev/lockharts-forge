@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useGame } from '../../context/GameContext';
 import { generateShopRequest } from '../../utils/shopUtils';
 import { calculateMaxHp, calculateMaxMp } from '../../models/Stats';
+import { generateMercenary } from '../../utils/mercenaryGenerator';
 import { SHOP_CONFIG } from '../../config/shop-config';
 import { rng } from '../../utils/random';
 
@@ -53,18 +54,24 @@ export const useShopService = () => {
                 }
 
                 // Normal Candidate filtering
-                // status check corrected from 'IN_JURED' to 'INJURED' and includes 'ON_EXPEDITION', 'DEAD'
                 const validCandidates = state.knownMercenaries.filter(m => 
                     !visitorsToday.includes(m.id) && 
                     !['ON_EXPEDITION', 'INJURED', 'DEAD'].includes(m.status)
                 );
 
-                if (validCandidates.length === 0) {
-                    scheduleNextArrival();
-                    return;
+                // If we have few known mercenaries or just by chance (40%), generate a new one
+                const shouldGenerateNew = validCandidates.length < 3 || rng.chance(0.4);
+
+                let selectedMerc;
+                if (shouldGenerateNew) {
+                    selectedMerc = generateMercenary(state.knownMercenaries, state.stats.day);
+                } else if (validCandidates.length > 0) {
+                    selectedMerc = rng.pick(validCandidates);
+                } else {
+                    // Fallback to generating if no known are available
+                    selectedMerc = generateMercenary(state.knownMercenaries, state.stats.day);
                 }
 
-                const selectedMerc = rng.pick(validCandidates);
                 const maxHp = calculateMaxHp(selectedMerc.stats, selectedMerc.level);
                 const maxMp = calculateMaxMp(selectedMerc.stats, selectedMerc.level);
                 

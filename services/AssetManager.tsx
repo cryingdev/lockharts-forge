@@ -21,9 +21,9 @@ const AssetManager: React.FC = () => {
 
         const bgms = AUDIO_MANIFEST.BGM;
         const sfxs = AUDIO_MANIFEST.SFX;
-        const mercs = IMAGE_MANIFEST.MERCENARIES;
-        const mainAssets = (IMAGE_MANIFEST as any).MAIN || [];
-        const misc = (IMAGE_MANIFEST as any).MISC || [];
+        const mercs = IMAGE_MANIFEST.MERCENARIES.filter(name => !name.includes('_profile'));
+        const mainAssets = ((IMAGE_MANIFEST as any).MAIN || []).filter((name: string) => !name.includes('_profile'));
+        const misc = ((IMAGE_MANIFEST as any).MISC || []).filter((name: string) => !name.includes('_profile'));
         
         // 프리로드할 폰트 구성
         const fontsToLoad = [

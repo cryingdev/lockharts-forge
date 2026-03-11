@@ -41,9 +41,9 @@ export const MercenaryPaperDoll: React.FC<MercenaryPaperDollProps> = ({
 }) => {
   const [spriteRatio, setSpriteRatio] = useState<number>(1 / 2.15);
   
-  const isSpriteSheet = !!mercenary.sprite && mercenary.sprite.includes('_sprite');
-  const isFullImage = !!mercenary.profileImage || (!!mercenary.sprite && !isSpriteSheet);
-  const displayImage = mercenary.profileImage || mercenary.sprite || 'default.png';
+  const isSpriteSheet = !!mercenary.spriteImage && mercenary.spriteImage.includes('_sprite');
+  const displayImage = mercenary.fullBodyImage || mercenary.spriteImage || 'default.png';
+  const isFullImage = !!mercenary.fullBodyImage || (!!mercenary.spriteImage && !isSpriteSheet);
   
   useEffect(() => {
       const sprite = displayImage;

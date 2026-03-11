@@ -47,23 +47,36 @@ const MainForgeCanvas = () => {
     }
 
     if (!gameRef.current && containerRef.current) {
-        const config: Phaser.Types.Core.GameConfig = {
-            type: Phaser.AUTO, parent: containerRef.current, width: containerRef.current.clientWidth, height: containerRef.current.clientHeight, backgroundColor: '#0c0a09',
-            scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
-            render: { transparent: false, antialias: true, powerPreference: 'high-performance' },
-            callbacks: { postBoot: (game) => { game.events.on('blur', () => {}); game.events.on('focus', () => {}); } },
-            scene: [MainForgeScene],
-        };
-        const game = new Phaser.Game(config);
-        gameRef.current = game;
-        game.scene.start('MainForgeScene', sceneData);
-        resizeObserver = new ResizeObserver((entries) => {
-            for (let entry of entries) {
-                const { width, height } = entry.contentRect;
-                if (game && game.scale && width > 0 && height > 0) game.scale.resize(width, height);
-            }
-        });
-        resizeObserver.observe(containerRef.current);
+        const width = containerRef.current.clientWidth;
+        const height = containerRef.current.clientHeight;
+        
+        if (width <= 0 || height <= 0) return;
+
+        try {
+            const config: Phaser.Types.Core.GameConfig = {
+                type: Phaser.AUTO, 
+                parent: containerRef.current, 
+                width: width, 
+                height: height, 
+                backgroundColor: '#0c0a09',
+                scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+                render: { transparent: false, antialias: true, powerPreference: 'high-performance' },
+                callbacks: { postBoot: (game) => { game.events.on('blur', () => {}); game.events.on('focus', () => {}); } },
+                scene: [MainForgeScene],
+            };
+            const game = new Phaser.Game(config);
+            gameRef.current = game;
+            game.scene.start('MainForgeScene', sceneData);
+            resizeObserver = new ResizeObserver((entries) => {
+                for (let entry of entries) {
+                    const { width, height } = entry.contentRect;
+                    if (game && game.scale && width > 0 && height > 0) game.scale.resize(width, height);
+                }
+            });
+            resizeObserver.observe(containerRef.current);
+        } catch (error) {
+            console.error("Failed to initialize Phaser game in MainForgeCanvas:", error);
+        }
     }
     return () => { if (resizeObserver) resizeObserver.disconnect(); }
   }, [isReady, state.forge.hasFurnace, actions]); 

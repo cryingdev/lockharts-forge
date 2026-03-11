@@ -72,7 +72,6 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                 </div>
             </div>
 
-            {/* Character Stage - Optimized for wide sprites by removing max-w-4xl */}
             <div className="absolute inset-0 z-10 w-full h-full pointer-events-none flex items-end justify-center">
                 <div className="relative w-full h-full flex items-end justify-center px-4 animate-in fade-in zoom-in-95 duration-700 ease-out">
                     <div className="relative h-[85dvh] max-h-[100dvh] flex items-end justify-center">
@@ -93,7 +92,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                         
                         <AnimatedMercenary 
                             mercenary={mercenary} 
-                            className="h-full w-auto max-w-full object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10" 
+                            className="h-full w-auto filter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-all duration-500 relative z-10" 
                         />
                         
                         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-black/60 blur-3xl rounded-full -z-10"></div>

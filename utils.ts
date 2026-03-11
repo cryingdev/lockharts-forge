@@ -41,17 +41,17 @@ export const AUDIO_MANIFEST = {
  */
 export const IMAGE_MANIFEST = {
     MERCENARIES: [
-        'tilly_footloose_sprite.png', 'tilly_footloose_profile.png',
-        'pip_green_sprite.png', 'pip_green_profile.png',
-        'adeline_ashford_sprite.png', 'adeline_ashford_profile.png',
-        'iron_garret_sprite.png', 'iron_garret_profile.png',
-        'elara_flame_sprite.png', 'elara_flame_profile.png',
-        'ylva_ironvein_sprite.png', 'ylva_ironvein_profile.png',
-        'lucian_ravenscar_sprite.png', 'lucian_ravenscar_profile.png',
-        'skeld_stormblood_sprite.png', 'skeld_stormblood_profile.png',
-        'sly_vargo_sprite.png', 'sly_vargo_profile.png',
-        'jade_nightbinder_sprite.png', 'jade_nightbinder_profile.png',
-        'sister_aria_sprite.png', 'sister_aria_profile.png'
+        'tilly_footloose_sprite.png',
+        'pip_green_sprite.png',
+        'adeline_ashford_sprite.png',
+        'iron_garret_sprite.png',
+        'elara_flame_sprite.png',
+        'ylva_ironvein_sprite.png',
+        'lucian_ravenscar_sprite.png',
+        'skeld_stormblood_sprite.png',
+        'sly_vargo_sprite.png',
+        'jade_nightbinder_sprite.png',
+        'sister_aria_sprite.png'
     ],
     MAIN: [
         'bg_ground_horizontal.png',

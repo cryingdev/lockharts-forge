@@ -4,6 +4,7 @@ import { UserPlus, Check, Sparkles } from 'lucide-react';
 import { Mercenary } from '../../models/Mercenary';
 import { getAssetUrl } from '../../utils';
 import { SfxButton } from '../common/ui/SfxButton';
+import { AnimatedMercenary } from '../common/ui/AnimatedMercenary';
 
 interface MercenaryInviteModalProps {
     mercenary: Mercenary | null;
@@ -81,28 +82,17 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
                     </div>
 
                     {/* Reveal Area */}
-                    <div className="relative aspect-[3/4] bg-black overflow-hidden group flex items-center justify-center">
+                    <div className="relative aspect-[3/4] bg-black overflow-hidden group flex items-start justify-center">
                         {/* The Mercenary Image */}
-                        {(() => {
-                            const isSpriteSheet = !!mercenary.sprite && mercenary.sprite.includes('_sprite');
-                            const isFullImage = !!mercenary.profileImage || (!!mercenary.sprite && !isSpriteSheet);
-                            const displayImage = mercenary.profileImage || mercenary.sprite || 'default_merc.png';
-                            
-                            return (
-                                <div 
-                                    className="w-full h-full"
-                                    style={{
-                                        opacity: revealStage === 'hidden' ? 0 : 1,
-                                        transition: 'opacity 0.5s ease-out',
-                                        backgroundImage: `url(${getAssetUrl(displayImage, 'mercenaries')})`,
-                                        backgroundSize: isFullImage ? 'contain' : '300% 100%',
-                                        backgroundPosition: isFullImage ? 'center' : '0% 0%',
-                                        backgroundRepeat: 'no-repeat',
-                                        imageRendering: isFullImage ? 'auto' : 'pixelated',
-                                    }}
-                                />
-                            );
-                        })()}
+                        <div className="w-full h-full flex items-start justify-center">
+                            <AnimatedMercenary 
+                                mercenary={mercenary} 
+                                height="165%"
+                                objectFit="cover"
+                                valign="top"
+                                className={`w-auto object-top transition-opacity duration-500 ${revealStage === 'hidden' ? 'opacity-0' : 'opacity-100'}`}
+                            />
+                        </div>
 
                         {/* Lantern Effect Overlay (The "Hole") */}
                         <motion.div 

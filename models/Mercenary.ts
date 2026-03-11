@@ -26,8 +26,9 @@ export interface Mercenary {
 
   // Visuals
   icon?: string;
-  sprite?: string;
-  profileImage?: string; // 전용 프로필 일러스트 (있을 경우 우선 사용)
+  spriteImage?: string;
+  portraitImage?: string;
+  fullBodyImage?: string;
 
   // Relationships
   affinity: number;

@@ -172,13 +172,17 @@ export default class DungeonScene extends Phaser.Scene {
         this.cameras.main.zoomTo(2.5, 2000, 'Cubic.easeInOut');
         
         if (this.cameras.main.postFX) {
-            this.pixelateFX = this.cameras.main.postFX.addPixelate(2);
-            this.tweens.add({
-                targets: this.pixelateFX,
-                amount: 32,
-                duration: 2000,
-                ease: 'Quad.easeIn'
-            });
+            try {
+                this.pixelateFX = this.cameras.main.postFX.addPixelate(2);
+                this.tweens.add({
+                    targets: this.pixelateFX,
+                    amount: 32,
+                    duration: 2000,
+                    ease: 'Quad.easeIn'
+                });
+            } catch (e) {
+                console.warn("Failed to add PixelateFX:", e);
+            }
         }
 
         this.cameras.main.shake(2000, 0.005);
