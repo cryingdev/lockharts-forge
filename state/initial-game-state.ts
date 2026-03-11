@@ -105,6 +105,7 @@ export const createInitialGameState = (): GameState => {
         shopQueue: [],
         visitorsToday: [],
         talkedToToday: [],
+        boughtDrinkToday: [],
 
         // Market Initial Stock
         marketStock: MARKET_CATALOG.reduce((acc, item) => ({ ...acc, [item.id]: item.maxStock }), {}),

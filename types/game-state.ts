@@ -115,6 +115,7 @@ export interface GameState {
   shopQueue: ShopCustomer[]; 
   visitorsToday: string[]; 
   talkedToToday: string[]; 
+  boughtDrinkToday: string[]; 
 
   marketStock: Record<string, number>; 
   garrickAffinity: number;

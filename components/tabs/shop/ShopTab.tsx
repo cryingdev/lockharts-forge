@@ -111,6 +111,8 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
                     <AnimatedMercenary
                         mercenary={shop.activeCustomer.mercenary}
+                        height="100%"
+                        valign="bottom"
                         className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${
                             shop.refusalReaction === 'ANGRY' ? 'brightness-50 sepia-50' : ''
                         }`}

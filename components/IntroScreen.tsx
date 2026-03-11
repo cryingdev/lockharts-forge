@@ -92,41 +92,47 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
       const w = Math.max(1, Math.floor(rect.width));
       const h = Math.max(1, Math.floor(rect.height));
 
-      const config: Phaser.Types.Core.GameConfig = {
-        type: Phaser.AUTO,
-        parent: el,
-        width: w,
-        height: h,
-        backgroundColor: '#000000',
-        scene: [IntroScene],
-        scale: {
-          mode: Phaser.Scale.RESIZE,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
-        },
-      };
+      if (w <= 0 || h <= 0) return;
 
-      console.log("[Intro] Initializing cinematic engine...");
-      const game = new Phaser.Game(config);
-      gameRef.current = game;
-      
-      // 초기 레지스트리 설정
-      game.registry.set('loadingProgress', loadingProgress);
+      try {
+        const config: Phaser.Types.Core.GameConfig = {
+          type: Phaser.CANVAS,
+          parent: el,
+          width: w,
+          height: h,
+          backgroundColor: '#000000',
+          scene: [IntroScene],
+          scale: {
+            mode: Phaser.Scale.RESIZE,
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+          },
+        };
 
-      const onIntroComplete = () => {
-          console.log("%c[Intro] Sequence concluded. Navigating to title.", "color: #8b5cf6; font-weight: bold;");
-          onComplete();
-      };
-      game.events.on('intro-complete', onIntroComplete);
+        console.log("[Intro] Initializing cinematic engine...");
+        const game = new Phaser.Game(config);
+        gameRef.current = game;
+        
+        // 초기 레지스트리 설정
+        game.registry.set('loadingProgress', loadingProgress);
 
-      sync();
-      setTimeout(sync, 80);
-      setTimeout(sync, 180);
+        const onIntroComplete = () => {
+            console.log("%c[Intro] Sequence concluded. Navigating to title.", "color: #8b5cf6; font-weight: bold;");
+            onComplete();
+        };
+        game.events.on('intro-complete', onIntroComplete);
 
-      return () => {
-        game.events.off('intro-complete', onIntroComplete);
-        game.destroy(true);
-        gameRef.current = null;
-      };
+        sync();
+        setTimeout(sync, 80);
+        setTimeout(sync, 180);
+
+        return () => {
+          game.events.off('intro-complete', onIntroComplete);
+          game.destroy(true);
+          gameRef.current = null;
+        };
+      } catch (error) {
+        console.error("Failed to initialize Phaser game in IntroScreen:", error);
+      }
     };
 
     let cancelled = false;

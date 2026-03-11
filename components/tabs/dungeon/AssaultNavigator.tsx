@@ -422,17 +422,32 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
     useEffect(() => {
         if (!isReady || !containerRef.current || !session || !dungeon) return;
         if (!gameRef.current) {
-            const config: Phaser.Types.Core.GameConfig = {
-                type: Phaser.AUTO, parent: containerRef.current, width: containerRef.current.clientWidth, height: containerRef.current.clientHeight, backgroundColor: 'transparent', transparent: true, scene: [DungeonScene],
-                scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
-            };
-            const game = new Phaser.Game(config);
-            gameRef.current = game;
-            game.scene.start('DungeonScene', { 
-                session, 
-                onMove: (dx: number, dy: number) => actions.moveInManualDungeon(dx, dy),
-                initialZoom: mapZoom 
-            });
+            const width = containerRef.current.clientWidth;
+            const height = containerRef.current.clientHeight;
+            
+            if (width <= 0 || height <= 0) return;
+
+            try {
+                const config: Phaser.Types.Core.GameConfig = {
+                    type: Phaser.AUTO, 
+                    parent: containerRef.current, 
+                    width: width, 
+                    height: height, 
+                    backgroundColor: '#000000',
+                    transparent: false, 
+                    scene: [DungeonScene],
+                    scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
+                };
+                const game = new Phaser.Game(config);
+                gameRef.current = game;
+                game.scene.start('DungeonScene', { 
+                    session, 
+                    onMove: (dx: number, dy: number) => actions.moveInManualDungeon(dx, dy),
+                    initialZoom: mapZoom 
+                });
+            } catch (error) {
+                console.error("Failed to initialize Phaser game in AssaultNavigator:", error);
+            }
         } else {
             const scene = gameRef.current.scene.getScene('DungeonScene') as DungeonScene;
             if (scene) scene.updateSession(session);
@@ -440,7 +455,13 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
     }, [isReady, session, actions, dungeon]);
 
     useEffect(() => {
-        const check = () => { if (containerRef.current?.clientWidth) setIsReady(true); else requestAnimationFrame(check); };
+        const check = () => { 
+            if (containerRef.current && containerRef.current.clientWidth > 0 && containerRef.current.clientHeight > 0) {
+                setIsReady(true); 
+            } else {
+                requestAnimationFrame(check);
+            }
+        };
         check();
     }, []);
 
@@ -627,7 +648,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
                         <div className={`flex flex-col items-end gap-4 relative transition-all duration-500 ${isEncounterAnimationActive ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
                             <DialogueBox 
                                 speaker={speaker}
-                                speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.profileImage || 'default.png', 'mercenaries') : undefined}
+                                speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.portraitImage || 'default.png', 'mercenaries') : undefined}
                                 text={dialogueText}
                                 options={isOnNPCTile ? [
                                     { label: "GET THEM TO SAFETY", action: () => { 

@@ -89,7 +89,7 @@ const calculateLevelDataFromTotalXp = (totalXp: number) => {
     };
 };
 
-export const createRandomMercenary = (currentDay: number): Mercenary => {
+export const createRandomMercenary = (currentDay: number, knownMercenaries: Mercenary[] = []): Mercenary => {
     const jobKeys = Object.values(JobClass);
     const job = rng.pick(jobKeys);
     const gender: Gender = rng.chance(0.5) ? 'Male' : 'Female';
@@ -121,8 +121,17 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
     let sprite = '';
     
     if (assetConfig) {
-        const variantNum = rng.rangeInt(1, assetConfig.count);
-        sprite = `${assetConfig.prefix}_${variantNum.toString().padStart(2, '0')}.png`;
+        const usedSprites = new Set(knownMercenaries.map(m => m.fullBodyImage).filter(Boolean));
+        
+        let variantNum;
+        let attempts = 0;
+        const maxAttempts = 20; // 최대한 피하기 위해 여러 번 시도
+        
+        do {
+            variantNum = rng.rangeInt(1, assetConfig.count);
+            sprite = `${assetConfig.prefix}_${variantNum.toString().padStart(2, '0')}.png`;
+            attempts++;
+        } while (usedSprites.has(sprite) && attempts < maxAttempts);
     }
 
     return {
@@ -143,7 +152,7 @@ export const createRandomMercenary = (currentDay: number): Mercenary => {
         isUnique: false,
         lastVisitDay: currentDay,
         icon: '👤',
-        sprite: sprite || undefined, // 설정이 없는 경우 undefined로 두어 기본 처리
+        fullBodyImage: sprite || undefined, // 랜덤 생성 캐릭터는 fullBodyImage를 가짐
         expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: currentXp,
         xpToNextLevel: xpToNextLevel,
@@ -198,5 +207,5 @@ export const generateMercenary = (knownMercenaries: Mercenary[], currentDay: num
         }
     }
 
-    return createRandomMercenary(currentDay);
+    return createRandomMercenary(currentDay, knownMercenaries);
 };

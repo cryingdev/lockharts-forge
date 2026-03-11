@@ -5,6 +5,8 @@ interface AnimatedMercenaryProps {
     mercenary: any;
     className?: string;
     height?: string;
+    objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+    valign?: 'top' | 'center' | 'bottom';
 }
 
 /**
@@ -15,15 +17,17 @@ interface AnimatedMercenaryProps {
 export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({ 
     mercenary, 
     className, 
-    height 
+    height,
+    objectFit = 'contain',
+    valign = 'bottom'
 }) => {
     const [frame, setFrame] = useState(0);
-    const [aspectRatio, setAspectRatio] = useState<number>(1 / 2.15); // 초기 기본값
+    const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null); 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const isSpriteSheet = !!mercenary?.sprite && mercenary.sprite.includes('_sprite');
-    const isFullImage = !!mercenary?.profileImage || (!!mercenary?.sprite && !isSpriteSheet);
-    const displayImage = mercenary?.profileImage || mercenary?.sprite || 'default.png';
+    const isSpriteSheet = !!mercenary?.spriteImage && mercenary.spriteImage.includes('_sprite');
+    const displayImage = mercenary?.spriteImage || mercenary?.fullBodyImage || mercenary?.portraitImage || 'default.png';
+    const isFullImage = !isSpriteSheet && (!!mercenary?.fullBodyImage || !!mercenary?.portraitImage || !!mercenary?.spriteImage);
     const imageUrl = getAssetUrl(displayImage, 'mercenaries');
 
     // 이미지 로드 시 실제 해상도를 측정하여 가로세로비 계산 (프레임 단위 비율)
@@ -33,15 +37,19 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
         const img = new Image();
         img.src = imageUrl;
         img.onload = () => {
+            // 스프라이트 시트인 경우 전체 너비의 1/3이 한 프레임의 너비
             const singleFrameWidth = isSpriteSheet ? (img.naturalWidth / 3) : img.naturalWidth;
             const ratio = singleFrameWidth / img.naturalHeight;
+            
             if (!isNaN(ratio) && ratio > 0) {
-                setAspectRatio(ratio);
+                setDimensions({ width: singleFrameWidth, height: img.naturalHeight });
+                console.log(`[AnimatedMercenary] Asset Loaded: ${displayImage}, Frame Ratio: ${ratio.toFixed(2)}`);
             }
         };
-    }, [imageUrl, isSpriteSheet, isFullImage]);
+    }, [imageUrl, isSpriteSheet, displayImage]);
 
     const blink = useCallback(() => {
+        if (!isSpriteSheet) return;
         setFrame(1);
         setTimeout(() => {
             setFrame(2);
@@ -53,12 +61,13 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
                 }, 80);
             }, 100);
         }, 80);
-    }, []);
+    }, [isSpriteSheet]);
 
     const scheduleNextBlink = useCallback(() => {
+        if (!isSpriteSheet) return;
         const delay = 3000 + Math.random() * 4000;
         timerRef.current = setTimeout(blink, delay);
-    }, [blink]);
+    }, [blink, isSpriteSheet]);
 
     useEffect(() => {
         if (isSpriteSheet) scheduleNextBlink();
@@ -72,20 +81,26 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
             <div 
                 className={className} 
                 style={{ 
-                    height: height || '100%',
-                    aspectRatio: `${aspectRatio}`, 
+                    height: height || '85vh',
+                    aspectRatio: dimensions ? `${dimensions.width} / ${dimensions.height}` : undefined,
+                    width: dimensions ? `calc(${height || '85vh'} * ${dimensions.width / dimensions.height})` : 'auto',
                     overflow: 'hidden',
                     display: 'flex',
-                    alignItems: 'flex-end'
+                    alignItems: valign === 'top' ? 'flex-start' : valign === 'center' ? 'center' : 'flex-end',
+                    position: 'relative',
+                    flexShrink: 0,
+                    maxWidth: '100%'
                 }}
             >
                 <div 
-                    className="h-full w-full transition-transform duration-75 ease-linear"
+                    className="h-full w-full"
                     style={{
                         backgroundImage: `url(${imageUrl})`,
+                        // 컨테이너 너비의 300%로 설정하여 1/3(1프레임)이 딱 맞게 함
                         backgroundSize: '300% 100%',
                         backgroundPosition: `${frame * 50}% 0%`,
-                        imageRendering: 'pixelated'
+                        backgroundRepeat: 'no-repeat',
+                        imageRendering: isSpriteSheet ? 'pixelated' : 'auto'
                     }}
                 />
             </div>
@@ -97,9 +112,13 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
             src={imageUrl} 
             className={className}
             style={{ 
-                height: height || '100%', 
-                objectFit: 'contain',
-                imageRendering: isFullImage ? 'auto' : 'pixelated'
+                height: height || '85vh', 
+                width: dimensions ? `calc(${height || '85vh'} * ${dimensions.width} / ${dimensions.height})` : 'auto',
+                aspectRatio: dimensions ? `${dimensions.width} / ${dimensions.height}` : undefined,
+                maxWidth: '100%',
+                objectFit: objectFit,
+                imageRendering: isFullImage ? 'auto' : 'pixelated',
+                flexShrink: 0
             }}
             alt={mercenary.name}
         />

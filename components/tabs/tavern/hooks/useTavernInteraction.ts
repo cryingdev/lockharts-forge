@@ -57,6 +57,25 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         setDialogue(lines[Math.floor(Math.random() * lines.length)]);
     }, [mercenary.id, state.talkedToToday, pendingGiftItem, step, actions, spawnHearts]);
 
+    const handleBuyDrink = useCallback(() => {
+        if (pendingGiftItem || step !== 'IDLE') return;
+        
+        const DRINK_COST = 100;
+        if (state.stats.gold < DRINK_COST) {
+            setDialogue("I'd love a drink, but it seems you're a bit short on coin today.");
+            return;
+        }
+
+        if (state.boughtDrinkToday.includes(mercenary.id)) {
+            setDialogue("One is enough for now. I don't want to be too tipsy for my next quest.");
+            return;
+        }
+
+        actions.buyDrink(mercenary.id);
+        spawnHearts();
+        setDialogue(`"Ah, a fine brew! Cheers, Lockhart. This hits the spot."`);
+    }, [mercenary.id, state.stats.gold, state.boughtDrinkToday, pendingGiftItem, step, actions, spawnHearts]);
+
     const handleRecruitInit = useCallback(() => {
         if (!hasAffinity) {
             setDialogue("I don't know you well enough to pledge my blade to your forge yet.");
@@ -122,6 +141,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         hasAffinity,
         handlers: {
             handleTalk,
+            handleBuyDrink,
             handleRecruitInit,
             handleConfirmHire,
             handleTerminateInit,

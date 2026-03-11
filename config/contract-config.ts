@@ -7,8 +7,8 @@ import { JobClass } from "../models/JobClass";
 
 export const CONTRACT_CONFIG = {
     HIRE_AFFINITY_THRESHOLD: 10, // 고용을 위해 필요한 최소 호감도 (디버그를 위해 1로 설정됨)
-    BASE_HIRING_COST: 100,       // 기본 고용 계약금
-    COST_PER_LEVEL: 50,          // 레벨당 추가 계약금
+    BASE_HIRING_COST: 500,       // 기본 고용 계약금 (100 -> 500)
+    COST_PER_LEVEL: 150,          // 레벨당 추가 계약금 (50 -> 150)
     WAGE_PERCENTAGE: 0.15,       // 일당 비율 (계약금의 15%)
 };
 
