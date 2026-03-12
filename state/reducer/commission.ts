@@ -84,13 +84,15 @@ const getContractMatchingItems = (inventory: InventoryItem[], itemId: string, ac
 };
 
 export const handleTriggerNamedEncounterCheck = (state: GameState, location: string): GameState => {
+    const pipRegistryEntry = NAMED_CONTRACT_REGISTRY.find(entry => entry.mercenaryId === 'pip_green');
+
     // 0. Day 3 Formal Contract Dialogue for Pip (Special Progression)
     if (state.stats.day >= 3 && (location === 'SHOP' || location === 'TAVERN')) {
         const pipState = state.commission.namedEncounters['pip_green'];
         const hasPipContract = state.commission.activeContracts.some(c => c.mercenaryId === 'pip_green');
         const isPipHired = state.knownMercenaries.some(m => m.id === 'pip_green' && ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
         
-        if (pipState && pipState.hasAppeared && !pipState.recruitUnlocked && !hasPipContract && !isPipHired && !state.activeDialogue) {
+        if (pipRegistryEntry && pipState && pipState.hasAppeared && !pipState.recruitUnlocked && !hasPipContract && !isPipHired && !state.activeDialogue) {
             const pipMerc = state.knownMercenaries.find(m => m.id === 'pip_green');
             if (pipMerc) {
                 return {
@@ -101,12 +103,12 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
                         options: [
                             { 
                                 label: "I accept.", 
-                                action: { type: 'ACCEPT_CONTRACT', payload: { mercenaryId: 'pip_green' } },
+                                action: { type: 'ACCEPT_CONTRACT', payload: { contractId: pipRegistryEntry.contractId } },
                                 variant: 'primary'
                             },
                             { 
                                 label: "Maybe later.", 
-                                action: { type: 'CLOSE_DIALOGUE' },
+                                action: { type: 'SET_DIALOGUE', payload: null },
                                 variant: 'neutral'
                             }
                         ]
@@ -281,8 +283,7 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
     newNamedEncounters[registryEntry.mercenaryId] = {
         ...newNamedEncounters[registryEntry.mercenaryId],
         unlocked: true,
-        // Special case for Pip: Hireable immediately after contract acceptance on Day 3+
-        recruitUnlocked: registryEntry.mercenaryId === 'pip_green' ? true : newNamedEncounters[registryEntry.mercenaryId].recruitUnlocked,
+        recruitUnlocked: newNamedEncounters[registryEntry.mercenaryId].recruitUnlocked,
     };
 
     const newKnownMercenaries = state.knownMercenaries.map(m => 

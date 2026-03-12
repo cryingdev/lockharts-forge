@@ -120,17 +120,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         };
     case 'COMPLETE_TUTORIAL':
         const finalTabs = ['MAIN', 'FORGE', 'MARKET', 'INVENTORY', 'SHOP', 'TAVERN', 'DUNGEON', 'SIMULATION'];
-        
-        // Unlock Pip the Green for recruitment as the first mercenary
-        const newNamedEncounters = { ...state.commission.namedEncounters };
-        if (newNamedEncounters['pip_green']) {
-            newNamedEncounters['pip_green'] = {
-                ...newNamedEncounters['pip_green'],
-                unlocked: true,
-                hasAppeared: true,
-                recruitUnlocked: true
-            };
-        }
 
         return {
             ...state,
@@ -142,10 +131,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
                 tierLevel: Math.max(state.stats.tierLevel, 1) 
             },
             forge: { ...state.forge, hasFurnace: true }, 
-            commission: {
-                ...state.commission,
-                namedEncounters: newNamedEncounters
-            },
             showTutorialCompleteModal: true,
             logs: ["Tutorial completed. Lockhart's Forge is fully operational.", ...state.logs]
         };
