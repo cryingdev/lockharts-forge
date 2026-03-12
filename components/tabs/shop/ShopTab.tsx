@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
 import { Store, Heart, ArrowLeft, ChevronLeft } from 'lucide-react';
@@ -21,13 +21,18 @@ interface ShopTabProps {
 const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   const shop = useShop();
+
+  useEffect(() => {
+    actions.triggerNamedEncounterCheck('SHOP');
+  }, []);
+
   const [counterImgError, setCounterImgError] = useState(false);
 
   // 튜토리얼 중 상점 열기 단계인지 확인
   const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
   
   // MainGameLayout에서 글로벌로 처리하는 튜토리얼 대화 단계인지 확인 (Shop 인트로만 해당)
-  const isGlobalTutorialDialogue = state.tutorialStep === 'SHOP_INTRO_DIALOG';
+  const isGlobalTutorialDialogue = state.tutorialStep === 'SHOP_INTRO_DIALOG_GUIDE';
 
   return (
     <div className="fixed inset-0 z-[1000] bg-stone-900 overflow-hidden flex flex-col items-center justify-center px-safe">
@@ -92,7 +97,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none">
         {shop.isShopOpen && shop.activeCustomer && shop.dialogueState && (
             <div className="relative flex justify-center items-end w-full h-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                <div className="relative h-[80dvh] max-h-[100dvh] flex items-end justify-center">
+                <div className="relative h-[75dvh] max-h-[100dvh] flex items-end justify-center">
                     {/* 하트가 캐릭터 앞쪽에서 떠오르도록 z-20 설정, y축 시작점 bottom 상향 조정 */}
                     {shop.floatingHearts.map((heart) => (
                     <Heart
@@ -111,7 +116,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
                     <AnimatedMercenary
                         mercenary={shop.activeCustomer.mercenary}
-                        height="100%"
                         valign="bottom"
                         className={`h-full w-auto object-contain object-bottom filter drop-shadow-[0_0_100px_rgba(0,0,0,0.95)] transition-all duration-500 relative z-10 ${
                             shop.refusalReaction === 'ANGRY' ? 'brightness-50 sepia-50' : ''

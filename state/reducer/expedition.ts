@@ -266,6 +266,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     
     if (goldGained > 0) logStr += ` and ${goldGained} Gold.`;
 
+    const hasAnyInjured = mercenaryResults.some(r => r.statusChange === 'INJURED');
+
     return {
         ...state,
         inventory: newInventory,
@@ -273,6 +275,10 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
         activeExpeditions: remainingExpeditions,
         dungeonClearCounts: newClearCounts,
         dungeonResult: resultData,
+        commission: {
+            ...state.commission,
+            hasHadInjuredMercenary: state.commission.hasHadInjuredMercenary || hasAnyInjured
+        },
         stats: {
             ...state.stats,
             gold: state.stats.gold + goldGained,

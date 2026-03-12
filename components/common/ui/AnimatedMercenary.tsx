@@ -76,14 +76,19 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
 
     if (!mercenary) return null;
 
+    const finalHeight = height || '85vh';
+    const isPercentageHeight = finalHeight.endsWith('%');
+
     if (isSpriteSheet) {
         return (
             <div 
                 className={className} 
                 style={{ 
-                    height: height || '85vh',
+                    height: finalHeight,
                     aspectRatio: dimensions ? `${dimensions.width} / ${dimensions.height}` : undefined,
-                    width: dimensions ? `calc(${height || '85vh'} * ${dimensions.width / dimensions.height})` : 'auto',
+                    width: (dimensions && !isPercentageHeight) 
+                        ? `calc(${finalHeight} * ${dimensions.width / dimensions.height})` 
+                        : 'auto',
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: valign === 'top' ? 'flex-start' : valign === 'center' ? 'center' : 'flex-end',
@@ -112,8 +117,10 @@ export const AnimatedMercenary: React.FC<AnimatedMercenaryProps> = ({
             src={imageUrl} 
             className={className}
             style={{ 
-                height: height || '85vh', 
-                width: dimensions ? `calc(${height || '85vh'} * ${dimensions.width} / ${dimensions.height})` : 'auto',
+                height: finalHeight, 
+                width: (dimensions && !isPercentageHeight) 
+                    ? `calc(${finalHeight} * ${dimensions.width} / ${dimensions.height})` 
+                    : 'auto',
                 aspectRatio: dimensions ? `${dimensions.width} / ${dimensions.height}` : undefined,
                 maxWidth: '100%',
                 objectFit: objectFit,

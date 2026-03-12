@@ -181,21 +181,21 @@ export const useShop = () => {
     }, [refusalReaction, activeCustomer]);
 
     const tutorialContent = useMemo(() => {
-        if (tutorialStep === 'PIP_PRAISE_DIALOG') {
+        if (tutorialStep === 'PIP_PRAISE_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
                 text: "This... this is incredible. I can feel the balance in the grip. It's much better than the scraps I found in the woods. You really are a Lockhart, aren't you?",
-                options: [{ label: "Continue", action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG'), variant: 'primary' as const }]
+                options: [{ label: "Continue", action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG_GUIDE'), variant: 'primary' as const }]
             };
         }
-        if (tutorialStep === 'DRAGON_TALK_DIALOG') {
+        if (tutorialStep === 'DRAGON_TALK_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
                 text: "The village... it hasn't been the same since the Dragon's fire. I lost my brother that night. I see that same shadow in your eyes, smith. We all lost someone. Good luck with the forge.",
-                options: [{ label: "Farewell", action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_DIALOG'); }, variant: 'primary' as const }]
+                options: [{ label: "Farewell", action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_DIALOG_GUIDE'); }, variant: 'primary' as const }]
             };
         }
-        if (tutorialStep === 'TUTORIAL_END_DIALOG') {
+        if (tutorialStep === 'TUTORIAL_END_DIALOG_GUIDE') {
             return {
                 speaker: "Lockhart",
                 text: "Finally... the first sale. It's a small spark, but enough to light the way. I'll reclaim our legacy, one blade at a time.",

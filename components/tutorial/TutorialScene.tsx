@@ -12,11 +12,11 @@ const IDLE_TEMP = 10;
 
 type SequenceStep = 
     | 'IDLE' 
-    | 'POST_REPLACE_TALK' 
-    | 'WAIT_HEAT' 
+    | 'REPLACE_FURNACE_GUIDE' 
+    | 'IGNITE_FURNACE_GUIDE' 
     | 'HEAT_CONFIRM_DIALOG' 
     | 'WAIT_CONTINUE_BELLOWS' 
-    | 'WAIT_PUMP' 
+    | 'PUMP_FURNACE_GUIDE' 
     | 'FURNACE_FINAL_DIALOG';
 
 type TutorialDirection = 'top' | 'bottom' | 'left' | 'right' | 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
@@ -28,8 +28,8 @@ interface SceneStepConfig {
 }
 
 const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
-    WAIT_HEAT: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
-    WAIT_PUMP: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
+    IGNITE_FURNACE_GUIDE: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
+    PUMP_FURNACE_GUIDE: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
 };
 
 const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
@@ -133,7 +133,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
             break;
     }
 
-    const currentLabel = (step === 'WAIT_PUMP' && hasPumpedOnce) ? "Keep Pump!" : config.label;
+    const currentLabel = (step === 'PUMP_FURNACE_GUIDE' && hasPumpedOnce) ? "Keep Pump!" : config.label;
 
     return (
         <div className="fixed inset-0 z-[3050] pointer-events-none overflow-hidden">
@@ -197,7 +197,7 @@ const TutorialScene: React.FC = () => {
     }, [mode]);
 
     useEffect(() => {
-        if (seq === 'HEAT_CONFIRM_DIALOG' || seq === 'WAIT_CONTINUE_BELLOWS' || seq === 'WAIT_PUMP') {
+        if (seq === 'HEAT_CONFIRM_DIALOG' || seq === 'WAIT_CONTINUE_BELLOWS' || seq === 'PUMP_FURNACE_GUIDE') {
             const timer = setInterval(() => {
                 setTemp(prev => {
                     const floorVal = 26.17;
@@ -211,10 +211,10 @@ const TutorialScene: React.FC = () => {
 
     const bgImage = useMemo(() => {
         if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'tutorial/forge_ruined_bg.jpeg';
-        if (seq === 'POST_REPLACE_TALK' || seq === 'WAIT_HEAT') return 'tutorial/forge_fixed_bg.jpeg';
+        if (seq === 'REPLACE_FURNACE_GUIDE' || seq === 'IGNITE_FURNACE_GUIDE') return 'tutorial/forge_fixed_bg.jpeg';
         const currentDegrees = Math.round(IDLE_TEMP + (temp / 100) * (MAX_TEMP - IDLE_TEMP));
         if (currentDegrees >= 1490) return 'tutorial/forge_hot_bg.jpeg';
-        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'WAIT_PUMP', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'tutorial/forge_start_bg.jpeg';
+        if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'PUMP_FURNACE_GUIDE', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'tutorial/forge_start_bg.jpeg';
         return 'tutorial/forge_fixed_bg.jpeg';
     }, [mode, seq, temp, isStarted]);
 
@@ -224,7 +224,7 @@ const TutorialScene: React.FC = () => {
             setShowFlash(true);
             setTimeout(() => {
                 setIsStarted(true);
-                setSeq('POST_REPLACE_TALK');
+                setSeq('REPLACE_FURNACE_GUIDE');
                 setCurrentStep(0);
             }, 50);
             setTimeout(() => setShowFlash(false), 800);
@@ -234,7 +234,7 @@ const TutorialScene: React.FC = () => {
     };
 
     const handleHeatUp = () => {
-        if (seq !== 'WAIT_HEAT') return;
+        if (seq !== 'IGNITE_FURNACE_GUIDE') return;
         setTemp(39.6);
         setSeq('HEAT_CONFIRM_DIALOG');
     };
@@ -246,7 +246,7 @@ const TutorialScene: React.FC = () => {
         setTemp(nextTempRatio);
         setTimeout(() => setIsPumping(false), 300);
         
-        if (seq === 'WAIT_PUMP' && nextTempRatio >= 99) {
+        if (seq === 'PUMP_FURNACE_GUIDE' && nextTempRatio >= 99) {
             setSeq('FURNACE_FINAL_DIALOG');
         }
     };
@@ -254,7 +254,7 @@ const TutorialScene: React.FC = () => {
     const dialogue = useMemo(() => {
         if (!isStarted) return { text: "" };
         if (mode === 'PROLOGUE') return SCRIPTS[`PROLOGUE_${currentStep}`];
-        if (seq === 'POST_REPLACE_TALK') return SCRIPTS[`FURNACE_${currentStep}`];
+        if (seq === 'REPLACE_FURNACE_GUIDE') return SCRIPTS[`FURNACE_${currentStep}`];
         if (seq === 'HEAT_CONFIRM_DIALOG') return SCRIPTS.FURNACE_HEATED;
         if (seq === 'WAIT_CONTINUE_BELLOWS') {
             return currentStep === 0 ? SCRIPTS.FURNACE_COOLING : SCRIPTS.FURNACE_BELLOWS_MONO;
@@ -268,18 +268,18 @@ const TutorialScene: React.FC = () => {
             if (currentStep < 1) setCurrentStep(prev => prev + 1);
             else actions.completePrologue();
         } else {
-            if (seq === 'POST_REPLACE_TALK') {
+            if (seq === 'REPLACE_FURNACE_GUIDE') {
                 if (currentStep < 1) setCurrentStep(prev => prev + 1);
-                else setSeq('WAIT_HEAT');
+                else setSeq('IGNITE_FURNACE_GUIDE');
             } else if (seq === 'HEAT_CONFIRM_DIALOG') {
                 setSeq('WAIT_CONTINUE_BELLOWS');
                 setCurrentStep(0);
             } else if (seq === 'WAIT_CONTINUE_BELLOWS') {
                 if (currentStep < 1) setCurrentStep(prev => prev + 1);
-                else setSeq('WAIT_PUMP');
+                else setSeq('PUMP_FURNACE_GUIDE');
             } else if (seq === 'FURNACE_FINAL_DIALOG') {
                 actions.setTutorialScene('SMITHING');
-                actions.setTutorialStep('CRAFT_START_DIALOG');
+                actions.setTutorialStep('CRAFT_START_DIALOG_GUIDE');
             }
         }
     };
@@ -290,7 +290,7 @@ const TutorialScene: React.FC = () => {
     };
 
     const promptText = mode === 'FURNACE_RESTORED' ? "REPLACE FURNACE" : "TAP TO BEGIN";
-    const isIndicateStep = seq === 'WAIT_HEAT' || seq === 'WAIT_PUMP';
+    const isIndicateStep = seq === 'IGNITE_FURNACE_GUIDE' || seq === 'PUMP_FURNACE_GUIDE';
 
     return (
         <div className="fixed inset-0 z-[3000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center cursor-pointer px-safe" onClick={handleStart}>
@@ -352,13 +352,13 @@ const TutorialScene: React.FC = () => {
                         </div>
                     </div>
 
-                    <SfxButton id="tutorial-bellows" sfx="bellows.wav" onClick={(e) => { e.stopPropagation(); handlePump(); }} disabled={seq !== 'WAIT_PUMP'} className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group ${seq === 'WAIT_PUMP' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'} ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}`}>
-                        <Zap className={`w-6 h-6 md:w-10 md:h-10 ${seq === 'WAIT_PUMP' ? 'text-amber-400' : 'text-stone-600'}`} />
+                    <SfxButton id="tutorial-bellows" sfx="bellows.wav" onClick={(e) => { e.stopPropagation(); handlePump(); }} disabled={seq !== 'PUMP_FURNACE_GUIDE'} className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group ${seq === 'PUMP_FURNACE_GUIDE' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'} ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}`}>
+                        <Zap className={`w-6 h-6 md:w-10 md:h-10 ${seq === 'PUMP_FURNACE_GUIDE' ? 'text-amber-400' : 'text-stone-600'}`} />
                         <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-1">Pump</span>
                     </SfxButton>
 
-                    <SfxButton id="tutorial-heat" sfx="fire_up.mp3" onClick={(e) => { e.stopPropagation(); handleHeatUp(); }} disabled={seq !== 'WAIT_HEAT'} className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl ${seq === 'WAIT_HEAT' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}`}>
-                        <Flame className={`w-5 h-5 md:w-8 md:h-8 ${seq === 'WAIT_HEAT' ? 'text-orange-400' : 'text-stone-600'}`} />
+                    <SfxButton id="tutorial-heat" sfx="fire_up.mp3" onClick={(e) => { e.stopPropagation(); handleHeatUp(); }} disabled={seq !== 'IGNITE_FURNACE_GUIDE'} className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl ${seq === 'IGNITE_FURNACE_GUIDE' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}`}>
+                        <Flame className={`w-5 h-5 md:w-8 md:h-8 ${seq === 'IGNITE_FURNACE_GUIDE' ? 'text-orange-400' : 'text-stone-600'}`} />
                         <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest mt-1">Ignite</span>
                     </SfxButton>
                 </div>

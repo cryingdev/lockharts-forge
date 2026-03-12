@@ -41,7 +41,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   // Set initial step of the forge tutorial when entering from START_FORGING_GUIDE to PRE_IGNITE_DIALOG_1
   useEffect(() => {
       if (isTutorial && state.tutorialStep === 'START_FORGING_GUIDE') {
-          actionsRef.current.setTutorialStep('PRE_IGNITE_DIALOG_1');
+          actionsRef.current.setTutorialStep('PRE_IGNITE_DIALOG_1_GUIDE');
       }
   }, [isTutorial, state.tutorialStep]);
 
@@ -112,9 +112,9 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       } else {
           // 지시 단계(INDICATE) 혹은 실제 미니게임 단계에서 클릭 시 다음 설명으로 전환
           const step = stateRef.current.tutorialStep;
-          if (step === 'SMITHING_MINIGAME_IGNITE' || step === 'PRE_IGNITE_INDICATE') {
-              actionsRef.current.setTutorialStep('PRE_PUMP_DIALOG');
-              (game as any).tutorialStep = 'PRE_PUMP_DIALOG';
+          if (step === 'SMITHING_MINIGAME_IGNITE_GUIDE' || step === 'PRE_IGNITE_INDICATE_GUIDE') {
+              actionsRef.current.setTutorialStep('PRE_PUMP_DIALOG_GUIDE');
+              (game as any).tutorialStep = 'PRE_PUMP_DIALOG_GUIDE';
           }
       }
       
@@ -136,9 +136,9 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
           setCurrentTemp(t);
           // 풀무질 지시 단계에서 99% 달성 시 중간 다이얼로그로 전환
           const step = stateRef.current.tutorialStep;
-          if (isTutorial && (step === 'SMITHING_MINIGAME_PUMP' || step === 'PRE_PUMP_INDICATE') && t >= 99) {
-              actionsRef.current.setTutorialStep('POST_PUMP_DIALOG');
-              (game as any).tutorialStep = 'POST_PUMP_DIALOG';
+          if (isTutorial && (step === 'SMITHING_MINIGAME_PUMP_GUIDE' || step === 'PRE_PUMP_INDICATE_GUIDE') && t >= 99) {
+              actionsRef.current.setTutorialStep('POST_PUMP_DIALOG_GUIDE');
+              (game as any).tutorialStep = 'POST_PUMP_DIALOG_GUIDE';
           }
       },
       onHeatUpRequest: handleHeatUp,
@@ -146,9 +146,9 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       onTutorialTargetUpdate: (rect: any) => setTutorialTarget(rect),
       onTutorialAction: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => {
           if (action === 'FIRST_HIT_DONE') {
-              actionsRef.current.setTutorialStep('FIRST_HIT_DIALOG');
+              actionsRef.current.setTutorialStep('FIRST_HIT_DIALOG_GUIDE');
           } else if (action === 'CRAFT_FINISHED') {
-              actionsRef.current.setTutorialStep('CRAFT_RESULT_DIALOG');
+              actionsRef.current.setTutorialStep('CRAFT_RESULT_DIALOG_GUIDE');
           }
       }
     });
@@ -188,7 +188,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     state.tutorialStep?.includes('_DIALOG') || 
     state.tutorialStep?.includes('_INDICATE') || 
     state.tutorialStep === 'START_FORGING_GUIDE' || 
-    state.tutorialStep === 'FIRST_HIT_DIALOG'
+    state.tutorialStep === 'FIRST_HIT_DIALOG_GUIDE'
   );
 
   const showPointer = currentTemp < 26.2 && !isTutorial;

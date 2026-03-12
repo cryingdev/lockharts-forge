@@ -172,6 +172,7 @@ export const getUnmetNamedMercenary = (knownMercenaries: Mercenary[]): Mercenary
 export const generateMercenary = (knownMercenaries: Mercenary[], currentDay: number): Mercenary => {
     const rand = rng.standard(0, 1, 4);
 
+    // 1. 30% chance to bring back a regular visitor (if any exist)
     if (knownMercenaries.length > 0 && rand < 0.3) {
         const potentialRegulars = knownMercenaries.filter(m => m.lastVisitDay !== currentDay);
         if (potentialRegulars.length > 0) {
@@ -193,19 +194,7 @@ export const generateMercenary = (knownMercenaries: Mercenary[], currentDay: num
         }
     }
 
-    if (rand < 0.5) {
-        const unknownNamed = NAMED_MERCENARIES.filter(
-            named => !knownMercenaries.some(known => known.id === named.id)
-        );
-        if (unknownNamed.length > 0) {
-            const merc = rng.pick(unknownNamed);
-            return {
-                ...merc,
-                visitCount: 1, 
-                lastVisitDay: currentDay
-            } as Mercenary;
-        }
-    }
-
+    // 2. Otherwise, create a completely new random mercenary
+    // (Named mercenaries are now triggered via conditional encounters in the commission system)
     return createRandomMercenary(currentDay, knownMercenaries);
 };

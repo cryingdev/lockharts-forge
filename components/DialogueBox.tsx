@@ -7,12 +7,7 @@ import { getAssetUrl } from '../utils';
 import { useAudio } from '../hooks/useAudio';
 import { SfxButton } from './common/ui/SfxButton';
 
-interface DialogueOption {
-  label: string;
-  action: () => void;
-  variant?: 'primary' | 'danger' | 'neutral';
-  disabled?: boolean;
-}
+import { DialogueOption } from '../types/game-state';
 
 interface ItemDetail {
   id: string;
@@ -326,14 +321,21 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
               {options.map((option, idx) => (
                 <SfxButton
                   key={idx}
-                  onClick={(e) => { e.stopPropagation(); option.action(); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (option.action) {
+                      if (typeof option.action === 'function') {
+                        option.action();
+                      }
+                    }
+                  }}
                   disabled={option.disabled}
                   className={`px-4 md:px-10 py-1.5 md:py-4 rounded-lg md:rounded-xl font-black text-[9px] md:text-sm flex items-center gap-1.5 md:gap-3 transition-all transform active:scale-95 border shadow-2xl ${
                     option.disabled 
                       ? 'bg-stone-800/40 text-stone-600 border-stone-700/30 cursor-not-allowed'
                       : option.variant === 'danger'
                         ? 'bg-red-900/60 text-red-50 border-red-800/50 hover:bg-red-700 hover:border-red-400'
-                        : option.variant === 'neutral'
+                        : option.variant === 'neutral' || option.variant === 'secondary'
                             ? 'bg-stone-800/60 text-stone-100 border-stone-600 hover:bg-stone-750 hover:border-stone-400'
                             : 'bg-amber-700/80 text-white border-amber-500 hover:bg-amber-600 hover:border-amber-300 hover:shadow-amber-900/60'
                   }`}

@@ -76,6 +76,102 @@ Mercenaries are the player's primary agents in the world.
 -   **Leveling**: Mercenaries gain XP from dungeons. Upon leveling, players can manually allocate bonus stat points.
 -   **Vitals**: Managing HP and MP is critical. Injured mercenaries require days of rest to recover.
 
+#### 3.3.3 Commission & Recruitment Contracts
+The commission system adds medium-term goals to the daily economy loop and acts as the primary unlock path for named mercenaries.
+
+-   **General Commissions**: Random townsfolk, travelers, and unnamed mercenaries can request crafted items.
+    -   Generated from the general commission pool.
+    -   Intended as repeatable economy content.
+    -   Rewards are primarily Gold, Affinity, and occasional bonus materials.
+-   **Special Contracts**: Named characters appear through controlled encounter windows and offer unique requests.
+    -   Intended as narrative progression content.
+    -   Completing the contract unlocks the named character as **Recruitable**, but does not auto-hire them.
+    -   The player must still pay the recruitment cost or satisfy the contract's join condition.
+
+##### 3.3.3.1 General Commission Rules
+-   **Availability**: 2-4 general commissions may be active at once.
+-   **Source**: Generated at day start and occasionally refreshed when the Shop opens.
+-   **Scope**:
+    -   Deliver 1-2 specific crafted items.
+    -   Meet a minimum quality threshold such as `GOOD`, `FINE`, or `PRISTINE`.
+    -   Optional class preference bonus if the requested item matches the requester job.
+-   **Deadline**: Usually 1-3 in-game days.
+-   **Rewards**:
+    -   Gold payout above normal resale value.
+    -   Small affinity gain with the requester archetype or district.
+    -   Low chance of a bonus material crate or market voucher.
+-   **Failure**:
+    -   No permanent lockout.
+    -   Small reputation loss or missed bonus.
+    -   Failed general commissions return to the pool after cooldown.
+
+##### 3.3.3.2 Special Contract Rules
+-   **Eligibility**: Each named character has a hidden unlock condition based on progress such as:
+    -   Current day.
+    -   Tier level.
+    -   Number of items crafted in a category.
+    -   Dungeon clears.
+    -   Specific material acquisition.
+-   **Encounter Window**:
+    -   Once eligible, the character enters a 3-day encounter window.
+    -   During the window, entering the appropriate location checks for appearance.
+    -   Base appearance rate is 40% per valid visit.
+    -   If not seen within 3 days, the next valid visit guarantees the event.
+-   **Locations**:
+    -   Tavern: Fighters, rogues, mercenary veterans.
+    -   Shop: Travelers, clerics, repeat customers, local defenders.
+    -   Market: Mages, specialists, traders, artisans.
+-   **Persistence**:
+    -   Once discovered, the special contract becomes a tracked objective.
+    -   The contract remains until completed, failed, or deliberately abandoned if the design later supports that option.
+
+##### 3.3.3.3 Named Recruitment Flow
+1.  Player satisfies hidden progression conditions.
+2.  Named character becomes encounter-eligible.
+3.  Character appears in a location-appropriate event.
+4.  Character offers a special contract.
+5.  Player completes the delivery or exploration objective.
+6.  Character state changes from `LOCKED` to `RECRUITABLE`.
+7.  Player may hire the character through the Tavern or relevant event follow-up.
+
+##### 3.3.3.4 Recommended Named Contract Order
+-   **Pip the Green**
+    -   Unlock Condition: Tutorial complete and Day 3 or later.
+    -   Encounter Location: Shop.
+    -   Contract: Deliver 1 `Bronze Shortsword` with `GOOD` quality or better.
+    -   Reward: Pip becomes recruitable. Small Gold bonus and positive shop dialogue.
+-   **Adeline Ashford**
+    -   Unlock Condition: Tier 1 unlocked, shield recipe crafted once, 5 successful sales.
+    -   Encounter Location: Tavern.
+    -   Contract: Deliver 1 one-handed weapon and 1 shield, both `GOOD` or better.
+    -   Reward: Adeline becomes recruitable. Fighter trust event unlocked.
+-   **Elara of the Flame**
+    -   Unlock Condition: Obtain `Fire Essence` and craft at least 1 magic-oriented item.
+    -   Encounter Location: Market.
+    -   Contract: Deliver a catalyst item plus a magic weapon or focus.
+    -   Reward: Elara becomes recruitable. Fire-aligned crafting dialogue unlocked.
+-   **Sister Aria**
+    -   Unlock Condition: Experience an injured mercenary state and recover or treat it.
+    -   Encounter Location: Shop or event visit.
+    -   Contract: Deliver healing supplies or cleric-oriented gear.
+    -   Reward: Sister Aria becomes recruitable. Recovery-focused utility unlock.
+
+##### 3.3.3.5 Named Unlock Matrix
+This table is the canonical design reference for named mercenary encounter order and recruit unlock requirements.
+
+| Mercenary ID | Display Name | Unlock Trigger | Encounter Location | Encounter Window | Special Contract Requirement | Completion Result |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `pip_green` | Pip the Green | Tutorial complete and Day >= 3 | `SHOP` | 3 days, 40% per valid visit, guaranteed on next valid visit after miss window | Deliver `bronze_shortsword` x1 with minimum `GOOD` quality | `RECRUITABLE`, small Gold reward, positive shop dialogue |
+| `adeline_shield` | Adeline Ashford | Tier >= 1, crafted shield recipe at least once, 5 successful shop sales | `TAVERN` | 3 days, 40% per valid visit, guaranteed on next valid visit after miss window | Deliver one one-handed weapon and one shield, both minimum `GOOD` quality | `RECRUITABLE`, fighter trust event unlocked |
+| `elara_flame` | Elara of the Flame | Obtained `fire_essence` and crafted at least one magic-oriented item | `MARKET` | 3 days, 40% per valid visit, guaranteed on next valid visit after miss window | Deliver one catalyst component and one magic weapon or focus | `RECRUITABLE`, fire-aligned crafting dialogue unlocked |
+| `sister_aria` | Sister Aria | At least one mercenary entered `INJURED` state and recovery flow has been experienced | `SHOP` or recovery event | 3 days, 40% per valid visit, guaranteed on next valid visit after miss window | Deliver healing supplies or cleric-oriented gear | `RECRUITABLE`, recovery utility unlock |
+
+##### 3.3.3.6 Balance Role of Commissions
+-   General commissions must not fully replace standard shop sales.
+-   Special contracts must not flood the player all at once; only 1 active named contract should exist at a time.
+-   Commission payouts should usually beat simple resale value by 10-25%, but not exceed dungeon loot spikes.
+-   Special contracts should reward access, story, and utility more than raw Gold.
+
 ---
 
 ### 3.4 Dungeon Exploration

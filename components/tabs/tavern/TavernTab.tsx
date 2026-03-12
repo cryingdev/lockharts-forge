@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTavern } from './hooks/useTavern';
+import { useGame } from '../../../context/GameContext';
 import { TavernListView } from './ui/TavernListView';
 import { TavernInteractionView } from './ui/TavernInteractionView';
+import { CommissionBoard } from './ui/CommissionBoard';
 import { MercenaryInviteModal } from '../../modals/MercenaryInviteModal';
 import { SfxButton } from '../../common/ui/SfxButton';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ClipboardList } from 'lucide-react';
 
 interface TavernTabProps {
     onNavigate?: (tab: any) => void;
@@ -12,6 +14,8 @@ interface TavernTabProps {
 
 const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
     const tavern = useTavern();
+    const { state, actions } = useGame();
+    const [showCommissionBoard, setShowCommissionBoard] = useState(false);
     const { 
         selectedMercenary, 
         groupedMercs, 
@@ -21,6 +25,10 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
         inviteCost,
         handlers 
     } = tavern;
+
+    useEffect(() => {
+        actions.triggerNamedEncounterCheck('TAVERN');
+    }, []);
 
     const handleBack = () => {
         if (isDetailOpen) {
@@ -43,6 +51,23 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                 >
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                     <span className="text-xs font-black uppercase tracking-widest">Back</span>
+                </SfxButton>
+            )}
+
+            {/* Commission Board Button */}
+            {!selectedMercenary && (
+                <SfxButton 
+                    sfx="switch"
+                    onClick={() => setShowCommissionBoard(true)}
+                    className="absolute top-4 right-4 z-[1100] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-amber-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
+                >
+                    <ClipboardList className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-black uppercase tracking-widest">Commissions</span>
+                    {state.commission.activeContracts.length > 0 && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white border border-stone-950">
+                            {state.commission.activeContracts.length}
+                        </div>
+                    )}
                 </SfxButton>
             )}
 
@@ -69,6 +94,15 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                 onConfirm={handlers.confirmInvite}
                 onClose={handlers.cancelInvite}
             />
+
+            {/* Commission Board Modal */}
+            {showCommissionBoard && (
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-2xl h-[80vh] animate-in zoom-in-95">
+                        <CommissionBoard onClose={() => setShowCommissionBoard(false)} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

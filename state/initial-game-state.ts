@@ -6,6 +6,7 @@ import { DUNGEON_CONFIG } from '../config/dungeon-config';
 import { DUNGEONS } from '../data/dungeons';
 import { loadGlobalSettings } from '../utils/saveSystem';
 import { createRandomMercenary } from '../utils/mercenaryGenerator';
+import { NAMED_CONTRACT_REGISTRY } from '../data/contracts/namedContracts';
 
 const createInitialInventory = (): InventoryItem[] => [
     { ...materials.anvil, type: 'TOOL', quantity: 1 },
@@ -66,6 +67,7 @@ export const createInitialGameState = (): GameState => {
             smithingExp: 0,
             workbenchExp: 0,
             inviteCount: 0,
+            totalSalesCount: 0,
             dailyFinancials: {
                 incomeShop: 0,
                 incomeInventory: 0,
@@ -87,15 +89,6 @@ export const createInitialGameState = (): GameState => {
         activeEvent: null,
         logs: ['You stand amidst the ruins of Lockhart\'s Forge.', 'The equipment is cold and broken. You need to gather gold to rebuild.'],
         knownMercenaries: [
-            // Only Pip the Green initially from named ones
-            ...NAMED_MERCENARIES.filter(m => m.id === 'pip_green').map(m => ({
-                ...m,
-                expeditionEnergy: DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
-                currentXp: 0,
-                xpToNextLevel: m.level * 100,
-                status: 'VISITOR' as const,
-                bonusStatPoints: m.bonusStatPoints ?? Math.max(0, (m.level - 1) * 3)
-            })),
             // Plus 5 random mercenaries
             ...Array.from({ length: 5 }).map(() => createRandomMercenary(1))
         ],
@@ -126,7 +119,7 @@ export const createInitialGameState = (): GameState => {
         unlockedRecipes: [],
         unlockedTabs: ['MAIN', 'FORGE', 'MARKET'],
         unlockedTierPopup: null,
-        tutorialStep: 'PROLOGUE_DIALOG',
+        tutorialStep: 'PROLOGUE_DIALOG_GUIDE',
         activeTutorialScene: 'PROLOGUE',
         hasCompletedPrologue: false,
 
@@ -144,6 +137,26 @@ export const createInitialGameState = (): GameState => {
 
         // Result Tracking
         lastCraftedItem: null,
+
+        commission: {
+            activeContracts: [],
+            completedContractIds: [],
+            failedContractIds: [],
+            namedEncounters: NAMED_CONTRACT_REGISTRY.reduce((acc, entry) => ({
+                ...acc,
+                [entry.mercenaryId]: {
+                    mercenaryId: entry.mercenaryId,
+                    unlocked: false,
+                    hasAppeared: false,
+                    recruitUnlocked: false,
+                    daysEligible: 0,
+                }
+            }), {}),
+            lastDailyCommissionRefreshDay: 0,
+            hasSeenRecoveryFlow: false,
+            hasHadInjuredMercenary: false,
+        },
+        activeDialogue: null,
 
         // UI Effects State
         uiEffects: {

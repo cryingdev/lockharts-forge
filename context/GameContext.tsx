@@ -163,6 +163,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     resolveCombatManual: (win: boolean, flee: boolean, finalParty: any[]) => 
         dispatch({ type: 'RESOLVE_COMBAT_MANUAL', payload: { win, flee, finalParty } }),
     proceedToNextFloorManual: () => dispatch({ type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' }),
+    triggerNamedEncounterCheck: (location: string) => dispatch({ type: 'TRIGGER_NAMED_ENCOUNTER_CHECK', payload: { location } }),
+    acceptContract: (contractId: string) => dispatch({ type: 'ACCEPT_CONTRACT', payload: { contractId } }),
+    submitContract: (contractId: string) => dispatch({ type: 'SUBMIT_CONTRACT', payload: { contractId } }),
+    failContract: (contractId: string) => dispatch({ type: 'FAIL_CONTRACT', payload: { contractId } }),
+    refreshCommissions: () => dispatch({ type: 'REFRESH_COMMISSIONS' }),
+    setDialogue: (dialogue: any | null) => dispatch({ type: 'SET_DIALOGUE', payload: dialogue }),
     triggerEnergyHighlight,
     showToast,
     hideToast: () => dispatch({ type: 'HIDE_TOAST' }),
@@ -172,6 +178,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     completeTutorial: () => dispatch({ type: 'COMPLETE_TUTORIAL' }),
     dismissTutorialComplete: () => dispatch({ type: 'DISMISS_TUTORIAL_COMPLETE' }),
     updateSettings: (settings: Partial<GameState['settings']>) => dispatch({ type: 'UPDATE_SETTINGS', payload: settings }),
+    dispatch: (action: any) => dispatch(action),
   }), [dispatch]); 
 
   return (

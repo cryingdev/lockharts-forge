@@ -220,7 +220,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     if (selectedItem) {
       actions.finishCrafting(selectedItem, score, bonus);
       if (tutorialStep === 'START_FORGING_GUIDE' && selectedItem.id === 'sword_bronze_t1') {
-        actions.setTutorialStep('CRAFT_RESULT_DIALOG');
+        actions.setTutorialStep('CRAFT_RESULT_DIALOG_GUIDE');
       }
     }
     // minigame 완료 후 레시피 목록을 열지 않고 워크스페이스(레시피 카드) 상태를 유지합니다.

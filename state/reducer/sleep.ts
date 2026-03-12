@@ -2,6 +2,8 @@ import { GameState } from '../../types/index';
 import { calculateDailyWage } from '../../config/contract-config';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 import { MARKET_CATALOG } from '../../data/market/index';
+import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
+import { isNamedMercenaryEligible } from './commission';
 
 export const handleSleep = (state: GameState): GameState => {
     if (state.forge.isShopOpen) {
@@ -104,6 +106,30 @@ export const handleConfirmSleep = (state: GameState): GameState => {
     if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. (Auto-saved)`;
     if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G). (Auto-saved)`;
 
+    // --- Commission System Updates ---
+    const updatedActiveContracts = state.commission.activeContracts
+        .map(c => ({ ...c, daysRemaining: (c.daysRemaining || 0) - 1 }))
+        .filter(c => (c.daysRemaining || 0) > 0);
+    
+    const expiredCount = state.commission.activeContracts.length - updatedActiveContracts.length;
+    if (expiredCount > 0) {
+        recoveryLogs.push(`${expiredCount} commission(s) have expired.`);
+    }
+
+    const updatedNamedEncounters = { ...state.commission.namedEncounters };
+    Object.keys(updatedNamedEncounters).forEach(id => {
+        const encounter = updatedNamedEncounters[id];
+        const registry = NAMED_CONTRACT_REGISTRY.find(r => r.mercenaryId === id);
+        
+        if (registry && isNamedMercenaryEligible(state, registry)) {
+            // Increment daysEligible if eligible but not appeared yet
+            updatedNamedEncounters[id] = {
+                ...encounter,
+                daysEligible: (encounter.daysEligible || 0) + 1
+            };
+        }
+    });
+
     return {
         ...state,
         stats: {
@@ -121,6 +147,11 @@ export const handleConfirmSleep = (state: GameState): GameState => {
                 expenseWages: totalWages,
                 expenseScout: 0
             },
+        },
+        commission: {
+            ...state.commission,
+            activeContracts: updatedActiveContracts,
+            namedEncounters: updatedNamedEncounters
         },
         knownMercenaries: updatedMercenaries,
         marketStock: newMarketStock,

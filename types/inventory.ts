@@ -16,10 +16,12 @@ export interface ItemDefinition {
   icon?: string; 
   image?: string;
   skillId?: string; // Links item to a specific skill in data/skills.ts
+  tags?: string[]; // Added tags for contract requirement matching
 }
 
 export interface InventoryItem extends ItemDefinition {
   quantity: number;
+  quality?: number;
   equipmentData?: Equipment; 
   isLocked?: boolean;
 }
@@ -45,6 +47,7 @@ export interface EquipmentItem {
   baseValue: number;
   requirements: { id: string; count: number }[];
   baseStats?: EquipmentStats;
+  tags?: string[]; // Added tags for contract requirement matching
   
   // Unlock logic
   unlockedByDefault?: boolean; // If false, requires a recipe scroll to show in Forge

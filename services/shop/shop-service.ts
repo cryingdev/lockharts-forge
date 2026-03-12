@@ -5,6 +5,7 @@ import { calculateMaxHp, calculateMaxMp } from '../../models/Stats';
 import { generateMercenary } from '../../utils/mercenaryGenerator';
 import { SHOP_CONFIG } from '../../config/shop-config';
 import { rng } from '../../utils/random';
+import { NAMED_MERCENARIES } from '../../data/mercenaries';
 
 /**
  * useShopService
@@ -41,7 +42,12 @@ export const useShopService = () => {
                 // Tutorial logic: Only Pip the Green enters when waiting for the first sell
                 if (isTutorialSignStep) {
                     if (activeCustomer === null && shopQueue.length === 0) {
-                        const pip = state.knownMercenaries.find(m => m.id === 'pip_green');
+                        // Try to find Pip in known mercenaries first, fallback to NAMED_MERCENARIES
+                        let pip = state.knownMercenaries.find(m => m.id === 'pip_green');
+                        if (!pip) {
+                            pip = NAMED_MERCENARIES.find(m => m.id === 'pip_green');
+                        }
+
                         if (pip) {
                             const customer = generateShopRequest(pip, unlockedRecipes);
                             customer.request.requestedId = 'sword_bronze_t1';

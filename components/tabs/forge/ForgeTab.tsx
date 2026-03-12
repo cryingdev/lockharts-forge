@@ -205,8 +205,14 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                 {/* Floating Toggle for Inventory Modal */}
                 <SfxButton 
                     sfx="switch"
-                    onClick={onOpenInventory}
-                    className={`w-16 h-16 md:w-20 md:h-20 bg-stone-800 hover:bg-stone-700 text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-2 border-stone-600 flex flex-col items-center justify-center transition-all active:scale-90 group ${isRecipeTutorial ? 'opacity-20 scale-90' : 'opacity-100'}`}
+                    onClick={() => {
+                        if (state.unlockedTabs.includes('INVENTORY')) {
+                            onOpenInventory();
+                        } else {
+                            actions.showToast("Inventory locked.");
+                        }
+                    }}
+                    className={`w-16 h-16 md:w-20 md:h-20 bg-stone-800 hover:bg-stone-700 text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-2 border-stone-600 flex flex-col items-center justify-center transition-all active:scale-90 group ${isRecipeTutorial || !state.unlockedTabs.includes('INVENTORY') ? 'opacity-20 scale-90' : 'opacity-100'}`}
                 >
                     <Package className="w-7 h-7 md:w-9 md:h-9 group-hover:scale-110 transition-transform" />
                     <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-0.5">Storage</span>

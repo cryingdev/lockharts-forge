@@ -14,6 +14,7 @@ import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 import { handleResearchCombination } from './reducer/research';
+import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleSubmitContract, handleFailContract, handleRefreshCommissions } from './reducer/commission';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -78,6 +79,13 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     // Research
     case 'RESEARCH_COMBINATION': return handleResearchCombination(state, action.payload);
 
+    // Commission
+    case 'TRIGGER_NAMED_ENCOUNTER_CHECK': return handleTriggerNamedEncounterCheck(state, action.payload.location);
+    case 'ACCEPT_CONTRACT': return handleAcceptContract(state, action.payload);
+    case 'SUBMIT_CONTRACT': return handleSubmitContract(state, action.payload.contractId);
+    case 'FAIL_CONTRACT': return handleFailContract(state, action.payload.contractId);
+    case 'REFRESH_COMMISSIONS': return handleRefreshCommissions(state);
+
     // Expedition
     case 'START_EXPEDITION': return handleStartExpedition(state, action.payload);
     case 'COMPLETE_EXPEDITION': return handleCompleteExpedition(state, action.payload);
@@ -107,10 +115,22 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             ...state, 
             hasCompletedPrologue: true,
             activeTutorialScene: null,
-            tutorialStep: 'MARKET_GUIDE' 
+            tutorialStep: 'MARKET_POI_GUIDE' 
         };
     case 'COMPLETE_TUTORIAL':
-        const finalTabs = ['FORGE', 'MARKET', 'INVENTORY', 'SHOP', 'TAVERN', 'DUNGEON', 'SIMULATION'];
+        const finalTabs = ['MAIN', 'FORGE', 'MARKET', 'INVENTORY', 'SHOP', 'TAVERN', 'DUNGEON', 'SIMULATION'];
+        
+        // Unlock Pip the Green for recruitment as the first mercenary
+        const newNamedEncounters = { ...state.commission.namedEncounters };
+        if (newNamedEncounters['pip_green']) {
+            newNamedEncounters['pip_green'] = {
+                ...newNamedEncounters['pip_green'],
+                unlocked: true,
+                hasAppeared: true,
+                recruitUnlocked: true
+            };
+        }
+
         return {
             ...state,
             tutorialStep: null,
@@ -121,6 +141,10 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
                 tierLevel: Math.max(state.stats.tierLevel, 1) 
             },
             forge: { ...state.forge, hasFurnace: true }, 
+            commission: {
+                ...state.commission,
+                namedEncounters: newNamedEncounters
+            },
             showTutorialCompleteModal: true,
             logs: ["Tutorial completed. Lockhart's Forge is fully operational.", ...state.logs]
         };
@@ -173,6 +197,9 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
                 [action.payload.effect]: action.payload.value
             }
         };
+
+    case 'SET_DIALOGUE':
+        return { ...state, activeDialogue: action.payload };
 
     default:
       return state;

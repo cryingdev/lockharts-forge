@@ -25,21 +25,21 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
     }, [step]);
 
     const script = useMemo(() => {
-        if (step === 'PRE_IGNITE_DIALOG_1' || step === 'START_FORGING_GUIDE') 
+        if (step === 'PRE_IGNITE_DIALOG_1_GUIDE' || step === 'START_FORGING_GUIDE') 
             return "The furnace stands ready, but the hearth is cold. I must strike the flint and wake the fire to life.";
-        if (step === 'PRE_IGNITE_DIALOG_2' || step === 'PRE_IGNITE_INDICATE') 
+        if (step === 'PRE_IGNITE_DIALOG_2_GUIDE' || step === 'PRE_IGNITE_INDICATE_GUIDE') 
             return "Tap the Ignite button on the right, it will heat furnace up and be ready.";
-        if (step === 'PRE_PUMP_DIALOG') 
+        if (step === 'PRE_PUMP_DIALOG_GUIDE') 
             return "The flame has taken, but it is weak and gasping. It needs breath—the steady rhythm of the bellows—to reach forging heat.";
-        if (step === 'PRE_PUMP_INDICATE' || step === 'SMITHING_MINIGAME_PUMP') 
+        if (step === 'PRE_PUMP_INDICATE_GUIDE' || step === 'SMITHING_MINIGAME_PUMP') 
             return "Pump the bellows repeatedly. Feed the fire until the gauge reaches its peak and the stone begins to hum.";
-        if (step === 'POST_PUMP_DIALOG')
+        if (step === 'POST_PUMP_DIALOG_GUIDE')
             return "The steel glows with the heat of a dying star! It's perfectly tempered. Now, I must strike while the iron is hot.";
         
-        if (step === 'SMITHING_MINIGAME_HIT') 
+        if (step === 'SMITHING_MINIGAME_HIT_GUIDE') 
             return "The steel glows with the color of the rising sun! Tap the target rings as they shrink to strike. Precision is our legacy.";
         
-        if (step === 'FIRST_HIT_DIALOG') 
+        if (step === 'FIRST_HIT_DIALOG_GUIDE') 
             return "Magnificent! The sound of steel on steel... it sings. Keep striking until the blade finds its form.";
         
         return "";
@@ -47,12 +47,13 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
 
     // 하이라이트 원 애니메이션 로직
     // DIALOG 단계에서는 다이얼로그만 보여주고, INDICATE 단계부터 버튼을 강조합니다.
-    const isTextOnlyStep = step.includes('_DIALOG') || step === 'START_FORGING_GUIDE';
+    const showDialogue = step.includes('_DIALOG') || step === 'START_FORGING_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE' || step.includes('_INDICATE');
     const isIndicateStep = step.includes('_INDICATE') || step.startsWith('SMITHING_MINIGAME');
+    const isMaskHidden = isDismissed || step === 'TUTORIAL_END_DIALOG_GUIDE' || step === 'CRAFT_RESULT_DIALOG_GUIDE' || step === 'SMITHING_MINIGAME_HIT_GUIDE';
     
     useEffect(() => {
         // 지시 단계(INDICATE)가 아니고 타겟 좌표가 없으면 원을 크게 유지
-        if (!targetCoord || !isIndicateStep || step === 'SMITHING_MINIGAME_HIT' || step === 'POST_PUMP_DIALOG') {
+        if (!targetCoord || !isIndicateStep || step === 'SMITHING_MINIGAME_HIT_GUIDE' || step === 'POST_PUMP_DIALOG_GUIDE') {
             setAnimatedRadius(2000);
             return;
         }
@@ -79,14 +80,6 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
     const w = targetCoord?.w || 0;
     const h = targetCoord?.h || 0;
 
-    /**
-     * 암전 마스크 숨김 조건:
-     * 1. 명시적 닫힘 상태
-     * 2. 대화창만 강조하는 텍스트 전용 단계 (마스크는 INDICATE에서만 버튼을 비춤)
-     * 3. 첫 타격 대기 단계 (TOUCH TO START 안내를 가리지 않기 위함)
-     */
-    const isMaskHidden = isDismissed || isTextOnlyStep || step === 'SMITHING_MINIGAME_HIT';
-
     return (
         <div className="fixed inset-0 z-[5000] pointer-events-none overflow-hidden">
             <style>{`
@@ -99,7 +92,7 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
                 <defs>
                     <mask id="smithing-tutorial-mask">
                         <rect width="100%" height="100%" fill="white" />
-                        {targetCoord && isIndicateStep && step !== 'SMITHING_MINIGAME_HIT' && step !== 'POST_PUMP_DIALOG' && (
+                        {targetCoord && isIndicateStep && step !== 'POST_PUMP_DIALOG_GUIDE' && (
                             <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />
                         )}
                     </mask>
@@ -108,7 +101,7 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
             </svg>
 
             {/* 클릭 방지 월 및 가이드 포인터 - 지시 단계(INDICATE)에서만 노출 */}
-            {!isDismissed && targetCoord && isIndicateStep && step !== 'SMITHING_MINIGAME_HIT' && step !== 'POST_PUMP_DIALOG' && (
+            {!isDismissed && targetCoord && isIndicateStep && step !== 'POST_PUMP_DIALOG_GUIDE' && (
                 <>
                     <div className="absolute inset-0 pointer-events-none">
                         <div className="absolute top-0 left-0 w-full pointer-events-auto" style={{ height: centerY - h/2 }} />
@@ -127,27 +120,31 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
                 </>
             )}
 
-            {/* 대화창 - DIALOG 단계에서만 노출 (INDICATE 시 숨김) */}
-            {!isDismissed && isTextOnlyStep && (
+            {/* 대화창 - showDialogue 조건에 따라 노출 */}
+            {!isDismissed && showDialogue && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90vw] max-w-4xl pointer-events-none z-[6000]">
                     <DialogueBox 
                         speaker="Lockhart" 
                         text={script} 
                         options={[
                             { 
-                                label: (step === 'SMITHING_MINIGAME_HIT' || step === 'FIRST_HIT_DIALOG') ? "I'm ready" : "Continue", 
+                                label: (step === 'SMITHING_MINIGAME_HIT_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE') ? "I'm ready" : "Continue", 
                                 action: () => {
-                                    if (step === 'PRE_IGNITE_DIALOG_1' || step === 'START_FORGING_GUIDE') {
-                                        actions.setTutorialStep('PRE_IGNITE_DIALOG_2');
-                                    } else if (step === 'PRE_IGNITE_DIALOG_2') {
-                                        actions.setTutorialStep('PRE_IGNITE_INDICATE');
-                                    } else if (step === 'PRE_PUMP_DIALOG') {
-                                        actions.setTutorialStep('PRE_PUMP_INDICATE');
-                                    } else if (step === 'POST_PUMP_DIALOG') {
-                                        actions.setTutorialStep('SMITHING_MINIGAME_HIT');
-                                    } else if (step === 'FIRST_HIT_DIALOG') {
+                                    if (step === 'PRE_IGNITE_DIALOG_1_GUIDE' || step === 'START_FORGING_GUIDE') {
+                                        actions.setTutorialStep('PRE_IGNITE_DIALOG_2_GUIDE');
+                                    } else if (step === 'PRE_IGNITE_DIALOG_2_GUIDE') {
+                                        actions.setTutorialStep('PRE_IGNITE_INDICATE_GUIDE');
+                                    } else if (step === 'PRE_IGNITE_INDICATE_GUIDE') {
+                                        actions.setTutorialStep('SMITHING_MINIGAME_IGNITE_GUIDE');
+                                    } else if (step === 'PRE_PUMP_DIALOG_GUIDE') {
+                                        actions.setTutorialStep('PRE_PUMP_INDICATE_GUIDE');
+                                    } else if (step === 'PRE_PUMP_INDICATE_GUIDE') {
+                                        actions.setTutorialStep('SMITHING_MINIGAME_PUMP_GUIDE');
+                                    } else if (step === 'POST_PUMP_DIALOG_GUIDE') {
+                                        actions.setTutorialStep('SMITHING_MINIGAME_HIT_GUIDE');
+                                    } else if (step === 'FIRST_HIT_DIALOG_GUIDE') {
                                         // 첫 타격 성공 다이얼로그 종료 시 타격 단계로 원복하여 게임 로직 재개
-                                        actions.setTutorialStep('SMITHING_MINIGAME_HIT');
+                                        actions.setTutorialStep('SMITHING_MINIGAME_HIT_GUIDE');
                                         setIsDismissed(true);
                                         if (onResume) onResume();
                                     } else {

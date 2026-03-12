@@ -760,7 +760,7 @@ export default class SmithingScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.isFinished) return;
     const currentStep = (this.game as any).tutorialStep;
-    const isTutorialDialogueActive = this.isTutorial && (currentStep === 'FIRST_HIT_DIALOG' || currentStep?.includes('_DIALOG'));
+    const isTutorialDialogueActive = this.isTutorial && (currentStep === 'FIRST_HIT_DIALOG_GUIDE' || currentStep?.includes('_DIALOG'));
     if (this.isPlaying && this.currentTool === 'HAMMER' && !isTutorialDialogueActive) {
         this.handleRingLogic(delta);
     }

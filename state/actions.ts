@@ -73,4 +73,11 @@ export type GameAction =
   | { type: 'START_COMBAT_MANUAL' }
   | { type: 'RESOLVE_COMBAT_MANUAL'; payload: { win: boolean; flee: boolean; finalParty: any[] } }
   | { type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' }
-  | { type: 'RESEARCH_COMBINATION'; payload: { items: { id: string; count: number }[] } };
+  | { type: 'RESEARCH_COMBINATION'; payload: { items: { id: string; count: number }[] } }
+  | { type: 'TRIGGER_NAMED_ENCOUNTER_CHECK'; payload: { location: string } }
+  | { type: 'ACCEPT_CONTRACT'; payload: { contractId: string } }
+  | { type: 'SUBMIT_CONTRACT'; payload: { contractId: string } }
+  | { type: 'COMPLETE_CONTRACT'; payload: { contractId: string } }
+  | { type: 'FAIL_CONTRACT'; payload: { contractId: string } }
+  | { type: 'REFRESH_COMMISSIONS' }
+  | { type: 'SET_DIALOGUE'; payload: any | null };

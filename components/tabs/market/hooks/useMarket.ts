@@ -32,7 +32,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
     // Tutorial Sync
     useEffect(() => {
         if (state.tutorialStep === 'FURNACE_GUIDE') setViewMode('CATALOG');
-        else if (state.tutorialStep === 'GARRICK_AFTER_PURCHASE_DIALOG') setViewMode('INTERACTION');
+        else if (state.tutorialStep === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE') setViewMode('INTERACTION');
     }, [state.tutorialStep]);
 
     const spawnHearts = useCallback((count: number) => {
@@ -114,7 +114,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         if (available <= 0) return false;
         const addCount = Math.min(amount, available);
         
-        if (itemId === 'furnace' && state.tutorialStep === 'FURNACE_GUIDE') actions.setTutorialStep('OPEN_SHOPPING_CART');
+        if (itemId === 'furnace' && state.tutorialStep === 'FURNACE_GUIDE') actions.setTutorialStep('OPEN_SHOPPING_CART_GUIDE');
 
         setCart(prev => ({ ...prev, [itemId]: (prev[itemId] || 0) + addCount }));
         return true;
@@ -131,8 +131,8 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
 
     const handleBuy = () => {
         if (cartItemCount === 0 || totalCost > state.stats.gold) return;
-        if (state.tutorialStep === 'PAY_NOW') {
-            if (cart['furnace']) actions.setTutorialStep('GARRICK_AFTER_PURCHASE_DIALOG');
+        if (state.tutorialStep === 'PAY_NOW_GUIDE') {
+            if (cart['furnace']) actions.setTutorialStep('GARRICK_AFTER_PURCHASE_DIALOG_GUIDE');
             else actions.setTutorialStep(null);
         }
         actions.buyItems(Object.entries(cart).map(([id, count]) => ({ id, count })), totalCost);

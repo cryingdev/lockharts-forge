@@ -53,7 +53,8 @@ interface StepConfig {
 }
 
 const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
-    MARKET_GUIDE: { targetId: 'MARKET_POI', label: 'Visit Market District', direction: 'right' },
+    MARKET_POI_GUIDE: { targetId: 'MARKET_POI', label: 'Visit Market District', direction: 'right' },
+    FORGE_POI_GUIDE: { targetId: 'FORGE_POI', label: 'Visit Lockhart Forge', direction: 'right' },
     OPEN_RECIPE_GUIDE: { targetId: 'RECIPE_TOGGLE', label: 'Open Recipes', direction: 'left' },
     SELECT_SWORD_GUIDE: { targetId: 'SWORD_RECIPE', label: 'Select Sword', direction: 'bottom' },
     START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', label: 'Start Forging', direction: 'right' },
@@ -63,7 +64,8 @@ const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
 };
 
 const TUTORIAL_CONTEXT_SCRIPTS: Record<string, { speaker: string, text: string }> = {
-    MARKET_GUIDE: { speaker: "Lockhart", text: "A forge without a roar is just a cold pile of stone. There should be a replacement furnace at the Market District... let's head to Garrick's store." },
+    MARKET_POI_GUIDE: { speaker: "Lockhart", text: "A forge without a roar is just a cold pile of stone. There should be a replacement furnace at the Market District... let's head to Garrick's store." },
+    FORGE_POI_GUIDE: { speaker: "Lockhart", text: "The furnace is installed. Now, let's see if I can still craft a blade worthy of the Lockhart name." },
     OPEN_RECIPE_GUIDE: { speaker: "Lockhart", text: "I've memorized the family patterns. Let's see which ones I can still recall with these materials." },
     SELECT_SWORD_GUIDE: { speaker: "Lockhart", text: "A Bronze Shortsword. A simple pattern, but a reliable test for this new unit." },
     OPEN_SHOP_TAB_GUIDE: { speaker: "Lockhart", text: "A blade without a wielder is just cold metal. Let's head to the front desk and see if any travelers seek Lockhart steel." },
@@ -255,7 +257,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
   const dialogueContent = useMemo(() => {
     switch (state.tutorialStep) {
-        case 'CRAFT_START_DIALOG': 
+        case 'CRAFT_START_DIALOG_GUIDE': 
             return { 
                 speaker: "Lockhart", 
                 text: "The heat is steady... I'll craft a Bronze Shortsword to test the unit.", 
@@ -264,8 +266,11 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                     actions.setTutorialStep('OPEN_RECIPE_GUIDE');
                 }
             };
-        case 'CRAFT_RESULT_DIALOG': return { speaker: "Lockhart", text: "Higher mastery grants permanent bonuses. Let's finish this piece.", nextStep: 'FINALIZE_FORGE_GUIDE' as const };
-        case 'SHOP_INTRO_DIALOG': return { speaker: "Lockhart", text: "The forge is alive. The shop must follow. Let's head to the Shop counter.", nextStep: 'OPEN_SHOP_TAB_GUIDE' as const };
+        case 'CRAFT_RESULT_DIALOG_GUIDE': return { speaker: "Lockhart", text: "Higher mastery grants permanent bonuses. Let's finish this piece.", nextStep: 'FINALIZE_FORGE_GUIDE' as const };
+        case 'SHOP_INTRO_DIALOG_GUIDE': return { speaker: "Lockhart", text: "The forge is alive. The shop must follow. Let's head to the Shop counter.", nextStep: 'OPEN_SHOP_TAB_GUIDE' as const };
+        case 'PIP_PRAISE_DIALOG_GUIDE': return { speaker: "Pip", text: "Wow! This is amazing! I've never seen such a fine blade. I'll tell everyone about Lockhart Forge!", nextStep: 'DRAGON_TALK_DIALOG_GUIDE' as const };
+        case 'DRAGON_TALK_DIALOG_GUIDE': return { speaker: "Ignis", text: "Not bad, mortal. You might just restore the glory of this place after all.", nextStep: 'TUTORIAL_END_DIALOG_GUIDE' as const };
+        case 'TUTORIAL_END_DIALOG_GUIDE': return { speaker: "Lockhart", text: "The first step is taken. Now, the real work begins. The world awaits Lockhart steel.", action: () => actions.completeTutorial() };
         default: return null;
     }
   }, [state.tutorialStep, actions]);
@@ -281,7 +286,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
           }
       } else {
           // 일반 내비게이션
-          if (state.tutorialStep === 'MARKET_GUIDE' && target === 'MARKET') {
+          if (state.tutorialStep === 'MARKET_POI_GUIDE' && target === 'MARKET') {
               actions.setTutorialStep('BROWSE_GOODS_GUIDE');
               actions.setTutorialScene('MARKET');
           }
@@ -327,6 +332,32 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                         action: dialogueContent.action || (() => actions.setTutorialStep(dialogueContent.nextStep!)), 
                         variant: 'primary' 
                     }]} 
+                />
+            </div>
+        </div>
+      )}
+
+      {/* General Dialogue Overlay */}
+      {state.activeDialogue && (
+        <div className="fixed inset-0 z-[2500] flex flex-col justify-end items-center pb-6 md:pb-12 px-4 pointer-events-none">
+            <div className="w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto">
+                <DialogueBox 
+                    speaker={state.activeDialogue.speaker} 
+                    text={state.activeDialogue.text} 
+                    speakerAvatar={state.activeDialogue.avatar}
+                    options={state.activeDialogue.options.map(opt => ({
+                        ...opt,
+                        action: () => {
+                            if (opt.action) {
+                                if (typeof opt.action === 'function') {
+                                    opt.action();
+                                } else if (typeof opt.action === 'object' && opt.action !== null) {
+                                    actions.dispatch(opt.action);
+                                }
+                            }
+                            actions.setDialogue(null);
+                        }
+                    }))} 
                 />
             </div>
         </div>
