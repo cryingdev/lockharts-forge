@@ -101,6 +101,7 @@ export interface CommissionState {
   failedContractIds: string[];
   namedEncounters: Record<string, NamedEncounterState>;
   lastDailyCommissionRefreshDay: number;
+  lastEncounterCheckDayByLocation?: Partial<Record<ContractSource, number>>;
   hasSeenRecoveryFlow?: boolean; // New: Track if player has seen the recovery tutorial/flow
   hasHadInjuredMercenary?: boolean; // New: Track if player has ever had an injured mercenary
 }

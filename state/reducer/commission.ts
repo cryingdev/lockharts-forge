@@ -1,11 +1,16 @@
-import { GameState, ContractDefinition } from '../../types/game-state';
+import { GameState, ContractDefinition, ContractSource } from '../../types/game-state';
+import { InventoryItem } from '../../types/inventory';
 import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
 import { NAMED_MERCENARIES } from '../../data/mercenaries';
+import { EQUIPMENT_ITEMS } from '../../data/equipment';
+import { rng } from '../../utils/random';
 
 export const isNamedMercenaryEligible = (state: GameState, entry: any): boolean => {
     const stateInfo = state.commission.namedEncounters[entry.mercenaryId];
-    // If already unlocked (contract accepted/completed) or appeared, skip
-    if (!stateInfo || stateInfo.unlocked || stateInfo.hasAppeared) return false; 
+    if (!stateInfo || stateInfo.unlocked || stateInfo.recruitUnlocked) return false;
+
+    const hasActiveContract = state.commission.activeContracts.some(c => c.mercenaryId === entry.mercenaryId);
+    if (hasActiveContract) return false;
     
     // Check unlock conditions
     const rule = entry.unlockRule;
@@ -38,10 +43,13 @@ export const isNamedMercenaryEligible = (state: GameState, entry: any): boolean 
         return false;
     }
 
-    // Check if we are past the encounter window
     if (stateInfo.daysEligible !== undefined && entry.encounterRule.encounterWindowDays) {
-        // If we've been eligible for longer than the window, and it's not guaranteed anymore
-        if (stateInfo.daysEligible > entry.encounterRule.encounterWindowDays) {
+        const maxEligibleDays = Math.max(
+            entry.encounterRule.encounterWindowDays,
+            entry.encounterRule.guaranteeAfterDays || 0
+        );
+
+        if (stateInfo.daysEligible > maxEligibleDays) {
             return false;
         }
     }
@@ -58,14 +66,47 @@ export const isNamedMercenaryEligible = (state: GameState, entry: any): boolean 
     return true;
 };
 
+const getContractMatchingItems = (inventory: InventoryItem[], itemId: string, acceptedTags?: string[], minQuality?: number) => {
+    return inventory.filter(inv => {
+        const recipeId = inv.equipmentData?.recipeId;
+        const inventoryTags = inv.tags || [];
+        const quality = inv.equipmentData?.quality ?? inv.quality ?? 0;
+
+        const idMatch = inv.id === itemId || recipeId === itemId;
+        const tagMatch = !!acceptedTags && acceptedTags.some(tag => inventoryTags.includes(tag));
+        const qualityMatch = minQuality === undefined || quality >= minQuality;
+
+        return (idMatch || tagMatch) && qualityMatch;
+    });
+};
+
 export const handleTriggerNamedEncounterCheck = (state: GameState, location: string): GameState => {
+    if (state.commission.activeContracts.some(c => c.type === 'SPECIAL')) {
+        return state;
+    }
+
+    if (state.commission.lastEncounterCheckDayByLocation?.[location as ContractSource] === state.stats.day) {
+        return state;
+    }
+
     // 1. Find eligible named mercenaries for this location
     const eligibleEntries = NAMED_CONTRACT_REGISTRY.filter(entry => {
         if (entry.encounterRule.location !== location) return false;
         return isNamedMercenaryEligible(state, entry);
     });
 
-    if (eligibleEntries.length === 0) return state;
+    if (eligibleEntries.length === 0) {
+        return {
+            ...state,
+            commission: {
+                ...state.commission,
+                lastEncounterCheckDayByLocation: {
+                    ...state.commission.lastEncounterCheckDayByLocation,
+                    [location]: state.stats.day
+                }
+            }
+        };
+    }
 
     // 2. Roll for appearance or check guarantee
     let triggeredEntry = null;
@@ -76,7 +117,7 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
         const daysSinceEligible = stateInfo.daysEligible || 0;
         
         const isGuaranteed = entry.encounterRule.guaranteeAfterDays && daysSinceEligible >= entry.encounterRule.guaranteeAfterDays;
-        const roll = Math.random();
+        const roll = rng.next();
         
         if (isGuaranteed || roll < entry.encounterRule.appearanceChance) {
             triggeredEntry = entry;
@@ -108,7 +149,11 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
         knownMercenaries: newKnownMercenaries,
         commission: {
             ...state.commission,
-            namedEncounters: newNamedEncounters
+            namedEncounters: newNamedEncounters,
+            lastEncounterCheckDayByLocation: {
+                ...state.commission.lastEncounterCheckDayByLocation,
+                [location]: state.stats.day
+            }
         },
         activeDialogue: {
             speaker: triggeredEntry.encounterDialogue.speaker,
@@ -177,23 +222,11 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
 
     // Check requirements
     const missingItems = contract.requirements.filter(req => {
-        // Find all items in inventory that match either ID or Tags
-        const matchingItems = state.inventory.filter(inv => {
-            const idMatch = inv.id === req.itemId;
-            const tagMatch = req.acceptedTags && inv.tags && req.acceptedTags.some(tag => inv.tags!.includes(tag));
-            return idMatch || tagMatch;
-        });
-
+        const matchingItems = getContractMatchingItems(state.inventory, req.itemId, req.acceptedTags, req.minQuality);
         const totalQty = matchingItems.reduce((sum, item) => sum + item.quantity, 0);
         
         if (totalQty < req.quantity) return true;
-        
-        if (req.minQuality) {
-            const qualityItems = matchingItems.filter(inv => (inv.quality || 0) >= req.minQuality!);
-            const qualityQty = qualityItems.reduce((sum, item) => sum + item.quantity, 0);
-            if (qualityQty < req.quantity) return true;
-        }
-        
+
         return false;
     });
 
@@ -211,9 +244,12 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
         newInventory = newInventory.map(inv => {
             if (remaining <= 0) return inv;
 
-            const idMatch = inv.id === req.itemId;
-            const tagMatch = req.acceptedTags && inv.tags && req.acceptedTags.some(tag => inv.tags!.includes(tag));
-            const qualityMatch = !req.minQuality || (inv.quality || 0) >= req.minQuality;
+            const recipeId = inv.equipmentData?.recipeId;
+            const inventoryTags = inv.tags || [];
+            const quality = inv.equipmentData?.quality ?? inv.quality ?? 0;
+            const idMatch = inv.id === req.itemId || recipeId === req.itemId;
+            const tagMatch = !!req.acceptedTags && req.acceptedTags.some(tag => inventoryTags.includes(tag));
+            const qualityMatch = !req.minQuality || quality >= req.minQuality;
 
             if ((idMatch || tagMatch) && qualityMatch) {
                 const take = Math.min(inv.quantity, remaining);
@@ -306,6 +342,76 @@ export const handleFailContract = (state: GameState, contractId: string): GameSt
 };
 
 export const handleRefreshCommissions = (state: GameState): GameState => {
-    // Implementation for daily random contracts (Phase 4)
-    return state;
+    if (state.commission.lastDailyCommissionRefreshDay === state.stats.day) {
+        return state;
+    }
+
+    const activeSpecialContracts = state.commission.activeContracts.filter(c => c.type === 'SPECIAL');
+    const activeGeneralContracts = state.commission.activeContracts.filter(c => c.type === 'GENERAL');
+    const generalSlotsToFill = Math.max(0, 3 - activeGeneralContracts.length);
+
+    if (generalSlotsToFill === 0) {
+        return {
+            ...state,
+            commission: {
+                ...state.commission,
+                lastDailyCommissionRefreshDay: state.stats.day
+            }
+        };
+    }
+
+    const availableRecipes = EQUIPMENT_ITEMS.filter(item => {
+        const isUnlocked = item.unlockedByDefault !== false || state.unlockedRecipes.includes(item.id);
+        const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1);
+        return isUnlocked && withinTier;
+    });
+
+    const generatedContracts: ContractDefinition[] = [];
+    const usedRecipeIds = new Set(activeGeneralContracts.flatMap(c => c.requirements.map(r => r.itemId)));
+
+    for (let i = 0; i < generalSlotsToFill; i++) {
+        const remainingCandidates = availableRecipes.filter(item => !usedRecipeIds.has(item.id));
+        if (remainingCandidates.length === 0) break;
+
+        const recipe = rng.pick(remainingCandidates);
+        usedRecipeIds.add(recipe.id);
+
+        const payout = Math.max(80, Math.floor(recipe.baseValue * rng.range(1.1, 1.26)));
+        const minQuality = recipe.tier <= 1 ? 70 : 80;
+        const daysRemaining = rng.rangeInt(2, 3);
+
+        generatedContracts.push({
+            id: `contract_general_${state.stats.day}_${i}_${recipe.id}`,
+            type: 'GENERAL',
+            status: 'ACTIVE',
+            source: 'SYSTEM',
+            title: `Order: ${recipe.name}`,
+            clientName: 'Town Commission Board',
+            description: `A standing order for ${recipe.name}. Deliver a reliable piece for local buyers.`,
+            requirements: [
+                {
+                    itemId: recipe.id,
+                    quantity: 1,
+                    minQuality
+                }
+            ],
+            rewards: [
+                { type: 'GOLD', gold: payout }
+            ],
+            deadlineDay: state.stats.day + daysRemaining,
+            daysRemaining,
+        });
+    }
+
+    return {
+        ...state,
+        commission: {
+            ...state.commission,
+            activeContracts: [...activeSpecialContracts, ...activeGeneralContracts, ...generatedContracts],
+            lastDailyCommissionRefreshDay: state.stats.day
+        },
+        logs: generatedContracts.length > 0
+            ? [`${generatedContracts.length} new commission(s) posted on the board.`, ...state.logs]
+            : state.logs
+    };
 };

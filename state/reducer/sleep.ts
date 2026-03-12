@@ -3,7 +3,7 @@ import { calculateDailyWage } from '../../config/contract-config';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 import { MARKET_CATALOG } from '../../data/market/index';
 import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
-import { isNamedMercenaryEligible } from './commission';
+import { handleRefreshCommissions, isNamedMercenaryEligible } from './commission';
 
 export const handleSleep = (state: GameState): GameState => {
     if (state.forge.isShopOpen) {
@@ -130,7 +130,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         }
     });
 
-    return {
+    const nextState: GameState = {
         ...state,
         stats: {
             ...state.stats,
@@ -168,4 +168,6 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         forgeTemperature: 0,
         lastForgeTime: Date.now(),
     };
+
+    return handleRefreshCommissions(nextState);
 };

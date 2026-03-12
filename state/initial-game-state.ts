@@ -153,6 +153,12 @@ export const createInitialGameState = (): GameState => {
                 }
             }), {}),
             lastDailyCommissionRefreshDay: 0,
+            lastEncounterCheckDayByLocation: {
+                SHOP: 0,
+                TAVERN: 0,
+                MARKET: 0,
+                SYSTEM: 0,
+            },
             hasSeenRecoveryFlow: false,
             hasHadInjuredMercenary: false,
         },

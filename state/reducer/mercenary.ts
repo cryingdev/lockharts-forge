@@ -54,6 +54,19 @@ export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mer
 export const handleHireMercenary = (state: GameState, payload: { mercenaryId: string; cost: number }): GameState => {
     const { mercenaryId, cost } = payload;
     if (state.stats.gold < cost) return state;
+
+    const targetMercenary = state.knownMercenaries.find(m => m.id === mercenaryId);
+    if (!targetMercenary) return state;
+
+    if (targetMercenary.isUnique) {
+        const namedState = state.commission.namedEncounters[mercenaryId];
+        if (!namedState?.recruitUnlocked) {
+            return {
+                ...state,
+                logs: [`${targetMercenary.name} will not join until their special contract is completed.`, ...state.logs]
+            };
+        }
+    }
     
     let newUnlockedTabs = [...state.unlockedTabs];
     let logUpdates: string[] = [];

@@ -14,17 +14,19 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
 
     const canSubmit = (contract: ContractDefinition) => {
         return contract.requirements.every(req => {
-            const invItems = state.inventory.filter(inv => inv.id === req.itemId);
+            const invItems = state.inventory.filter(inv => {
+                const recipeId = inv.equipmentData?.recipeId;
+                const inventoryTags = inv.tags || [];
+                const quality = inv.equipmentData?.quality ?? inv.quality ?? 0;
+                const idMatch = inv.id === req.itemId || recipeId === req.itemId;
+                const tagMatch = !!req.acceptedTags && req.acceptedTags.some(tag => inventoryTags.includes(tag));
+                const qualityMatch = req.minQuality === undefined || quality >= req.minQuality;
+                return (idMatch || tagMatch) && qualityMatch;
+            });
             const totalQty = invItems.reduce((sum, item) => sum + item.quantity, 0);
             
             if (totalQty < req.quantity) return false;
-            
-            if (req.minQuality) {
-                const qualityItems = invItems.filter(inv => (inv.quality || 0) >= req.minQuality!);
-                const qualityQty = qualityItems.reduce((sum, item) => sum + item.quantity, 0);
-                if (qualityQty < req.quantity) return false;
-            }
-            
+
             return true;
         });
     };
@@ -74,7 +76,15 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                                     <h4 className="text-[10px] text-stone-500 uppercase font-black tracking-widest mb-2">Requirements</h4>
                                     <div className="space-y-1.5">
                                         {contract.requirements.map((req, idx) => {
-                                            const invItems = state.inventory.filter(inv => inv.id === req.itemId);
+                                            const invItems = state.inventory.filter(inv => {
+                                                const recipeId = inv.equipmentData?.recipeId;
+                                                const inventoryTags = inv.tags || [];
+                                                const quality = inv.equipmentData?.quality ?? inv.quality ?? 0;
+                                                const idMatch = inv.id === req.itemId || recipeId === req.itemId;
+                                                const tagMatch = !!req.acceptedTags && req.acceptedTags.some(tag => inventoryTags.includes(tag));
+                                                const qualityMatch = req.minQuality === undefined || quality >= req.minQuality;
+                                                return (idMatch || tagMatch) && qualityMatch;
+                                            });
                                             const currentQty = invItems.reduce((sum, item) => sum + item.quantity, 0);
                                             const isMet = currentQty >= req.quantity;
                                             

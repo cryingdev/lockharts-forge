@@ -103,6 +103,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         description: item.description,
         baseValue: equipment.price,
         icon: item.icon,
+        tags: item.tags,
         quantity: 1,
         equipmentData: equipment
     };
