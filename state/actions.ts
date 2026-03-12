@@ -78,6 +78,8 @@ export type GameAction =
   | { type: 'ACCEPT_CONTRACT'; payload: { contractId: string } }
   | { type: 'DECLINE_CONTRACT'; payload: { contractId?: string; mercenaryId?: string } }
   | { type: 'SUBMIT_CONTRACT'; payload: { contractId: string } }
+  | { type: 'UPDATE_CONTRACT_OBJECTIVE_PROGRESS'; payload: { contractId: string; objectiveId: string; amount: number } }
+  | { type: 'CLAIM_OBJECTIVE_CONTRACT'; payload: { contractId: string } }
   | { type: 'COMPLETE_CONTRACT'; payload: { contractId: string } }
   | { type: 'FAIL_CONTRACT'; payload: { contractId: string } }
   | { type: 'REFRESH_COMMISSIONS' }

@@ -258,54 +258,83 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
 
 export const handleAcceptContract = (state: GameState, payload: { contractId: string }): GameState => {
     const { contractId } = payload;
+    
+    // 1. Check if it's a Special Contract from registry (Legacy/Special flow)
     const registryEntry = NAMED_CONTRACT_REGISTRY.find(r => r.contractId === contractId);
-    if (!registryEntry) return state;
+    
+    if (registryEntry) {
+        // Check if already active
+        if (state.commission.activeContracts.some(c => c.id === contractId && c.status === 'ACTIVE')) return state;
 
-    // Check if already active
-    if (state.commission.activeContracts.some(c => c.id === contractId)) return state;
+        const contract: ContractDefinition = {
+            id: registryEntry.contractId,
+            mercenaryId: registryEntry.mercenaryId,
+            title: `Special Request: ${registryEntry.displayName}`,
+            clientName: registryEntry.displayName,
+            description: `A special request from ${registryEntry.displayName}. Complete it to earn their trust.`,
+            type: 'SPECIAL',
+            status: 'ACTIVE',
+            source: registryEntry.encounterRule.location as any, 
+            requirements: registryEntry.requirements,
+            rewards: registryEntry.rewards,
+            deadlineDay: state.stats.day + 7,
+            daysRemaining: 7, 
+        };
 
-    const contract: ContractDefinition = {
-        id: registryEntry.contractId,
-        mercenaryId: registryEntry.mercenaryId,
-        title: `Special Request: ${registryEntry.displayName}`,
-        clientName: registryEntry.displayName,
-        description: `A special request from ${registryEntry.displayName}. Complete it to earn their trust.`,
-        type: 'SPECIAL',
-        status: 'ACTIVE',
-        source: registryEntry.encounterRule.location as any, 
-        requirements: registryEntry.requirements,
-        rewards: registryEntry.rewards,
-        deadlineDay: state.stats.day + 7,
-        daysRemaining: 7, 
-    };
+        const newNamedEncounters = { ...state.commission.namedEncounters };
+        newNamedEncounters[registryEntry.mercenaryId] = {
+            ...newNamedEncounters[registryEntry.mercenaryId],
+            unlocked: true,
+            recruitUnlocked: newNamedEncounters[registryEntry.mercenaryId].recruitUnlocked,
+        };
 
-    const newNamedEncounters = { ...state.commission.namedEncounters };
-    newNamedEncounters[registryEntry.mercenaryId] = {
-        ...newNamedEncounters[registryEntry.mercenaryId],
-        unlocked: true,
-        recruitUnlocked: newNamedEncounters[registryEntry.mercenaryId].recruitUnlocked,
-    };
+        const newKnownMercenaries = state.knownMercenaries.map(m => 
+            m.id === registryEntry.mercenaryId ? { ...m, status: 'CONTRACT_ACTIVE' as const } : m
+        );
 
-    const newKnownMercenaries = state.knownMercenaries.map(m => 
-        m.id === registryEntry.mercenaryId ? { ...m, status: 'CONTRACT_ACTIVE' as const } : m
+        return {
+            ...state,
+            knownMercenaries: newKnownMercenaries,
+            commission: {
+                ...state.commission,
+                activeContracts: [...state.commission.activeContracts.filter(c => c.id !== contractId), contract],
+                namedEncounters: {
+                    ...newNamedEncounters,
+                    [registryEntry.mercenaryId]: {
+                        ...newNamedEncounters[registryEntry.mercenaryId],
+                        specialContractId: registryEntry.contractId,
+                        declinedUntilDay: 0
+                    }
+                }
+            },
+            logs: [...state.logs, `Accepted special contract: ${contract.title}.`]
+        };
+    }
+
+    // 2. Check if it's a General Contract already in activeContracts as OFFERED
+    const offeredContract = state.commission.activeContracts.find(c => c.id === contractId && c.status === 'OFFERED');
+    if (!offeredContract) return state;
+
+    // Check slot limit for general contracts
+    const activeGeneralCount = state.commission.activeContracts.filter(c => c.type === 'GENERAL' && c.status === 'ACTIVE').length;
+    if (activeGeneralCount >= 3) {
+        return {
+            ...state,
+            logs: [...state.logs, "You cannot accept more than 3 general contracts at once."]
+        };
+    }
+
+    const newActiveContracts = state.commission.activeContracts.map(c => 
+        c.id === contractId ? { ...c, status: 'ACTIVE' as const } : c
     );
 
     return {
         ...state,
-        knownMercenaries: newKnownMercenaries,
         commission: {
             ...state.commission,
-            activeContracts: [...state.commission.activeContracts, contract],
-            namedEncounters: {
-                ...newNamedEncounters,
-                [registryEntry.mercenaryId]: {
-                    ...newNamedEncounters[registryEntry.mercenaryId],
-                    specialContractId: registryEntry.contractId,
-                    declinedUntilDay: 0
-                }
-            }
+            activeContracts: newActiveContracts
         },
-        logs: [...state.logs, `Accepted contract: ${contract.title}. Check the Commission Board.`]
+        logs: [...state.logs, `Accepted contract: ${offeredContract.title}.`]
     };
 };
 
@@ -470,6 +499,89 @@ export const handleFailContract = (state: GameState, contractId: string): GameSt
     };
 };
 
+export const handleUpdateContractObjectiveProgress = (
+    state: GameState, 
+    payload: { contractId: string; objectiveId: string; amount: number }
+): GameState => {
+    const { contractId, objectiveId, amount } = payload;
+    const contract = state.commission.activeContracts.find(c => c.id === contractId && c.status === 'ACTIVE');
+    if (!contract || !contract.objectives) return state;
+
+    const objective = contract.objectives.find(o => o.id === objectiveId);
+    if (!objective) return state;
+
+    const currentProgress = state.commission.trackedObjectiveProgress[contractId]?.[objectiveId] || 0;
+    const newProgress = Math.min(objective.target, currentProgress + amount);
+
+    return {
+        ...state,
+        commission: {
+            ...state.commission,
+            trackedObjectiveProgress: {
+                ...state.commission.trackedObjectiveProgress,
+                [contractId]: {
+                    ...(state.commission.trackedObjectiveProgress[contractId] || {}),
+                    [objectiveId]: newProgress
+                }
+            }
+        }
+    };
+};
+
+export const handleClaimObjectiveContract = (state: GameState, contractId: string): GameState => {
+    const contract = state.commission.activeContracts.find(c => c.id === contractId && c.status === 'ACTIVE');
+    if (!contract || !contract.objectives) return state;
+
+    // Check if all objectives are met
+    const allMet = contract.objectives.every(obj => {
+        const progress = state.commission.trackedObjectiveProgress[contractId]?.[obj.id] || 0;
+        return progress >= obj.target;
+    });
+
+    if (!allMet) {
+        return {
+            ...state,
+            logs: [...state.logs, "Objectives are not yet complete."]
+        };
+    }
+
+    // Apply rewards (similar to handleSubmitContract)
+    let newGold = state.stats.gold;
+    let newKnownMercenaries = [...state.knownMercenaries];
+    let newNamedEncounters = { ...state.commission.namedEncounters };
+
+    contract.rewards.forEach(reward => {
+        if (reward.type === 'GOLD' && reward.gold) {
+            newGold += reward.gold;
+        }
+        // Add other reward types if needed
+    });
+
+    const newActiveContracts = state.commission.activeContracts.filter(c => c.id !== contractId);
+    const newCompletedContractIds = [...state.commission.completedContractIds, contractId];
+
+    // Cleanup progress tracking
+    const newTrackedProgress = { ...state.commission.trackedObjectiveProgress };
+    delete newTrackedProgress[contractId];
+
+    return {
+        ...state,
+        stats: {
+            ...state.stats,
+            gold: newGold
+        },
+        knownMercenaries: newKnownMercenaries,
+        commission: {
+            ...state.commission,
+            activeContracts: newActiveContracts,
+            completedContractIds: newCompletedContractIds,
+            namedEncounters: newNamedEncounters,
+            trackedObjectiveProgress: newTrackedProgress
+        },
+        logs: [...state.logs, `Contract claimed: ${contract.title}!`]
+    };
+};
+
 export const handleRefreshCommissions = (state: GameState): GameState => {
     if (state.commission.lastDailyCommissionRefreshDay === state.stats.day) {
         return state;
@@ -512,7 +624,8 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
         generatedContracts.push({
             id: `contract_general_${state.stats.day}_${i}_${recipe.id}`,
             type: 'GENERAL',
-            status: 'ACTIVE',
+            kind: 'CRAFT',
+            status: 'OFFERED',
             source: 'SYSTEM',
             title: `Order: ${recipe.name}`,
             clientName: 'Town Commission Board',

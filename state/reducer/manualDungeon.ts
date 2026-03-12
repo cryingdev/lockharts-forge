@@ -178,6 +178,26 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
     };
 };
 
+import { handleUpdateContractObjectiveProgress } from './commission';
+
+const updateObjectives = (state: GameState, type: 'HUNT' | 'EXPLORE', targetId: string, amount: number): GameState => {
+    let newState = state;
+    state.commission.activeContracts.forEach(contract => {
+        if (contract.status === 'ACTIVE' && contract.objectives) {
+            contract.objectives.forEach(obj => {
+                if (obj.type === type && (!obj.targetId || obj.targetId === targetId)) {
+                    newState = handleUpdateContractObjectiveProgress(newState, { 
+                        contractId: contract.id, 
+                        objectiveId: obj.id, 
+                        amount 
+                    });
+                }
+            });
+        }
+    });
+    return newState;
+};
+
 export const handleMoveManualDungeon = (state: GameState, payload: { x: number, y: number }): GameState => {
     const session = state.activeManualDungeon;
     if (!session || session.encounterStatus === 'ENCOUNTERED' || session.encounterStatus === 'BATTLE') return state;
@@ -199,8 +219,13 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     if (targetRoom === 'WALL') return state;
 
     const isAlreadyVisited = session.visited[newY][newX];
+    
+    let stateWithProgress = state;
+    if (!isAlreadyVisited) {
+        stateWithProgress = updateObjectives(state, 'EXPLORE', session.dungeonId, 1);
+    }
 
-    let updatedMercs = state.knownMercenaries.map(m => {
+    let updatedMercs = stateWithProgress.knownMercenaries.map(m => {
         if (session.partyIds.includes(m.id)) {
             let nextHp = m.currentHp;
             if (targetRoom === 'TRAP' && !isAlreadyVisited) nextHp = Math.max(0, m.currentHp - 15);
@@ -210,7 +235,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     });
 
     const isWipedOut = updatedMercs.filter(m => session.partyIds.includes(m.id)).every(m => m.currentHp <= 0);
-    if (isWipedOut) return handleRetreatManualDungeon({ ...state, knownMercenaries: updatedMercs });
+    if (isWipedOut) return handleRetreatManualDungeon({ ...stateWithProgress, knownMercenaries: updatedMercs });
 
     const newVisited = [...session.visited.map(row => [...row])];
     newVisited[newY][newX] = true;
@@ -222,7 +247,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     // FIXED: Reset actionMsg to a neutral default so old event messages don't persist
     let actionMsg = isAlreadyVisited ? "Backtracking through a cleared path." : "Advancing through the shadows...";
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
-    let newMaxFloorReached = { ...state.maxFloorReached };
+    let newMaxFloorReached = { ...stateWithProgress.maxFloorReached };
 
     if (targetRoom === 'GOLD' && !isAlreadyVisited) {
         extraGold = (dungeon.tier || 1) * 30;
@@ -267,7 +292,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     }
 
     return {
-        ...state,
+        ...stateWithProgress,
         knownMercenaries: updatedMercs,
         maxFloorReached: newMaxFloorReached,
         activeManualDungeon: {
@@ -282,7 +307,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
             collectedLoot: nextCollectedLoot, // 수동 탐사 자원 업데이트 반영
             lastActionMessage: actionMsg
         },
-        logs: logMsg ? [logMsg, ...state.logs] : state.logs
+        logs: logMsg ? [logMsg, ...stateWithProgress.logs] : stateWithProgress.logs
     };
 };
 
@@ -389,7 +414,14 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
 
     const nextSessionXp = { ...session.sessionXp };
 
-    let newKnownMercenaries = state.knownMercenaries.map(m => {
+    let stateWithProgress = state;
+    if (payload.win && session.enemies) {
+        session.enemies.forEach(enemy => {
+            stateWithProgress = updateObjectives(stateWithProgress, 'HUNT', enemy.id, 1);
+        });
+    }
+
+    let newKnownMercenaries = stateWithProgress.knownMercenaries.map(m => {
         const combatant = payload.finalParty.find(p => p.id === m.id);
         if (combatant) {
             let currentXp = m.currentXp;
@@ -456,7 +488,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
     
     if (isDefeat) {
         return handleRetreatManualDungeon({
-            ...state,
+            ...stateWithProgress,
             knownMercenaries: newKnownMercenaries,
             activeManualDungeon: {
                 ...session,
@@ -471,7 +503,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
         : "\nNo materials were salvaged from the remains.";
 
     return {
-        ...state,
+        ...stateWithProgress,
         knownMercenaries: newKnownMercenaries,
         activeManualDungeon: {
             ...session,
@@ -484,7 +516,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
                 ? `Area neutralized. Squad, catch your breath.${lootSummary}`
                 : (payload.flee ? `We managed to pull back. Steel yourselves.` : `Everything's gone wrong... we need to get out.`)
         },
-        logs: logMsg ? [logMsg, ...state.logs] : state.logs
+        logs: logMsg ? [logMsg, ...stateWithProgress.logs] : stateWithProgress.logs
     };
 };
 

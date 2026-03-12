@@ -89,6 +89,26 @@ export const handleAbortExpedition = (state: GameState, payload: { expeditionId:
     };
 };
 
+import { handleUpdateContractObjectiveProgress } from './commission';
+
+const updateObjectives = (state: GameState, type: 'HUNT' | 'EXPLORE', targetId: string, amount: number): GameState => {
+    let newState = state;
+    state.commission.activeContracts.forEach(contract => {
+        if (contract.status === 'ACTIVE' && contract.objectives) {
+            contract.objectives.forEach(obj => {
+                if (obj.type === type && (!obj.targetId || obj.targetId === targetId)) {
+                    newState = handleUpdateContractObjectiveProgress(newState, { 
+                        contractId: contract.id, 
+                        objectiveId: obj.id, 
+                        amount 
+                    });
+                }
+            });
+        }
+    });
+    return newState;
+};
+
 export const handleClaimExpedition = (state: GameState, payload: { expeditionId: string; rescuedNpcId?: string; isFullClear?: boolean }): GameState => {
     const { expeditionId, rescuedNpcId, isFullClear = true } = payload;
     const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
@@ -128,12 +148,19 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
 
     // 1. Roll for monster drops (Auto-expedition represents clearing many encounters)
     // Only roll for auto expeditions, as manual assault already collected drops during combat
+    let stateWithProgress = state;
+    if (isFullClear) {
+        stateWithProgress = updateObjectives(stateWithProgress, 'EXPLORE', dungeon.id, 1);
+    }
+
     if (!isManualAssault) {
         const encounterCount = Math.floor(rng.standard(5, 10, 0)); // Simulate 5-10 encounters
         const allMobIds = Array.from(new Set(dungeon.monsterPools.flatMap(p => p.monsterIds)));
         
         for (let i = 0; i < encounterCount; i++) {
             const mobId = rng.pick(allMobIds);
+            stateWithProgress = updateObjectives(stateWithProgress, 'HUNT', mobId, 1);
+
             const drops = MONSTER_DROPS[mobId];
             if (drops) {
                 drops.forEach(drop => {
@@ -151,7 +178,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     const goldGained = isManualAssault ? 0 : (dungeon.goldReward || 0);
 
     const mercenaryResults: DungeonResult['mercenaryResults'] = [];
-    let newKnownMercenaries = [...state.knownMercenaries];
+    let newKnownMercenaries = [...stateWithProgress.knownMercenaries];
 
     // Calculate dungeon's average monster level for penalty
     const allPoolMobIds = dungeon.monsterPools.flatMap(p => p.monsterIds);
@@ -200,7 +227,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
 
             if (currentHp < 1) {
                 nextStatus = 'INJURED' as const;
-                recoveryUntilDay = state.stats.day + Math.floor(rng.standard(1, 2, 0)) + 1;
+                recoveryUntilDay = stateWithProgress.stats.day + Math.floor(rng.standard(1, 2, 0)) + 1;
             }
 
             mercenaryResults.push({
@@ -244,12 +271,12 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
         }
     }
 
-    const newClearCounts = { ...state.dungeonClearCounts };
+    const newClearCounts = { ...stateWithProgress.dungeonClearCounts };
     if (isFullClear) {
         newClearCounts[dungeon.id] = (newClearCounts[dungeon.id] || 0) + 1;
     }
     
-    const remainingExpeditions = state.activeExpeditions.filter(e => e.id !== expeditionId);
+    const remainingExpeditions = stateWithProgress.activeExpeditions.filter(e => e.id !== expeditionId);
 
     const resultData: DungeonResult = {
         dungeonName: dungeon.name,
@@ -269,25 +296,25 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     const hasAnyInjured = mercenaryResults.some(r => r.statusChange === 'INJURED');
 
     return {
-        ...state,
+        ...stateWithProgress,
         inventory: newInventory,
         knownMercenaries: newKnownMercenaries,
         activeExpeditions: remainingExpeditions,
         dungeonClearCounts: newClearCounts,
         dungeonResult: resultData,
         commission: {
-            ...state.commission,
-            hasHadInjuredMercenary: state.commission.hasHadInjuredMercenary || hasAnyInjured
+            ...stateWithProgress.commission,
+            hasHadInjuredMercenary: stateWithProgress.commission.hasHadInjuredMercenary || hasAnyInjured
         },
         stats: {
-            ...state.stats,
-            gold: state.stats.gold + goldGained,
+            ...stateWithProgress.stats,
+            gold: stateWithProgress.stats.gold + goldGained,
             dailyFinancials: {
-                ...state.stats.dailyFinancials,
-                incomeDungeon: state.stats.dailyFinancials.incomeDungeon + goldGained
+                ...stateWithProgress.stats.dailyFinancials,
+                incomeDungeon: stateWithProgress.stats.dailyFinancials.incomeDungeon + goldGained
             }
         },
-        logs: [logStr, ...state.logs]
+        logs: [logStr, ...stateWithProgress.logs]
     };
 };
 

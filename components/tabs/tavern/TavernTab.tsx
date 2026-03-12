@@ -12,10 +12,13 @@ interface TavernTabProps {
     onNavigate?: (tab: any) => void;
 }
 
+import { selectReadyContracts } from '../../../state/selectors/commissionSelectors';
+
 const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
     const tavern = useTavern();
     const { state, actions } = useGame();
     const [showCommissionBoard, setShowCommissionBoard] = useState(false);
+    
     const { 
         selectedMercenary, 
         groupedMercs, 
@@ -25,6 +28,8 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
         inviteCost,
         handlers 
     } = tavern;
+
+    const readyContracts = selectReadyContracts(state);
 
     useEffect(() => {
         actions.refreshCommissions();
@@ -64,13 +69,14 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                 >
                     <ClipboardList className="w-4 h-4 text-amber-500" />
                     <span className="text-xs font-black uppercase tracking-widest">Commissions</span>
-                    {state.commission.activeContracts.length > 0 && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white border border-stone-950">
-                            {state.commission.activeContracts.length}
+                    {readyContracts.length > 0 && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white border border-stone-950 shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                            {readyContracts.length}
                         </div>
                     )}
                 </SfxButton>
             )}
+
 
             {/* View Switcher */}
             {selectedMercenary ? (

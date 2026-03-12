@@ -8,15 +8,26 @@ import { Monster } from '../models/Monster';
 export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP' | 'STAIRS' | 'ENEMY' | 'RESOURCE';
 
 export type ContractType = 'GENERAL' | 'SPECIAL';
+export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
 export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
 export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
+export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
 
 export interface ContractItemRequirement {
   itemId: string;
   quantity: number;
   minQuality?: number;
   acceptedTags?: string[];
+}
+
+export interface ContractObjectiveRequirement {
+  objectiveId: string;
+  targetCount: number;
+  currentCount?: number;
+  targetType: ContractObjectiveType;
+  targetId?: string;
+  floorNumber?: number;
 }
 
 export interface ContractReward {
@@ -44,12 +55,14 @@ export interface ContractEncounterRule {
 export interface ContractDefinition {
   id: string;
   type: ContractType;
+  kind?: GeneralContractKind;
   title: string;
   clientName: string;
   mercenaryId?: string;
   source: ContractSource;
   description: string;
   requirements: ContractItemRequirement[];
+  objectives?: ContractObjectiveRequirement[];
   rewards: ContractReward[];
   deadlineDay: number;
   daysRemaining?: number;
@@ -98,9 +111,11 @@ export interface NamedEncounterState {
 
 export interface CommissionState {
   activeContracts: ContractDefinition[];
+  expiredContracts: ContractDefinition[];
   completedContractIds: string[];
   failedContractIds: string[];
   namedEncounters: Record<string, NamedEncounterState>;
+  trackedObjectiveProgress: Record<string, Record<string, number>>;
   lastDailyCommissionRefreshDay: number;
   lastEncounterCheckDayByLocation?: Partial<Record<ContractSource, number>>;
   hasSeenRecoveryFlow?: boolean; // New: Track if player has seen the recovery tutorial/flow

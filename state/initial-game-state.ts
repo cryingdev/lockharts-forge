@@ -162,6 +162,7 @@ export const createInitialGameState = (): GameState => {
             },
             hasSeenRecoveryFlow: false,
             hasHadInjuredMercenary: false,
+            trackedObjectiveProgress: {},
         },
         activeDialogue: null,
 
