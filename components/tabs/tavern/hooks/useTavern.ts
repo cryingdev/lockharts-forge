@@ -35,8 +35,9 @@ export const useTavern = () => {
 
     const groupedMercs = useMemo(() => {
         const hired = state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
-        const visitors = state.knownMercenaries.filter(m => !['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
-        return { hired, visitors };
+        const visitors = state.knownMercenaries.filter(m => m.status === 'VISITOR');
+        const special = state.knownMercenaries.filter(m => ['ENCOUNTERED', 'CONTRACT_ACTIVE'].includes(m.status));
+        return { hired, visitors, special };
     }, [state.knownMercenaries]);
 
     const selectedMercenary = useMemo(() => 

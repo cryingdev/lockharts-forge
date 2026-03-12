@@ -94,8 +94,18 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
         hasAppeared: true,
     };
 
+    const mercenaryData = NAMED_MERCENARIES.find(m => m.id === triggeredEntry.mercenaryId);
+    let newKnownMercenaries = [...state.knownMercenaries];
+    if (mercenaryData && !newKnownMercenaries.some(m => m.id === triggeredEntry.mercenaryId)) {
+        newKnownMercenaries.push({
+            ...mercenaryData,
+            status: 'ENCOUNTERED'
+        });
+    }
+
     return {
         ...state,
+        knownMercenaries: newKnownMercenaries,
         commission: {
             ...state.commission,
             namedEncounters: newNamedEncounters
@@ -145,8 +155,13 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
         unlocked: true,
     };
 
+    const newKnownMercenaries = state.knownMercenaries.map(m => 
+        m.id === registryEntry.mercenaryId ? { ...m, status: 'CONTRACT_ACTIVE' as const } : m
+    );
+
     return {
         ...state,
+        knownMercenaries: newKnownMercenaries,
         commission: {
             ...state.commission,
             activeContracts: [...state.commission.activeContracts, contract],
@@ -223,12 +238,19 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
                 recruitUnlocked: true
             };
             
-            const mercenaryData = NAMED_MERCENARIES.find(m => m.id === reward.mercenaryId);
-            if (mercenaryData && !newKnownMercenaries.some(m => m.id === reward.mercenaryId)) {
-                newKnownMercenaries.push({
-                    ...mercenaryData,
-                    status: 'VISITOR'
-                });
+            const exists = newKnownMercenaries.some(m => m.id === reward.mercenaryId);
+            if (exists) {
+                newKnownMercenaries = newKnownMercenaries.map(m => 
+                    m.id === reward.mercenaryId ? { ...m, status: 'VISITOR' as const } : m
+                );
+            } else {
+                const mercenaryData = NAMED_MERCENARIES.find(m => m.id === reward.mercenaryId);
+                if (mercenaryData) {
+                    newKnownMercenaries.push({
+                        ...mercenaryData,
+                        status: 'VISITOR'
+                    });
+                }
             }
         } else if (reward.type === 'AFFINITY' && reward.mercenaryId && reward.affinity) {
             newKnownMercenaries = newKnownMercenaries.map(m => 
