@@ -7,7 +7,7 @@ export const NAMED_CONTRACT_REGISTRY: NamedContractRegistryEntry[] = [
     contractId: 'contract_named_pip_bronze_blade',
     unlockRule: {
       tutorialCompleted: true,
-      minDay: 3,
+      minDay: 1,
     },
     encounterRule: {
       location: 'SHOP',

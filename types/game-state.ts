@@ -88,6 +88,7 @@ export interface NamedEncounterState {
   mercenaryId: string;
   unlocked: boolean;
   daysEligible?: number;
+  declinedUntilDay?: number;
   firstEligibleDay?: number;
   guaranteeDay?: number;
   hasAppeared: boolean;

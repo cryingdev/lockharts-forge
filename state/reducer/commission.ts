@@ -1,5 +1,6 @@
 import { GameState, ContractDefinition, ContractSource } from '../../types/game-state';
 import { InventoryItem } from '../../types/inventory';
+import { ShopCustomer } from '../../types/shop';
 import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
 import { NAMED_MERCENARIES } from '../../data/mercenaries';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
@@ -8,6 +9,8 @@ import { rng } from '../../utils/random';
 export const isNamedMercenaryEligible = (state: GameState, entry: any): boolean => {
     const stateInfo = state.commission.namedEncounters[entry.mercenaryId];
     if (!stateInfo || stateInfo.unlocked || stateInfo.recruitUnlocked) return false;
+
+    if ((stateInfo.declinedUntilDay || 0) > state.stats.day) return false;
 
     const hasActiveContract = state.commission.activeContracts.some(c => c.mercenaryId === entry.mercenaryId);
     if (hasActiveContract) return false;
@@ -81,6 +84,38 @@ const getContractMatchingItems = (inventory: InventoryItem[], itemId: string, ac
 };
 
 export const handleTriggerNamedEncounterCheck = (state: GameState, location: string): GameState => {
+    // 0. Day 3 Formal Contract Dialogue for Pip (Special Progression)
+    if (state.stats.day >= 3 && (location === 'SHOP' || location === 'TAVERN')) {
+        const pipState = state.commission.namedEncounters['pip_green'];
+        const hasPipContract = state.commission.activeContracts.some(c => c.mercenaryId === 'pip_green');
+        const isPipHired = state.knownMercenaries.some(m => m.id === 'pip_green' && ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status));
+        
+        if (pipState && pipState.hasAppeared && !pipState.recruitUnlocked && !hasPipContract && !isPipHired && !state.activeDialogue) {
+            const pipMerc = state.knownMercenaries.find(m => m.id === 'pip_green');
+            if (pipMerc) {
+                return {
+                    ...state,
+                    activeDialogue: {
+                        speaker: 'Pip the Green',
+                        text: "I've been watching you work, and I'm impressed. I'd like to offer a formal contract. If you can provide me with a high-quality Bronze Shortsword, I'll join your squad permanently.",
+                        options: [
+                            { 
+                                label: "I accept.", 
+                                action: { type: 'ACCEPT_CONTRACT', payload: { mercenaryId: 'pip_green' } },
+                                variant: 'primary'
+                            },
+                            { 
+                                label: "Maybe later.", 
+                                action: { type: 'CLOSE_DIALOGUE' },
+                                variant: 'neutral'
+                            }
+                        ]
+                    }
+                };
+            }
+        }
+    }
+
     if (state.commission.activeContracts.some(c => c.type === 'SPECIAL')) {
         return state;
     }
@@ -137,16 +172,60 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
 
     const mercenaryData = NAMED_MERCENARIES.find(m => m.id === triggeredEntry.mercenaryId);
     let newKnownMercenaries = [...state.knownMercenaries];
-    if (mercenaryData && !newKnownMercenaries.some(m => m.id === triggeredEntry.mercenaryId)) {
-        newKnownMercenaries.push({
-            ...mercenaryData,
-            status: 'ENCOUNTERED'
-        });
+    let newShopQueue = [...state.shopQueue];
+    let newVisitorsToday = [...state.visitorsToday];
+
+    if (mercenaryData) {
+        if (!newKnownMercenaries.some(m => m.id === triggeredEntry.mercenaryId)) {
+            newKnownMercenaries.push({
+                ...mercenaryData,
+                status: 'ENCOUNTERED'
+            });
+        }
+
+        // Special case for SHOP encounter: add to queue as customer
+        if (location === 'SHOP') {
+            const customer: ShopCustomer = {
+                id: `customer_named_${triggeredEntry.mercenaryId}_${state.stats.day}`,
+                mercenary: mercenaryData,
+                request: {
+                    type: 'EQUIPMENT',
+                    requestedId: triggeredEntry.requirements[0].itemId,
+                    price: 100, // Placeholder price
+                    markup: 1.25,
+                    dialogue: triggeredEntry.encounterDialogue.text
+                },
+                entryTime: Date.now()
+            };
+            newShopQueue.push(customer);
+            newVisitorsToday.push(mercenaryData.id);
+        }
+    }
+
+    // On Day 1-2, Pip doesn't offer a contract yet, just visits.
+    if (triggeredEntry.mercenaryId === 'pip_green' && state.stats.day < 3) {
+        return {
+            ...state,
+            knownMercenaries: newKnownMercenaries,
+            shopQueue: newShopQueue,
+            visitorsToday: newVisitorsToday,
+            commission: {
+                ...state.commission,
+                namedEncounters: newNamedEncounters,
+                lastEncounterCheckDayByLocation: {
+                    ...state.commission.lastEncounterCheckDayByLocation,
+                    [location]: state.stats.day
+                }
+            },
+            logs: [...state.logs, `A special visitor has appeared: ${triggeredEntry.displayName}!`]
+        };
     }
 
     return {
         ...state,
         knownMercenaries: newKnownMercenaries,
+        shopQueue: newShopQueue,
+        visitorsToday: newVisitorsToday,
         commission: {
             ...state.commission,
             namedEncounters: newNamedEncounters,
@@ -164,7 +243,11 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
                     variant: 'primary',
                     action: { type: 'ACCEPT_CONTRACT', payload: { contractId: triggeredEntry.contractId } }
                 },
-                { label: "Maybe later.", variant: 'neutral' }
+                {
+                    label: "Maybe later.",
+                    variant: 'neutral',
+                    action: { type: 'DECLINE_CONTRACT', payload: { mercenaryId: triggeredEntry.mercenaryId } }
+                }
             ]
         },
         logs: [...state.logs, `A special visitor has appeared: ${triggeredEntry.displayName}!`]
@@ -198,6 +281,8 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
     newNamedEncounters[registryEntry.mercenaryId] = {
         ...newNamedEncounters[registryEntry.mercenaryId],
         unlocked: true,
+        // Special case for Pip: Hireable immediately after contract acceptance on Day 3+
+        recruitUnlocked: registryEntry.mercenaryId === 'pip_green' ? true : newNamedEncounters[registryEntry.mercenaryId].recruitUnlocked,
     };
 
     const newKnownMercenaries = state.knownMercenaries.map(m => 
@@ -210,9 +295,52 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
         commission: {
             ...state.commission,
             activeContracts: [...state.commission.activeContracts, contract],
-            namedEncounters: newNamedEncounters
+            namedEncounters: {
+                ...newNamedEncounters,
+                [registryEntry.mercenaryId]: {
+                    ...newNamedEncounters[registryEntry.mercenaryId],
+                    specialContractId: registryEntry.contractId,
+                    declinedUntilDay: 0
+                }
+            }
         },
         logs: [...state.logs, `Accepted contract: ${contract.title}. Check the Commission Board.`]
+    };
+};
+
+export const handleDeclineContract = (state: GameState, payload: { contractId?: string; mercenaryId?: string }): GameState => {
+    let mercenaryId = payload.mercenaryId;
+
+    if (!mercenaryId && payload.contractId) {
+        mercenaryId = NAMED_CONTRACT_REGISTRY.find(entry => entry.contractId === payload.contractId)?.mercenaryId;
+    }
+
+    if (!mercenaryId) return state;
+
+    const currentEncounter = state.commission.namedEncounters[mercenaryId];
+    if (!currentEncounter) return state;
+
+    const mercenary = state.knownMercenaries.find(m => m.id === mercenaryId);
+    const newKnownMercenaries = state.knownMercenaries.filter(m => m.id !== mercenaryId);
+
+    return {
+        ...state,
+        knownMercenaries: newKnownMercenaries,
+        commission: {
+            ...state.commission,
+            namedEncounters: {
+                ...state.commission.namedEncounters,
+                [mercenaryId]: {
+                    ...currentEncounter,
+                    hasAppeared: false,
+                    declinedUntilDay: state.stats.day + 2
+                }
+            }
+        },
+        logs: [
+            `${mercenary?.name || mercenaryId} decided to wait. They may return in a few days.`,
+            ...state.logs
+        ]
     };
 };
 

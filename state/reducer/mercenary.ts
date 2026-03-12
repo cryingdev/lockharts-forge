@@ -31,9 +31,23 @@ export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mer
         expeditionEnergy: mercenary.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
         currentXp: mercenary.currentXp ?? 0,
         xpToNextLevel: mercenary.xpToNextLevel ?? (mercenary.level * 100),
-        status: 'VISITOR' as const,
+        status: mercenary.status || ('VISITOR' as const),
         bonusStatPoints: mercenary.bonusStatPoints ?? 0
     };
+
+    let newNamedEncounters = { ...state.commission.namedEncounters };
+    if (mercenary.isUnique) {
+        const current = newNamedEncounters[mercenary.id] || {
+            mercenaryId: mercenary.id,
+            unlocked: false,
+            hasAppeared: false,
+            recruitUnlocked: false
+        };
+        newNamedEncounters[mercenary.id] = {
+            ...current,
+            hasAppeared: true
+        };
+    }
 
     return {
         ...state,
@@ -45,6 +59,10 @@ export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mer
                 ...state.stats.dailyFinancials,
                 expenseScout: state.stats.dailyFinancials.expenseScout + cost
             }
+        },
+        commission: {
+            ...state.commission,
+            namedEncounters: newNamedEncounters
         },
         knownMercenaries: [...state.knownMercenaries, mercWithData],
         logs: [`Paid ${cost} G to find new talent. ${mercenary.name} arrived at the tavern.`, ...state.logs]

@@ -27,6 +27,7 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
     } = tavern;
 
     useEffect(() => {
+        actions.refreshCommissions();
         actions.triggerNamedEncounterCheck('TAVERN');
     }, []);
 

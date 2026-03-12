@@ -150,6 +150,7 @@ export const createInitialGameState = (): GameState => {
                     hasAppeared: false,
                     recruitUnlocked: false,
                     daysEligible: 0,
+                    declinedUntilDay: 0,
                 }
             }), {}),
             lastDailyCommissionRefreshDay: 0,

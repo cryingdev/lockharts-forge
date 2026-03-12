@@ -14,7 +14,7 @@ import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 import { handleResearchCombination } from './reducer/research';
-import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleSubmitContract, handleFailContract, handleRefreshCommissions } from './reducer/commission';
+import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleRefreshCommissions } from './reducer/commission';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -82,6 +82,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     // Commission
     case 'TRIGGER_NAMED_ENCOUNTER_CHECK': return handleTriggerNamedEncounterCheck(state, action.payload.location);
     case 'ACCEPT_CONTRACT': return handleAcceptContract(state, action.payload);
+    case 'DECLINE_CONTRACT': return handleDeclineContract(state, action.payload);
     case 'SUBMIT_CONTRACT': return handleSubmitContract(state, action.payload.contractId);
     case 'FAIL_CONTRACT': return handleFailContract(state, action.payload.contractId);
     case 'REFRESH_COMMISSIONS': return handleRefreshCommissions(state);

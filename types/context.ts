@@ -94,6 +94,7 @@ export interface GameContextType {
     proceedToNextFloorManual: () => void;
     triggerNamedEncounterCheck: (location: string) => void;
     acceptContract: (contractId: string) => void;
+    declineContract: (payload: { contractId?: string; mercenaryId?: string }) => void;
     submitContract: (contractId: string) => void;
     failContract: (contractId: string) => void;
     refreshCommissions: () => void;

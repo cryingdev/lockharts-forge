@@ -76,6 +76,7 @@ export type GameAction =
   | { type: 'RESEARCH_COMBINATION'; payload: { items: { id: string; count: number }[] } }
   | { type: 'TRIGGER_NAMED_ENCOUNTER_CHECK'; payload: { location: string } }
   | { type: 'ACCEPT_CONTRACT'; payload: { contractId: string } }
+  | { type: 'DECLINE_CONTRACT'; payload: { contractId?: string; mercenaryId?: string } }
   | { type: 'SUBMIT_CONTRACT'; payload: { contractId: string } }
   | { type: 'COMPLETE_CONTRACT'; payload: { contractId: string } }
   | { type: 'FAIL_CONTRACT'; payload: { contractId: string } }

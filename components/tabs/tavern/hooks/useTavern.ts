@@ -1,6 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useGame } from '../../../../context/GameContext';
-import { createRandomMercenary, getUnmetNamedMercenary } from '../../../../utils/mercenaryGenerator';
+import { createRandomMercenary } from '../../../../utils/mercenaryGenerator';
+import { isNamedMercenaryEligible } from '../../../../state/reducer/commission';
+import { NAMED_CONTRACT_REGISTRY } from '../../../../data/contracts/namedContracts';
+import { NAMED_MERCENARIES } from '../../../../data/mercenaries';
+import { rng } from '../../../../utils/random';
 
 export const useTavern = () => {
     const { state, actions } = useGame();
@@ -16,10 +20,39 @@ export const useTavern = () => {
             return;
         }
         
-        // Named mercenaries are now trigger-based, so always create a random one here
-        const newMerc = createRandomMercenary(state.stats.day);
+        // 1. Check for eligible named mercenaries that are not currently in the tavern
+        const eligibleNamed = NAMED_CONTRACT_REGISTRY.filter(entry => {
+            // Only consider TAVERN encounters for this tab
+            if (entry.encounterRule.location !== 'TAVERN') return false;
+            
+            // Check if they are eligible based on unlock rules and cooldowns
+            if (!isNamedMercenaryEligible(state, entry)) return false;
+            
+            // Check if they are already in the tavern list
+            const isAlreadyKnown = state.knownMercenaries.some(m => m.id === entry.mercenaryId);
+            if (isAlreadyKnown) return false;
+
+            return true;
+        });
+
+        let newMerc;
+        
+        // 2. If there are eligible named mercenaries, prioritize them (e.g., 70% chance to pick one)
+        if (eligibleNamed.length > 0 && rng.chance(0.7)) {
+            const pickedEntry = rng.pick(eligibleNamed);
+            const mercData = NAMED_MERCENARIES.find(m => m.id === pickedEntry.mercenaryId);
+            if (mercData) {
+                newMerc = { ...mercData, status: 'ENCOUNTERED' as const };
+            }
+        }
+
+        // 3. Fallback to a random mercenary
+        if (!newMerc) {
+            newMerc = createRandomMercenary(state.stats.day, state.knownMercenaries);
+        }
+
         setInvitingMercenary(newMerc);
-    }, [state.stats.gold, inviteCost, state.stats.day, actions]);
+    }, [state.stats.gold, inviteCost, state.stats.day, state.knownMercenaries, state.commission.namedEncounters, actions]);
 
     const confirmInvite = useCallback(() => {
         if (invitingMercenary) {
