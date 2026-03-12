@@ -77,6 +77,7 @@ The recommended addition is a contract-focused slice in `/types/game-state.ts`.
 
 ```ts
 export type ContractType = 'GENERAL' | 'SPECIAL';
+export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
 export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
 export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
@@ -86,6 +87,15 @@ export interface ContractItemRequirement {
   quantity: number;
   minQuality?: number;
   acceptedTags?: string[];
+}
+
+export interface ContractObjectiveRequirement {
+  objectiveId: string;
+  targetCount: number;
+  currentCount?: number;
+  targetType: 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
+  targetId?: string;
+  floorNumber?: number;
 }
 
 export interface ContractReward {
@@ -113,12 +123,14 @@ export interface ContractEncounterRule {
 export interface ContractDefinition {
   id: string;
   type: ContractType;
+  kind?: GeneralContractKind;
   title: string;
   clientName: string;
   mercenaryId?: string;
   source: ContractSource;
   description: string;
   requirements: ContractItemRequirement[];
+  objectives?: ContractObjectiveRequirement[];
   rewards: ContractReward[];
   deadlineDay: number;
   status: ContractStatus;
@@ -127,6 +139,29 @@ export interface ContractDefinition {
   unique?: boolean;
 }
 ```
+
+Recommended interpretation:
+
+-   `type`
+    -   High-level category: `GENERAL` or `SPECIAL`
+-   `kind`
+    -   Gameplay subtype for repeatable contracts:
+        -   `CRAFT`: submit crafted equipment
+        -   `TURN_IN`: submit stackable loot or gathered materials
+        -   `HUNT`: progress from kill tracking or combat results
+        -   `EXPLORE`: progress from dungeon exploration milestones
+-   `requirements`
+    -   Inventory-backed submission requirements
+-   `objectives`
+    -   Runtime-tracked goals that can progress without immediate inventory submission
+
+#### 4.4.1.1 General Contract Kind Mapping
+| `kind` | Uses `requirements` | Uses `objectives` | Primary completion mode | Typical source |
+| :--- | :--- | :--- | :--- | :--- |
+| `CRAFT` | Yes | Optional | Submit crafted item(s) | `SHOP`, `TAVERN`, `SYSTEM` |
+| `TURN_IN` | Yes | No | Submit material stack(s) | `SHOP`, `MARKET`, `SYSTEM` |
+| `HUNT` | Optional | Yes | Auto-progress from combat results, then claim | `TAVERN`, `SYSTEM` |
+| `EXPLORE` | Optional | Yes | Auto-progress from exploration state, then claim | `TAVERN`, `SYSTEM` |
 
 For named mercenary contracts, the design source should be stored in a registry-style structure that AI agents and reducers can read without inferring narrative text:
 
@@ -267,6 +302,7 @@ export interface CommissionState {
   failedContractIds: string[];
   namedEncounters: Record<string, NamedEncounterState>;
   lastDailyCommissionRefreshDay: number;
+  trackedObjectiveProgress: Record<string, Record<string, number>>;
 }
 ```
 
@@ -275,6 +311,14 @@ And added to `GameState`:
 ```ts
 commission: CommissionState;
 ```
+
+`trackedObjectiveProgress` is keyed as:
+
+```ts
+trackedObjectiveProgress[contractId][objectiveId] = currentProgress;
+```
+
+This allows `HUNT` and `EXPLORE` contracts to update incrementally from combat and dungeon reducers without mutating the original contract template shape.
 
 #### 4.4.2 Action Design (`state/actions.ts`)
 The reducer API should keep encounter logic and contract progress explicit.
@@ -285,6 +329,8 @@ The reducer API should keep encounter logic and contract progress explicit.
 | { type: 'ACCEPT_CONTRACT'; payload: { contractId: string } }
 | { type: 'DECLINE_CONTRACT'; payload: { contractId: string } }
 | { type: 'SUBMIT_CONTRACT_ITEMS'; payload: { contractId: string; items: { itemId: string; quantity: number; inventoryItemIds?: string[] }[] } }
+| { type: 'UPDATE_CONTRACT_OBJECTIVE_PROGRESS'; payload: { contractId: string; objectiveId: string; amount: number } }
+| { type: 'CLAIM_OBJECTIVE_CONTRACT'; payload: { contractId: string } }
 | { type: 'COMPLETE_CONTRACT'; payload: { contractId: string } }
 | { type: 'FAIL_CONTRACT'; payload: { contractId: string; reason: 'DEADLINE' | 'MANUAL' | 'INVALID_STATE' } }
 | { type: 'MARK_NAMED_ENCOUNTER_ELIGIBLE'; payload: { mercenaryId: string; currentDay: number } }
@@ -303,6 +349,10 @@ The reducer API should keep encounter logic and contract progress explicit.
     -   Advances deadlines.
     -   Expires overdue general contracts.
     -   Rolls named encounter guarantee windows forward.
+-   `state/reducer/combat.ts`
+    -   Increments `HUNT` contract objectives when matching enemies are defeated.
+-   `state/reducer/dungeon.ts`
+    -   Increments `EXPLORE` contract objectives for floor reach, node discovery, rescues, and recovery events.
 -   `state/reducer/inventory.ts`
     -   Validates submission requirements.
     -   Removes delivered items only on successful submission.
@@ -316,15 +366,152 @@ The reducer API should keep encounter logic and contract progress explicit.
 4.  Entering Shop, Tavern, or Market dispatches `TRIGGER_NAMED_ENCOUNTER_CHECK`.
 5.  If the roll succeeds or the guarantee day is reached, `OFFER_SPECIAL_CONTRACT` fires.
 6.  Once accepted, the contract is stored in `commission.activeContracts`.
-7.  Submission validates inventory and quality.
-8.  `COMPLETE_CONTRACT` applies rewards.
-9.  If the reward includes `UNLOCK_RECRUIT`, the mercenary becomes recruitable through normal hire flow.
+7.  `CRAFT` and `TURN_IN` contracts complete through inventory submission and requirement validation.
+8.  `HUNT` and `EXPLORE` contracts update progress passively through combat and dungeon reducers.
+9.  Once objective progress reaches all targets, the contract becomes claimable.
+10. `COMPLETE_CONTRACT` applies rewards.
+11. If the reward includes `UNLOCK_RECRUIT`, the mercenary becomes recruitable through normal hire flow.
 
 #### 4.4.5 Seeded Randomness Rules
 -   General contract generation should use the shared seeded RNG utility.
 -   Named encounter appearance checks should also use seeded RNG, but must respect the guarantee day override.
 -   Encounter checks should be performed once per valid location entry, not every render.
 -   Contract generation should avoid duplicate special contracts if the mercenary is already recruitable or hired.
+
+#### 4.4.6 Commission Board UI Flow
+The Commission Board should present public contracts as a stateful management screen rather than a flat list of buttons.
+
+Suggested view model:
+
+```ts
+type CommissionBoardTab = 'AVAILABLE' | 'ACCEPTED' | 'READY' | 'EXPIRED';
+
+interface CommissionBoardViewModel {
+  available: ContractDefinition[];
+  accepted: ContractDefinition[];
+  ready: ContractDefinition[];
+  expired: ContractDefinition[];
+  selectedContractId?: string;
+}
+```
+
+Board grouping rules:
+
+-   `AVAILABLE`
+    -   `status === 'OFFERED'`
+    -   Source should generally be public-facing contracts only
+-   `ACCEPTED`
+    -   `status === 'ACTIVE'`
+    -   At least one requirement or objective remains incomplete
+-   `READY`
+    -   `status === 'ACTIVE'`
+    -   All submission requirements satisfied or all objective progress complete
+-   `EXPIRED`
+    -   `status === 'FAILED' || status === 'EXPIRED'`
+    -   Optional short-lived UI bucket for recent feedback
+
+Recommended UI actions by state:
+
+```ts
+AVAILABLE -> ACCEPT_CONTRACT
+ACCEPTED  -> DECLINE_CONTRACT | OPEN_CONTRACT_DETAIL
+READY     -> SUBMIT_CONTRACT_ITEMS | CLAIM_OBJECTIVE_CONTRACT
+EXPIRED   -> DISMISS_EXPIRED_NOTICE
+```
+
+Status derivation notes:
+
+-   `CRAFT`
+    -   `READY` requires matching item presence and quality validation
+-   `TURN_IN`
+    -   `READY` requires matching material counts in inventory
+-   `HUNT`
+    -   `READY` requires objective progress target met
+-   `EXPLORE`
+    -   `READY` requires objective progress target met and any event flags satisfied
+
+Detail panel expectations:
+
+-   Selected contract detail should display:
+    -   Type and source
+    -   Issuer name
+    -   Deadline and urgency state
+    -   Reward breakdown
+    -   Requirement list and live progress
+    -   Current available actions
+-   The detail panel should be the single place where `Accept`, `Abandon`, `Submit`, or `Claim` actions are executed.
+
+Reducer and selector guidance:
+
+-   Use selectors to derive `ready` state from inventory plus tracked objective progress rather than storing a second redundant status flag.
+-   `CommissionBoard` should consume:
+    -   `commission.activeContracts`
+    -   `commission.trackedObjectiveProgress`
+    -   inventory state
+    -   current day for deadline urgency
+-   Expiration should still be authoritative in reducers; the Board only reflects current state.
+
+### 4.5 Tavern Reputation System
+`Tavern Reputation` should be modeled as a Tavern-level progression value that affects recruit quality, not recruit affinity.
+
+-   Primary purpose:
+    -   Improve the quality of candidates returned by Tavern recruitment interactions such as `Invite`.
+    -   Expand the class pool and level band available from the Tavern.
+    -   Gate some Tavern-based named encounter eligibility.
+-   Explicit non-goals:
+    -   Do not modify starting affinity.
+    -   Do not reduce hiring cost by default.
+    -   Do not guarantee agreement, loyalty, or immediate relationship benefits.
+
+#### 4.5.1 Data Modeling (`types/`)
+Recommended additions to `/types/game-state.ts`:
+
+```ts
+export interface TavernState {
+  reputation: number;
+  lastInviteDay: number;
+  inviteCountToday: number;
+}
+```
+
+And added to `GameState`:
+
+```ts
+tavern: TavernState;
+```
+
+#### 4.5.2 Recruit Quality Effects
+Tavern Reputation should drive recruit generation through weighted bounds rather than direct stat gifts.
+
+-   Suggested effects:
+    -   Increase the minimum and maximum level range for random Tavern recruits.
+    -   Increase weight for uncommon classes such as Mage and Cleric.
+    -   Increase the chance to roll higher-value traits or advanced recruit templates.
+    -   Unlock specific named encounter checks once minimum reputation thresholds are met.
+-   Suggested non-effects:
+    -   No starting affinity bonus.
+    -   No automatic hire price discount.
+    -   No bypass of named contract completion.
+
+#### 4.5.3 Integration Points
+-   `utils/mercenaryGenerator.ts`
+    -   Accept Tavern Reputation as an input when generating Tavern invite candidates.
+    -   Derive recruit level band and class weights from reputation buckets.
+-   `state/reducer/tavern.ts` or Tavern interaction handler
+    -   Increment Tavern Reputation from successful Tavern-origin commissions, positive social events, and high-value recruit outcomes.
+    -   Apply daily limits or diminishing returns if repeated invites are spammed.
+-   `state/reducer/commission.ts`
+    -   Use Tavern Reputation as an optional unlock requirement for Tavern-based named encounters.
+-   `components/tabs/tavern/`
+    -   Show Tavern Reputation and a lightweight explanation of what higher reputation improves.
+
+#### 4.5.4 Suggested Reputation Buckets
+| Reputation | Recruit Level Effect | Class Pool Effect | Named Encounter Effect |
+| :--- | :--- | :--- | :--- |
+| `0-19` | Base low-level pool | Mostly common martial classes | Early Tavern encounters only |
+| `20-39` | Slightly wider level band | Rogue/support weight increases | Mid-early encounters may unlock |
+| `40-59` | Veteran recruits appear | Mage/Cleric weight rises | Most Tavern named encounters eligible |
+| `60+` | High-end candidate band | Rare classes/traits more common | Late Tavern named encounters can appear |
 
 ## 5. UI/UX Patterns
 -   **Responsive Design**: Mobile-first approach with Tailwind's `px-safe` and flex/grid layouts.
