@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { Store, Heart, ArrowLeft, ChevronLeft } from 'lucide-react';
+import { Store, Heart, ArrowLeft, ChevronLeft, ScrollText } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { useShop } from './hooks/useShop';
+import { DialogueOption } from '../../../types/game-state';
 
 // Sub-components
 import { ShopSign } from './ui/ShopSign';
@@ -20,7 +21,7 @@ interface ShopTabProps {
 
 const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
-  const shop = useShop();
+  const shop = useShop(onNavigate);
 
   useEffect(() => {
     actions.triggerNamedEncounterCheck('SHOP');
@@ -78,6 +79,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             isOpen={shop.isShopOpen} 
             onToggle={shop.handlers.handleToggleShop} 
             disabled={shop.isTutorialActive && !isOpeningStep}
+            isPulsing={state.tutorialStep === 'PIP_RETURN_GUIDE'}
         />
 
         {/* UI Elements: Queue & HUD */}
@@ -130,6 +132,23 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
         {/* Shop Counter */}
         <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-30 flex items-end justify-center pointer-events-none">
+            {/* Pip's Order Sticky Note */}
+            {(state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE' || state.tutorialStep === 'PIP_RETURN_GUIDE') && (
+                <div className="absolute top-0 left-10 md:left-24 -translate-y-1/2 z-40 animate-in slide-in-from-bottom-10 duration-700 pointer-events-auto">
+                    <div className="relative w-24 h-24 md:w-32 md:h-32 bg-amber-50 border-2 border-amber-200/50 shadow-xl rotate-[-6deg] p-2 md:p-3 flex flex-col items-center justify-center group hover:rotate-0 transition-transform cursor-help">
+                        {/* Tape effect */}
+                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-4 bg-stone-400/30 rotate-3"></div>
+                        
+                        <ScrollText className="w-5 h-5 md:w-6 md:h-6 text-amber-700 mb-1" />
+                        <span className="text-[8px] md:text-[10px] font-black text-amber-900 uppercase tracking-tighter text-center leading-none">
+                            Pip's Order:<br/>Bronze Sword
+                        </span>
+                        <div className="mt-1 w-full h-0.5 bg-amber-200/50"></div>
+                        <span className="text-[6px] md:text-[8px] text-amber-700/60 font-serif italic mt-1">"I'll be back!"</span>
+                    </div>
+                </div>
+            )}
+
             {!counterImgError ? (
                 <img 
                     src={getAssetUrl('shop_counter.png', 'bg')} 
@@ -150,7 +169,21 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                  <DialogueBox 
                     speaker={shop.dialogueState.speaker}
                     text={shop.dialogueState.text}
-                    options={shop.dialogueState.options}
+                    options={(shop.dialogueState.options as DialogueOption[]).map(opt => ({
+                        ...opt,
+                        action: () => {
+                            if (opt.action) {
+                                if (typeof opt.action === 'function') {
+                                    opt.action();
+                                } else if (typeof opt.action === 'object' && opt.action !== null) {
+                                    actions.dispatch(opt.action);
+                                }
+                            }
+                            if (opt.targetTab) {
+                                onNavigate(opt.targetTab as any);
+                            }
+                        }
+                    }))}
                     highlightTerm={(shop.dialogueState as any).highlightTerm}
                     itemDetail={(shop.dialogueState as any).itemDetail}
                     className="w-full relative pointer-events-auto"

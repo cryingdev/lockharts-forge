@@ -56,8 +56,11 @@ export const useTavern = () => {
 
     const confirmInvite = useCallback(() => {
         if (invitingMercenary) {
+            const mercId = invitingMercenary.id;
             actions.scoutMercenary(invitingMercenary, inviteCost);
             setInvitingMercenary(null);
+            setSelectedMercId(mercId); // Automatically select the new mercenary
+            setIsDetailOpen(false); // Ensure detail is closed
             actions.showToast(`${invitingMercenary.name} has arrived at the tavern!`);
         }
     }, [invitingMercenary, inviteCost, actions]);

@@ -109,14 +109,21 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     };
 
     const newInventory = [...state.inventory, newItem];
-
-    const newMastery = { ...state.craftingMastery };
-    newMastery[item.id] = (masteryCount || 0) + masteryGain;
-
+    
     const label = getQualityLabel(quality);
     let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}! (+${expGain} XP)`;
     if (bonus > 0) logMsg += ` Pinned technique applied +${bonus} enhancements.`;
     if (newLevel > oldLevel) logMsg += ` Level Up! (Lv.${newLevel})`;
+
+    // Tutorial progression: If we were waiting for the first sword to be crafted
+    let newTutorialStep = state.tutorialStep;
+    if (state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE' && item.id === 'sword_bronze_t1') {
+        newTutorialStep = 'PIP_RETURN_GUIDE';
+        logMsg = "Pip's Bronze Shortsword is complete! He'll be back at the shop soon. " + logMsg;
+    }
+
+    const newMastery = { ...state.craftingMastery };
+    newMastery[item.id] = (masteryCount || 0) + masteryGain;
 
     let newUnlockedTabs = [...state.unlockedTabs];
     if (!newUnlockedTabs.includes('INVENTORY')) {
@@ -131,6 +138,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
         unlockedTabs: newUnlockedTabs,
         craftingMastery: newMastery,
         lastCraftedItem: newItem, 
+        tutorialStep: newTutorialStep,
         stats: {
             ...state.stats,
             smithingExp: isForge ? newExp : state.stats.smithingExp,

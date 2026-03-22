@@ -10,13 +10,19 @@ export const handleToggleShop = (state: GameState): GameState => {
         return { ...state, logs: ["You cannot open the shop while exploring a dungeon!", ...state.logs] };
     }
 
-    // 에너지 소모 로직 제거: 누구나 언제든 상점을 열고 닫을 수 있음
+    let newLogs = [willOpen ? 'Shop is now OPEN.' : 'Shop is now CLOSED.', ...state.logs];
+    
+    // Pip이 떠날 때 특별 로그 (튜토리얼 단계 확인)
+    if (!willOpen && state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE') {
+        newLogs = ["Pip left to wait for his Bronze Shortsword. Better get to the forge!", ...newLogs];
+    }
+
     return {
         ...state,
         forge: { ...state.forge, isShopOpen: willOpen },
         activeCustomer: willOpen ? state.activeCustomer : null,
         shopQueue: willOpen ? state.shopQueue : [],
-        logs: [willOpen ? 'Shop is now OPEN.' : 'Shop is now CLOSED.', ...state.logs]
+        logs: newLogs
     };
 };
 

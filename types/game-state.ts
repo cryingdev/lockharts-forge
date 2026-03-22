@@ -26,6 +26,7 @@ export interface ContractObjectiveRequirement {
   targetCount: number;
   currentCount?: number;
   targetType: ContractObjectiveType;
+  label: string;
   targetId?: string;
   floorNumber?: number;
 }
@@ -58,6 +59,8 @@ export interface ContractDefinition {
   kind?: GeneralContractKind;
   title: string;
   clientName: string;
+  issuer?: string;
+  urgency?: 'NORMAL' | 'HIGH' | 'URGENT';
   mercenaryId?: string;
   source: ContractSource;
   description: string;
@@ -206,6 +209,7 @@ export interface DialogueOption {
   action?: (() => void) | { type: string; payload?: any };
   variant?: 'primary' | 'danger' | 'neutral' | 'secondary';
   disabled?: boolean;
+  targetTab?: string;
 }
 
 export interface DialogueState {
@@ -297,9 +301,13 @@ export interface GameState {
     | 'OPEN_SHOP_TAB_GUIDE' 
     | 'OPEN_SHOP_SIGN_GUIDE' 
     | 'SELL_ITEM_GUIDE' 
+    | 'CRAFT_FIRST_SWORD_GUIDE'
+    | 'CRAFT_FIRST_SWORD_DIALOG_GUIDE'
+    | 'PIP_RETURN_GUIDE'
     | 'CRAFT_START_DIALOG_GUIDE'
     | 'CRAFT_RESULT_DIALOG_GUIDE'
     | 'SHOP_INTRO_DIALOG_GUIDE'
+    | 'PIP_INITIAL_FAREWELL_DIALOG_GUIDE'
     | 'PIP_PRAISE_DIALOG_GUIDE'
     | 'DRAGON_TALK_DIALOG_GUIDE'
     | 'TUTORIAL_END_DIALOG_GUIDE'

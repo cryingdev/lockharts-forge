@@ -84,6 +84,11 @@ const getContractMatchingItems = (inventory: InventoryItem[], itemId: string, ac
 };
 
 export const handleTriggerNamedEncounterCheck = (state: GameState, location: string): GameState => {
+    // Prevent shop encounters if the shop is not open
+    if (location === 'SHOP' && !state.forge.isShopOpen) {
+        return state;
+    }
+
     const pipRegistryEntry = NAMED_CONTRACT_REGISTRY.find(entry => entry.mercenaryId === 'pip_green');
 
     // 0. Day 3 Formal Contract Dialogue for Pip (Special Progression)
@@ -104,7 +109,8 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
                             { 
                                 label: "I accept.", 
                                 action: { type: 'ACCEPT_CONTRACT', payload: { contractId: pipRegistryEntry.contractId } },
-                                variant: 'primary'
+                                variant: 'primary',
+                                targetTab: 'FORGE'
                             },
                             { 
                                 label: "Maybe later.", 
@@ -243,7 +249,8 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
                 { 
                     label: "I'll see what I can do.", 
                     variant: 'primary',
-                    action: { type: 'ACCEPT_CONTRACT', payload: { contractId: triggeredEntry.contractId } }
+                    action: { type: 'ACCEPT_CONTRACT', payload: { contractId: triggeredEntry.contractId } },
+                    targetTab: 'FORGE'
                 },
                 {
                     label: "Maybe later.",
@@ -340,9 +347,26 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
 
 export const handleDeclineContract = (state: GameState, payload: { contractId?: string; mercenaryId?: string }): GameState => {
     let mercenaryId = payload.mercenaryId;
+    const contractId = payload.contractId;
 
-    if (!mercenaryId && payload.contractId) {
-        mercenaryId = NAMED_CONTRACT_REGISTRY.find(entry => entry.contractId === payload.contractId)?.mercenaryId;
+    // 1. Handle General Contract Decline (from Board)
+    if (contractId && !mercenaryId) {
+        const contract = state.commission.activeContracts.find(c => c.id === contractId);
+        if (contract && contract.type === 'GENERAL') {
+            return {
+                ...state,
+                commission: {
+                    ...state.commission,
+                    activeContracts: state.commission.activeContracts.filter(c => c.id !== contractId)
+                },
+                logs: [...state.logs, `Declined contract: ${contract.title}.`]
+            };
+        }
+    }
+
+    // 2. Handle Named Mercenary Decline (Dialogue)
+    if (!mercenaryId && contractId) {
+        mercenaryId = NAMED_CONTRACT_REGISTRY.find(entry => entry.contractId === contractId)?.mercenaryId;
     }
 
     if (!mercenaryId) return state;
@@ -485,17 +509,20 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
 };
 
 export const handleFailContract = (state: GameState, contractId: string): GameState => {
+    const contract = state.commission.activeContracts.find(c => c.id === contractId);
     const newActiveContracts = state.commission.activeContracts.filter(c => c.id !== contractId);
     const newFailedContractIds = [...state.commission.failedContractIds, contractId];
+    const newExpiredContracts = contract ? [...state.commission.expiredContracts, { ...contract, status: 'FAILED' as const }] : state.commission.expiredContracts;
 
     return {
         ...state,
         commission: {
             ...state.commission,
             activeContracts: newActiveContracts,
-            failedContractIds: newFailedContractIds
+            failedContractIds: newFailedContractIds,
+            expiredContracts: newExpiredContracts
         },
-        logs: [...state.logs, `Contract failed: ${contractId}`]
+        logs: [...state.logs, `Contract failed: ${contract?.title || contractId}`]
     };
 };
 
@@ -507,11 +534,11 @@ export const handleUpdateContractObjectiveProgress = (
     const contract = state.commission.activeContracts.find(c => c.id === contractId && c.status === 'ACTIVE');
     if (!contract || !contract.objectives) return state;
 
-    const objective = contract.objectives.find(o => o.id === objectiveId);
+    const objective = contract.objectives.find(o => o.objectiveId === objectiveId);
     if (!objective) return state;
 
     const currentProgress = state.commission.trackedObjectiveProgress[contractId]?.[objectiveId] || 0;
-    const newProgress = Math.min(objective.target, currentProgress + amount);
+    const newProgress = Math.min(objective.targetCount, currentProgress + amount);
 
     return {
         ...state,
@@ -534,8 +561,8 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
 
     // Check if all objectives are met
     const allMet = contract.objectives.every(obj => {
-        const progress = state.commission.trackedObjectiveProgress[contractId]?.[obj.id] || 0;
-        return progress >= obj.target;
+        const progress = state.commission.trackedObjectiveProgress[contractId]?.[obj.objectiveId] || 0;
+        return progress >= obj.targetCount;
     });
 
     if (!allMet) {
@@ -629,6 +656,8 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
             source: 'SYSTEM',
             title: `Order: ${recipe.name}`,
             clientName: 'Town Commission Board',
+            issuer: 'Guild Master',
+            urgency: rng.next() > 0.8 ? 'HIGH' : 'NORMAL',
             description: `A standing order for ${recipe.name}. Deliver a reliable piece for local buyers.`,
             requirements: [
                 {

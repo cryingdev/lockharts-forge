@@ -355,6 +355,9 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                                     actions.dispatch(opt.action);
                                 }
                             }
+                            if (opt.targetTab) {
+                                setActiveTab(opt.targetTab as any);
+                            }
                             actions.setDialogue(null);
                         }
                     }))} 
@@ -367,11 +370,11 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       <main className="flex-1 overflow-hidden relative bg-stone-950 flex flex-col min-h-0">
         <Suspense fallback={<LoadingFallback />}>
           <div className={`h-full w-full ${activeTab === 'MAIN' ? 'block' : 'hidden'}`}><MainScene onNavigate={handleSceneNavigation} onSettingsClick={() => setIsSettingsOpen(true)} /></div>
-          <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab isActive={activeTab === 'FORGE'} onNavigate={setActiveTab} onOpenInventory={() => setIsInventoryOpen(true)} /></div>
-          <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab onNavigate={setActiveTab} /></div>
-          {activeTab === 'SHOP' && <ShopTab onNavigate={setActiveTab} />}
-          {activeTab === 'MARKET' && <MarketTab onNavigate={setActiveTab} />}
-          {activeTab === 'TAVERN' && <TavernTab onNavigate={setActiveTab} />}
+          <div className={`h-full w-full ${activeTab === 'FORGE' ? 'block' : 'hidden'}`}><ForgeTab isActive={activeTab === 'FORGE'} onNavigate={handleSceneNavigation} onOpenInventory={() => setIsInventoryOpen(true)} /></div>
+          <div className={`h-full w-full ${activeTab === 'DUNGEON' ? 'block' : 'hidden'}`}><DungeonTab onNavigate={handleSceneNavigation} /></div>
+          <div className={`h-full w-full ${activeTab === 'SHOP' ? 'block' : 'hidden'}`}><ShopTab onNavigate={handleSceneNavigation} /></div>
+          <div className={`h-full w-full ${activeTab === 'MARKET' ? 'block' : 'hidden'}`}><MarketTab onNavigate={handleSceneNavigation} /></div>
+          <div className={`h-full w-full ${activeTab === 'TAVERN' ? 'block' : 'hidden'}`}><TavernTab onNavigate={handleSceneNavigation} /></div>
           {activeTab === 'SIMULATION' && <SimulationTab />}
         </Suspense>
       </main>

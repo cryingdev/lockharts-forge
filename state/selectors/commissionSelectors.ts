@@ -29,8 +29,8 @@ export const isContractReady = (state: GameState, contract: ContractDefinition):
     // 1. Check Progress-based (HUNT, EXPLORE)
     if (contract.objectives && contract.objectives.length > 0) {
         return contract.objectives.every(obj => {
-            const progress = state.commission.trackedObjectiveProgress[contract.id]?.[obj.id] || 0;
-            return progress >= obj.target;
+            const progress = state.commission.trackedObjectiveProgress[contract.id]?.[obj.objectiveId] || 0;
+            return progress >= obj.targetCount;
         });
     }
 
@@ -51,9 +51,7 @@ export const selectReadyContracts = (state: GameState): ContractDefinition[] => 
 };
 
 export const selectExpiredContracts = (state: GameState): ContractDefinition[] => {
-    // This assumes we keep expired contracts in activeContracts with a flag or just check deadline
-    // For now, let's just check if deadlineDay < currentDay
-    return state.commission.activeContracts.filter(c => c.deadlineDay < state.stats.day);
+    return state.commission.expiredContracts;
 };
 
 export const selectContractProgressSummary = (state: GameState, contractId: string) => {
@@ -62,10 +60,10 @@ export const selectContractProgressSummary = (state: GameState, contractId: stri
 
     if (contract.objectives) {
         return contract.objectives.map(obj => ({
-            id: obj.id,
+            id: obj.objectiveId,
             label: obj.label,
-            current: state.commission.trackedObjectiveProgress[contractId]?.[obj.id] || 0,
-            target: obj.target
+            current: state.commission.trackedObjectiveProgress[contractId]?.[obj.objectiveId] || 0,
+            target: obj.targetCount
         }));
     }
 

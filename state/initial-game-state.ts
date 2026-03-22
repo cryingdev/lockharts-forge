@@ -140,6 +140,7 @@ export const createInitialGameState = (): GameState => {
 
         commission: {
             activeContracts: [],
+            expiredContracts: [],
             completedContractIds: [],
             failedContractIds: [],
             namedEncounters: NAMED_CONTRACT_REGISTRY.reduce((acc, entry) => ({

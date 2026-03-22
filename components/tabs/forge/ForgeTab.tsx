@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap, Users } from 'lucide-react';
 import { useForge } from './hooks/useForge';
 import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
@@ -51,6 +51,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
 
   const bgUrl = getAssetUrl('forge_start_bg.jpeg', 'tutorial');
   const energyPercent = (state.stats.energy / state.stats.maxEnergy) * 100;
+
+  const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
 
   // Reposition logic for tutorial: move buttons up if OPEN_RECIPE_GUIDE is active
   const isRecipeTutorial = state.tutorialStep === 'OPEN_RECIPE_GUIDE';
@@ -114,7 +116,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         )}
 
         {/* Paging Button - To Shop (좌측 중앙 배치) */}
-        {!isCrafting && (!state.tutorialStep || state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE') && (
+        {!isCrafting && (!state.tutorialStep || ['OPEN_SHOP_TAB_GUIDE', 'CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE'].includes(state.tutorialStep)) && (
             <SfxButton 
                 sfx="switch" 
                 onClick={() => {
@@ -127,6 +129,12 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                 className="absolute left-0 top-1/2 -translate-y-1/2 z-[1050] w-8 h-24 bg-stone-900/60 hover:bg-amber-600/40 text-amber-500 rounded-r-2xl border-y border-r border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-95 group flex items-center justify-center"
             >
                 <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                {state.forge.isShopOpen && totalShopVisitors > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-lg animate-bounce z-30">
+                        <Users className="w-2.5 h-2.5" />
+                        {totalShopVisitors}
+                    </div>
+                )}
             </SfxButton>
         )}
 

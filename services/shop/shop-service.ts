@@ -28,19 +28,25 @@ export const useShopService = () => {
 
         const scheduleNextArrival = () => {
             const isTutorialSignStep = state.tutorialStep === 'SELL_ITEM_GUIDE';
-            const isMidTutorial = !!state.tutorialStep && state.tutorialStep !== 'SELL_ITEM_GUIDE';
+            const isPipReturnStep = state.tutorialStep === 'PIP_RETURN_GUIDE';
+            const isMidTutorial = !!state.tutorialStep && !isTutorialSignStep && !isPipReturnStep;
             
-            // Block normal arrivals if any tutorial is active (except the selling guide)
+            // Check if this is the very first visitor of the game (even if tutorial is skipped)
+            // Only apply this priority on Day 1
+            const isFirstVisitorEver = state.stats.day === 1 && state.visitorsToday.length === 0 && !state.knownMercenaries.some(m => m.id === 'pip_green');
+            
+            // Block normal arrivals if any tutorial is active (except the selling guide and return guide)
             if (isMidTutorial) {
                 if (arrivalTimerRef.current) clearTimeout(arrivalTimerRef.current);
                 return;
             }
 
-            const interval = isTutorialSignStep ? 500 : Math.floor(rng.standard(SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS, SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS + SHOP_CONFIG.ARRIVAL.VARIANCE_MS, 0));
+            const isPriorityPip = isTutorialSignStep || isPipReturnStep || isFirstVisitorEver;
+            const interval = isPriorityPip ? 500 : Math.floor(rng.standard(SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS, SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS + SHOP_CONFIG.ARRIVAL.VARIANCE_MS, 0));
             
             arrivalTimerRef.current = setTimeout(() => {
-                // Tutorial logic: Only Pip the Green enters when waiting for the first sell
-                if (isTutorialSignStep) {
+                // Priority Pip logic: Pip the Green enters for the first quest or return
+                if (isPriorityPip) {
                     if (activeCustomer === null && shopQueue.length === 0) {
                         // Try to find Pip in known mercenaries first, fallback to NAMED_MERCENARIES
                         let pip = state.knownMercenaries.find(m => m.id === 'pip_green');
@@ -51,12 +57,18 @@ export const useShopService = () => {
                         if (pip) {
                             const customer = generateShopRequest(pip, unlockedRecipes);
                             customer.request.requestedId = 'sword_bronze_t1';
-                            customer.request.dialogue = "Lockhart! I heard you fixed the furnace. I've been training with a wooden stick... Do you have a real Bronze Shortsword for sale?";
+                            
+                            if (isTutorialSignStep || isFirstVisitorEver) {
+                                customer.request.dialogue = "Lockhart! I heard you fixed the furnace. I've been training with a wooden stick... Do you have a real Bronze Shortsword for sale?";
+                            } else {
+                                customer.request.dialogue = "I'm back! Is the Bronze Shortsword ready? I can't wait to try it out!";
+                            }
+                            
                             customer.request.price = 550;
                             actions.enqueueCustomer(customer);
                         }
                     }
-                    return; // Exit to prevent other mercenaries from spawning during tutorial
+                    return; // Exit to prevent other mercenaries from spawning
                 }
 
                 // Normal Candidate filtering

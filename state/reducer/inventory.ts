@@ -188,7 +188,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
 
     if (customer) {
         const existingMercIdx = newKnownMercenaries.findIndex(m => m.id === customer.id);
-        const isPipTutorial = newTutorialStep === 'SELL_ITEM_GUIDE' && customer.id === 'pip_green';
+        const isPipTutorial = (newTutorialStep === 'SELL_ITEM_GUIDE' || newTutorialStep === 'PIP_RETURN_GUIDE') && customer.id === 'pip_green';
         
         // 최종 호감도 상승량 결정 (기본 2 + 품질 보너스)
         const baseAffinityGain = isPipTutorial ? 10 : 2;

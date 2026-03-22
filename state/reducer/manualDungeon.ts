@@ -185,10 +185,12 @@ const updateObjectives = (state: GameState, type: 'HUNT' | 'EXPLORE', targetId: 
     state.commission.activeContracts.forEach(contract => {
         if (contract.status === 'ACTIVE' && contract.objectives) {
             contract.objectives.forEach(obj => {
-                if (obj.type === type && (!obj.targetId || obj.targetId === targetId)) {
+                const isMatch = (type === 'HUNT' && obj.targetType === 'KILL') || 
+                                (type === 'EXPLORE' && obj.targetType === 'NODE_DISCOVERED');
+                if (isMatch && (!obj.targetId || obj.targetId === targetId)) {
                     newState = handleUpdateContractObjectiveProgress(newState, { 
                         contractId: contract.id, 
-                        objectiveId: obj.id, 
+                        objectiveId: obj.objectiveId, 
                         amount 
                     });
                 }

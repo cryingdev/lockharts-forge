@@ -66,7 +66,7 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={handleSkip}
-                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm cursor-pointer"
+                className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm cursor-pointer"
             >
                 <motion.div 
                     initial={{ scale: 0.9, opacity: 0 }}
