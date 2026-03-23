@@ -28,9 +28,9 @@ export const useTavern = () => {
             // Check if they are eligible based on unlock rules and cooldowns
             if (!isNamedMercenaryEligible(state, entry)) return false;
             
-            // Check if they are already in the tavern list
-            const isAlreadyKnown = state.knownMercenaries.some(m => m.id === entry.mercenaryId);
-            if (isAlreadyKnown) return false;
+            // Check if they are already in the tavern list (VISITOR or other active status)
+            const merc = state.knownMercenaries.find(m => m.id === entry.mercenaryId);
+            if (merc && merc.status !== 'DEPARTED') return false;
 
             return true;
         });
@@ -40,15 +40,26 @@ export const useTavern = () => {
         // 2. If there are eligible named mercenaries, prioritize them (e.g., 70% chance to pick one)
         if (eligibleNamed.length > 0 && rng.chance(0.7)) {
             const pickedEntry = rng.pick(eligibleNamed);
-            const mercData = NAMED_MERCENARIES.find(m => m.id === pickedEntry.mercenaryId);
-            if (mercData) {
-                newMerc = { ...mercData, status: 'ENCOUNTERED' as const };
+            const existingMerc = state.knownMercenaries.find(m => m.id === pickedEntry.mercenaryId);
+            
+            if (existingMerc) {
+                newMerc = existingMerc;
+            } else {
+                const mercData = NAMED_MERCENARIES.find(m => m.id === pickedEntry.mercenaryId);
+                if (mercData) {
+                    newMerc = { ...mercData, status: 'ENCOUNTERED' as const };
+                }
             }
         }
 
-        // 3. Fallback to a random mercenary
+        // 3. Fallback to a random mercenary or a departed one
         if (!newMerc) {
-            newMerc = createRandomMercenary(state.stats.day, state.knownMercenaries);
+            const departedMercs = state.knownMercenaries.filter(m => m.status === 'DEPARTED' && !m.isUnique);
+            if (departedMercs.length > 0 && rng.chance(0.5)) {
+                newMerc = rng.pick(departedMercs);
+            } else {
+                newMerc = createRandomMercenary(state.stats.day, state.knownMercenaries);
+            }
         }
 
         setInvitingMercenary(newMerc);

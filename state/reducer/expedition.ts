@@ -263,6 +263,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
 
     // Handle Rescued NPC
     let rescuedMercenary = undefined;
+    let newNamedEncounters = { ...stateWithProgress.commission.namedEncounters };
+
     if (rescuedNpcId) {
         const specialMerc = SPECIAL_RECRUITS_REGISTRY[rescuedNpcId];
         if (specialMerc) {
@@ -270,6 +272,18 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
             if (!newKnownMercenaries.some(m => m.id === rescuedMercenary!.id)) {
                 newKnownMercenaries.push(rescuedMercenary);
             }
+
+            // Unlock recruitment for the rescued NPC
+            newNamedEncounters[rescuedNpcId] = {
+                ...(newNamedEncounters[rescuedNpcId] || {
+                    mercenaryId: rescuedNpcId,
+                    unlocked: true,
+                    hasAppeared: true,
+                    daysEligible: 0,
+                    declinedUntilDay: 0,
+                }),
+                recruitUnlocked: true
+            };
         }
     }
 
@@ -306,7 +320,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
         dungeonResult: resultData,
         commission: {
             ...stateWithProgress.commission,
-            hasHadInjuredMercenary: stateWithProgress.commission.hasHadInjuredMercenary || hasAnyInjured
+            hasHadInjuredMercenary: stateWithProgress.commission.hasHadInjuredMercenary || hasAnyInjured,
+            namedEncounters: newNamedEncounters
         },
         stats: {
             ...stateWithProgress.stats,

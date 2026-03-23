@@ -4,11 +4,10 @@ import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 import { MARKET_CATALOG } from '../../data/market/index';
 import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
 import { handleRefreshCommissions, isNamedMercenaryEligible } from './commission';
+import { SHOP_CONFIG } from '../../config/shop-config';
+import { rng } from '../../utils/random';
 
 export const handleSleep = (state: GameState): GameState => {
-    if (state.forge.isShopOpen) {
-        return { ...state, logs: ["You cannot sleep while the shop is open!", ...state.logs] };
-    }
     if (state.activeManualDungeon) {
         return { ...state, logs: ["You cannot sleep while exploring a dungeon!", ...state.logs] };
     }
@@ -28,38 +27,54 @@ export const handleConfirmSleep = (state: GameState): GameState => {
     const nextDay = state.stats.day + 1;
     const newGold = state.stats.gold - totalWages;
 
-    // --- Mercenary Recovery & Energy Recovery ---
+    // --- Mercenary Recovery & Energy Recovery & Tavern Departure/Return ---
     let recoveryLogs: string[] = [];
+    let departedCount = 0;
+    let returnedCount = 0;
+
     const updatedMercenaries = state.knownMercenaries.map(merc => {
         let status = merc.status;
         let recoveryUntilDay = merc.recoveryUntilDay;
+
+        // Tavern Departure Logic: Unhired visitors have a chance to leave
+        if (status === 'VISITOR') {
+            const leaves = rng.chance(SHOP_CONFIG.TAVERN_DEPARTURE_CHANCE);
+            if (leaves) {
+                departedCount++;
+                status = 'DEPARTED';
+            }
+        } else if (status === 'DEPARTED') {
+            // Tavern Return Logic: Departed visitors have a chance to return
+            const returns = rng.chance(SHOP_CONFIG.TAVERN_RETURN_CHANCE);
+            if (returns) {
+                returnedCount++;
+                status = 'VISITOR';
+            }
+        }
         
         // Base Vitals Recovery: All mercenaries not on expedition recover 50% of Max HP/MP
         let nextHp = merc.currentHp;
         let nextMp = merc.currentMp;
         
-        if (['HIRED', 'INJURED', 'VISITOR'].includes(status)) {
+        if (['HIRED', 'INJURED', 'VISITOR', 'DEPARTED'].includes(status)) {
             nextHp = Math.min(merc.maxHp, nextHp + Math.floor(merc.maxHp * 0.5));
             nextMp = Math.min(merc.maxMp, nextMp + Math.floor(merc.maxMp * 0.5));
         }
 
         // Progress recovery for injured mercenaries
-        // They return to HIRED status only if the recovery day has passed AND they have health
         if (status === 'INJURED' && recoveryUntilDay && nextDay >= recoveryUntilDay) {
             if (nextHp > 0) {
                 status = 'HIRED';
                 recoveryUntilDay = undefined;
                 recoveryLogs.push(`${merc.name} has fully recovered from their injuries.`);
             } else {
-                // If they still have 0 HP for some reason, they stay injured but recovery time is cleared
-                // or we extend it. For now, we assume 50% recovery ensures > 0 HP.
                 status = 'HIRED';
                 recoveryUntilDay = undefined;
             }
         }
 
         // Recover energy for mercenaries not on expedition
-        if (['HIRED', 'INJURED', 'VISITOR'].includes(status)) {
+        if (['HIRED', 'INJURED', 'VISITOR', 'DEPARTED'].includes(status)) {
             return {
                 ...merc,
                 status,
@@ -105,6 +120,8 @@ export const handleConfirmSleep = (state: GameState): GameState => {
 
     if (totalWages > 0) logMsg = `Day ${nextDay} begins. Paid ${totalWages} G in wages. (Auto-saved)`;
     if (newGold < 0) logMsg = `Day ${nextDay} begins. You are in debt! (${newGold} G). (Auto-saved)`;
+    if (departedCount > 0) recoveryLogs.push(`${departedCount} traveler(s) have left the Tavern.`);
+    if (returnedCount > 0) recoveryLogs.push(`${returnedCount} traveler(s) have returned to the Tavern.`);
 
     // --- Commission System Updates ---
     const updatedActiveContracts = state.commission.activeContracts
