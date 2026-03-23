@@ -547,11 +547,11 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
 
             {/* NPC Discovery Scene */}
             {isOnNPCTile && rescueTarget && (
-                <div className="absolute inset-0 z-40 flex flex-col items-center justify-end pointer-events-none pb-20">
-                    <div className="relative flex justify-center items-end w-full h-[80dvh] animate-in fade-in zoom-in slide-in-from-bottom-12 duration-1000 ease-out">
-                        <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/20 blur-[80px] rounded-full -z-10 animate-pulse"></div>
-                        <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-48 h-10 bg-black/60 blur-2xl rounded-full -z-10"></div>
-                        <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2 z-0">
+                <div className="absolute inset-0 z-40 flex flex-col items-center justify-end pointer-events-none">
+                    <div className="relative flex justify-center items-end w-full h-[85dvh] animate-in fade-in zoom-in slide-in-from-bottom-12 duration-1000 ease-out">
+                        <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/20 blur-[80px] rounded-full -z-10 animate-pulse"></div>
+                        <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-48 h-10 bg-black/60 blur-2xl rounded-full -z-10"></div>
+                        <div className="absolute bottom-[25%] left-1/2 -translate-x-1/2 z-0">
                             <Sparkles className="w-12 h-12 text-amber-300 opacity-40 animate-bounce" />
                         </div>
                         <AnimatedMercenary

@@ -47,6 +47,9 @@ The Shop is where the player interacts with the world's inhabitants.
 
 #### 3.2.1 Customer Behavior
 -   **Arrival**: Mercenaries arrive randomly (every 5-25 seconds) while the shop is open.
+-   **Daily Limit**: The maximum number of visitors per day is capped at `ceil(knownMercenaries.length * 1.1)`.
+-   **Arrival Chance**: When the arrival timer fires, there is an 80% chance a customer actually appears.
+-   **Selection Logic**: If a customer appears, there is a 10% chance it is a newly generated mercenary and a 90% chance it is an existing known mercenary (who hasn't visited today).
 -   **Requests**: Customers seek specific items based on their class and level.
 -   **Patience**: Customers will wait for approximately 45 seconds before leaving in disappointment.
 -   **Pricing**: Items are sold at a markup (typically 125% of base value). High-quality items can be sold for even more.
@@ -64,6 +67,7 @@ Mercenaries are the player's primary agents in the world.
 #### 3.3.1 Recruitment
 -   **Named Heroes**: Unique characters like *Pip the Green* or *Adeline Ashford* with fixed backgrounds and potential.
 -   **Random Recruits**: Procedurally generated mercenaries to fill the ranks.
+-   **Tavern Presence**: Unhired `VISITOR` mercenaries are transient. At the end of each day, they have a 70% chance to leave the Tavern if not hired.
 -   **Job Classes**:
     -   **Novice**: Versatile but weak.
     -   **Fighter**: High VIT and STR, the frontline.

@@ -42,6 +42,16 @@ export const useShopService = () => {
             }
 
             const isPriorityPip = isTutorialSignStep || isPipReturnStep || isFirstVisitorEver;
+            
+            // Check daily visit limit (except for priority Pip)
+            const maxVisitorsToday = Math.ceil(state.knownMercenaries.length * SHOP_CONFIG.ARRIVAL.LIMIT_MULTIPLIER);
+            const hasReachedLimit = state.visitorsToday.length >= Math.max(3, maxVisitorsToday); // Minimum 3 for early game
+
+            if (hasReachedLimit && !isPriorityPip) {
+                if (arrivalTimerRef.current) clearTimeout(arrivalTimerRef.current);
+                return;
+            }
+
             const interval = isPriorityPip ? 500 : Math.floor(rng.standard(SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS, SHOP_CONFIG.ARRIVAL.MIN_INTERVAL_MS + SHOP_CONFIG.ARRIVAL.VARIANCE_MS, 0));
             
             arrivalTimerRef.current = setTimeout(() => {
@@ -71,38 +81,42 @@ export const useShopService = () => {
                     return; // Exit to prevent other mercenaries from spawning
                 }
 
-                // Normal Candidate filtering
-                const validCandidates = state.knownMercenaries.filter(m => 
-                    !visitorsToday.includes(m.id) && 
-                    !['ON_EXPEDITION', 'INJURED', 'DEAD'].includes(m.status)
-                );
-
-                // If we have few known mercenaries or just by chance (40%), generate a new one
-                const shouldGenerateNew = validCandidates.length < 3 || rng.chance(0.4);
-
-                let selectedMerc;
-                if (shouldGenerateNew) {
-                    selectedMerc = generateMercenary(state.knownMercenaries, state.stats.day);
-                } else if (validCandidates.length > 0) {
-                    selectedMerc = rng.pick(validCandidates);
-                } else {
-                    // Fallback to generating if no known are available
-                    selectedMerc = generateMercenary(state.knownMercenaries, state.stats.day);
-                }
-
-                const maxHp = calculateMaxHp(selectedMerc.stats, selectedMerc.level);
-                const maxMp = calculateMaxMp(selectedMerc.stats, selectedMerc.level);
+                // 80% chance to actually have a customer arrive
+                const doesArrive = rng.chance(SHOP_CONFIG.ARRIVAL.CHANCE);
                 
-                const visitingMerc = {
-                    ...selectedMerc,
-                    currentHp: maxHp,
-                    currentMp: maxMp,
-                    maxHp,
-                    maxMp
-                };
+                if (doesArrive) {
+                    // Normal Candidate filtering
+                    const validCandidates = state.knownMercenaries.filter(m => 
+                        !visitorsToday.includes(m.id) && 
+                        !['ON_EXPEDITION', 'INJURED', 'DEAD'].includes(m.status)
+                    );
 
-                const customer = generateShopRequest(visitingMerc, unlockedRecipes);
-                actions.enqueueCustomer(customer);
+                    // 10% chance to generate a new mercenary, or if no valid candidates left
+                    const shouldGenerateNew = rng.chance(SHOP_CONFIG.ARRIVAL.NEW_MERCENARY_CHANCE) || validCandidates.length === 0;
+
+                    let selectedMerc;
+                    if (shouldGenerateNew) {
+                        selectedMerc = generateMercenary(state.knownMercenaries, state.stats.day);
+                    } else {
+                        selectedMerc = rng.pick(validCandidates);
+                    }
+
+                    if (selectedMerc) {
+                        const maxHp = calculateMaxHp(selectedMerc.stats, selectedMerc.level);
+                        const maxMp = calculateMaxMp(selectedMerc.stats, selectedMerc.level);
+                        
+                        const visitingMerc = {
+                            ...selectedMerc,
+                            currentHp: maxHp,
+                            currentMp: maxMp,
+                            maxHp,
+                            maxMp
+                        };
+
+                        const customer = generateShopRequest(visitingMerc, unlockedRecipes);
+                        actions.enqueueCustomer(customer);
+                    }
+                }
                 
                 scheduleNextArrival();
             }, interval);

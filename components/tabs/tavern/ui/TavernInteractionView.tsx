@@ -36,7 +36,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
 
     const isNamed = mercenary.isUnique;
     const namedState = isNamed ? state.commission.namedEncounters[mercenary.id] : null;
-    const canHireNamed = !isNamed || (namedState?.recruitUnlocked);
+    const canHireNamed = !isNamed || (namedState ? namedState.recruitUnlocked : true);
 
     const btnBaseClass = "w-full h-12 md:h-16 flex items-center justify-center gap-1 md:gap-2 px-1 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 relative border";
 
