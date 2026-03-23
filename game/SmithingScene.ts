@@ -92,6 +92,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   private score = 0;
   private targetScore = 100;
+  private scoreIncrement = 12.5;
   private combo = 0;
   private lastHitTime = 0;
   private hitCooldown = 200;
@@ -195,6 +196,11 @@ export default class SmithingScene extends Phaser.Scene {
     this.onTutorialAction = data.onTutorialAction;
     this.isTutorial = !!data.isTutorial;
     this.charcoalCount = data.charcoalCount;
+    
+    const tier = data.difficulty || 1;
+    const requiredHits = 8 + (tier - 1) * 4;
+    this.scoreIncrement = 100 / requiredHits;
+
     this.shrinkDuration = Math.max(800, 2000 - data.difficulty * 200);
     this.coolingRate = 2 + data.difficulty * 0.8;
     this.score = 0;
@@ -713,8 +719,12 @@ export default class SmithingScene extends Phaser.Scene {
     
     if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.PERFECT_THRESHOLD) {
       window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'billet_hit_normal.mp3' } }));
-      this.score += Math.ceil(8 * eff); this.combo++; this.perfectCount++;
-      if (this.perfectCount >= 6) { this.currentQuality += 1; }
+      this.score += this.scoreIncrement * eff; this.combo++; this.perfectCount++;
+      
+      // Quality gain based on temperature stage
+      const qGain = this.currentTempStage === 'AURA' ? 5 : this.currentTempStage === 'HOT' ? 3 : 1;
+      this.currentQuality = Math.min(120, this.currentQuality + qGain);
+      
       if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(x, y);
       this.createSparks(30, this.currentTargetColor, 1.5, 'spark_perfect', x, y); this.showFeedback('PERFECT!', 0xffb300, 1.4, x, y); this.cameras.main.shake(150, 0.02);
       this.applyKickback(0.05); 
@@ -728,7 +738,7 @@ export default class SmithingScene extends Phaser.Scene {
       }
     } else if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.GOOD_THRESHOLD) {
       window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'billet_hit_normal.mp3' } }));
-      this.score += Math.ceil(5 * eff); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
+      this.score += (this.scoreIncrement * 0.64) * eff; this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
       this.createSparks(15, 0xffffff, 1.1, 'spark_normal', x, y); this.showFeedback('GOOD', 0xe5e5e5, 1.1, x, y);
       this.applyKickback(0.4); 
     } else { this.handleMiss(x, y); }
@@ -760,7 +770,7 @@ export default class SmithingScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.isFinished) return;
     const currentStep = (this.game as any).tutorialStep;
-    const isTutorialDialogueActive = this.isTutorial && (currentStep === 'FIRST_HIT_DIALOG' || currentStep?.includes('_DIALOG'));
+    const isTutorialDialogueActive = this.isTutorial && (currentStep === 'FIRST_HIT_DIALOG_GUIDE' || currentStep?.includes('_DIALOG'));
     if (this.isPlaying && this.currentTool === 'HAMMER' && !isTutorialDialogueActive) {
         this.handleRingLogic(delta);
     }

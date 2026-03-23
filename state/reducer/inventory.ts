@@ -188,7 +188,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
 
     if (customer) {
         const existingMercIdx = newKnownMercenaries.findIndex(m => m.id === customer.id);
-        const isPipTutorial = newTutorialStep === 'SELL_ITEM_GUIDE' && customer.id === 'pip_green';
+        const isPipTutorial = (newTutorialStep === 'SELL_ITEM_GUIDE' || newTutorialStep === 'PIP_RETURN_GUIDE') && customer.id === 'pip_green';
         
         // 최종 호감도 상승량 결정 (기본 2 + 품질 보너스)
         const baseAffinityGain = isPipTutorial ? 10 : 2;
@@ -229,7 +229,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
         }
 
         if (isPipTutorial) {
-            newTutorialStep = 'PIP_PRAISE_DIALOG';
+            newTutorialStep = 'PIP_PRAISE_DIALOG_GUIDE';
         }
     } else {
         logMessage = `Sold ${itemName} for ${price} Gold.`;
@@ -241,6 +241,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
         stats: { 
             ...state.stats, 
             gold: state.stats.gold + price,
+            totalSalesCount: state.stats.totalSalesCount + (isShopSale ? count : 0),
             dailyFinancials: {
                 ...state.stats.dailyFinancials,
                 incomeShop: state.stats.dailyFinancials.incomeShop + (isShopSale ? price : 0),
@@ -375,12 +376,19 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
         return item;
     }).filter(i => i.quantity > 0);
 
+    const mercBefore = mercenaryId ? state.knownMercenaries.find(m => m.id === mercenaryId) : null;
+    const wasInjured = mercBefore?.status === 'INJURED';
+
     return {
         ...state,
         stats: newStats,
         inventory: newInventory,
         unlockedRecipes: newUnlockedRecipes,
         knownMercenaries: newKnownMercenaries,
+        commission: {
+            ...state.commission,
+            hasSeenRecoveryFlow: state.commission.hasSeenRecoveryFlow || (itemUsed && wasInjured)
+        },
         logs: [logMsg, ...state.logs]
     };
 };

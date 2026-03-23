@@ -13,7 +13,7 @@ interface FloatingHeart {
     size: number;
 }
 
-export const useShop = () => {
+export const useShop = (onNavigate?: (tab: string) => void) => {
     const { state, actions } = useGame();
     const { isShopOpen } = state.forge;
     const { activeCustomer, shopQueue, tutorialStep, inventory, unlockedRecipes } = state;
@@ -140,13 +140,29 @@ export const useShop = () => {
 
     const getThanksDialogue = useCallback(() => {
         const itemName = getItemName(activeCustomer?.request.requestedId || "");
-        if (lastSoldQuality > 100) {
+        const isPip = activeCustomer?.mercenary.id === 'pip_green';
+
+        if (lastSoldQuality >= 110) { // MASTERWORK
+            if (isPip) {
+                return `"W-wait... is this for real? I've never seen a blade so beautiful! The edge... it's like it's made of starlight. I'll cherish this forever, Lockhart! I'll make sure everyone knows who the greatest smith in the world is!"`;
+            }
             return [
                 `"Unbelievable! This ${itemName} is a true masterpiece. The edge is unlike anything I've seen. You really have the Lockhart touch!"`,
                 `"Absolute perfection. I can feel the strength in this steel. I'll tell everyone in the tavern about your forge!"`,
                 `"This quality is beyond what I expected. A fair price for legendary work. Thank you, Lockhart!"`
             ][Math.floor(Math.random() * 3)];
         } 
+        if (lastSoldQuality >= 100) { // PRISTINE
+            if (isPip) {
+                return `"Wow! It's so shiny and sharp! This is exactly what I dreamed of. Thank you so much, Lockhart! I'm going to go practice right now!"`;
+            }
+            return [
+                `"Fantastic craftsmanship! This ${itemName} is exactly what I needed. Thank you, Lockhart!"`,
+                `"Superb work. I feel much safer with this by my side. I'll be back!"`,
+                `"A fair price for quality steel. May your bellows never tire, smith."`,
+                `"You truly have the Lockhart touch. This will serve me well in the ruins."`
+            ][Math.floor(Math.random() * 4)];
+        }
         if (lastSoldQuality < 80) {
             return [
                 `"It'll do for now, I suppose. Though the finish on this ${itemName} is a bit rough... I hope your next work is a bit more refined."`,
@@ -181,21 +197,50 @@ export const useShop = () => {
     }, [refusalReaction, activeCustomer]);
 
     const tutorialContent = useMemo(() => {
-        if (tutorialStep === 'PIP_PRAISE_DIALOG') {
+        if (tutorialStep === 'PIP_INITIAL_FAREWELL_DIALOG_GUIDE') {
+            return {
+                speaker: activeCustomer?.mercenary.name || "Pip the Green",
+                text: "Really? Thank you, Lockhart! I'll be back later today or tomorrow. Good luck with the forging!",
+                options: [{ 
+                    label: "Farewell", 
+                    action: () => {
+                        handleFarewell();
+                        actions.setTutorialStep('CRAFT_FIRST_SWORD_DIALOG_GUIDE');
+                    }, 
+                    variant: 'primary' as const 
+                }]
+            };
+        }
+        if (tutorialStep === 'CRAFT_FIRST_SWORD_DIALOG_GUIDE') {
+            return {
+                speaker: "Lockhart",
+                text: "A Bronze Shortsword... it's been a while since I've forged one. I'll need to head to the Forge and use the furnace. I hope I still remember the rhythm of the hammer.",
+                options: [{ 
+                    label: "Go to Forge", 
+                    action: () => { 
+                        actions.setTutorialStep('CRAFT_FIRST_SWORD_GUIDE');
+                        if (onNavigate) onNavigate('FORGE');
+                    }, 
+                    variant: 'primary' as const,
+                    targetTab: 'FORGE'
+                }]
+            };
+        }
+        if (tutorialStep === 'PIP_PRAISE_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
                 text: "This... this is incredible. I can feel the balance in the grip. It's much better than the scraps I found in the woods. You really are a Lockhart, aren't you?",
-                options: [{ label: "Continue", action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG'), variant: 'primary' as const }]
+                options: [{ label: "Continue", action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG_GUIDE'), variant: 'primary' as const }]
             };
         }
-        if (tutorialStep === 'DRAGON_TALK_DIALOG') {
+        if (tutorialStep === 'DRAGON_TALK_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
                 text: "The village... it hasn't been the same since the Dragon's fire. I lost my brother that night. I see that same shadow in your eyes, smith. We all lost someone. Good luck with the forge.",
-                options: [{ label: "Farewell", action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_DIALOG'); }, variant: 'primary' as const }]
+                options: [{ label: "Farewell", action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_DIALOG_GUIDE'); }, variant: 'primary' as const }]
             };
         }
-        if (tutorialStep === 'TUTORIAL_END_DIALOG') {
+        if (tutorialStep === 'TUTORIAL_END_DIALOG_GUIDE') {
             return {
                 speaker: "Lockhart",
                 text: "Finally... the first sale. It's a small spark, but enough to light the way. I'll reclaim our legacy, one blade at a time.",
@@ -203,7 +248,7 @@ export const useShop = () => {
             };
         }
         return null;
-    }, [tutorialStep, activeCustomer, actions, handleFarewell]);
+    }, [tutorialStep, activeCustomer, actions, handleFarewell, onNavigate]);
 
     const dialogueState = useMemo(() => {
         if (tutorialContent) return tutorialContent;
@@ -228,6 +273,74 @@ export const useShop = () => {
         const { request, mercenary } = activeCustomer;
         const inventoryMatch = matchingItems.length > 0;
         
+        // Pip's initial request dialogue (Tutorial or first visit after skip on Day 1)
+        const isInitialPipVisit = (tutorialStep === 'SELL_ITEM_GUIDE' || (!tutorialStep && state.stats.day === 1 && state.visitorsToday.length <= 1)) && mercenary.id === 'pip_green';
+        
+        if (isInitialPipVisit) {
+            if (!inventoryMatch) {
+                return {
+                    speaker: mercenary.name,
+                    text: "Lockhart! I heard you fixed the furnace. I've been training with a wooden stick... Do you have a real Bronze Shortsword for sale?",
+                    highlightTerm: "Bronze Shortsword",
+                    options: [
+                        { 
+                            label: "I'll have it ready. Come back later.", 
+                            action: () => {
+                                // Instead of immediate navigation, we set a step that shows Pip's farewell
+                                actions.setTutorialStep('PIP_INITIAL_FAREWELL_DIALOG_GUIDE');
+                            }, 
+                            variant: 'primary' as const
+                        },
+                        { 
+                            label: "I'm too busy right now.", 
+                            action: handleRefuse, 
+                            variant: 'danger' as const 
+                        }
+                    ]
+                };
+            } else {
+                return {
+                    speaker: mercenary.name,
+                    text: "Oh! You already have one? That's incredible. Can I buy it from you?",
+                    highlightTerm: "Bronze Shortsword",
+                    options: [
+                        { 
+                            label: "Of course, here it is.", 
+                            action: handleSellClick, 
+                            variant: 'primary' as const 
+                        },
+                        { 
+                            label: "I need this for something else.", 
+                            action: handleRefuse, 
+                            variant: 'danger' as const 
+                        }
+                    ]
+                };
+            }
+        }
+
+        // Pip's return dialogue
+        if (tutorialStep === 'PIP_RETURN_GUIDE' && mercenary.id === 'pip_green') {
+            return {
+                speaker: mercenary.name,
+                text: "I'm back! Is the Bronze Shortsword ready? I can't wait to try it out!",
+                highlightTerm: "Bronze Shortsword",
+                options: [
+                    { 
+                        label: `Sell (${request.price} G)`, 
+                        action: handleSellClick, 
+                        variant: 'primary' as const,
+                        disabled: !inventoryMatch
+                    },
+                    { 
+                        label: "Wait a bit more", 
+                        action: handleRefuse, 
+                        variant: 'danger' as const 
+                    }
+                ]
+            };
+        }
+
         const isEquip = request.type === 'EQUIPMENT';
         const recipe = isEquip ? EQUIPMENT_ITEMS.find(e => e.id === request.requestedId) : null;
         const material = !isEquip ? Object.values(materials).find(m => m.id === request.requestedId) : null;
@@ -278,7 +391,7 @@ export const useShop = () => {
         matchingItems,
         showInstanceSelector,
         selectedInstance,
-        isTutorialActive: !!tutorialStep,
+        isTutorialActive: !!tutorialStep && !['CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE'].includes(tutorialStep),
         handlers: {
             handleToggleShop,
             handleFarewell,

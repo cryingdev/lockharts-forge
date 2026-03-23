@@ -257,7 +257,8 @@ export default class IntroScene extends Phaser.Scene {
     const uiScale = Phaser.Math.Clamp(Math.min(w, h) / 720, 0.6, 1.2);
     this.bgs.forEach((img) => {
       img.setPosition(cx, cy);
-      img.setScale(Math.max(w / img.width, h / img.height));
+      // Add 15% extra scale to prevent black borders during camera shake
+      img.setScale(Math.max(w / img.width, h / img.height) * 1.15);
     });
     
     if (this.dragon) {
@@ -292,7 +293,7 @@ export default class IntroScene extends Phaser.Scene {
       this.skipHint.setPosition(cx, h - 24);
       this.skipHint.setFontSize(Math.round(14 * uiScale));
     }
-    this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
+    this.breathOverlay?.setPosition(cx, cy).setSize(w * 1.2, h * 1.2);
 
     this.narrativeTexts.forEach((t, i) => {
       if (i === 3) { 
@@ -313,7 +314,8 @@ export default class IntroScene extends Phaser.Scene {
     const uiScale = Phaser.Math.Clamp(w / 400, 0.7, 1.0);
     this.bgs.forEach((img) => {
       img.setPosition(cx, cy);
-      img.setScale(Math.max(w / img.width, h / img.height));
+      // Add 15% extra scale to prevent black borders during camera shake
+      img.setScale(Math.max(w / img.width, h / img.height) * 1.15);
     });
     
   if (this.dragon) {
@@ -348,7 +350,7 @@ export default class IntroScene extends Phaser.Scene {
       this.skipHint.setPosition(cx, h - 36);
       this.skipHint.setFontSize(Math.round(14 * uiScale));
     }
-    this.breathOverlay?.setPosition(cx, cy).setSize(w, h);
+    this.breathOverlay?.setPosition(cx, cy).setSize(w * 1.2, h * 1.2);
     
     this.narrativeTexts.forEach((t, i) => {
       if (i === 3) { 

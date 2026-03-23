@@ -34,6 +34,10 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
     const isOnExpedition = mercenary.status === 'ON_EXPEDITION';
     const hasUnallocated = isHired && (mercenary.bonusStatPoints || 0) > 0;
 
+    const isNamed = mercenary.isUnique;
+    const namedState = isNamed ? state.commission.namedEncounters[mercenary.id] : null;
+    const canHireNamed = !isNamed || (namedState?.recruitUnlocked);
+
     const btnBaseClass = "w-full h-12 md:h-16 flex items-center justify-center gap-1 md:gap-2 px-1 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 relative border";
 
     return (
@@ -128,11 +132,12 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                                 <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">Fire</span>
                             </SfxButton>
                         ) : (
-                            <SfxButton onClick={handlers.handleRecruitInit} disabled={!canAfford || !hasAffinity} className={`${btnBaseClass} ${(!canAfford || !hasAffinity) ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'}`}>
+                            <SfxButton onClick={handlers.handleRecruitInit} disabled={!canAfford || !hasAffinity || !canHireNamed} className={`${btnBaseClass} ${(!canAfford || !hasAffinity || !canHireNamed) ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'}`}>
                                 <UserPlus className="w-3.5 h-3.5 md:w-5 md:h-5" />
                                 <div className="flex flex-col items-center leading-none">
                                     <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">Hire</span>
-                                    {hasAffinity && <span className="text-[6px] md:text-[8px] font-mono opacity-80 mt-0.5">{hiringCost}G</span>}
+                                    {hasAffinity && canHireNamed && <span className="text-[6px] md:text-[8px] font-mono opacity-80 mt-0.5">{hiringCost}G</span>}
+                                    {isNamed && !canHireNamed && <span className="text-[6px] md:text-[8px] font-mono text-red-500 mt-0.5">Locked</span>}
                                 </div>
                             </SfxButton>
                         )}

@@ -7,6 +7,124 @@ import { Monster } from '../models/Monster';
 
 export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP' | 'STAIRS' | 'ENEMY' | 'RESOURCE';
 
+export type ContractType = 'GENERAL' | 'SPECIAL';
+export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
+export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
+export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
+export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
+export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
+
+export interface ContractItemRequirement {
+  itemId: string;
+  quantity: number;
+  minQuality?: number;
+  acceptedTags?: string[];
+}
+
+export interface ContractObjectiveRequirement {
+  objectiveId: string;
+  targetCount: number;
+  currentCount?: number;
+  targetType: ContractObjectiveType;
+  label: string;
+  targetId?: string;
+  floorNumber?: number;
+}
+
+export interface ContractReward {
+  type: ContractRewardType;
+  gold?: number;
+  affinity?: number;
+  itemId?: string;
+  itemCount?: number;
+  mercenaryId?: string;
+}
+
+export interface ContractEncounterRule {
+  location: ContractSource;
+  unlockDay?: number;
+  minTier?: number;
+  requiredRecipeIds?: string[];
+  requiredDungeonIds?: string[];
+  requiredItemIds?: string[];
+  requiredSalesCount?: number;
+  encounterWindowDays: number;
+  appearanceChance: number;
+  guaranteeAfterDays: number;
+}
+
+export interface ContractDefinition {
+  id: string;
+  type: ContractType;
+  kind?: GeneralContractKind;
+  title: string;
+  clientName: string;
+  issuer?: string;
+  urgency?: 'NORMAL' | 'HIGH' | 'URGENT';
+  mercenaryId?: string;
+  source: ContractSource;
+  description: string;
+  requirements: ContractItemRequirement[];
+  objectives?: ContractObjectiveRequirement[];
+  rewards: ContractReward[];
+  deadlineDay: number;
+  daysRemaining?: number;
+  status: ContractStatus;
+  encounterRule?: ContractEncounterRule;
+  chainId?: string;
+  unique?: boolean;
+}
+
+export interface NamedContractRegistryEntry {
+  mercenaryId: string;
+  displayName: string;
+  contractId: string;
+  unlockRule: {
+    tutorialCompleted?: boolean;
+    minDay?: number;
+    minTier?: number;
+    requiredRecipeIds?: string[];
+    requiredSalesCount?: number;
+    requiredItemIds?: string[];
+    requiredDungeonIds?: string[];
+    requireInjuredMercenary?: boolean;
+    requireRecoveryFlowSeen?: boolean;
+  };
+  encounterRule: ContractEncounterRule;
+  requirements: ContractItemRequirement[];
+  rewards: ContractReward[];
+  daysRemaining?: number;
+  encounterDialogue: {
+    text: string;
+    speaker: string;
+  };
+}
+
+export interface NamedEncounterState {
+  mercenaryId: string;
+  unlocked: boolean;
+  daysEligible?: number;
+  declinedUntilDay?: number;
+  firstEligibleDay?: number;
+  guaranteeDay?: number;
+  hasAppeared: boolean;
+  specialContractId?: string;
+  recruitUnlocked: boolean;
+}
+
+export interface CommissionState {
+  activeContracts: ContractDefinition[];
+  expiredContracts: ContractDefinition[];
+  completedContractIds: string[];
+  failedContractIds: string[];
+  namedEncounters: Record<string, NamedEncounterState>;
+  trackedObjectiveProgress: Record<string, Record<string, number>>;
+  lastDailyCommissionRefreshDay: number;
+  lastEncounterCheckDayByLocation?: Partial<Record<ContractSource, number>>;
+  hasSeenRecoveryFlow?: boolean; // New: Track if player has seen the recovery tutorial/flow
+  hasHadInjuredMercenary?: boolean; // New: Track if player has ever had an injured mercenary
+}
+
 export interface ManualDungeonSession {
     dungeonId: string;
     partyIds: string[];
@@ -50,6 +168,7 @@ export interface PlayerStats {
   smithingExp: number; 
   workbenchExp: number; 
   inviteCount: number; // New: Track number of invites today
+  totalSalesCount: number; // New: Track total items sold in shop
   dailyFinancials: DailyFinancials; 
 }
 
@@ -83,6 +202,21 @@ export interface DungeonResult {
 export interface GameToast {
     message: string;
     visible: boolean;
+}
+
+export interface DialogueOption {
+  label: string;
+  action?: (() => void) | { type: string; payload?: any };
+  variant?: 'primary' | 'danger' | 'neutral' | 'secondary';
+  disabled?: boolean;
+  targetTab?: string;
+}
+
+export interface DialogueState {
+  speaker: string;
+  text: string;
+  avatar?: string;
+  options: DialogueOption[];
 }
 
 export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED' | 'MARKET' | 'SMITHING';
@@ -135,41 +269,48 @@ export interface GameState {
   unlockedTierPopup: { type: 'FORGE' | 'WORKBENCH'; tier: number } | null; 
   
   tutorialStep: 
-    | 'PROLOGUE_DIALOG'
-    | 'MARKET_GUIDE' 
+    | 'PROLOGUE_DIALOG_GUIDE'
+    | 'MARKET_POI_GUIDE' 
     | 'BROWSE_GOODS_GUIDE' 
     | 'FURNACE_GUIDE' 
-    | 'OPEN_SHOPPING_CART' 
-    | 'CLOSE_SHOPPING_CART' 
-    | 'PAY_NOW' 
-    | 'GARRICK_AFTER_PURCHASE_DIALOG' 
+    | 'OPEN_SHOPPING_CART_GUIDE' 
+    | 'CLOSE_SHOPPING_CART_GUIDE' 
+    | 'PAY_NOW_GUIDE' 
+    | 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' 
     | 'LEAVE_MARKET_GUIDE' 
-    | 'CRAFT_START_DIALOG' 
-    | 'FORGE_TAB_GUIDE' 
+    | 'REPLACE_FURNACE_GUIDE'
+    | 'IGNITE_FURNACE_GUIDE'
+    | 'HEAT_CONFIRM_DIALOG_GUIDE'
+    | 'PUMP_FURNACE_GUIDE'
+    | 'FURNACE_FINAL_DIALOG_GUIDE'
+    | 'FORGE_POI_GUIDE' 
     | 'OPEN_RECIPE_GUIDE'
     | 'SELECT_SWORD_GUIDE' 
     | 'START_FORGING_GUIDE' 
-    | 'PRE_IGNITE_DIALOG_1' 
-    | 'PRE_IGNITE_DIALOG_2' 
-    | 'PRE_IGNITE_INDICATE'
-    | 'SMITHING_MINIGAME_IGNITE' 
-    | 'PRE_PUMP_DIALOG' 
-    | 'PRE_PUMP_INDICATE' 
-    | 'SMITHING_MINIGAME_PUMP' 
-    | 'POST_PUMP_DIALOG'
-    | 'SMITHING_MINIGAME_HIT'
-    | 'FIRST_HIT_DIALOG' 
-    | 'CRAFT_RESULT_DIALOG' 
+    | 'PRE_IGNITE_DIALOG_1_GUIDE' 
+    | 'PRE_IGNITE_DIALOG_2_GUIDE' 
+    | 'PRE_IGNITE_INDICATE_GUIDE'
+    | 'SMITHING_MINIGAME_IGNITE_GUIDE' 
+    | 'PRE_PUMP_DIALOG_GUIDE' 
+    | 'PRE_PUMP_INDICATE_GUIDE' 
+    | 'SMITHING_MINIGAME_PUMP_GUIDE' 
+    | 'POST_PUMP_DIALOG_GUIDE'
+    | 'SMITHING_MINIGAME_HIT_GUIDE'
+    | 'FIRST_HIT_DIALOG_GUIDE' 
     | 'FINALIZE_FORGE_GUIDE' 
-    | 'SHOP_INTRO_DIALOG' 
     | 'OPEN_SHOP_TAB_GUIDE' 
     | 'OPEN_SHOP_SIGN_GUIDE' 
     | 'SELL_ITEM_GUIDE' 
-    | 'PIP_PRAISE_DIALOG' 
-    | 'DRAGON_TALK_DIALOG' 
-    | 'TUTORIAL_END_DIALOG' 
-    | 'HEAT_CONFIRM_DIALOG'
-    | 'FURNACE_FINAL_DIALOG'
+    | 'CRAFT_FIRST_SWORD_GUIDE'
+    | 'CRAFT_FIRST_SWORD_DIALOG_GUIDE'
+    | 'PIP_RETURN_GUIDE'
+    | 'CRAFT_START_DIALOG_GUIDE'
+    | 'CRAFT_RESULT_DIALOG_GUIDE'
+    | 'SHOP_INTRO_DIALOG_GUIDE'
+    | 'PIP_INITIAL_FAREWELL_DIALOG_GUIDE'
+    | 'PIP_PRAISE_DIALOG_GUIDE'
+    | 'DRAGON_TALK_DIALOG_GUIDE'
+    | 'TUTORIAL_END_DIALOG_GUIDE'
     | null;
     
   activeTutorialScene: TutorialSceneMode | null;
@@ -186,6 +327,10 @@ export interface GameState {
   showManualDungeonOverlay: boolean; 
 
   lastCraftedItem: null | InventoryItem;
+
+  commission: CommissionState;
+
+  activeDialogue: DialogueState | null;
 
   uiEffects: {
     energyHighlight: boolean;

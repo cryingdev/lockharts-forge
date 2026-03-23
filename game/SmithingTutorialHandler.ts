@@ -21,7 +21,7 @@ export class SmithingTutorialHandler {
    * 튜토리얼 첫 타격 시 유저 편의를 위해 링 수축 속도를 조절합니다.
    */
   static getRingSpeedFactor(isTutorial: boolean, tutorialStep: string | null, perfectCount: number): number {
-    if (isTutorial && tutorialStep === 'SMITHING_MINIGAME_HIT' && perfectCount === 0) {
+    if (isTutorial && tutorialStep === 'SMITHING_MINIGAME_HIT_GUIDE' && perfectCount === 0) {
       return 0.6; // 기존 0.3(70% 감속)에서 0.6(40% 감속)으로 상향하여 쾌적함 개선
     }
     return 1.0;
@@ -31,7 +31,7 @@ export class SmithingTutorialHandler {
    * 튜토리얼 중 첫 시도시 강제로 EASY 난이도 설정을 적용할지 결정합니다.
    */
   static getForcedDifficulty(isTutorial: boolean, tutorialStep: string | null, perfectCount: number) {
-    if (isTutorial && tutorialStep === 'SMITHING_MINIGAME_HIT' && perfectCount === 0) {
+    if (isTutorial && tutorialStep === 'SMITHING_MINIGAME_HIT_GUIDE' && perfectCount === 0) {
       return SMITHING_CONFIG.DIFFICULTY.EASY;
     }
     return null;
@@ -55,23 +55,23 @@ export class SmithingTutorialHandler {
     if (!isTutorial || !tutorialStep) return null;
 
     switch (tutorialStep) {
-      case 'PRE_IGNITE_INDICATE':
-      case 'SMITHING_MINIGAME_IGNITE':
+      case 'PRE_IGNITE_INDICATE_GUIDE':
+      case 'SMITHING_MINIGAME_IGNITE_GUIDE':
         return { 
           x: components.heatUpBtn.x, 
           y: components.heatUpBtn.y, 
           w: 100 * components.heatUpBtn.scaleX, 
           h: 100 * components.heatUpBtn.scaleY 
         };
-      case 'PRE_PUMP_INDICATE':
-      case 'SMITHING_MINIGAME_PUMP':
+      case 'PRE_PUMP_INDICATE_GUIDE':
+      case 'SMITHING_MINIGAME_PUMP_GUIDE':
         return { 
           x: components.bellowsBtn.x, 
           y: components.bellowsBtn.y, 
           w: 100 * components.bellowsBtn.scaleX, 
           h: 100 * components.bellowsBtn.scaleY 
         };
-      case 'SMITHING_MINIGAME_HIT':
+      case 'SMITHING_MINIGAME_HIT_GUIDE':
         if (isPlaying) {
           return { 
             x: components.hitX, 

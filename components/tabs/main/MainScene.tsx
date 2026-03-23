@@ -135,7 +135,7 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                 </div>
 
                 {/* 3. Material Store (Market) */}
-                <div className="absolute top-[55%] left-[0%] w-[45%] md:w-[35%] z-[35] flex flex-col items-end -translate-y-1/2 pr-4 md:pr-10">
+                <div className="absolute top-[52%] left-[0%] md:left-[12%] w-[45%] md:w-[32%] z-[35] flex flex-col items-end -translate-y-1/2 pr-4 md:pr-10">
                     <SfxButton 
                         sfx="switch" 
                         onClick={() => state.unlockedTabs.includes('MARKET') ? onNavigate('MARKET') : actions.showToast("Facility locked.")} 
@@ -147,7 +147,7 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                 </div>
 
                 {/* 4. Tavern */}
-                <div className="absolute top-[60%] right-[-15%] md:right-[-12%] w-[55%] md:w-[42%] z-[36] flex flex-col items-center -translate-y-1/2">
+                <div className="absolute top-[60%] right-[-15%] md:right-[-5%] w-[55%] md:w-[42%] z-[36] flex flex-col items-center -translate-y-1/2">
                     <SfxButton sfx="switch" onClick={() => state.unlockedTabs.includes('TAVERN') ? onNavigate('TAVERN') : actions.showToast("Facility locked.")} className="group relative pointer-events-auto w-full flex flex-col items-center">
                         <div className="absolute inset-0 bg-orange-500/5 blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity" />
                         <img src={poiTavernUrl} className="w-full h-auto object-contain drop-shadow-[0_30px_50px_rgba(0,0,0,0.85)] group-hover:brightness-110 transition-all" alt="Tavern" />
@@ -155,7 +155,7 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                 </div>
 
                 {/* 5. Lockhart's Forge (Frontmost Building) */}
-                <div className="absolute top-[75%] left-[-20%] md:left-[-16%] w-[65%] md:w-[50%] z-[40] flex flex-col items-center -translate-y-1/2">
+                <div className="absolute top-[78%] left-[-20%] md:left-[-10%] w-[65%] md:w-[45%] z-[40] flex flex-col items-center -translate-y-1/2">
                     <SfxButton 
                         sfx="switch" 
                         onClick={() => onNavigate('FORGE_BUILDING')} 
@@ -165,7 +165,7 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                         <img src={poiForgeUrl} className="w-full h-auto object-contain drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)] group-hover:brightness-110 transition-all" alt="Forge Exterior" />
                         
                         {/* Shop Visitor Queue Badge */}
-                        {totalShopVisitors > 0 && (
+                        {state.forge.isShopOpen && totalShopVisitors > 0 && (
                             <div className="absolute top-[45%] right-[12%] z-50 pointer-events-none animate-in zoom-in duration-500">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-red-600 blur-md opacity-40 animate-pulse"></div>
@@ -197,12 +197,12 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                 </div>
 
                 {/* Market Label - Absolute bottom of store */}
-                <div className="absolute top-[56%] left-[0%] w-[45%] md:w-[35%] flex flex-col items-end -translate-y-1/2 pr-4 md:pr-10">
+                <div className="absolute top-[53%] left-[0%] md:left-[12%] w-[45%] md:w-[32%] flex flex-col items-end -translate-y-1/2 pr-4 md:pr-10">
                     <SfxButton 
                         sfx="switch" 
                         onClick={() => state.unlockedTabs.includes('MARKET') ? onNavigate('MARKET') : actions.showToast("Facility locked.")} 
                         data-tutorial-id="MARKET_POI"
-                        className="mt-[55%] md:mt-[75%] pointer-events-auto flex flex-row-reverse items-center gap-2 px-3 py-1 bg-stone-900/70 backdrop-blur-xl border border-stone-700/50 hover:border-blue-500/50 rounded-full shadow-xl transition-all scale-[0.7] md:scale-[0.85]"
+                        className="mt-[55%] md:mt-[40%] pointer-events-auto flex flex-row-reverse items-center gap-2 px-3 py-1 bg-stone-900/70 backdrop-blur-xl border border-stone-700/50 hover:border-blue-500/50 rounded-full shadow-xl transition-all scale-[0.7] md:scale-[0.85]"
                     >
                         <div className="w-6 h-6 bg-blue-950/30 border border-blue-900/20 rounded-full flex items-center justify-center shrink-0">
                             <ShoppingBag className="w-3 h-3 text-blue-400/80" />
@@ -215,8 +215,8 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                 </div>
 
                 {/* Tavern Label - Deep base */}
-                <div className="absolute top-[67%] right-[-15%] md:right-[-12%] w-[55%] md:w-[42%] flex flex-col items-center -translate-y-1/2">
-                    <SfxButton sfx="switch" onClick={() => state.unlockedTabs.includes('TAVERN') ? onNavigate('TAVERN') : actions.showToast("Facility locked.")} className="mt-[42%] md:mt-[58%] translate-x-[-15%] pointer-events-auto flex items-center gap-2 px-3 py-1 bg-stone-900/60 backdrop-blur-xl border border-stone-700/50 hover:border-orange-500/50 rounded-full shadow-2xl transition-all scale-[0.7] md:scale-[0.9]">
+                <div className="absolute top-[67%] right-[-15%] md:right-[-5%] w-[55%] md:w-[42%] flex flex-col items-center -translate-y-1/2">
+                    <SfxButton sfx="switch" onClick={() => state.unlockedTabs.includes('TAVERN') ? onNavigate('TAVERN') : actions.showToast("Facility locked.")} className="mt-[42%] md:mt-[42%] translate-x-[-15%] pointer-events-auto flex items-center gap-2 px-3 py-1 bg-stone-900/60 backdrop-blur-xl border border-stone-700/50 hover:border-orange-500/50 rounded-full shadow-2xl transition-all scale-[0.7] md:scale-[0.9]">
                         <div className="w-6 h-6 bg-orange-950/30 border border-orange-900/20 rounded-full flex items-center justify-center shrink-0">
                             <Beer className="w-3 h-3 text-orange-400/80" />
                         </div>
@@ -228,12 +228,12 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                 </div>
 
                 {/* Forge Label - Very base of the entrance */}
-                <div className="absolute top-[78%] left-[-20%] md:left-[-16%] w-[65%] md:w-[50%] flex flex-col items-center -translate-y-1/2">
+                <div className="absolute top-[81%] left-[-20%] md:left-[-10%] w-[65%] md:w-[45%] flex flex-col items-center -translate-y-1/2">
                     <SfxButton 
                         sfx="switch" 
                         onClick={() => onNavigate('FORGE_BUILDING')} 
                         data-tutorial-id="FORGE_POI"
-                        className="mt-[55%] md:mt-[85%] translate-x-[20%] pointer-events-auto flex flex-row-reverse items-center gap-2 px-3 py-1 bg-stone-900/80 backdrop-blur-2xl border border-amber-600/30 hover:border-amber-500/60 rounded-full shadow-2xl transition-all scale-[0.8] md:scale-100"
+                        className="mt-[55%] md:mt-[50%] translate-x-[20%] pointer-events-auto flex flex-row-reverse items-center gap-2 px-3 py-1 bg-stone-900/80 backdrop-blur-2xl border border-amber-600/30 hover:border-amber-500/60 rounded-full shadow-2xl transition-all scale-[0.8] md:scale-100"
                     >
                         <div className="w-6 h-6 bg-amber-950/30 border border-amber-900/20 rounded-full flex items-center justify-center shrink-0">
                             <Store className="w-3 h-3 text-amber-400/80" />

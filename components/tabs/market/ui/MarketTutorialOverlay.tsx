@@ -11,10 +11,10 @@ import { GameState } from '../../../../types/game-state';
 export type SequenceStep = Extract<GameState['tutorialStep'], 
     'BROWSE_GOODS_GUIDE' | 
     'FURNACE_GUIDE' | 
-    'OPEN_SHOPPING_CART' | 
-    'CLOSE_SHOPPING_CART' | 
-    'PAY_NOW' | 
-    'GARRICK_AFTER_PURCHASE_DIALOG' | 
+    'OPEN_SHOPPING_CART_GUIDE' | 
+    'CLOSE_SHOPPING_CART_GUIDE' | 
+    'PAY_NOW_GUIDE' | 
+    'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' | 
     'LEAVE_MARKET_GUIDE'
 >;
 
@@ -27,20 +27,20 @@ interface StepConfig {
 const SCENE_STEPS_CONFIG: Record<SequenceStep, StepConfig> = {
     BROWSE_GOODS_GUIDE: { targetId: 'BROWSE_GOODS_BUTTON', label: 'Browse Goods', direction: 'top' },
     FURNACE_GUIDE: { targetId: 'FURNACE_ITEM', label: 'Select the Furnace', direction: 'bottom' },
-    OPEN_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Open the Cart', direction: 'left' },
-    CLOSE_SHOPPING_CART: { targetId: 'CART_TOGGLE', label: 'Close the Cart', direction: 'right' },
-    PAY_NOW: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottom' },
-    GARRICK_AFTER_PURCHASE_DIALOG: { targetId: 'GARRICK_TALK_BUTTON', label: 'Talk to Garrick', direction: 'top' },
+    OPEN_SHOPPING_CART_GUIDE: { targetId: 'CART_TOGGLE', label: 'Open the Cart', direction: 'left' },
+    CLOSE_SHOPPING_CART_GUIDE: { targetId: 'CART_TOGGLE', label: 'Close the Cart', direction: 'right' },
+    PAY_NOW_GUIDE: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottom' },
+    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { targetId: 'GARRICK_TALK_BUTTON', label: 'Talk to Garrick', direction: 'top' },
     LEAVE_MARKET_GUIDE: { targetId: 'MARKET_BACK_BUTTON', label: 'Exit to Square', direction: 'bottom' },
 };
 
 const SCRIPTS: Record<SequenceStep, { speaker: string; text: string }> = {
     BROWSE_GOODS_GUIDE: { speaker: "Garrick", text: "Welcome back, smith! Open up my catalog and see what catches your eye." },
     FURNACE_GUIDE: { speaker: "Garrick", text: "There it is! Not as grand as your old one, but it'll bring the fire back." },
-    OPEN_SHOPPING_CART: { speaker: "Garrick", text: "Going to settle the bill? Open your cart on the right." },
-    CLOSE_SHOPPING_CART: { speaker: "Garrick", text: "Now close the list so we can talk business." },
-    PAY_NOW: { speaker: "Garrick", text: "Hand over the coin, and the future is yours." },
-    GARRICK_AFTER_PURCHASE_DIALOG: { speaker: "Lockhart", text: "I should say goodbye to Garrick before I leave." },
+    OPEN_SHOPPING_CART_GUIDE: { speaker: "Garrick", text: "Going to settle the bill? Open your cart on the right." },
+    CLOSE_SHOPPING_CART_GUIDE: { speaker: "Garrick", text: "Now close the list so we can talk business." },
+    PAY_NOW_GUIDE: { speaker: "Garrick", text: "Hand over the coin, and the future is yours." },
+    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { speaker: "Lockhart", text: "I should say goodbye to Garrick before I leave." },
     LEAVE_MARKET_GUIDE: { speaker: "Garrick", text: "Safe travels, Lockhart. Don't let those embers go cold again." },
 };
 
@@ -130,7 +130,7 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
     }
 
     // 대화 위주의 안내 단계에서는 배경 암전 효과를 숨깁니다.
-    const isDialogueStep = step === 'BROWSE_GOODS_GUIDE' || step === 'GARRICK_AFTER_PURCHASE_DIALOG' || step === 'LEAVE_MARKET_GUIDE';
+    const isDialogueStep = step === 'BROWSE_GOODS_GUIDE' || step === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' || step === 'LEAVE_MARKET_GUIDE';
 
     return (
         <div className="fixed inset-0 z-[4000] pointer-events-none overflow-hidden">
@@ -184,7 +184,7 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
                         options={
                             step === 'BROWSE_GOODS_GUIDE' 
                                 ? [{ label: "Browse", action: () => actions.setTutorialStep('FURNACE_GUIDE'), variant: 'primary' }] 
-                                : step === 'GARRICK_AFTER_PURCHASE_DIALOG' 
+                                : step === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' 
                                     ? [{ label: "Talk", action: () => actions.setTutorialStep('LEAVE_MARKET_GUIDE'), variant: 'primary' }] 
                                     : []
                         } 

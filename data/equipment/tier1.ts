@@ -186,6 +186,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     isRepairable: false,
     minLevel: 3,
     unlockedByDefault: true,
+    tags: ['CLERIC'],
   },
   {
     id: 'mace_wood_bonebound_t1',
@@ -232,6 +233,7 @@ export const TIER1_ITEMS: EquipmentItem[] = [
     isRepairable: false,
     minLevel: 2,
     unlockedByDefault: true,
+    tags: ['MAGIC'],
   },
   {
     id: 'staff_oak_silkbind_t1',

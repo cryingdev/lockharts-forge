@@ -89,12 +89,12 @@ const CraftingResultModal = () => {
     const label = getQualityLabel(data.quality);
     const qColor = getQualityColor(data.quality);
 
-    const isLockedByTutorial = state.tutorialStep === 'CRAFT_RESULT_DIALOG';
+    const isLockedByTutorial = state.tutorialStep === 'CRAFT_RESULT_DIALOG_GUIDE';
 
     const handleFinalize = () => {
         if (isLockedByTutorial) return;
         if (state.tutorialStep === 'FINALIZE_FORGE_GUIDE') {
-            actions.setTutorialStep('SHOP_INTRO_DIALOG');
+            actions.setTutorialStep('SHOP_INTRO_DIALOG_GUIDE');
         }
         actions.dismissCraftingResult();
     };

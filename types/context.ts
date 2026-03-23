@@ -92,5 +92,15 @@ export interface GameContextType {
     startCombatManual: () => void;
     resolveCombatManual: (win: boolean, flee: boolean, finalParty: any[]) => void;
     proceedToNextFloorManual: () => void;
+    triggerNamedEncounterCheck: (location: string) => void;
+    acceptContract: (contractId: string) => void;
+    declineContract: (payload: { contractId?: string; mercenaryId?: string }) => void;
+    submitContract: (contractId: string) => void;
+    updateContractObjectiveProgress: (contractId: string, objectiveId: string, amount: number) => void;
+    claimObjectiveContract: (contractId: string) => void;
+    failContract: (contractId: string) => void;
+    refreshCommissions: () => void;
+    setDialogue: (dialogue: any | null) => void;
+    dispatch: (action: any) => void;
   };
 }

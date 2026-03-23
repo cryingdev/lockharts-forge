@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Heart, Box, Coins } from 'lucide-react';
+import { Heart, Box, Coins, ScrollText } from 'lucide-react';
 import { EquipmentItem } from '../../../../types';
 import { useAudio } from '../../../../hooks/useAudio';
+import { useGame } from '../../../../context/GameContext';
 
 interface RecipeCardProps {
     item: EquipmentItem;
@@ -21,7 +22,10 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
     item, isSelected, isFav, inventoryCount, onSelect, onToggleFavorite,
     onMouseEnter, onMouseMove, onMouseLeave, imageUrl
 }) => {
+    const { state } = useGame();
     const { playClick } = useAudio();
+
+    const isPipOrder = state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE' && item.id === 'sword_bronze_t1';
 
     return (
         <div 
@@ -33,8 +37,19 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
             onMouseEnter={(e) => onMouseEnter(item, e)} 
             onMouseMove={onMouseMove} 
             onMouseLeave={onMouseLeave}
-            className={`relative flex flex-col items-center rounded-lg border transition-all cursor-pointer group text-left h-[115px] md:h-[135px] overflow-hidden ${isSelected ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-stone-800 border-stone-700 hover:border-stone-500 hover:bg-stone-750'}`}
+            className={`relative flex flex-col items-center rounded-lg border transition-all cursor-pointer group text-left h-[115px] md:h-[135px] overflow-hidden ${
+                isSelected 
+                    ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' 
+                    : isPipOrder 
+                        ? 'bg-emerald-900/20 border-emerald-500/50 animate-pulse' 
+                        : 'bg-stone-800 border-stone-700 hover:border-stone-500 hover:bg-stone-750'
+            }`}
         >
+            {isPipOrder && (
+                <div className="absolute top-0 left-0 w-full bg-emerald-600/80 text-[8px] md:text-[10px] text-white font-black uppercase tracking-tighter py-0.5 px-1 flex items-center justify-center gap-1 z-20 shadow-lg">
+                    <ScrollText className="w-2 h-2 md:w-2.5 md:h-2.5" /> Pip's Order
+                </div>
+            )}
             <div className="w-full flex justify-between items-start p-1.5 md:p-2 z-10">
                  <span className={`text-[8px] md:text-[10px] font-bold tracking-wider font-mono ${isSelected ? 'text-amber-400' : 'text-stone-600'}`}>T{item.tier}</span>
                  <button onClick={(e) => onToggleFavorite(e, item.id)} className="p-1 rounded-full hover:bg-stone-700 transition-colors">

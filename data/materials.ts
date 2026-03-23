@@ -14,6 +14,7 @@ export interface MaterialDefinition {
     icon?: string;
     image?: string;
     skillId?: string;
+    tags?: string[];
 }
 
 /**
@@ -462,7 +463,7 @@ export const materials: Record<string, MaterialDefinition> = {
     },
 
     // --- 6. POTIONS & SUPPLIES ---
-    potion_health_small: { id: 'potion_health_small', name: 'Small HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 50 HP.', baseValue: 120 },
+    potion_health_small: { id: 'potion_health_small', name: 'Small HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 1, description: 'Restores 50 HP.', baseValue: 120, tags: ['HEALING'] },
     potion_health_medium: { id: 'potion_health_medium', name: 'Medium HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 2, description: 'Restores 150 HP.', baseValue: 300 },
     potion_health_large: { id: 'potion_health_large', name: 'Large HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 400 HP.', baseValue: 750 },
     potion_health_huge: { id: 'potion_health_huge', name: 'Huge HP Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Fully restores HP.', baseValue: 1800 },

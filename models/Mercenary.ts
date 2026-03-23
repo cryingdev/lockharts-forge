@@ -4,7 +4,7 @@ import { Equipment, EquipmentSlotType } from './Equipment';
 
 export type Gender = 'Male' | 'Female';
 
-export type MercenaryStatus = 'VISITOR' | 'HIRED' | 'ON_EXPEDITION' | 'INJURED' | 'DEAD';
+export type MercenaryStatus = 'VISITOR' | 'HIRED' | 'ON_EXPEDITION' | 'INJURED' | 'DEAD' | 'ENCOUNTERED' | 'CONTRACT_ACTIVE';
 
 export type MercenaryEquipment = Record<EquipmentSlotType, Equipment | null>;
 
