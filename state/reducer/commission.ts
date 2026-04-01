@@ -5,6 +5,8 @@ import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
 import { NAMED_MERCENARIES } from '../../data/mercenaries';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
 import { BOARD_ISSUER_PROFILES } from '../../data/contracts/boardIssuers';
+import { materials } from '../../data/materials';
+import { DUNGEONS } from '../../data/dungeons';
 import { rng } from '../../utils/random';
 
 export const isNamedMercenaryEligible = (state: GameState, entry: any): boolean => {
@@ -650,10 +652,16 @@ const pickBoardContractKind = (
     return issuer.favoredKinds[0] || 'CRAFT'; // Fallback to first favored or CRAFT
 };
 
-const getUrgencyFromBias = (bias: 'LOW' | 'MEDIUM' | 'HIGH'): 'NORMAL' | 'HIGH' => {
+const getUrgencyFromBias = (bias: 'LOW' | 'MEDIUM' | 'HIGH'): 'NORMAL' | 'HIGH' | 'URGENT' => {
     const roll = rng.next();
-    if (bias === 'HIGH') return roll > 0.4 ? 'HIGH' : 'NORMAL';
-    if (bias === 'MEDIUM') return roll > 0.7 ? 'HIGH' : 'NORMAL';
+    if (bias === 'HIGH') {
+        if (roll > 0.85) return 'URGENT';
+        return roll > 0.4 ? 'HIGH' : 'NORMAL';
+    }
+    if (bias === 'MEDIUM') {
+        if (roll > 0.95) return 'URGENT';
+        return roll > 0.7 ? 'HIGH' : 'NORMAL';
+    }
     return roll > 0.9 ? 'HIGH' : 'NORMAL';
 };
 
@@ -666,17 +674,49 @@ const createCraftBoardContract = (
     const availableRecipes = EQUIPMENT_ITEMS.filter(item => {
         const isUnlocked = item.unlockedByDefault !== false || state.unlockedRecipes.includes(item.id);
         const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1);
+        
+        // Strengthen issuer identity:
+        if (issuer.id === 'TOWN_GUARD') {
+             // Town Guard prefers weapons and shields
+             const isGuardItem = ['SWORD', 'AXE', 'MACE', 'SPEAR', 'SHIELD', 'HEAVY_ARMOR'].includes(item.subCategoryId || '');
+             return isUnlocked && !usedRecipeIds.has(item.id) && withinTier && isGuardItem;
+        }
+        if (issuer.id === 'ASHFIELD_TRADERS') {
+             // Traders prefer tools, accessories, and light armor
+             const isTraderItem = ['TOOL', 'ACCESSORY', 'LIGHT_ARMOR', 'DAGGER'].includes(item.subCategoryId || '');
+             return isUnlocked && !usedRecipeIds.has(item.id) && withinTier && isTraderItem;
+        }
+        if (issuer.id === 'CHAPEL_OF_EMBER') {
+             // Chapel prefers staves, robes, and holy items
+             const isChapelItem = ['STAFF', 'WAND', 'ROBE', 'ACCESSORY'].includes(item.subCategoryId || '');
+             return isUnlocked && !usedRecipeIds.has(item.id) && withinTier && isChapelItem;
+        }
+        
         return isUnlocked && !usedRecipeIds.has(item.id) && withinTier;
     });
 
-    if (availableRecipes.length === 0) return null;
+    if (availableRecipes.length === 0) {
+        // If no thematic recipes are available, fallback to any available recipe
+        const fallbackRecipes = EQUIPMENT_ITEMS.filter(item => {
+            const isUnlocked = item.unlockedByDefault !== false || state.unlockedRecipes.includes(item.id);
+            const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1);
+            return isUnlocked && !usedRecipeIds.has(item.id) && withinTier;
+        });
+        if (fallbackRecipes.length === 0) return null;
+        availableRecipes.push(...fallbackRecipes);
+    }
 
     const recipe = rng.pick(availableRecipes);
     usedRecipeIds.add(recipe.id);
 
-    const payout = Math.max(80, Math.floor(recipe.baseValue * rng.range(1.1, 1.26)));
+    const urgency = getUrgencyFromBias(issuer.urgencyBias);
+    const payout = Math.max(80, Math.floor(recipe.baseValue * rng.range(1.1, 1.3)));
     const minQuality = recipe.tier <= 1 ? 70 : 80;
-    const daysRemaining = rng.rangeInt(2, 3);
+    
+    // High urgency reduces deadline
+    let daysRemaining = rng.rangeInt(2, 4);
+    if (urgency === 'HIGH') daysRemaining = Math.max(1, daysRemaining - 1);
+    if (urgency === 'URGENT') daysRemaining = 1;
 
     return {
         id: `contract_board_${state.stats.day}_${index}_${recipe.id}`,
@@ -688,7 +728,7 @@ const createCraftBoardContract = (
         issuerName: issuer.displayName,
         title: `${issuer.displayName} Request: ${recipe.name}`,
         clientName: issuer.displayName,
-        urgency: getUrgencyFromBias(issuer.urgencyBias),
+        urgency,
         description: `The ${issuer.displayName} requires a high-quality ${recipe.name}. ${issuer.flavorTone}.`,
         requirements: [
             {
@@ -726,9 +766,23 @@ const createTurnInBoardContract = (
     }
 
     const selectedMaterialId = rng.pick(materialOptions);
-    const quantity = rng.rangeInt(3, 8);
+    const material = materials[selectedMaterialId];
     
-    const daysRemaining = rng.rangeInt(2, 4);
+    // Quantity based on tier
+    let quantity = rng.rangeInt(3, 8);
+    if (material) {
+        if (material.tier === 2) quantity = rng.rangeInt(2, 5);
+        if (material.tier && material.tier >= 3) quantity = rng.rangeInt(1, 3);
+    }
+    
+    const urgency = getUrgencyFromBias(issuer.urgencyBias);
+    let daysRemaining = rng.rangeInt(2, 4);
+    if (urgency === 'HIGH') daysRemaining = Math.max(1, daysRemaining - 1);
+    if (urgency === 'URGENT') daysRemaining = 1;
+
+    const baseValue = material?.baseValue || 100;
+    const goldReward = Math.floor(baseValue * quantity * rng.range(1.1, 1.3));
+
     return {
         id: `contract_board_${state.stats.day}_${index}_turnin`,
         type: 'GENERAL',
@@ -739,13 +793,13 @@ const createTurnInBoardContract = (
         issuerName: issuer.displayName,
         title: `${issuer.displayName} Supply Order`,
         clientName: issuer.displayName,
-        urgency: getUrgencyFromBias(issuer.urgencyBias),
+        urgency,
         description: `A request for basic supplies from ${issuer.displayName}. ${issuer.flavorTone}.`,
         requirements: [
             { itemId: selectedMaterialId, quantity }
         ],
         rewards: [
-            { type: 'GOLD', gold: 150 + (quantity * 20) }
+            { type: 'GOLD', gold: goldReward }
         ],
         deadlineDay: state.stats.day + daysRemaining,
         daysRemaining,
@@ -780,7 +834,11 @@ const createHuntBoardContract = (
     const selectedMonster = rng.pick(monsterOptions);
     const count = rng.rangeInt(3, 6);
 
-    const daysRemaining = rng.rangeInt(3, 5);
+    const urgency = getUrgencyFromBias(issuer.urgencyBias);
+    let daysRemaining = rng.rangeInt(3, 5);
+    if (urgency === 'HIGH') daysRemaining = Math.max(1, daysRemaining - 1);
+    if (urgency === 'URGENT') daysRemaining = 1;
+
     return {
         id: `contract_board_${state.stats.day}_${index}_hunt`,
         type: 'GENERAL',
@@ -791,7 +849,7 @@ const createHuntBoardContract = (
         issuerName: issuer.displayName,
         title: `${issuer.displayName} Hunt Order`,
         clientName: issuer.displayName,
-        urgency: getUrgencyFromBias(issuer.urgencyBias),
+        urgency,
         description: `Eliminate threats in the outskirts for ${issuer.displayName}. ${issuer.flavorTone}.`,
         requirements: [],
         objectives: [
@@ -816,7 +874,18 @@ const createExploreBoardContract = (
     issuer: BoardIssuerProfile,
     index: number
 ): ContractDefinition => {
-    const daysRemaining = rng.rangeInt(4, 6);
+    // Pick a dungeon based on tier
+    const availableDungeons = DUNGEONS.filter(d => d.tier <= Math.max(1, state.stats.tierLevel + 1));
+    const dungeon = rng.pick(availableDungeons) || DUNGEONS[0];
+
+    const urgency = getUrgencyFromBias(issuer.urgencyBias);
+    let daysRemaining = rng.rangeInt(4, 6);
+    if (urgency === 'HIGH') daysRemaining = Math.max(2, daysRemaining - 1);
+    if (urgency === 'URGENT') daysRemaining = 1;
+
+    const floorTarget = dungeon.maxFloors || 1;
+    const label = floorTarget > 1 ? `Reach Floor ${floorTarget} in ${dungeon.name}` : `Complete ${dungeon.name}`;
+
     return {
         id: `contract_board_${state.stats.day}_${index}_explore`,
         type: 'GENERAL',
@@ -827,20 +896,20 @@ const createExploreBoardContract = (
         issuerName: issuer.displayName,
         title: `${issuer.displayName} Reconnaissance`,
         clientName: issuer.displayName,
-        urgency: getUrgencyFromBias(issuer.urgencyBias),
-        description: `Explore the depths of the nearby ruins for ${issuer.displayName}. ${issuer.flavorTone}.`,
+        urgency,
+        description: `Explore the depths of the ${dungeon.name} for ${issuer.displayName}. ${issuer.flavorTone}.`,
         requirements: [],
         objectives: [
             {
-                objectiveId: 'explore_dungeon_1',
+                objectiveId: `explore_${dungeon.id}`,
                 targetType: 'FLOOR_REACHED',
-                targetId: 'dungeon_t1_sewers',
-                targetCount: 1,
-                label: 'Complete The Sewer Cellars'
+                targetId: dungeon.id,
+                targetCount: floorTarget,
+                label
             }
         ],
         rewards: [
-            { type: 'GOLD', gold: 300 }
+            { type: 'GOLD', gold: 200 + (dungeon.tier * 100) }
         ],
         deadlineDay: state.stats.day + daysRemaining,
         daysRemaining,
@@ -854,27 +923,36 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
 
     const activeSpecialContracts = state.commission.activeContracts.filter(c => c.type === 'SPECIAL');
     const activeGeneralContracts = state.commission.activeContracts.filter(c => c.type === 'GENERAL');
-    const generalSlotsToFill = Math.max(0, 3 - activeGeneralContracts.length);
 
-    if (generalSlotsToFill === 0) {
-        return {
-            ...state,
-            commission: {
-                ...state.commission,
-                lastDailyCommissionRefreshDay: state.stats.day
-            }
-        };
-    }
+    // Keep non-board general contracts (from Pip, etc.)
+    const activeNonBoardGeneral = activeGeneralContracts.filter(c => c.source !== 'BOARD');
 
-    const generatedContracts: ContractDefinition[] = [];
-    const usedRecipeIds = new Set(activeGeneralContracts.flatMap(c => c.requirements.map(r => r.itemId)));
+    const newBoardContracts: ContractDefinition[] = [];
+    const usedRecipeIds = new Set<string>();
+    const usedIssuerIds = new Set<string>();
+    const usedKinds = new Set<string>();
 
-    for (let i = 0; i < generalSlotsToFill; i++) {
-        const issuer = pickBoardIssuer();
-        const kind = pickBoardContractKind(issuer, state.stats.tierLevel);
+    const boardCount = 4;
+    for (let i = 0; i < boardCount; i++) {
+        // Try to pick a unique issuer if possible
+        let issuer = pickBoardIssuer();
+        let attempts = 0;
+        while (usedIssuerIds.has(issuer.id) && attempts < 5) {
+            issuer = pickBoardIssuer();
+            attempts++;
+        }
+        usedIssuerIds.add(issuer.id);
+
+        // Try to pick a unique kind if possible
+        let kind = pickBoardContractKind(issuer, state.stats.tierLevel);
+        attempts = 0;
+        while (usedKinds.has(kind) && attempts < 5) {
+            kind = pickBoardContractKind(issuer, state.stats.tierLevel);
+            attempts++;
+        }
+        usedKinds.add(kind);
 
         let contract: ContractDefinition | null = null;
-
         switch (kind) {
             case 'CRAFT':
                 contract = createCraftBoardContract(state, issuer, i, usedRecipeIds);
@@ -893,7 +971,16 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
         }
 
         if (contract) {
-            generatedContracts.push(contract);
+            // Assign differentiated rewards based on issuer bias
+            if (issuer.rewardBias === 'REPUTATION') {
+                contract.rewards.push({ type: 'AFFINITY', affinity: 5 });
+            } else if (issuer.rewardBias === 'DUNGEON') {
+                contract.rewards.push({ type: 'GOLD', gold: 50 });
+            } else if (issuer.rewardBias === 'UTILITY') {
+                contract.rewards.push({ type: 'GOLD', gold: 30 });
+            }
+
+            newBoardContracts.push(contract);
         }
     }
 
@@ -901,11 +988,9 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
         ...state,
         commission: {
             ...state.commission,
-            activeContracts: [...activeSpecialContracts, ...activeGeneralContracts, ...generatedContracts],
+            activeContracts: [...activeSpecialContracts, ...activeNonBoardGeneral, ...newBoardContracts],
             lastDailyCommissionRefreshDay: state.stats.day
         },
-        logs: generatedContracts.length > 0
-            ? [`${generatedContracts.length} new commission(s) posted on the board.`, ...state.logs]
-            : state.logs
+        logs: ['The Commission Board has been updated with new requests.', ...state.logs]
     };
 };

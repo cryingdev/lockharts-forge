@@ -11,7 +11,11 @@ import {
     Compass, 
     Hammer, 
     Trash2,
-    Trophy
+    Trophy,
+    Shield,
+    Flame,
+    User,
+    AlertTriangle
 } from 'lucide-react';
 import { ContractDefinition } from '../../../../types/game-state';
 import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
@@ -42,9 +46,19 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
 
     const getUrgencyColor = (urgency?: string) => {
         switch (urgency) {
-            case 'URGENT': return 'text-red-500 bg-red-500/10 border-red-500/20';
+            case 'URGENT': return 'text-red-500 bg-red-500/10 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.2)]';
             case 'HIGH': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
             default: return 'text-stone-500 bg-stone-500/10 border-stone-500/20';
+        }
+    };
+
+    const getIssuerIcon = (issuerId?: string) => {
+        switch (issuerId) {
+            case 'TOWN_GUARD': return <Shield className="w-3 h-3" />;
+            case 'ASHFIELD_TRADERS': return <Coins className="w-3 h-3" />;
+            case 'CHAPEL_OF_EMBER': return <Flame className="w-3 h-3" />;
+            case 'ADVENTURERS_GUILD': return <Trophy className="w-3 h-3" />;
+            default: return <User className="w-3 h-3" />;
         }
     };
 
@@ -61,12 +75,14 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                         <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black border ${getUrgencyColor(contract.urgency)}`}>
+                            {contract.urgency === 'URGENT' && <AlertTriangle className="w-2.5 h-2.5 animate-pulse" />}
                             {getKindIcon(contract.kind)}
                             {contract.kind || 'GENERAL'}
                         </span>
                         {(contract.issuerName || contract.issuerId) && (
-                            <span className="text-[9px] text-stone-500 uppercase font-bold tracking-widest">
-                                Issued by: {contract.issuerName || contract.issuerId}
+                            <span className="flex items-center gap-1 text-[9px] text-stone-500 uppercase font-bold tracking-widest bg-stone-950/40 px-1.5 py-0.5 rounded border border-stone-800/50">
+                                {getIssuerIcon(contract.issuerId)}
+                                {contract.issuerName || contract.issuerId}
                             </span>
                         )}
                     </div>

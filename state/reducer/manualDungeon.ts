@@ -186,7 +186,7 @@ const updateObjectives = (state: GameState, type: 'HUNT' | 'EXPLORE', targetId: 
         if (contract.status === 'ACTIVE' && contract.objectives) {
             contract.objectives.forEach(obj => {
                 const isMatch = (type === 'HUNT' && obj.targetType === 'KILL') || 
-                                (type === 'EXPLORE' && obj.targetType === 'NODE_DISCOVERED');
+                                (type === 'EXPLORE' && (obj.targetType === 'NODE_DISCOVERED' || obj.targetType === 'FLOOR_REACHED'));
                 if (isMatch && (!obj.targetId || obj.targetId === targetId)) {
                     newState = handleUpdateContractObjectiveProgress(newState, { 
                         contractId: contract.id, 
@@ -331,8 +331,11 @@ export const handleProceedToNextFloorManual = (state: GameState): GameState => {
     const nextVisited = Array.from({ length: dungeon.gridHeight }, () => Array(dungeon.gridWidth).fill(false));
     nextVisited[nextStartPos.y][nextStartPos.x] = true;
     
+    // Update EXPLORE objectives for reaching a new floor
+    const stateWithProgress = updateObjectives(state, 'EXPLORE', session.dungeonId, 1);
+
     return {
-        ...state,
+        ...stateWithProgress,
         activeManualDungeon: {
             ...session,
             grid: nextGrid,
@@ -344,7 +347,7 @@ export const handleProceedToNextFloorManual = (state: GameState): GameState => {
             floorBoost: session.floorBoost + 0.05, // 5% boost per floor
             lastActionMessage: `The stairs were long, but we've reached Sector ${nextFloor}. Stay alert.`
         },
-        logs: [`The squad has descended deeper into the abyss. Floor ${nextFloor}. Momentum Boost: +${Math.round((session.floorBoost + 0.05 - 1) * 100)}%`, ...state.logs]
+        logs: [`The squad has descended deeper into the abyss. Floor ${nextFloor}. Momentum Boost: +${Math.round((session.floorBoost + 0.05 - 1) * 100)}%`, ...stateWithProgress.logs]
     };
 };
 
