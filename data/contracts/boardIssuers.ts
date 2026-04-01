@@ -4,7 +4,7 @@ export const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
   {
     id: 'TOWN_GUARD',
     displayName: 'Town Guard',
-    favoredKinds: ['CRAFT', 'HUNT', 'EXPLORE'],
+    favoredKinds: ['CRAFT', 'HUNT'],
     rewardBias: 'REPUTATION',
     urgencyBias: 'HIGH',
     flavorTone: 'Practical, defensive, and urgent',
@@ -20,7 +20,7 @@ export const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
   {
     id: 'CHAPEL_OF_EMBER',
     displayName: 'Chapel of Ember',
-    favoredKinds: ['TURN_IN', 'CRAFT', 'HUNT', 'EXPLORE'],
+    favoredKinds: ['TURN_IN', 'CRAFT', 'HUNT'],
     rewardBias: 'UTILITY',
     urgencyBias: 'MEDIUM',
     flavorTone: 'Protective, solemn, and recovery-focused',
@@ -28,7 +28,7 @@ export const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
   {
     id: 'ADVENTURERS_GUILD',
     displayName: "Adventurers' Guild",
-    favoredKinds: ['HUNT', 'EXPLORE', 'CRAFT', 'TURN_IN'],
+    favoredKinds: ['HUNT', 'CRAFT', 'TURN_IN'],
     rewardBias: 'DUNGEON',
     urgencyBias: 'MEDIUM',
     flavorTone: 'Risk-tolerant, field-oriented, and opportunistic',

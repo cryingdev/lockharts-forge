@@ -62,6 +62,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'potion_health_small', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   plague_rat_king: [
+    { itemId: 'trophy_rat_king', minQuantity: 1, maxQuantity: 1, chance: 1.00 },
     { itemId: 'leather_strips', minQuantity: 2, maxQuantity: 4, chance: 1.00 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.40 },
       // REPLACE molar with crown + scrap mace
@@ -103,6 +104,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'leather_strips', minQuantity: 1, maxQuantity: 2, chance: 0.30 },
   ],
   werewolf: [
+    { itemId: 'trophy_werewolf', minQuantity: 1, maxQuantity: 1, chance: 1.00 },
     { itemId: 'wolf_fang', minQuantity: 1, maxQuantity: 3, chance: 0.40 },
     { itemId: 'hard_leather', minQuantity: 1, maxQuantity: 1, chance: 0.30 },
   ],
@@ -121,6 +123,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'potion_health_medium', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],
   goblin_king: [
+    { itemId: 'trophy_goblin_king', minQuantity: 1, maxQuantity: 1, chance: 1.00 },
     { itemId: 'tin_ore', minQuantity: 2, maxQuantity: 4, chance: 0.85 },
     { itemId: 'copper_ore', minQuantity: 2, maxQuantity: 5, chance: 1.00 },
     { itemId: 'goblin_scrap_buckle', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
@@ -154,6 +157,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'frost_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
   ],
   brood_mother: [
+    { itemId: 'trophy_brood_mother', minQuantity: 1, maxQuantity: 1, chance: 1.00 },
     { itemId: 'spider_silk_bundle', minQuantity: 2, maxQuantity: 4, chance: 0.85 },
     { itemId: 'venom_sac', minQuantity: 1, maxQuantity: 2, chance: 0.35 },
     { itemId: 'brood_chitin_plate', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
@@ -170,6 +174,7 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'stardust_powder', minQuantity: 1, maxQuantity: 1, chance: 0.15 },
   ],
   kobold_foreman: [
+    { itemId: 'trophy_kobold_foreman', minQuantity: 1, maxQuantity: 1, chance: 1.00 },
     { itemId: 'iron_ore', minQuantity: 2, maxQuantity: 5, chance: 1.00 },
     { itemId: 'coal', minQuantity: 2, maxQuantity: 4, chance: 0.75 },
     { itemId: 'foreman_badge', minQuantity: 1, maxQuantity: 1, chance: 0.22 },

@@ -164,6 +164,12 @@ export const createInitialGameState = (): GameState => {
             hasSeenRecoveryFlow: false,
             hasHadInjuredMercenary: false,
             trackedObjectiveProgress: {},
+            issuerAffinity: {
+                TOWN_GUARD: 0,
+                ASHFIELD_TRADERS: 0,
+                CHAPEL_OF_EMBER: 0,
+                ADVENTURERS_GUILD: 0,
+            },
         },
         activeDialogue: null,
 

@@ -26,7 +26,7 @@ export const selectAcceptedContracts = (state: GameState): ContractDefinition[] 
 export const isContractReady = (state: GameState, contract: ContractDefinition): boolean => {
     if (contract.status !== 'ACTIVE') return false;
 
-    // 1. Check Progress-based (HUNT, EXPLORE)
+    // 1. Check Progress-based (HUNT, BOSS)
     if (contract.objectives && contract.objectives.length > 0) {
         return contract.objectives.every(obj => {
             const progress = state.commission.trackedObjectiveProgress[contract.id]?.[obj.objectiveId] || 0;

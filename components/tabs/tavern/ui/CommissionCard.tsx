@@ -37,7 +37,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
     const getKindIcon = (kind?: string) => {
         switch (kind) {
             case 'HUNT': return <Sword className="w-3 h-3" />;
-            case 'EXPLORE': return <Compass className="w-3 h-3" />;
+            case 'BOSS': return <Trophy className="w-3 h-3 text-amber-500" />;
             case 'CRAFT': return <Hammer className="w-3 h-3" />;
             case 'TURN_IN': return <Package className="w-3 h-3" />;
             default: return <Package className="w-3 h-3" />;
@@ -101,7 +101,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <h4 className="text-[10px] text-stone-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1">
-                        {contract.kind === 'HUNT' || contract.kind === 'EXPLORE' ? 'Objectives' : 'Requirements'}
+                        {contract.kind === 'HUNT' || contract.kind === 'BOSS' ? 'Objectives' : 'Requirements'}
                     </h4>
                     <div className="space-y-1.5">
                         {/* Requirements (CRAFT/TURN_IN) */}
@@ -131,7 +131,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             );
                         })}
 
-                        {/* Objectives (HUNT/EXPLORE) */}
+                        {/* Objectives (HUNT/BOSS) */}
                         {contract.objectives?.map((obj) => {
                             const current = progressSummary[obj.objectiveId] || 0;
                             const isMet = current >= obj.targetCount;

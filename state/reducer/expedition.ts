@@ -91,13 +91,12 @@ export const handleAbortExpedition = (state: GameState, payload: { expeditionId:
 
 import { handleUpdateContractObjectiveProgress } from './commission';
 
-const updateObjectives = (state: GameState, type: 'HUNT' | 'EXPLORE', targetId: string, amount: number): GameState => {
+const updateObjectives = (state: GameState, type: 'HUNT', targetId: string, amount: number): GameState => {
     let newState = state;
     state.commission.activeContracts.forEach(contract => {
         if (contract.status === 'ACTIVE' && contract.objectives) {
             contract.objectives.forEach(obj => {
-                const isMatch = (type === 'HUNT' && obj.targetType === 'KILL') || 
-                                (type === 'EXPLORE' && (obj.targetType === 'NODE_DISCOVERED' || obj.targetType === 'FLOOR_REACHED'));
+                const isMatch = (type === 'HUNT' && obj.targetType === 'KILL');
                 if (isMatch && (!obj.targetId || obj.targetId === targetId)) {
                     newState = handleUpdateContractObjectiveProgress(newState, { 
                         contractId: contract.id, 
@@ -151,10 +150,6 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     // 1. Roll for monster drops (Auto-expedition represents clearing many encounters)
     // Only roll for auto expeditions, as manual assault already collected drops during combat
     let stateWithProgress = state;
-    if (isFullClear) {
-        const floorProgress = isManualAssault ? 1 : (dungeon.maxFloors || 1);
-        stateWithProgress = updateObjectives(stateWithProgress, 'EXPLORE', dungeon.id, floorProgress);
-    }
 
     if (!isManualAssault) {
         const encounterCount = Math.floor(rng.standard(5, 10, 0)); // Simulate 5-10 encounters

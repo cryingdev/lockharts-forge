@@ -579,12 +579,28 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
     let newGold = state.stats.gold;
     let newKnownMercenaries = [...state.knownMercenaries];
     let newNamedEncounters = { ...state.commission.namedEncounters };
+    let newIssuerAffinity = { ...state.commission.issuerAffinity };
 
     contract.rewards.forEach(reward => {
         if (reward.type === 'GOLD' && reward.gold) {
             newGold += reward.gold;
         }
-        // Add other reward types if needed
+        if (reward.type === 'AFFINITY' && reward.affinity && contract.issuerId) {
+            const currentAffinity = newIssuerAffinity[contract.issuerId] || 0;
+            newIssuerAffinity[contract.issuerId] = currentAffinity + reward.affinity;
+        }
+        if (reward.type === 'UNLOCK_RECRUIT' && reward.mercenaryId) {
+            newNamedEncounters[reward.mercenaryId] = {
+                ...(newNamedEncounters[reward.mercenaryId] || {
+                    mercenaryId: reward.mercenaryId,
+                    unlocked: true,
+                    hasAppeared: true,
+                    daysEligible: 0,
+                    declinedUntilDay: 0,
+                }),
+                recruitUnlocked: true
+            };
+        }
     });
 
     const newActiveContracts = state.commission.activeContracts.filter(c => c.id !== contractId);
@@ -606,7 +622,8 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
             activeContracts: newActiveContracts,
             completedContractIds: newCompletedContractIds,
             namedEncounters: newNamedEncounters,
-            trackedObjectiveProgress: newTrackedProgress
+            trackedObjectiveProgress: newTrackedProgress,
+            issuerAffinity: newIssuerAffinity
         },
         logs: [...state.logs, `Contract claimed: ${contract.title}!`]
     };
@@ -628,10 +645,10 @@ const pickBoardContractKind = (
     const isEarlyGame = tierLevel <= 1;
     
     const kindWeights: Record<GeneralContractKind, number> = {
-        CRAFT: isEarlyGame ? 40 : 25,
-        TURN_IN: isEarlyGame ? 40 : 25,
-        HUNT: isEarlyGame ? 10 : 25,
-        EXPLORE: isEarlyGame ? 10 : 25,
+        CRAFT: isEarlyGame ? 45 : 30,
+        TURN_IN: isEarlyGame ? 45 : 30,
+        HUNT: isEarlyGame ? 10 : 30,
+        BOSS: isEarlyGame ? 0 : 10, // BOSS contracts are rare and late game
     };
 
     // 2. Filter to only favoredKinds to strengthen issuer identity
@@ -869,51 +886,55 @@ const createHuntBoardContract = (
     };
 };
 
-const createExploreBoardContract = (
+const BOSS_TROPHY_MAP: Record<string, { itemId: string; name: string; tier: number }> = {
+    'plague_rat_king': { itemId: 'trophy_rat_king', name: "Rat King's Tail", tier: 1 },
+    'goblin_king': { itemId: 'trophy_goblin_king', name: "Goblin King's Scepter", tier: 2 },
+    'brood_mother': { itemId: 'trophy_brood_mother', name: "Brood Mother's Eye", tier: 2 },
+    'werewolf': { itemId: 'trophy_werewolf', name: "Werewolf's Alpha Pelt", tier: 2 },
+    'kobold_foreman': { itemId: 'trophy_kobold_foreman', name: "Foreman's Golden Pickaxe", tier: 2 },
+};
+
+const createBossTurnInContract = (
     state: GameState,
     issuer: BoardIssuerProfile,
     index: number
 ): ContractDefinition => {
-    // Pick a dungeon based on tier
-    const availableDungeons = DUNGEONS.filter(d => d.tier <= Math.max(1, state.stats.tierLevel + 1));
-    const dungeon = rng.pick(availableDungeons) || DUNGEONS[0];
+    // Pick a boss trophy based on tier
+    const bossIds = Object.keys(BOSS_TROPHY_MAP);
+    const availableBosses = bossIds.filter(id => BOSS_TROPHY_MAP[id].tier <= Math.max(1, state.stats.tierLevel + 1));
+    const selectedBossId = rng.pick(availableBosses) || 'plague_rat_king';
+    const trophy = BOSS_TROPHY_MAP[selectedBossId];
 
-    const urgency = getUrgencyFromBias(issuer.urgencyBias);
-    let daysRemaining = rng.rangeInt(4, 6);
-    if (urgency === 'HIGH') daysRemaining = Math.max(2, daysRemaining - 1);
-    if (urgency === 'URGENT') daysRemaining = 1;
+    const urgency = 'URGENT'; // Boss trophies are always urgent
+    const daysRemaining = 2; // Short deadline for high reward
 
-    // Tier-based scouting target
-    const floorTarget = dungeon.tier === 1 ? Math.min(2, dungeon.maxFloors) :
-                        dungeon.tier === 2 ? Math.min(3, dungeon.maxFloors) :
-                        dungeon.maxFloors;
-
-    const label = floorTarget > 1 ? `Reach Floor ${floorTarget} in ${dungeon.name}` : `Complete ${dungeon.name}`;
+    const goldReward = 800 + (trophy.tier * 500);
 
     return {
-        id: `contract_board_${state.stats.day}_${index}_explore`,
+        id: `contract_board_${state.stats.day}_${index}_boss`,
         type: 'GENERAL',
-        kind: 'EXPLORE',
+        kind: 'TURN_IN',
         status: 'OFFERED',
         source: 'BOARD',
         issuerId: issuer.id,
         issuerName: issuer.displayName,
-        title: `${issuer.displayName} Reconnaissance`,
+        title: `URGENT: ${trophy.name} Required`,
         clientName: issuer.displayName,
         urgency,
-        description: `Explore the depths of the ${dungeon.name} for ${issuer.displayName}. ${issuer.flavorTone}.`,
+        description: `We require proof of the ${selectedBossId.replace(/_/g, ' ')}'s defeat. Bring us the ${trophy.name}. ${issuer.flavorTone}.`,
         requirements: [],
         objectives: [
             {
-                objectiveId: `explore_${dungeon.id}`,
-                targetType: 'FLOOR_REACHED',
-                targetId: dungeon.id,
-                targetCount: floorTarget,
-                label
+                objectiveId: `turn_in_${trophy.itemId}`,
+                targetType: 'TURN_IN',
+                targetId: trophy.itemId,
+                targetCount: 1,
+                label: `Turn in ${trophy.name}`
             }
         ],
         rewards: [
-            { type: 'GOLD', gold: 200 + (dungeon.tier * 100) }
+            { type: 'GOLD', gold: goldReward },
+            { type: 'AFFINITY', affinity: 15 } // Higher affinity for boss trophies
         ],
         deadlineDay: state.stats.day + daysRemaining,
         daysRemaining,
@@ -949,6 +970,13 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
 
         // Try to pick a unique kind if possible
         let kind = pickBoardContractKind(issuer, state.stats.tierLevel);
+        
+        // 10% chance to force a BOSS contract if it's not already used
+        const isBossAttempt = rng.chance(0.1);
+        if (isBossAttempt && !usedKinds.has('BOSS')) {
+            kind = 'BOSS' as any;
+        }
+
         attempts = 0;
         while (usedKinds.has(kind) && attempts < 5) {
             kind = pickBoardContractKind(issuer, state.stats.tierLevel);
@@ -957,7 +985,7 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
         usedKinds.add(kind);
 
         let contract: ContractDefinition | null = null;
-        switch (kind) {
+        switch (kind as string) {
             case 'CRAFT':
                 contract = createCraftBoardContract(state, issuer, i, usedRecipeIds);
                 break;
@@ -967,8 +995,8 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
             case 'HUNT':
                 contract = createHuntBoardContract(state, issuer, i);
                 break;
-            case 'EXPLORE':
-                contract = createExploreBoardContract(state, issuer, i);
+            case 'BOSS':
+                contract = createBossTurnInContract(state, issuer, i);
                 break;
             default:
                 contract = createCraftBoardContract(state, issuer, i, usedRecipeIds);

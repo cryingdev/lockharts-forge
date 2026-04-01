@@ -77,7 +77,7 @@ The recommended addition is a contract-focused slice in `/types/game-state.ts`.
 
 ```ts
 export type ContractType = 'GENERAL' | 'SPECIAL';
-export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
+export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'BOSS';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
 export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
 export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
@@ -149,7 +149,7 @@ Recommended interpretation:
         -   `CRAFT`: submit crafted equipment
         -   `TURN_IN`: submit stackable loot or gathered materials
         -   `HUNT`: progress from kill tracking or combat results
-        -   `EXPLORE`: progress from dungeon exploration milestones
+        -   `BOSS`: high-reward `TURN_IN` variant for boss trophies
 -   `requirements`
     -   Inventory-backed submission requirements
 -   `objectives`
@@ -161,7 +161,7 @@ Recommended interpretation:
 | `CRAFT` | Yes | Optional | Submit crafted item(s) | `SHOP`, `TAVERN`, `SYSTEM` |
 | `TURN_IN` | Yes | No | Submit material stack(s) | `SHOP`, `MARKET`, `SYSTEM` |
 | `HUNT` | Optional | Yes | Auto-progress from combat results, then claim | `TAVERN`, `SYSTEM` |
-| `EXPLORE` | Optional | Yes | Auto-progress from exploration state, then claim | `TAVERN`, `SYSTEM` |
+| `BOSS` | Yes | No | Submit boss trophy item | `BOARD`, `GUILD` |
 
 For named mercenary contracts, the design source should be stored in a registry-style structure that AI agents and reducers can read without inferring narrative text:
 
@@ -352,7 +352,7 @@ The reducer API should keep encounter logic and contract progress explicit.
 -   `state/reducer/combat.ts`
     -   Increments `HUNT` contract objectives when matching enemies are defeated.
 -   `state/reducer/dungeon.ts`
-    -   Increments `EXPLORE` contract objectives for floor reach, node discovery, rescues, and recovery events.
+    -   Handles boss encounter triggers and special narrative events.
 -   `state/reducer/inventory.ts`
     -   Validates submission requirements.
     -   Removes delivered items only on successful submission.
@@ -366,8 +366,8 @@ The reducer API should keep encounter logic and contract progress explicit.
 4.  Entering Shop, Tavern, or Market dispatches `TRIGGER_NAMED_ENCOUNTER_CHECK`.
 5.  If the roll succeeds or the guarantee day is reached, `OFFER_SPECIAL_CONTRACT` fires.
 6.  Once accepted, the contract is stored in `commission.activeContracts`.
-7.  `CRAFT` and `TURN_IN` contracts complete through inventory submission and requirement validation.
-8.  `HUNT` and `EXPLORE` contracts update progress passively through combat and dungeon reducers.
+7.  `CRAFT`, `TURN_IN`, and `BOSS` contracts complete through inventory submission and requirement validation.
+8.  `HUNT` contracts update progress passively through combat results.
 9.  Once objective progress reaches all targets, the contract becomes claimable.
 10. `COMPLETE_CONTRACT` applies rewards.
 11. If the reward includes `UNLOCK_RECRUIT`, the mercenary becomes recruitable through normal hire flow.
@@ -427,8 +427,8 @@ Status derivation notes:
     -   `READY` requires matching material counts in inventory
 -   `HUNT`
     -   `READY` requires objective progress target met
--   `EXPLORE`
-    -   `READY` requires objective progress target met and any event flags satisfied
+-   `BOSS`
+    -   `READY` requires boss trophy presence in inventory
 
 Detail panel expectations:
 

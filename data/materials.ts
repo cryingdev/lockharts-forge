@@ -483,6 +483,28 @@ export const materials: Record<string, MaterialDefinition> = {
     potion_energy_large: { id: 'potion_energy_large', name: 'Large Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 3, description: 'Restores 75 HP and 75 MP for a mercenary.', baseValue: 600 },
     potion_energy_huge: { id: 'potion_energy_huge', name: 'Huge Energy Potion', type: 'CONSUMABLE', category: 'POTION', tier: 4, description: 'Restores 100 HP and 100 MP for a mercenary.', baseValue: 1500 },
 
+    // ===== BOSS TROPHIES =====
+    trophy_rat_king: {
+        id: 'trophy_rat_king', name: "Rat King's Tail", type: 'RESOURCE', category: 'KEY_ITEM', tier: 1,
+        description: 'A thick, matted tail from the Plague Rat King. Proof of a filthy victory.', baseValue: 1200, icon: '🐀'
+    },
+    trophy_goblin_king: {
+        id: 'trophy_goblin_king', name: "Goblin King's Scepter", type: 'RESOURCE', category: 'KEY_ITEM', tier: 2,
+        description: 'A gilded scepter stolen by the Goblin King. It radiates a crude authority.', baseValue: 2500, icon: '👑'
+    },
+    trophy_brood_mother: {
+        id: 'trophy_brood_mother', name: "Brood Mother's Eye", type: 'RESOURCE', category: 'KEY_ITEM', tier: 2,
+        description: 'A massive, multifaceted eye that still seems to watch you.', baseValue: 2800, icon: '👁️'
+    },
+    trophy_werewolf: {
+        id: 'trophy_werewolf', name: "Werewolf's Alpha Pelt", type: 'RESOURCE', category: 'KEY_ITEM', tier: 2,
+        description: 'A thick, silver-streaked pelt from a legendary werewolf.', baseValue: 3000, icon: '🐺'
+    },
+    trophy_kobold_foreman: {
+        id: 'trophy_kobold_foreman', name: "Foreman's Golden Pickaxe", type: 'RESOURCE', category: 'KEY_ITEM', tier: 2,
+        description: 'A heavy, gold-plated pickaxe used by the Kobold Foreman.', baseValue: 2200, icon: '⛏️'
+    },
+
     // Facilities & Key Items
     furnace: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for smelting metal ores.', baseValue: 0 },
     workbench: { id: 'workbench', name: 'Workbench', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for leatherworking and woodworking.', baseValue: 300 },
