@@ -14,6 +14,22 @@ export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
 export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
 export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
 
+export type BoardIssuerId =
+  | 'TOWN_GUARD'
+  | 'ASHFIELD_TRADERS'
+  | 'CHAPEL_OF_EMBER'
+  | 'ADVENTURERS_GUILD';
+
+export interface BoardIssuerProfile {
+  id: BoardIssuerId;
+  displayName: string;
+  favoredKinds: GeneralContractKind[];
+  rewardBias: 'GOLD' | 'REPUTATION' | 'UTILITY' | 'DUNGEON';
+  urgencyBias: 'LOW' | 'MEDIUM' | 'HIGH';
+  flavorTone: string;
+  source: 'BOARD';
+}
+
 export interface ContractItemRequirement {
   itemId: string;
   quantity: number;
@@ -60,6 +76,8 @@ export interface ContractDefinition {
   title: string;
   clientName: string;
   issuer?: string;
+  issuerId?: BoardIssuerId;
+  issuerName?: string;
   urgency?: 'NORMAL' | 'HIGH' | 'URGENT';
   mercenaryId?: string;
   source: ContractSource;
