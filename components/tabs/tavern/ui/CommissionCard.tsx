@@ -64,9 +64,9 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             {getKindIcon(contract.kind)}
                             {contract.kind || 'GENERAL'}
                         </span>
-                        {contract.issuer && (
+                        {(contract.issuerName || contract.issuerId) && (
                             <span className="text-[9px] text-stone-500 uppercase font-bold tracking-widest">
-                                Issued by: {contract.issuer}
+                                Issued by: {contract.issuerName || contract.issuerId}
                             </span>
                         )}
                     </div>

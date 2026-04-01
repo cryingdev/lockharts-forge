@@ -656,7 +656,7 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
             source: 'SYSTEM',
             title: `Order: ${recipe.name}`,
             clientName: 'Town Commission Board',
-            issuer: 'Guild Master',
+            issuerName: 'Guild Master',
             urgency: rng.next() > 0.8 ? 'HIGH' : 'NORMAL',
             description: `A standing order for ${recipe.name}. Deliver a reliable piece for local buyers.`,
             requirements: [

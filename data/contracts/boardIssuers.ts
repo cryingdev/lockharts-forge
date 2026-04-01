@@ -8,7 +8,6 @@ export const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
     rewardBias: 'REPUTATION',
     urgencyBias: 'HIGH',
     flavorTone: 'Practical, defensive, and urgent',
-    source: 'BOARD',
   },
   {
     id: 'ASHFIELD_TRADERS',
@@ -17,7 +16,6 @@ export const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
     rewardBias: 'GOLD',
     urgencyBias: 'MEDIUM',
     flavorTone: 'Commercial, deadline-aware, and transactional',
-    source: 'BOARD',
   },
   {
     id: 'CHAPEL_OF_EMBER',
@@ -26,7 +24,6 @@ export const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
     rewardBias: 'UTILITY',
     urgencyBias: 'MEDIUM',
     flavorTone: 'Protective, solemn, and recovery-focused',
-    source: 'BOARD',
   },
   {
     id: 'ADVENTURERS_GUILD',
@@ -35,6 +32,5 @@ export const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
     rewardBias: 'DUNGEON',
     urgencyBias: 'MEDIUM',
     flavorTone: 'Risk-tolerant, field-oriented, and opportunistic',
-    source: 'BOARD',
   },
 ];

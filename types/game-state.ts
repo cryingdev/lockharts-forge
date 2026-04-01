@@ -10,7 +10,7 @@ export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 
 export type ContractType = 'GENERAL' | 'SPECIAL';
 export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
-export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
+export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM' | 'BOARD';
 export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
 export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
 
@@ -20,14 +20,16 @@ export type BoardIssuerId =
   | 'CHAPEL_OF_EMBER'
   | 'ADVENTURERS_GUILD';
 
+export type BoardRewardBias = 'GOLD' | 'REPUTATION' | 'UTILITY' | 'DUNGEON';
+export type BoardUrgencyBias = 'LOW' | 'MEDIUM' | 'HIGH';
+
 export interface BoardIssuerProfile {
   id: BoardIssuerId;
   displayName: string;
   favoredKinds: GeneralContractKind[];
-  rewardBias: 'GOLD' | 'REPUTATION' | 'UTILITY' | 'DUNGEON';
-  urgencyBias: 'LOW' | 'MEDIUM' | 'HIGH';
+  rewardBias: BoardRewardBias;
+  urgencyBias: BoardUrgencyBias;
   flavorTone: string;
-  source: 'BOARD';
 }
 
 export interface ContractItemRequirement {
@@ -75,7 +77,6 @@ export interface ContractDefinition {
   kind?: GeneralContractKind;
   title: string;
   clientName: string;
-  issuer?: string;
   issuerId?: BoardIssuerId;
   issuerName?: string;
   urgency?: 'NORMAL' | 'HIGH' | 'URGENT';
