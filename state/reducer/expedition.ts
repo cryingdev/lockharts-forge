@@ -152,7 +152,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     // Only roll for auto expeditions, as manual assault already collected drops during combat
     let stateWithProgress = state;
     if (isFullClear) {
-        stateWithProgress = updateObjectives(stateWithProgress, 'EXPLORE', dungeon.id, 1);
+        const floorProgress = isManualAssault ? 1 : (dungeon.maxFloors || 1);
+        stateWithProgress = updateObjectives(stateWithProgress, 'EXPLORE', dungeon.id, floorProgress);
     }
 
     if (!isManualAssault) {

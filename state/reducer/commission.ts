@@ -883,7 +883,11 @@ const createExploreBoardContract = (
     if (urgency === 'HIGH') daysRemaining = Math.max(2, daysRemaining - 1);
     if (urgency === 'URGENT') daysRemaining = 1;
 
-    const floorTarget = dungeon.maxFloors || 1;
+    // Tier-based scouting target
+    const floorTarget = dungeon.tier === 1 ? Math.min(2, dungeon.maxFloors) :
+                        dungeon.tier === 2 ? Math.min(3, dungeon.maxFloors) :
+                        dungeon.maxFloors;
+
     const label = floorTarget > 1 ? `Reach Floor ${floorTarget} in ${dungeon.name}` : `Complete ${dungeon.name}`;
 
     return {
