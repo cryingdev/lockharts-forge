@@ -632,21 +632,29 @@ const pickBoardContractKind = (
         EXPLORE: isEarlyGame ? 10 : 25,
     };
 
-    // 2. Apply issuer bias (favoredKinds get a boost)
+    // 2. Filter to only favoredKinds to strengthen issuer identity
+    const favoredWeights: Partial<Record<GeneralContractKind, number>> = {};
     issuer.favoredKinds.forEach(kind => {
-        kindWeights[kind] *= 2;
+        favoredWeights[kind] = kindWeights[kind];
     });
 
-    // 3. Weighted random selection
-    const totalWeight = Object.values(kindWeights).reduce((a, b) => a + b, 0);
+    // 3. Weighted random selection from favored kinds
+    const totalWeight = Object.values(favoredWeights).reduce((a, b) => a + b, 0);
     let roll = rng.next() * totalWeight;
     
-    for (const [kind, weight] of Object.entries(kindWeights)) {
+    for (const [kind, weight] of Object.entries(favoredWeights)) {
         roll -= weight;
         if (roll <= 0) return kind as GeneralContractKind;
     }
 
-    return 'CRAFT'; // Fallback
+    return issuer.favoredKinds[0] || 'CRAFT'; // Fallback to first favored or CRAFT
+};
+
+const getUrgencyFromBias = (bias: 'LOW' | 'MEDIUM' | 'HIGH'): 'NORMAL' | 'HIGH' => {
+    const roll = rng.next();
+    if (bias === 'HIGH') return roll > 0.4 ? 'HIGH' : 'NORMAL';
+    if (bias === 'MEDIUM') return roll > 0.7 ? 'HIGH' : 'NORMAL';
+    return roll > 0.9 ? 'HIGH' : 'NORMAL';
 };
 
 const createCraftBoardContract = (
@@ -678,9 +686,9 @@ const createCraftBoardContract = (
         source: 'BOARD',
         issuerId: issuer.id,
         issuerName: issuer.displayName,
-        title: `${issuer.displayName}: ${recipe.name}`,
+        title: `${issuer.displayName} Request: ${recipe.name}`,
         clientName: issuer.displayName,
-        urgency: rng.next() > 0.8 ? 'HIGH' : 'NORMAL',
+        urgency: getUrgencyFromBias(issuer.urgencyBias),
         description: `The ${issuer.displayName} requires a high-quality ${recipe.name}. ${issuer.flavorTone}.`,
         requirements: [
             {
@@ -703,7 +711,23 @@ const createTurnInBoardContract = (
     issuer: BoardIssuerProfile,
     index: number
 ): ContractDefinition => {
-    // Simple placeholder for TURN_IN
+    let materialOptions: string[] = ['copper_ore', 'tin_ore'];
+    
+    // Thematic selection based on issuer
+    if (issuer.id === 'TOWN_GUARD') {
+        materialOptions = ['vermin_fang', 'slime_gel', 'hide_patch'];
+    } else if (issuer.id === 'ASHFIELD_TRADERS') {
+        materialOptions = ['copper_ore', 'tin_ore', 'leather_strips', 'oak_log'];
+    } else if (issuer.id === 'CHAPEL_OF_EMBER') {
+        materialOptions = ['cave_moss_pad', 'slime_gel', 'charcoal'];
+        if (state.stats.tierLevel >= 2) materialOptions.push('fire_essence');
+    } else if (issuer.id === 'ADVENTURERS_GUILD') {
+        materialOptions = ['bat_sonar_gland', 'mold_spore_sac', 'ember_beetle_gland'];
+    }
+
+    const selectedMaterialId = rng.pick(materialOptions);
+    const quantity = rng.rangeInt(3, 8);
+    
     const daysRemaining = rng.rangeInt(2, 4);
     return {
         id: `contract_board_${state.stats.day}_${index}_turnin`,
@@ -713,15 +737,15 @@ const createTurnInBoardContract = (
         source: 'BOARD',
         issuerId: issuer.id,
         issuerName: issuer.displayName,
-        title: `${issuer.displayName} Supply Request`,
+        title: `${issuer.displayName} Supply Order`,
         clientName: issuer.displayName,
-        urgency: 'NORMAL',
-        description: `A request for basic supplies from ${issuer.displayName}.`,
+        urgency: getUrgencyFromBias(issuer.urgencyBias),
+        description: `A request for basic supplies from ${issuer.displayName}. ${issuer.flavorTone}.`,
         requirements: [
-            { itemId: 'scrap_metal', quantity: 5 } // Placeholder
+            { itemId: selectedMaterialId, quantity }
         ],
         rewards: [
-            { type: 'GOLD', gold: 150 }
+            { type: 'GOLD', gold: 150 + (quantity * 20) }
         ],
         deadlineDay: state.stats.day + daysRemaining,
         daysRemaining,
@@ -733,6 +757,29 @@ const createHuntBoardContract = (
     issuer: BoardIssuerProfile,
     index: number
 ): ContractDefinition => {
+    let monsterOptions = [
+        { id: 'giant_rat', name: 'Giant Rats' },
+        { id: 'sewer_slime', name: 'Sewer Slimes' }
+    ];
+
+    // Thematic selection based on issuer
+    if (issuer.id === 'TOWN_GUARD') {
+        monsterOptions = [
+            { id: 'giant_rat', name: 'Giant Rats' },
+            { id: 'sewer_slime', name: 'Sewer Slimes' },
+            { id: 'cave_bat', name: 'Cave Bats' }
+        ];
+    } else if (issuer.id === 'ADVENTURERS_GUILD') {
+        monsterOptions = [
+            { id: 'cave_bat', name: 'Cave Bats' },
+            { id: 'mold_sporeling', name: 'Mold Sporelings' },
+            { id: 'ember_beetle', name: 'Ember Beetles' }
+        ];
+    }
+    
+    const selectedMonster = rng.pick(monsterOptions);
+    const count = rng.rangeInt(3, 6);
+
     const daysRemaining = rng.rangeInt(3, 5);
     return {
         id: `contract_board_${state.stats.day}_${index}_hunt`,
@@ -744,20 +791,20 @@ const createHuntBoardContract = (
         issuerName: issuer.displayName,
         title: `${issuer.displayName} Hunt Order`,
         clientName: issuer.displayName,
-        urgency: 'NORMAL',
-        description: `Eliminate threats in the outskirts for ${issuer.displayName}.`,
+        urgency: getUrgencyFromBias(issuer.urgencyBias),
+        description: `Eliminate threats in the outskirts for ${issuer.displayName}. ${issuer.flavorTone}.`,
         requirements: [],
         objectives: [
             {
-                objectiveId: 'hunt_slimes',
+                objectiveId: `hunt_${selectedMonster.id}`,
                 targetType: 'KILL',
-                targetId: 'slime_green',
-                targetCount: 5,
-                label: 'Hunt Green Slimes'
+                targetId: selectedMonster.id,
+                targetCount: count,
+                label: `Hunt ${selectedMonster.name}`
             }
         ],
         rewards: [
-            { type: 'GOLD', gold: 200 }
+            { type: 'GOLD', gold: 100 + (count * 30) }
         ],
         deadlineDay: state.stats.day + daysRemaining,
         daysRemaining,
@@ -780,16 +827,16 @@ const createExploreBoardContract = (
         issuerName: issuer.displayName,
         title: `${issuer.displayName} Reconnaissance`,
         clientName: issuer.displayName,
-        urgency: 'NORMAL',
-        description: `Explore the depths of the nearby ruins for ${issuer.displayName}.`,
+        urgency: getUrgencyFromBias(issuer.urgencyBias),
+        description: `Explore the depths of the nearby ruins for ${issuer.displayName}. ${issuer.flavorTone}.`,
         requirements: [],
         objectives: [
             {
                 objectiveId: 'explore_dungeon_1',
                 targetType: 'FLOOR_REACHED',
-                targetId: 'dungeon_ashfield_outskirts',
+                targetId: 'dungeon_t1_sewers',
                 targetCount: 1,
-                label: 'Complete Ashfield Outskirts'
+                label: 'Complete The Sewer Cellars'
             }
         ],
         rewards: [
