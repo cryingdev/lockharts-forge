@@ -1,9 +1,10 @@
-import { GameState, ContractDefinition, ContractSource } from '../../types/game-state';
+import { GameState, ContractDefinition, ContractSource, BoardIssuerProfile, GeneralContractKind } from '../../types/game-state';
 import { InventoryItem } from '../../types/inventory';
 import { ShopCustomer } from '../../types/shop';
 import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
 import { NAMED_MERCENARIES } from '../../data/mercenaries';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
+import { BOARD_ISSUER_PROFILES } from '../../data/contracts/boardIssuers';
 import { rng } from '../../utils/random';
 
 export const isNamedMercenaryEligible = (state: GameState, entry: any): boolean => {
@@ -609,6 +610,196 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
     };
 };
 
+// --- Board Contract Generation Helpers ---
+
+const pickBoardIssuer = (): BoardIssuerProfile => {
+    return rng.pick(BOARD_ISSUER_PROFILES);
+};
+
+const pickBoardContractKind = (
+    issuer: BoardIssuerProfile,
+    tierLevel: number
+): GeneralContractKind => {
+    // 1. Determine base weights for kinds
+    // Early game (tier 0-1) favors CRAFT and TURN_IN
+    // Later game increases HUNT and EXPLORE
+    const isEarlyGame = tierLevel <= 1;
+    
+    const kindWeights: Record<GeneralContractKind, number> = {
+        CRAFT: isEarlyGame ? 40 : 25,
+        TURN_IN: isEarlyGame ? 40 : 25,
+        HUNT: isEarlyGame ? 10 : 25,
+        EXPLORE: isEarlyGame ? 10 : 25,
+    };
+
+    // 2. Apply issuer bias (favoredKinds get a boost)
+    issuer.favoredKinds.forEach(kind => {
+        kindWeights[kind] *= 2;
+    });
+
+    // 3. Weighted random selection
+    const totalWeight = Object.values(kindWeights).reduce((a, b) => a + b, 0);
+    let roll = rng.next() * totalWeight;
+    
+    for (const [kind, weight] of Object.entries(kindWeights)) {
+        roll -= weight;
+        if (roll <= 0) return kind as GeneralContractKind;
+    }
+
+    return 'CRAFT'; // Fallback
+};
+
+const createCraftBoardContract = (
+    state: GameState,
+    issuer: BoardIssuerProfile,
+    index: number,
+    usedRecipeIds: Set<string>
+): ContractDefinition | null => {
+    const availableRecipes = EQUIPMENT_ITEMS.filter(item => {
+        const isUnlocked = item.unlockedByDefault !== false || state.unlockedRecipes.includes(item.id);
+        const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1);
+        return isUnlocked && !usedRecipeIds.has(item.id) && withinTier;
+    });
+
+    if (availableRecipes.length === 0) return null;
+
+    const recipe = rng.pick(availableRecipes);
+    usedRecipeIds.add(recipe.id);
+
+    const payout = Math.max(80, Math.floor(recipe.baseValue * rng.range(1.1, 1.26)));
+    const minQuality = recipe.tier <= 1 ? 70 : 80;
+    const daysRemaining = rng.rangeInt(2, 3);
+
+    return {
+        id: `contract_board_${state.stats.day}_${index}_${recipe.id}`,
+        type: 'GENERAL',
+        kind: 'CRAFT',
+        status: 'OFFERED',
+        source: 'BOARD',
+        issuerId: issuer.id,
+        issuerName: issuer.displayName,
+        title: `${issuer.displayName}: ${recipe.name}`,
+        clientName: issuer.displayName,
+        urgency: rng.next() > 0.8 ? 'HIGH' : 'NORMAL',
+        description: `The ${issuer.displayName} requires a high-quality ${recipe.name}. ${issuer.flavorTone}.`,
+        requirements: [
+            {
+                itemId: recipe.id,
+                quantity: 1,
+                minQuality
+            }
+        ],
+        rewards: [
+            { type: 'GOLD', gold: payout }
+        ],
+        deadlineDay: state.stats.day + daysRemaining,
+        daysRemaining,
+    };
+};
+
+// Placeholder for other kinds - for now they fallback to CRAFT or simple versions
+const createTurnInBoardContract = (
+    state: GameState,
+    issuer: BoardIssuerProfile,
+    index: number
+): ContractDefinition => {
+    // Simple placeholder for TURN_IN
+    const daysRemaining = rng.rangeInt(2, 4);
+    return {
+        id: `contract_board_${state.stats.day}_${index}_turnin`,
+        type: 'GENERAL',
+        kind: 'TURN_IN',
+        status: 'OFFERED',
+        source: 'BOARD',
+        issuerId: issuer.id,
+        issuerName: issuer.displayName,
+        title: `${issuer.displayName} Supply Request`,
+        clientName: issuer.displayName,
+        urgency: 'NORMAL',
+        description: `A request for basic supplies from ${issuer.displayName}.`,
+        requirements: [
+            { itemId: 'scrap_metal', quantity: 5 } // Placeholder
+        ],
+        rewards: [
+            { type: 'GOLD', gold: 150 }
+        ],
+        deadlineDay: state.stats.day + daysRemaining,
+        daysRemaining,
+    };
+};
+
+const createHuntBoardContract = (
+    state: GameState,
+    issuer: BoardIssuerProfile,
+    index: number
+): ContractDefinition => {
+    const daysRemaining = rng.rangeInt(3, 5);
+    return {
+        id: `contract_board_${state.stats.day}_${index}_hunt`,
+        type: 'GENERAL',
+        kind: 'HUNT',
+        status: 'OFFERED',
+        source: 'BOARD',
+        issuerId: issuer.id,
+        issuerName: issuer.displayName,
+        title: `${issuer.displayName} Hunt Order`,
+        clientName: issuer.displayName,
+        urgency: 'NORMAL',
+        description: `Eliminate threats in the outskirts for ${issuer.displayName}.`,
+        requirements: [],
+        objectives: [
+            {
+                objectiveId: 'hunt_slimes',
+                targetType: 'KILL',
+                targetId: 'slime_green',
+                targetCount: 5,
+                label: 'Hunt Green Slimes'
+            }
+        ],
+        rewards: [
+            { type: 'GOLD', gold: 200 }
+        ],
+        deadlineDay: state.stats.day + daysRemaining,
+        daysRemaining,
+    };
+};
+
+const createExploreBoardContract = (
+    state: GameState,
+    issuer: BoardIssuerProfile,
+    index: number
+): ContractDefinition => {
+    const daysRemaining = rng.rangeInt(4, 6);
+    return {
+        id: `contract_board_${state.stats.day}_${index}_explore`,
+        type: 'GENERAL',
+        kind: 'EXPLORE',
+        status: 'OFFERED',
+        source: 'BOARD',
+        issuerId: issuer.id,
+        issuerName: issuer.displayName,
+        title: `${issuer.displayName} Reconnaissance`,
+        clientName: issuer.displayName,
+        urgency: 'NORMAL',
+        description: `Explore the depths of the nearby ruins for ${issuer.displayName}.`,
+        requirements: [],
+        objectives: [
+            {
+                objectiveId: 'explore_dungeon_1',
+                targetType: 'FLOOR_REACHED',
+                targetId: 'dungeon_ashfield_outskirts',
+                targetCount: 1,
+                label: 'Complete Ashfield Outskirts'
+            }
+        ],
+        rewards: [
+            { type: 'GOLD', gold: 300 }
+        ],
+        deadlineDay: state.stats.day + daysRemaining,
+        daysRemaining,
+    };
+};
+
 export const handleRefreshCommissions = (state: GameState): GameState => {
     if (state.commission.lastDailyCommissionRefreshDay === state.stats.day) {
         return state;
@@ -628,50 +819,35 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
         };
     }
 
-    const availableRecipes = EQUIPMENT_ITEMS.filter(item => {
-        const isUnlocked = item.unlockedByDefault !== false || state.unlockedRecipes.includes(item.id);
-        const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1);
-        return isUnlocked && withinTier;
-    });
-
     const generatedContracts: ContractDefinition[] = [];
     const usedRecipeIds = new Set(activeGeneralContracts.flatMap(c => c.requirements.map(r => r.itemId)));
 
     for (let i = 0; i < generalSlotsToFill; i++) {
-        const remainingCandidates = availableRecipes.filter(item => !usedRecipeIds.has(item.id));
-        if (remainingCandidates.length === 0) break;
+        const issuer = pickBoardIssuer();
+        const kind = pickBoardContractKind(issuer, state.stats.tierLevel);
 
-        const recipe = rng.pick(remainingCandidates);
-        usedRecipeIds.add(recipe.id);
+        let contract: ContractDefinition | null = null;
 
-        const payout = Math.max(80, Math.floor(recipe.baseValue * rng.range(1.1, 1.26)));
-        const minQuality = recipe.tier <= 1 ? 70 : 80;
-        const daysRemaining = rng.rangeInt(2, 3);
+        switch (kind) {
+            case 'CRAFT':
+                contract = createCraftBoardContract(state, issuer, i, usedRecipeIds);
+                break;
+            case 'TURN_IN':
+                contract = createTurnInBoardContract(state, issuer, i);
+                break;
+            case 'HUNT':
+                contract = createHuntBoardContract(state, issuer, i);
+                break;
+            case 'EXPLORE':
+                contract = createExploreBoardContract(state, issuer, i);
+                break;
+            default:
+                contract = createCraftBoardContract(state, issuer, i, usedRecipeIds);
+        }
 
-        generatedContracts.push({
-            id: `contract_general_${state.stats.day}_${i}_${recipe.id}`,
-            type: 'GENERAL',
-            kind: 'CRAFT',
-            status: 'OFFERED',
-            source: 'SYSTEM',
-            title: `Order: ${recipe.name}`,
-            clientName: 'Town Commission Board',
-            issuerName: 'Guild Master',
-            urgency: rng.next() > 0.8 ? 'HIGH' : 'NORMAL',
-            description: `A standing order for ${recipe.name}. Deliver a reliable piece for local buyers.`,
-            requirements: [
-                {
-                    itemId: recipe.id,
-                    quantity: 1,
-                    minQuality
-                }
-            ],
-            rewards: [
-                { type: 'GOLD', gold: payout }
-            ],
-            deadlineDay: state.stats.day + daysRemaining,
-            daysRemaining,
-        });
+        if (contract) {
+            generatedContracts.push(contract);
+        }
     }
 
     return {
