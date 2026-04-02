@@ -18,6 +18,7 @@ export type InteractionStep = 'IDLE' | 'CONFIRM_HIRE' | 'CONFIRM_FIRE';
 export const useTavernInteraction = (mercenary: Mercenary) => {
     const { state, actions } = useGame();
     const [dialogue, setDialogue] = useState(`(You sit across from ${mercenary.name}.)`);
+    const [followupText, setFollowupText] = useState<string | null>(null);
     const [showGiftMenu, setShowGiftMenu] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
@@ -50,6 +51,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
 
         const outcome = resolveTavernTalkOutcome(state, mercenary);
         setDialogue(outcome.text);
+        setFollowupText(outcome.followupText || null);
 
         if (outcome.outcome === 'MINOR_CONTRACT' && outcome.contractTemplateId) {
             // Only generate if it's the first talk today to prevent spamming contracts
@@ -125,10 +127,18 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         setPendingGiftItem(null);
     }, [pendingGiftItem, mercenary.id, actions]);
 
+    const handleContinue = useCallback(() => {
+        if (followupText) {
+            setDialogue(followupText);
+            setFollowupText(null);
+        }
+    }, [followupText]);
+
     return {
         state,
         actions,
         dialogue,
+        followupText,
         showGiftMenu,
         setShowGiftMenu,
         showDetail,
@@ -150,6 +160,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
             handleConfirmTerminate,
             handleSelectItemForGift,
             handleConfirmGift,
+            handleContinue,
             handleCancelGift: () => { setPendingGiftItem(null); setDialogue("Actually, never mind."); },
             handleCancelStep: () => { setStep('IDLE'); setDialogue("I'm glad we cleared that up."); }
         }

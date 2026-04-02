@@ -1058,6 +1058,16 @@ export const handleGenerateTavernMinorContract = (state: GameState, payload: { m
     const mercenary = state.knownMercenaries.find(m => m.id === payload.mercenaryId);
     if (!mercenary) return state;
 
+    // Check if mercenary already has an active TAVERN contract
+    const existingTavernContract = state.commission.activeContracts.find(
+        c => c.mercenaryId === payload.mercenaryId && c.source === 'TAVERN'
+    );
+    if (existingTavernContract) return state;
+
+    // Limit total tavern contracts to prevent cluttering the board
+    const totalTavernContracts = state.commission.activeContracts.filter(c => c.source === 'TAVERN').length;
+    if (totalTavernContracts >= 3) return state;
+
     const newContract: ContractDefinition = {
         id: `tavern_${payload.mercenaryId}_${state.stats.day}_${rng.next().toString(36).substr(2, 5)}`,
         type: 'GENERAL',

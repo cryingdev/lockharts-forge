@@ -63,7 +63,11 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
     };
 
     return (
-        <div className="bg-stone-900/80 border border-stone-800 rounded-xl p-4 flex flex-col gap-4 hover:border-stone-700 transition-colors relative overflow-hidden">
+        <div className={`bg-stone-900/80 border rounded-xl p-4 flex flex-col gap-4 hover:border-stone-700 transition-colors relative overflow-hidden ${
+            contract.source === 'TAVERN' 
+            ? 'border-indigo-500/30 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]' 
+            : 'border-stone-800'
+        }`}>
             {isReady && activeTab !== 'ready' && (
                 <div className="absolute top-0 right-0 bg-emerald-500 text-stone-950 text-[8px] font-black px-2 py-0.5 uppercase tracking-tighter rounded-bl-lg shadow-lg">
                     Ready to Claim
@@ -80,8 +84,12 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             {contract.kind || 'GENERAL'}
                         </span>
                         {(contract.issuerName || contract.issuerId || contract.source === 'TAVERN') && (
-                            <span className="flex items-center gap-1 text-[9px] text-stone-500 uppercase font-bold tracking-widest bg-stone-950/40 px-1.5 py-0.5 rounded border border-stone-800/50">
-                                {contract.source === 'TAVERN' ? <User className="w-3 h-3 text-amber-500/50" /> : getIssuerIcon(contract.issuerId)}
+                            <span className={`flex items-center gap-1 text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded border ${
+                                contract.source === 'TAVERN' 
+                                ? 'text-indigo-400 bg-indigo-950/40 border-indigo-500/30' 
+                                : 'text-stone-500 bg-stone-950/40 border-stone-800/50'
+                            }`}>
+                                {contract.source === 'TAVERN' ? <User className="w-3 h-3 text-indigo-400/50" /> : getIssuerIcon(contract.issuerId)}
                                 {contract.source === 'TAVERN' ? `Personal: ${contract.clientName}` : (contract.issuerName || contract.issuerId)}
                             </span>
                         )}

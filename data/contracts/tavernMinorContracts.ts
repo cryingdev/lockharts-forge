@@ -7,7 +7,7 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
         kind: 'TURN_IN',
         description: "I'm heading out at dawn. A decent pair of gloves would help protect my hands from the cold and the grit.",
         requirements: [
-            { itemId: 'leather_gloves', quantity: 1, minQuality: 1 }
+            { itemId: 'gloves_leather_t1', quantity: 1, minQuality: 1 }
         ],
         rewardGold: 120,
         rewardAffinity: 5,
@@ -19,7 +19,7 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
         kind: 'TURN_IN',
         description: "My last expedition was a close call. I need some healing potions before I even think about going back.",
         requirements: [
-            { itemId: 'health_potion', quantity: 2 }
+            { itemId: 'potion_health_small', quantity: 2 }
         ],
         rewardGold: 80,
         rewardAffinity: 4,
@@ -31,7 +31,7 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
         kind: 'TURN_IN',
         description: "My current sword is more of a club now. I need something sharp and reliable for the next floor.",
         requirements: [
-            { itemId: 'iron_shortsword', quantity: 1, minQuality: 2 }
+            { itemId: 'sword_bronze_t1', quantity: 1, minQuality: 2 }
         ],
         rewardGold: 250,
         rewardAffinity: 6,
@@ -43,7 +43,7 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
         kind: 'TURN_IN',
         description: "Those skeletons in the crypt hit harder than they look. A solid shield would be a lifesaver.",
         requirements: [
-            { itemId: 'wooden_shield', quantity: 1, minQuality: 2 }
+            { itemId: 'shield_wood_t1', quantity: 1, minQuality: 2 }
         ],
         rewardGold: 180,
         rewardAffinity: 5,
@@ -55,7 +55,7 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
         kind: 'TURN_IN',
         description: "The deeper floors are damp and rough. My boots are falling apart.",
         requirements: [
-            { itemId: 'leather_boots', quantity: 1, minQuality: 1 }
+            { itemId: 'boots_leather_t1', quantity: 1, minQuality: 1 }
         ],
         rewardGold: 140,
         rewardAffinity: 4,
@@ -67,7 +67,7 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
         kind: 'TURN_IN',
         description: "I've heard some rings can ward off the darkness. Do you have anything like that?",
         requirements: [
-            { itemId: 'iron_ring', quantity: 1 }
+            { itemId: 'ring_copper_t1', quantity: 1 }
         ],
         rewardGold: 300,
         rewardAffinity: 7,
