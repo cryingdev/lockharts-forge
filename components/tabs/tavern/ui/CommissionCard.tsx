@@ -79,10 +79,10 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             {getKindIcon(contract.kind)}
                             {contract.kind || 'GENERAL'}
                         </span>
-                        {(contract.issuerName || contract.issuerId) && (
+                        {(contract.issuerName || contract.issuerId || contract.source === 'TAVERN') && (
                             <span className="flex items-center gap-1 text-[9px] text-stone-500 uppercase font-bold tracking-widest bg-stone-950/40 px-1.5 py-0.5 rounded border border-stone-800/50">
-                                {getIssuerIcon(contract.issuerId)}
-                                {contract.issuerName || contract.issuerId}
+                                {contract.source === 'TAVERN' ? <User className="w-3 h-3 text-amber-500/50" /> : getIssuerIcon(contract.issuerId)}
+                                {contract.source === 'TAVERN' ? `Personal: ${contract.clientName}` : (contract.issuerName || contract.issuerId)}
                             </span>
                         )}
                     </div>

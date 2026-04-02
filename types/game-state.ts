@@ -14,6 +14,37 @@ export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM' | 'BOARD';
 export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
 export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED' | 'TURN_IN';
 
+export type TavernTalkOutcome = 'FLAVOR' | 'RUMOR' | 'MINOR_CONTRACT' | 'OPPORTUNITY';
+export type TavernTalkTone = 'COLD' | 'NEUTRAL' | 'WARM';
+export type TavernTalkConditionJob = 'Fighter' | 'Mage' | 'Rogue' | 'Cleric' | 'Novice' | 'ANY';
+
+export interface TavernTalkEntry {
+  id: string;
+  outcome: TavernTalkOutcome;
+  speakerJob: TavernTalkConditionJob;
+  minAffinity?: number;
+  maxAffinity?: number;
+  minTier?: number;
+  requiresHired?: boolean;
+  requiresVisitor?: boolean;
+  weight: number;
+  text: string;
+  followupText?: string;
+  rumorTag?: string;
+  contractTemplateId?: string;
+}
+
+export interface TavernMinorContractTemplate {
+  id: string;
+  title: string;
+  kind: GeneralContractKind;
+  description: string;
+  requirements: ContractItemRequirement[];
+  rewardGold: number;
+  rewardAffinity: number;
+  deadlineDays: number;
+}
+
 export type BoardIssuerId =
   | 'TOWN_GUARD'
   | 'ASHFIELD_TRADERS'

@@ -4,6 +4,7 @@ import { useGame } from '../../../../context/GameContext';
 import { Mercenary } from '../../../../models/Mercenary';
 import { calculateHiringCost, CONTRACT_CONFIG } from '../../../../config/contract-config';
 import { InventoryItem } from '../../../../types/inventory';
+import { resolveTavernTalkOutcome } from '../../../../state/helpers/tavernTalkHelpers';
 
 export interface FloatingHeart {
     id: number;
@@ -41,21 +42,22 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
     const handleTalk = useCallback(() => {
         if (pendingGiftItem || step !== 'IDLE') return;
 
-        if (!state.talkedToToday.includes(mercenary.id)) {
+        const isFirstTalkToday = !state.talkedToToday.includes(mercenary.id);
+        if (isFirstTalkToday) {
             actions.talkMercenary(mercenary.id);
             spawnHearts();
         }
 
-        const lines = [
-            "The road is long, but a warm fire makes it easier.",
-            "I heard rumors of rare ores in the Rat Cellar...",
-            "What's your specialty, smith? I need something that won't break.",
-            "I've seen many forges, but yours has... potential.",
-            "Tell me, do you have any ale left?",
-            "I'm looking for work. Something that pays in gold and glory."
-        ];
-        setDialogue(lines[Math.floor(Math.random() * lines.length)]);
-    }, [mercenary.id, state.talkedToToday, pendingGiftItem, step, actions, spawnHearts]);
+        const outcome = resolveTavernTalkOutcome(state, mercenary);
+        setDialogue(outcome.text);
+
+        if (outcome.outcome === 'MINOR_CONTRACT' && outcome.contractTemplateId) {
+            // Only generate if it's the first talk today to prevent spamming contracts
+            if (isFirstTalkToday) {
+                actions.generateTavernMinorContract(mercenary.id, outcome.contractTemplateId);
+            }
+        }
+    }, [mercenary.id, state.talkedToToday, state.knownMercenaries, state.stats.tierLevel, pendingGiftItem, step, actions, spawnHearts, state]);
 
     const handleBuyDrink = useCallback(() => {
         if (pendingGiftItem || step !== 'IDLE') return;

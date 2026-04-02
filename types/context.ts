@@ -100,6 +100,7 @@ export interface GameContextType {
     claimObjectiveContract: (contractId: string) => void;
     failContract: (contractId: string) => void;
     refreshCommissions: () => void;
+    generateTavernMinorContract: (mercenaryId: string, templateId: string) => void;
     setDialogue: (dialogue: any | null) => void;
     dispatch: (action: any) => void;
   };

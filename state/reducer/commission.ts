@@ -5,6 +5,7 @@ import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
 import { NAMED_MERCENARIES } from '../../data/mercenaries';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
 import { BOARD_ISSUER_PROFILES } from '../../data/contracts/boardIssuers';
+import { TAVERN_MINOR_CONTRACT_TEMPLATES } from '../../data/contracts/tavernMinorContracts';
 import { materials } from '../../data/materials';
 import { DUNGEONS } from '../../data/dungeons';
 import { rng } from '../../utils/random';
@@ -564,6 +565,11 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
 
     // Check if all objectives are met
     const allMet = contract.objectives.every(obj => {
+        if (obj.targetType === 'TURN_IN' && obj.targetId) {
+            const matchingItems = getContractMatchingItems(state.inventory, obj.targetId);
+            const totalQty = matchingItems.reduce((sum, item) => sum + item.quantity, 0);
+            return totalQty >= obj.targetCount;
+        }
         const progress = state.commission.trackedObjectiveProgress[contractId]?.[obj.objectiveId] || 0;
         return progress >= obj.targetCount;
     });
@@ -574,6 +580,23 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
             logs: [...state.logs, "Objectives are not yet complete."]
         };
     }
+
+    // Consume items for TURN_IN objectives
+    let newInventory = [...state.inventory];
+    contract.objectives.forEach(obj => {
+        if (obj.targetType === 'TURN_IN' && obj.targetId) {
+            let remainingToConsume = obj.targetCount;
+            newInventory = newInventory.map(inv => {
+                if (remainingToConsume <= 0) return inv;
+                if (inv.id === obj.targetId || inv.equipmentData?.recipeId === obj.targetId) {
+                    const toTake = Math.min(inv.quantity, remainingToConsume);
+                    remainingToConsume -= toTake;
+                    return { ...inv, quantity: inv.quantity - toTake };
+                }
+                return inv;
+            }).filter(inv => inv.quantity > 0);
+        }
+    });
 
     // Apply rewards (similar to handleSubmitContract)
     let newGold = state.stats.gold;
@@ -616,6 +639,7 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
             ...state.stats,
             gold: newGold
         },
+        inventory: newInventory,
         knownMercenaries: newKnownMercenaries,
         commission: {
             ...state.commission,
@@ -1024,5 +1048,41 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
             lastDailyCommissionRefreshDay: state.stats.day
         },
         logs: ['The Commission Board has been updated with new requests.', ...state.logs]
+    };
+};
+
+export const handleGenerateTavernMinorContract = (state: GameState, payload: { mercenaryId: string; templateId: string }): GameState => {
+    const template = TAVERN_MINOR_CONTRACT_TEMPLATES.find(t => t.id === payload.templateId);
+    if (!template) return state;
+
+    const mercenary = state.knownMercenaries.find(m => m.id === payload.mercenaryId);
+    if (!mercenary) return state;
+
+    const newContract: ContractDefinition = {
+        id: `tavern_${payload.mercenaryId}_${state.stats.day}_${rng.next().toString(36).substr(2, 5)}`,
+        type: 'GENERAL',
+        kind: template.kind,
+        title: template.title,
+        clientName: mercenary.name,
+        mercenaryId: mercenary.id,
+        source: 'TAVERN',
+        description: template.description,
+        requirements: template.requirements,
+        rewards: [
+            { type: 'GOLD', gold: template.rewardGold },
+            { type: 'AFFINITY', affinity: template.rewardAffinity }
+        ],
+        deadlineDay: state.stats.day + template.deadlineDays,
+        status: 'ACTIVE', // Tavern requests are accepted immediately in this design
+        unique: false
+    };
+
+    return {
+        ...state,
+        commission: {
+            ...state.commission,
+            activeContracts: [newContract, ...state.commission.activeContracts]
+        },
+        logs: [`${mercenary.name} has given you a personal request.`, ...state.logs]
     };
 };
