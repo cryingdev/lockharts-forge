@@ -3,9 +3,9 @@ import { TavernMinorContractTemplate } from '../../types/game-state';
 export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
     {
         id: 'tavern_gloves_request_t1',
-        title: 'A Sturdy Pair of Gloves',
+        titleKey: 'tavernContracts.tavern_gloves_request_t1.title',
         kind: 'TURN_IN',
-        description: "I'm heading out at dawn. A decent pair of gloves would help protect my hands from the cold and the grit.",
+        descriptionKey: 'tavernContracts.tavern_gloves_request_t1.description',
         requirements: [
             { itemId: 'gloves_leather_t1', quantity: 1, minQuality: 1 }
         ],
@@ -15,9 +15,9 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
     },
     {
         id: 'tavern_potion_request_t1',
-        title: 'Emergency Supplies',
+        titleKey: 'tavernContracts.tavern_potion_request_t1.title',
         kind: 'TURN_IN',
-        description: "My last expedition was a close call. I need some healing potions before I even think about going back.",
+        descriptionKey: 'tavernContracts.tavern_potion_request_t1.description',
         requirements: [
             { itemId: 'potion_health_small', quantity: 2 }
         ],
@@ -27,9 +27,9 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
     },
     {
         id: 'tavern_sword_request_t1',
-        title: 'Blade Upgrade',
+        titleKey: 'tavernContracts.tavern_sword_request_t1.title',
         kind: 'TURN_IN',
-        description: "My current sword is more of a club now. I need something sharp and reliable for the next floor.",
+        descriptionKey: 'tavernContracts.tavern_sword_request_t1.description',
         requirements: [
             { itemId: 'sword_bronze_t1', quantity: 1, minQuality: 2 }
         ],
@@ -39,9 +39,9 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
     },
     {
         id: 'tavern_shield_request_t1',
-        title: 'Better Defense',
+        titleKey: 'tavernContracts.tavern_shield_request_t1.title',
         kind: 'TURN_IN',
-        description: "Those skeletons in the crypt hit harder than they look. A solid shield would be a lifesaver.",
+        descriptionKey: 'tavernContracts.tavern_shield_request_t1.description',
         requirements: [
             { itemId: 'shield_wood_t1', quantity: 1, minQuality: 2 }
         ],
@@ -51,9 +51,9 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
     },
     {
         id: 'tavern_boots_request_t1',
-        title: 'Long Walk Ahead',
+        titleKey: 'tavernContracts.tavern_boots_request_t1.title',
         kind: 'TURN_IN',
-        description: "The deeper floors are damp and rough. My boots are falling apart.",
+        descriptionKey: 'tavernContracts.tavern_boots_request_t1.description',
         requirements: [
             { itemId: 'boots_leather_t1', quantity: 1, minQuality: 1 }
         ],
@@ -63,9 +63,9 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
     },
     {
         id: 'tavern_ring_request_t1',
-        title: 'A Bit of Luck',
+        titleKey: 'tavernContracts.tavern_ring_request_t1.title',
         kind: 'TURN_IN',
-        description: "I've heard some rings can ward off the darkness. Do you have anything like that?",
+        descriptionKey: 'tavernContracts.tavern_ring_request_t1.description',
         requirements: [
             { itemId: 'ring_copper_t1', quantity: 1 }
         ],
@@ -75,9 +75,9 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
     },
     {
         id: 'tavern_rare_opportunity_t1',
-        title: 'The Smith\'s Legacy',
+        titleKey: 'tavernContracts.tavern_rare_opportunity_t1.title',
         kind: 'TURN_IN',
-        description: "I've found a map to a hidden workshop. If you help me prepare, I'll share what I find.",
+        descriptionKey: 'tavernContracts.tavern_rare_opportunity_t1.description',
         requirements: [
             { itemId: 'potion_health_small', quantity: 3 },
             { itemId: 'sword_bronze_t1', quantity: 1, minQuality: 3 }

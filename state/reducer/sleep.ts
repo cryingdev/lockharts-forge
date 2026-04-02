@@ -177,6 +177,10 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         visitorsToday: [],
         talkedToToday: [],
         boughtDrinkToday: [],
+        tavern: {
+            ...state.tavern,
+            inviteCountToday: 0,
+        },
         talkedToGarrickToday: false,
         activeCustomer: null,
         shopQueue: [],

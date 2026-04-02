@@ -9,7 +9,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         minAffinity: 0,
         maxAffinity: 19,
         weight: 10,
-        text: "A solid shield saves more lives than a sharp tongue."
+        textKey: 'tavernTalk.fighter_low_flavor_01'
     },
     {
         id: 'fighter_mid_flavor_01',
@@ -17,7 +17,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Fighter',
         minAffinity: 20,
         weight: 10,
-        text: "The forge's heat is like the heat of battle. It tempers the soul."
+        textKey: 'tavernTalk.fighter_mid_flavor_01'
     },
     {
         id: 'fighter_rumor_01',
@@ -25,7 +25,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Fighter',
         minAffinity: 10,
         weight: 5,
-        text: "Heard the goblins are gathering in the lower caves. Watch your back.",
+        textKey: 'tavernTalk.fighter_rumor_01',
         rumorTag: 'GOBLIN_ACTIVITY'
     },
 
@@ -37,7 +37,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         minAffinity: 0,
         maxAffinity: 19,
         weight: 10,
-        text: "Magic is a precise art. One wrong word and... well, let's just say it's messy."
+        textKey: 'tavernTalk.mage_low_flavor_01'
     },
     {
         id: 'mage_mid_flavor_01',
@@ -45,7 +45,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Mage',
         minAffinity: 20,
         weight: 10,
-        text: "Your forge hums with a peculiar resonance. It's quite fascinating."
+        textKey: 'tavernTalk.mage_mid_flavor_01'
     },
     {
         id: 'mage_rumor_01',
@@ -53,7 +53,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Mage',
         minAffinity: 15,
         weight: 5,
-        text: "The ley lines are shifting. Expect more magical anomalies in the ruins.",
+        textKey: 'tavernTalk.mage_rumor_01',
         rumorTag: 'MAGICAL_ANOMALY'
     },
 
@@ -65,7 +65,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         minAffinity: 0,
         maxAffinity: 19,
         weight: 10,
-        text: "In the shadows, the only thing you can trust is your own blade."
+        textKey: 'tavernTalk.rogue_low_flavor_01'
     },
     {
         id: 'rogue_mid_flavor_01',
@@ -73,7 +73,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Rogue',
         minAffinity: 20,
         weight: 10,
-        text: "You've got a good eye for detail. Most people don't see the small things."
+        textKey: 'tavernTalk.rogue_mid_flavor_01'
     },
     {
         id: 'rogue_rumor_bats_01',
@@ -81,7 +81,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Rogue',
         minAffinity: 10,
         weight: 6,
-        text: "Heard the Sewer Cellars are thick with bats tonight.",
+        textKey: 'tavernTalk.rogue_rumor_bats_01',
         rumorTag: 'CAVE_BAT_ACTIVITY'
     },
 
@@ -93,7 +93,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         minAffinity: 0,
         maxAffinity: 19,
         weight: 10,
-        text: "Faith is the strongest armor one can wear."
+        textKey: 'tavernTalk.cleric_low_flavor_01'
     },
     {
         id: 'cleric_mid_flavor_01',
@@ -101,7 +101,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Cleric',
         minAffinity: 20,
         weight: 10,
-        text: "May your work bring light to the darkness of these lands."
+        textKey: 'tavernTalk.cleric_mid_flavor_01'
     },
     {
         id: 'cleric_rumor_01',
@@ -109,7 +109,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Cleric',
         minAffinity: 15,
         weight: 5,
-        text: "The undead are restless in the old crypt. We must be vigilant.",
+        textKey: 'tavernTalk.cleric_rumor_01',
         rumorTag: 'UNDEAD_ACTIVITY'
     },
 
@@ -119,14 +119,14 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         outcome: 'FLAVOR',
         speakerJob: 'ANY',
         weight: 5,
-        text: "Another day, another dungeon. At least the ale here is decent."
+        textKey: 'tavernTalk.any_flavor_01'
     },
     {
         id: 'any_flavor_02',
         outcome: 'FLAVOR',
         speakerJob: 'ANY',
         weight: 5,
-        text: "The road is long, but a warm fire and good company make it shorter."
+        textKey: 'tavernTalk.any_flavor_02'
     },
 
     // --- MINOR CONTRACTS ---
@@ -137,7 +137,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         requiresVisitor: true,
         minAffinity: 10,
         weight: 4,
-        text: "I'm heading out at dawn. A decent pair of gloves would help.",
+        textKey: 'tavernTalk.visitor_minor_contract_gloves',
         contractTemplateId: 'tavern_gloves_request_t1'
     },
     {
@@ -147,7 +147,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         requiresVisitor: true,
         minAffinity: 10,
         weight: 4,
-        text: "I'm low on supplies. Do you have any spare potions?",
+        textKey: 'tavernTalk.visitor_minor_contract_potion',
         contractTemplateId: 'tavern_potion_request_t1'
     },
     {
@@ -156,7 +156,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Fighter',
         minAffinity: 15,
         weight: 3,
-        text: "My blade is dull. I need a new iron shortsword before my next hunt.",
+        textKey: 'tavernTalk.fighter_minor_contract_sword',
         contractTemplateId: 'tavern_sword_request_t1'
     },
     {
@@ -165,7 +165,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'Cleric',
         minAffinity: 15,
         weight: 3,
-        text: "The darkness is growing. I need a sturdy shield to protect the innocent.",
+        textKey: 'tavernTalk.cleric_minor_contract_shield',
         contractTemplateId: 'tavern_shield_request_t1'
     },
 
@@ -176,8 +176,8 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         speakerJob: 'ANY',
         minAffinity: 25,
         weight: 1,
-        text: "I've heard whispers of a legendary smith who once lived in these parts. Maybe you can find their lost techniques.",
-        followupText: "They say the entrance to their hidden workshop is somewhere in the Whispering Woods. If you help me prepare, I'll take you there.",
+        textKey: 'tavernTalk.opportunity_named_01',
+        followupTextKey: 'tavernTalk.opportunity_named_01_followup',
         contractTemplateId: 'tavern_rare_opportunity_t1'
     }
 ];

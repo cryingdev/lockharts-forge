@@ -21,6 +21,7 @@ import { ContractDefinition } from '../../../../types/game-state';
 import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
 import { materials } from '../../../../data/materials';
 import { isContractReady } from '../../../../state/selectors/commissionSelectors';
+import { t } from '../../../../utils/i18n';
 
 interface CommissionCardProps {
     contract: ContractDefinition;
@@ -30,9 +31,11 @@ interface CommissionCardProps {
 
 export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, activeTab, onActionComplete }) => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
     
     const isReady = isContractReady(state, contract);
     const progressSummary = state.commission.trackedObjectiveProgress[contract.id] || {};
+    const issuerAffinity = contract.issuerId ? state.commission.issuerAffinity[contract.issuerId] || 0 : null;
 
     const getKindIcon = (kind?: string) => {
         switch (kind) {
@@ -70,7 +73,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
         }`}>
             {isReady && activeTab !== 'ready' && (
                 <div className="absolute top-0 right-0 bg-emerald-500 text-stone-950 text-[8px] font-black px-2 py-0.5 uppercase tracking-tighter rounded-bl-lg shadow-lg">
-                    Ready to Claim
+                    {t(language, 'commission.ready_badge')}
                 </div>
             )}
 
@@ -90,12 +93,20 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                 : 'text-stone-500 bg-stone-950/40 border-stone-800/50'
                             }`}>
                                 {contract.source === 'TAVERN' ? <User className="w-3 h-3 text-indigo-400/50" /> : getIssuerIcon(contract.issuerId)}
-                                {contract.source === 'TAVERN' ? `Personal: ${contract.clientName}` : (contract.issuerName || contract.issuerId)}
+                                {contract.source === 'TAVERN'
+                                    ? t(language, 'commission.personal_badge', { name: contract.clientName })
+                                    : (contract.issuerName || contract.issuerId)}
                             </span>
                         )}
                     </div>
                     <h3 className="text-amber-200 font-bold text-sm uppercase tracking-tight">{contract.title}</h3>
                     <p className="text-xs text-stone-400 mt-1 leading-relaxed italic opacity-80">"{contract.description}"</p>
+                    {issuerAffinity !== null && (
+                        <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-sky-300 bg-sky-950/30 border border-sky-500/20 rounded-md px-2 py-1">
+                            <Heart className="w-3 h-3 text-sky-300" />
+                            <span>{t(language, 'commission.issuer_affinity', { value: issuerAffinity })}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="flex flex-col items-end gap-2">
                     <div className="flex items-center gap-1.5 px-2 py-1 bg-stone-950 rounded-lg border border-stone-800">
@@ -109,7 +120,9 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <h4 className="text-[10px] text-stone-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1">
-                        {contract.kind === 'HUNT' || contract.kind === 'BOSS' ? 'Objectives' : 'Requirements'}
+                        {contract.kind === 'HUNT' || contract.kind === 'BOSS'
+                            ? t(language, 'commission.objectives')
+                            : t(language, 'commission.requirements')}
                     </h4>
                     <div className="space-y-1.5">
                         {/* Requirements (CRAFT/TURN_IN) */}
@@ -165,7 +178,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                     </div>
                 </div>
                 <div>
-                    <h4 className="text-[10px] text-stone-500 uppercase font-black tracking-widest mb-2">Rewards</h4>
+                    <h4 className="text-[10px] text-stone-500 uppercase font-black tracking-widest mb-2">{t(language, 'commission.rewards')}</h4>
                     <div className="space-y-1.5">
                         {contract.rewards.map((reward, idx) => (
                             <div key={idx} className="flex items-center gap-2 text-[11px] bg-stone-950/50 p-1.5 rounded-lg border border-stone-800/50">
@@ -176,7 +189,10 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                     <><Heart className="w-3 h-3 text-pink-500" /><span className="text-pink-500 font-bold">+{reward.affinity}</span></>
                                 )}
                                 {reward.type === 'UNLOCK_RECRUIT' && (
-                                    <><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span className="text-emerald-500 font-bold italic">Recruit Unlocked</span></>
+                                    <><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span className="text-emerald-500 font-bold italic">{t(language, 'commission.recruit_unlocked')}</span></>
+                                )}
+                                {reward.type === 'ISSUER_AFFINITY' && (
+                                    <><Heart className="w-3 h-3 text-sky-400" /><span className="text-sky-400 font-bold">{t(language, 'commission.issuer_affinity_reward', { value: reward.issuerAffinity || 0 })}</span></>
                                 )}
                             </div>
                         ))}
@@ -196,7 +212,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             }}
                             className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg"
                         >
-                            Accept Contract
+                            {t(language, 'commission.accept_contract')}
                         </SfxButton>
                         <SfxButton 
                             sfx="switch"
@@ -227,7 +243,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                     : 'bg-stone-800 text-stone-600 cursor-not-allowed'
                                 }`}
                             >
-                                {isReady ? 'Submit Items' : 'In Progress'}
+                                {isReady ? t(language, 'commission.submit_items') : t(language, 'commission.in_progress')}
                             </SfxButton>
                         ) : (
                             <SfxButton 
@@ -243,7 +259,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                     : 'bg-stone-800 text-stone-600 cursor-not-allowed'
                                 }`}
                             >
-                                {isReady ? 'Claim Rewards' : 'In Progress'}
+                                {isReady ? t(language, 'commission.claim_rewards') : t(language, 'commission.in_progress')}
                             </SfxButton>
                         )}
                         <SfxButton 
@@ -253,7 +269,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                 onActionComplete?.();
                             }}
                             className="p-2 bg-stone-800 hover:bg-red-900/30 text-stone-500 hover:text-red-500 rounded-xl border border-stone-700 transition-all"
-                            title="Abandon Contract"
+                            title={t(language, 'commission.abandon_contract')}
                         >
                             <Trash2 className="w-4 h-4" />
                         </SfxButton>
@@ -274,7 +290,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                         className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-stone-950 rounded-xl font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2"
                     >
                         <Trophy className="w-4 h-4" />
-                        Complete & Claim
+                        {t(language, 'commission.complete_and_claim')}
                     </SfxButton>
                 )}
 
@@ -287,7 +303,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                         }}
                         className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-400 rounded-xl font-black uppercase tracking-widest text-[10px]"
                     >
-                        Dismiss Notice
+                        {t(language, 'commission.dismiss_notice')}
                     </SfxButton>
                 )}
             </div>

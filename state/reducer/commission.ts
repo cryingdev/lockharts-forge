@@ -5,10 +5,27 @@ import { NAMED_CONTRACT_REGISTRY } from '../../data/contracts/namedContracts';
 import { NAMED_MERCENARIES } from '../../data/mercenaries';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
 import { BOARD_ISSUER_PROFILES } from '../../data/contracts/boardIssuers';
+import { BOSS_TROPHIES } from '../../data/contracts/bossTrophies';
 import { TAVERN_MINOR_CONTRACT_TEMPLATES } from '../../data/contracts/tavernMinorContracts';
 import { materials } from '../../data/materials';
 import { DUNGEONS } from '../../data/dungeons';
+import { t } from '../../utils/i18n';
 import { rng } from '../../utils/random';
+
+// --- Shared Helpers -------------------------------------------------------
+
+const getCommissionText = (
+    state: GameState,
+    key: string,
+    params?: Record<string, string | number>
+) => t(state.settings.language, key, params);
+
+const getNamedEncounterText = (state: GameState, contractId: string, fallback: string) => {
+    const registryEntry = NAMED_CONTRACT_REGISTRY.find(entry => entry.contractId === contractId);
+    return registryEntry?.encounterDialogue.textKey
+        ? getCommissionText(state, registryEntry.encounterDialogue.textKey)
+        : fallback;
+};
 
 export const isNamedMercenaryEligible = (state: GameState, entry: any): boolean => {
     const stateInfo = state.commission.namedEncounters[entry.mercenaryId];
@@ -87,6 +104,78 @@ const getContractMatchingItems = (inventory: InventoryItem[], itemId: string, ac
     });
 };
 
+type RewardApplicationResult = {
+    gold: number;
+    knownMercenaries: GameState['knownMercenaries'];
+    namedEncounters: GameState['commission']['namedEncounters'];
+    issuerAffinity: GameState['commission']['issuerAffinity'];
+    dialogue: GameState['activeDialogue'];
+};
+
+const applyContractRewards = (state: GameState, contract: ContractDefinition): RewardApplicationResult => {
+    let gold = state.stats.gold;
+    let knownMercenaries = [...state.knownMercenaries];
+    let namedEncounters = { ...state.commission.namedEncounters };
+    let issuerAffinity = { ...state.commission.issuerAffinity };
+    let dialogue = null as GameState['activeDialogue'];
+
+    contract.rewards.forEach(reward => {
+        if (reward.type === 'GOLD' && reward.gold) {
+            gold += reward.gold;
+        }
+
+        if (reward.type === 'UNLOCK_RECRUIT' && reward.mercenaryId) {
+            namedEncounters[reward.mercenaryId] = {
+                ...(namedEncounters[reward.mercenaryId] || {
+                    mercenaryId: reward.mercenaryId,
+                    unlocked: true,
+                    hasAppeared: true,
+                    daysEligible: 0,
+                    declinedUntilDay: 0,
+                }),
+                recruitUnlocked: true,
+            };
+
+            const exists = knownMercenaries.some(m => m.id === reward.mercenaryId);
+            if (exists) {
+                knownMercenaries = knownMercenaries.map(m =>
+                    m.id === reward.mercenaryId ? { ...m, status: 'VISITOR' as const } : m
+                );
+            } else {
+                const mercenaryData = NAMED_MERCENARIES.find(m => m.id === reward.mercenaryId);
+                if (mercenaryData) {
+                    knownMercenaries.push({
+                        ...mercenaryData,
+                        status: 'VISITOR',
+                    });
+                }
+            }
+        }
+
+        if (reward.type === 'AFFINITY' && reward.mercenaryId && reward.affinity) {
+            knownMercenaries = knownMercenaries.map(m =>
+                m.id === reward.mercenaryId ? { ...m, affinity: (m.affinity || 0) + (reward.affinity ?? 0) } : m
+            );
+        }
+
+        if (reward.type === 'ISSUER_AFFINITY' && reward.issuerAffinity && contract.issuerId) {
+            issuerAffinity[contract.issuerId] = (issuerAffinity[contract.issuerId] || 0) + reward.issuerAffinity;
+        }
+    });
+
+    if (contract.rewards.some(r => r.type === 'UNLOCK_RECRUIT')) {
+        dialogue = {
+            speaker: contract.clientName || 'Mercenary',
+            text: getCommissionText(state, 'commission.recruit_unlock_thanks'),
+            options: [{ label: getCommissionText(state, 'commission.recruit_unlock_welcome'), variant: 'primary' as const }]
+        };
+    }
+
+    return { gold, knownMercenaries, namedEncounters, issuerAffinity, dialogue };
+};
+
+// --- Named Contract Flow --------------------------------------------------
+
 export const handleTriggerNamedEncounterCheck = (state: GameState, location: string): GameState => {
     // Prevent shop encounters if the shop is not open
     if (location === 'SHOP' && !state.forge.isShopOpen) {
@@ -108,16 +197,16 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
                     ...state,
                     activeDialogue: {
                         speaker: 'Pip the Green',
-                        text: "I've been watching you work, and I'm impressed. I'd like to offer a formal contract. If you can provide me with a high-quality Bronze Shortsword, I'll join your squad permanently.",
+                        text: getCommissionText(state, 'commission.pip_formal_offer'),
                         options: [
                             { 
-                                label: "I accept.", 
+                                label: getCommissionText(state, 'commission.option_accept'),
                                 action: { type: 'ACCEPT_CONTRACT', payload: { contractId: pipRegistryEntry.contractId } },
                                 variant: 'primary',
                                 targetTab: 'FORGE'
                             },
                             { 
-                                label: "Maybe later.", 
+                                label: getCommissionText(state, 'commission.option_maybe_later'),
                                 action: { type: 'SET_DIALOGUE', payload: null },
                                 variant: 'neutral'
                             }
@@ -205,7 +294,7 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
                     requestedId: triggeredEntry.requirements[0].itemId,
                     price: 100, // Placeholder price
                     markup: 1.25,
-                    dialogue: triggeredEntry.encounterDialogue.text
+                    dialogue: getNamedEncounterText(state, triggeredEntry.contractId, triggeredEntry.encounterDialogue.text)
                 },
                 entryTime: Date.now()
             };
@@ -229,7 +318,7 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
                     [location]: state.stats.day
                 }
             },
-            logs: [...state.logs, `A special visitor has appeared: ${triggeredEntry.displayName}!`]
+            logs: [...state.logs, getCommissionText(state, 'logs.special_visitor', { name: triggeredEntry.displayName })]
         };
     }
 
@@ -248,22 +337,22 @@ export const handleTriggerNamedEncounterCheck = (state: GameState, location: str
         },
         activeDialogue: {
             speaker: triggeredEntry.encounterDialogue.speaker,
-            text: triggeredEntry.encounterDialogue.text,
+            text: getNamedEncounterText(state, triggeredEntry.contractId, triggeredEntry.encounterDialogue.text),
             options: [
                 { 
-                    label: "I'll see what I can do.", 
+                    label: getCommissionText(state, 'commission.option_try_help'),
                     variant: 'primary',
                     action: { type: 'ACCEPT_CONTRACT', payload: { contractId: triggeredEntry.contractId } },
                     targetTab: 'FORGE'
                 },
                 {
-                    label: "Maybe later.",
+                    label: getCommissionText(state, 'commission.option_maybe_later'),
                     variant: 'neutral',
                     action: { type: 'DECLINE_CONTRACT', payload: { mercenaryId: triggeredEntry.mercenaryId } }
                 }
             ]
         },
-        logs: [...state.logs, `A special visitor has appeared: ${triggeredEntry.displayName}!`]
+        logs: [...state.logs, getCommissionText(state, 'logs.special_visitor', { name: triggeredEntry.displayName })]
     };
 };
 
@@ -280,9 +369,9 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
         const contract: ContractDefinition = {
             id: registryEntry.contractId,
             mercenaryId: registryEntry.mercenaryId,
-            title: `Special Request: ${registryEntry.displayName}`,
+            title: getCommissionText(state, 'commission.special_request_title', { name: registryEntry.displayName }),
             clientName: registryEntry.displayName,
-            description: `A special request from ${registryEntry.displayName}. Complete it to earn their trust.`,
+            description: getCommissionText(state, 'commission.special_request_desc', { name: registryEntry.displayName }),
             type: 'SPECIAL',
             status: 'ACTIVE',
             source: registryEntry.encounterRule.location as any, 
@@ -318,7 +407,7 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
                     }
                 }
             },
-            logs: [...state.logs, `Accepted special contract: ${contract.title}.`]
+            logs: [...state.logs, getCommissionText(state, 'logs.accepted_special_contract', { title: contract.title })]
         };
     }
 
@@ -331,7 +420,7 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
     if (activeGeneralCount >= 3) {
         return {
             ...state,
-            logs: [...state.logs, "You cannot accept more than 3 general contracts at once."]
+            logs: [...state.logs, getCommissionText(state, 'commission.active_limit_reached')]
         };
     }
 
@@ -345,7 +434,7 @@ export const handleAcceptContract = (state: GameState, payload: { contractId: st
             ...state.commission,
             activeContracts: newActiveContracts
         },
-        logs: [...state.logs, `Accepted contract: ${offeredContract.title}.`]
+        logs: [...state.logs, getCommissionText(state, 'logs.accepted_contract', { title: offeredContract.title })]
     };
 };
 
@@ -363,7 +452,7 @@ export const handleDeclineContract = (state: GameState, payload: { contractId?: 
                     ...state.commission,
                     activeContracts: state.commission.activeContracts.filter(c => c.id !== contractId)
                 },
-                logs: [...state.logs, `Declined contract: ${contract.title}.`]
+                logs: [...state.logs, getCommissionText(state, 'logs.declined_contract', { title: contract.title })]
             };
         }
     }
@@ -396,11 +485,13 @@ export const handleDeclineContract = (state: GameState, payload: { contractId?: 
             }
         },
         logs: [
-            `${mercenary?.name || mercenaryId} decided to wait. They may return in a few days.`,
+            getCommissionText(state, 'commission.named_wait_return', { name: mercenary?.name || mercenaryId }),
             ...state.logs
         ]
     };
 };
+
+// --- Reward Application ---------------------------------------------------
 
 export const handleSubmitContract = (state: GameState, contractId: string): GameState => {
     const contract = state.commission.activeContracts.find(c => c.id === contractId);
@@ -419,7 +510,7 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
     if (missingItems.length > 0) {
         return {
             ...state,
-            logs: [...state.logs, `You don't have the required items for this contract.`]
+            logs: [...state.logs, getCommissionText(state, 'logs.missing_contract_items')]
         };
     }
 
@@ -446,75 +537,28 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
         }).filter(inv => inv.quantity > 0);
     });
 
-    // Apply rewards
-    let newGold = state.stats.gold;
-    let newKnownMercenaries = [...state.knownMercenaries];
-    let newNamedEncounters = { ...state.commission.namedEncounters };
-    let newIssuerAffinity = { ...state.commission.issuerAffinity };
-    const logs = [...state.logs];
-
-    contract.rewards.forEach(reward => {
-        if (reward.type === 'GOLD' && reward.gold) {
-            newGold += reward.gold;
-        } else if (reward.type === 'UNLOCK_RECRUIT' && reward.mercenaryId) {
-            newNamedEncounters[reward.mercenaryId] = {
-                ...newNamedEncounters[reward.mercenaryId],
-                recruitUnlocked: true
-            };
-            
-            const exists = newKnownMercenaries.some(m => m.id === reward.mercenaryId);
-            if (exists) {
-                newKnownMercenaries = newKnownMercenaries.map(m => 
-                    m.id === reward.mercenaryId ? { ...m, status: 'VISITOR' as const } : m
-                );
-            } else {
-                const mercenaryData = NAMED_MERCENARIES.find(m => m.id === reward.mercenaryId);
-                if (mercenaryData) {
-                    newKnownMercenaries.push({
-                        ...mercenaryData,
-                        status: 'VISITOR'
-                    });
-                }
-            }
-        } else if (reward.type === 'AFFINITY' && reward.mercenaryId && reward.affinity) {
-            newKnownMercenaries = newKnownMercenaries.map(m => 
-                m.id === reward.mercenaryId ? { ...m, affinity: (m.affinity || 0) + reward.affinity! } : m
-            );
-        } else if (reward.type === 'ISSUER_AFFINITY' && reward.issuerAffinity && contract.issuerId) {
-            const currentAffinity = newIssuerAffinity[contract.issuerId] || 0;
-            newIssuerAffinity[contract.issuerId] = currentAffinity + reward.issuerAffinity;
-        }
-    });
+    const rewardResult = applyContractRewards(state, contract);
 
     const newActiveContracts = state.commission.activeContracts.filter(c => c.id !== contractId);
     const newCompletedContractIds = [...state.commission.completedContractIds, contractId];
-
-    let dialogue = null;
-    if (contract.rewards.some(r => r.type === 'UNLOCK_RECRUIT')) {
-        dialogue = {
-            speaker: contract.clientName || 'Mercenary',
-            text: "Thank you! I can see you're a smith of your word. I'd be honored to work with you. You can find me in the Tavern whenever you need my blade.",
-            options: [{ label: "Welcome to the Forge!", variant: 'primary' as const }]
-        };
-    }
 
     return {
         ...state,
         stats: {
             ...state.stats,
-            gold: newGold
+            gold: rewardResult.gold
         },
         inventory: newInventory,
-        knownMercenaries: newKnownMercenaries,
+        knownMercenaries: rewardResult.knownMercenaries,
         commission: {
             ...state.commission,
             activeContracts: newActiveContracts,
             completedContractIds: newCompletedContractIds,
-            namedEncounters: newNamedEncounters,
-            issuerAffinity: newIssuerAffinity
+            namedEncounters: rewardResult.namedEncounters,
+            issuerAffinity: rewardResult.issuerAffinity
         },
-        activeDialogue: dialogue,
-        logs: [...state.logs, `Contract completed: ${contract.title}!`]
+        activeDialogue: rewardResult.dialogue,
+        logs: [...state.logs, getCommissionText(state, 'logs.completed_contract', { title: contract.title })]
     };
 };
 
@@ -532,7 +576,7 @@ export const handleFailContract = (state: GameState, contractId: string): GameSt
             failedContractIds: newFailedContractIds,
             expiredContracts: newExpiredContracts
         },
-        logs: [...state.logs, `Contract failed: ${contract?.title || contractId}`]
+        logs: [...state.logs, getCommissionText(state, 'logs.failed_contract', { title: contract?.title || contractId })]
     };
 };
 
@@ -583,7 +627,7 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
     if (!allMet) {
         return {
             ...state,
-            logs: [...state.logs, "Objectives are not yet complete."]
+            logs: [...state.logs, getCommissionText(state, 'commission.active_objectives_incomplete')]
         };
     }
 
@@ -604,38 +648,7 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
         }
     });
 
-    // Apply rewards (similar to handleSubmitContract)
-    let newGold = state.stats.gold;
-    let newKnownMercenaries = [...state.knownMercenaries];
-    let newNamedEncounters = { ...state.commission.namedEncounters };
-    let newIssuerAffinity = { ...state.commission.issuerAffinity };
-
-    contract.rewards.forEach(reward => {
-        if (reward.type === 'GOLD' && reward.gold) {
-            newGold += reward.gold;
-        }
-        if (reward.type === 'ISSUER_AFFINITY' && reward.issuerAffinity && contract.issuerId) {
-            const currentAffinity = newIssuerAffinity[contract.issuerId] || 0;
-            newIssuerAffinity[contract.issuerId] = currentAffinity + reward.issuerAffinity;
-        }
-        if (reward.type === 'AFFINITY' && reward.mercenaryId && reward.affinity) {
-            newKnownMercenaries = newKnownMercenaries.map(m => 
-                m.id === reward.mercenaryId ? { ...m, affinity: (m.affinity || 0) + reward.affinity! } : m
-            );
-        }
-        if (reward.type === 'UNLOCK_RECRUIT' && reward.mercenaryId) {
-            newNamedEncounters[reward.mercenaryId] = {
-                ...(newNamedEncounters[reward.mercenaryId] || {
-                    mercenaryId: reward.mercenaryId,
-                    unlocked: true,
-                    hasAppeared: true,
-                    daysEligible: 0,
-                    declinedUntilDay: 0,
-                }),
-                recruitUnlocked: true
-            };
-        }
-    });
+    const rewardResult = applyContractRewards(state, contract);
 
     const newActiveContracts = state.commission.activeContracts.filter(c => c.id !== contractId);
     const newCompletedContractIds = [...state.commission.completedContractIds, contractId];
@@ -648,19 +661,20 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
         ...state,
         stats: {
             ...state.stats,
-            gold: newGold
+            gold: rewardResult.gold
         },
         inventory: newInventory,
-        knownMercenaries: newKnownMercenaries,
+        knownMercenaries: rewardResult.knownMercenaries,
         commission: {
             ...state.commission,
             activeContracts: newActiveContracts,
             completedContractIds: newCompletedContractIds,
-            namedEncounters: newNamedEncounters,
+            namedEncounters: rewardResult.namedEncounters,
             trackedObjectiveProgress: newTrackedProgress,
-            issuerAffinity: newIssuerAffinity
+            issuerAffinity: rewardResult.issuerAffinity
         },
-        logs: [...state.logs, `Contract claimed: ${contract.title}!`]
+        activeDialogue: rewardResult.dialogue,
+        logs: [...state.logs, getCommissionText(state, 'logs.claimed_contract', { title: contract.title })]
     };
 };
 
@@ -683,6 +697,7 @@ const pickBoardContractKind = (
         CRAFT: isEarlyGame ? 45 : 30,
         TURN_IN: isEarlyGame ? 45 : 30,
         HUNT: isEarlyGame ? 10 : 30,
+        EXPLORE: 0,
         BOSS: isEarlyGame ? 0 : 10, // BOSS contracts are rare and late game
     };
 
@@ -778,10 +793,10 @@ const createCraftBoardContract = (
         source: 'BOARD',
         issuerId: issuer.id,
         issuerName: issuer.displayName,
-        title: `${issuer.displayName} Request: ${recipe.name}`,
+        title: getCommissionText(state, 'commission.board_craft_title', { issuer: issuer.displayName, item: recipe.name }),
         clientName: issuer.displayName,
         urgency,
-        description: `The ${issuer.displayName} requires a high-quality ${recipe.name}. ${issuer.flavorTone}.`,
+        description: getCommissionText(state, 'commission.board_craft_desc', { issuer: issuer.displayName, item: recipe.name, tone: issuer.flavorTone }),
         requirements: [
             {
                 itemId: recipe.id,
@@ -843,10 +858,10 @@ const createTurnInBoardContract = (
         source: 'BOARD',
         issuerId: issuer.id,
         issuerName: issuer.displayName,
-        title: `${issuer.displayName} Supply Order`,
+        title: getCommissionText(state, 'commission.board_turn_in_title', { issuer: issuer.displayName }),
         clientName: issuer.displayName,
         urgency,
-        description: `A request for basic supplies from ${issuer.displayName}. ${issuer.flavorTone}.`,
+        description: getCommissionText(state, 'commission.board_turn_in_desc', { issuer: issuer.displayName, tone: issuer.flavorTone }),
         requirements: [
             { itemId: selectedMaterialId, quantity }
         ],
@@ -899,10 +914,10 @@ const createHuntBoardContract = (
         source: 'BOARD',
         issuerId: issuer.id,
         issuerName: issuer.displayName,
-        title: `${issuer.displayName} Hunt Order`,
+        title: getCommissionText(state, 'commission.board_hunt_title', { issuer: issuer.displayName }),
         clientName: issuer.displayName,
         urgency,
-        description: `Eliminate threats in the outskirts for ${issuer.displayName}. ${issuer.flavorTone}.`,
+        description: getCommissionText(state, 'commission.board_hunt_desc', { issuer: issuer.displayName, tone: issuer.flavorTone }),
         requirements: [],
         objectives: [
             {
@@ -910,7 +925,7 @@ const createHuntBoardContract = (
                 targetType: 'KILL',
                 targetId: selectedMonster.id,
                 targetCount: count,
-                label: `Hunt ${selectedMonster.name}`
+                label: getCommissionText(state, 'commission.board_hunt_objective', { target: selectedMonster.name })
             }
         ],
         rewards: [
@@ -921,24 +936,14 @@ const createHuntBoardContract = (
     };
 };
 
-const BOSS_TROPHY_MAP: Record<string, { itemId: string; name: string; tier: number }> = {
-    'plague_rat_king': { itemId: 'trophy_rat_king', name: "Rat King's Tail", tier: 1 },
-    'goblin_king': { itemId: 'trophy_goblin_king', name: "Goblin King's Scepter", tier: 2 },
-    'brood_mother': { itemId: 'trophy_brood_mother', name: "Brood Mother's Eye", tier: 2 },
-    'werewolf': { itemId: 'trophy_werewolf', name: "Werewolf's Alpha Pelt", tier: 2 },
-    'kobold_foreman': { itemId: 'trophy_kobold_foreman', name: "Foreman's Golden Pickaxe", tier: 2 },
-};
-
 const createBossTurnInContract = (
     state: GameState,
     issuer: BoardIssuerProfile,
     index: number
 ): ContractDefinition => {
     // Pick a boss trophy based on tier
-    const bossIds = Object.keys(BOSS_TROPHY_MAP);
-    const availableBosses = bossIds.filter(id => BOSS_TROPHY_MAP[id].tier <= Math.max(1, state.stats.tierLevel + 1));
-    const selectedBossId = rng.pick(availableBosses) || 'plague_rat_king';
-    const trophy = BOSS_TROPHY_MAP[selectedBossId];
+    const availableBosses = BOSS_TROPHIES.filter(trophy => trophy.tier <= Math.max(1, state.stats.tierLevel + 1));
+    const trophy = rng.pick(availableBosses) || BOSS_TROPHIES[0];
 
     const urgency = 'URGENT'; // Boss trophies are always urgent
     const daysRemaining = 2; // Short deadline for high reward
@@ -953,10 +958,14 @@ const createBossTurnInContract = (
         source: 'BOARD',
         issuerId: issuer.id,
         issuerName: issuer.displayName,
-        title: `URGENT: ${trophy.name} Required`,
+        title: getCommissionText(state, 'commission.board_boss_title', { trophy: trophy.trophyName }),
         clientName: issuer.displayName,
         urgency,
-        description: `We require proof of the ${selectedBossId.replace(/_/g, ' ')}'s defeat. Bring us the ${trophy.name}. ${issuer.flavorTone}.`,
+        description: getCommissionText(state, 'commission.board_boss_desc', {
+            boss: trophy.bossName,
+            trophy: trophy.trophyName,
+            tone: issuer.flavorTone
+        }),
         requirements: [],
         objectives: [
             {
@@ -964,7 +973,7 @@ const createBossTurnInContract = (
                 targetType: 'TURN_IN',
                 targetId: trophy.itemId,
                 targetCount: 1,
-                label: `Turn in ${trophy.name}`
+                label: getCommissionText(state, 'commission.board_boss_objective', { trophy: trophy.trophyName })
             }
         ],
         rewards: [
@@ -1058,7 +1067,7 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
             activeContracts: [...activeSpecialContracts, ...activeNonBoardGeneral, ...newBoardContracts],
             lastDailyCommissionRefreshDay: state.stats.day
         },
-        logs: ['The Commission Board has been updated with new requests.', ...state.logs]
+        logs: [getCommissionText(state, 'logs.refreshed_commissions', { count: newBoardContracts.length }), ...state.logs]
     };
 };
 
@@ -1082,9 +1091,11 @@ export const handleUnlockNamedEncounter = (state: GameState, mercenaryId: string
                 }
             }
         },
-        logs: [`You've learned something new about ${mercenaryId}.`, ...state.logs]
+        logs: [getCommissionText(state, 'commission.named_hint_learned', { name: mercenaryId }), ...state.logs]
     };
 };
+
+// --- Tavern Contract Flow -------------------------------------------------
 
 export const handleGenerateTavernMinorContract = (state: GameState, payload: { mercenaryId: string; templateId: string }): GameState => {
     const template = TAVERN_MINOR_CONTRACT_TEMPLATES.find(t => t.id === payload.templateId);
@@ -1107,11 +1118,11 @@ export const handleGenerateTavernMinorContract = (state: GameState, payload: { m
         id: `tavern_${payload.mercenaryId}_${state.stats.day}_${rng.next().toString(36).substr(2, 5)}`,
         type: 'GENERAL',
         kind: template.kind,
-        title: template.title,
+        title: template.titleKey ? getCommissionText(state, template.titleKey) : (template.title || template.id),
         clientName: mercenary.name,
         mercenaryId: mercenary.id,
         source: 'TAVERN',
-        description: template.description,
+        description: template.descriptionKey ? getCommissionText(state, template.descriptionKey) : (template.description || template.id),
         requirements: template.requirements,
         rewards: [
             { type: 'GOLD', gold: template.rewardGold },
@@ -1124,10 +1135,14 @@ export const handleGenerateTavernMinorContract = (state: GameState, payload: { m
 
     return {
         ...state,
+        tavern: {
+            ...state.tavern,
+            reputation: Math.min(100, state.tavern.reputation + 2),
+        },
         commission: {
             ...state.commission,
             activeContracts: [newContract, ...state.commission.activeContracts]
         },
-        logs: [`${mercenary.name} has given you a personal request.`, ...state.logs]
+        logs: [getCommissionText(state, 'commission.personal_request_received', { name: mercenary.name }), ...state.logs]
     };
 };

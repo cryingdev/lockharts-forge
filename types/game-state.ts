@@ -8,12 +8,12 @@ import { Monster } from '../models/Monster';
 export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP' | 'STAIRS' | 'ENEMY' | 'RESOURCE';
 
 export type ContractType = 'GENERAL' | 'SPECIAL';
-export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
+export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE' | 'BOSS';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
 
 export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM' | 'BOARD';
 export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT' | 'ISSUER_AFFINITY';
-export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
+export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED' | 'TURN_IN';
 
 export type TavernTalkOutcome = 'FLAVOR' | 'RUMOR' | 'MINOR_CONTRACT' | 'OPPORTUNITY';
 export type TavernTalkTone = 'COLD' | 'NEUTRAL' | 'WARM';
@@ -30,8 +30,10 @@ export interface TavernTalkEntry {
   requiresHired?: boolean;
   requiresVisitor?: boolean;
   weight: number;
-  text: string;
+  text?: string;
+  textKey?: string;
   followupText?: string;
+  followupTextKey?: string;
   rumorTag?: string;
   contractTemplateId?: string;
   unlockNamedId?: string;
@@ -39,9 +41,11 @@ export interface TavernTalkEntry {
 
 export interface TavernMinorContractTemplate {
   id: string;
-  title: string;
+  title?: string;
+  titleKey?: string;
   kind: GeneralContractKind;
-  description: string;
+  description?: string;
+  descriptionKey?: string;
   requirements: ContractItemRequirement[];
   rewardGold: number;
   rewardAffinity: number;
@@ -91,6 +95,7 @@ export interface ContractReward {
   itemCount?: number;
   mercenaryId?: string;
   issuerId?: BoardIssuerId;
+  issuerAffinity?: number;
 }
 
 export interface ContractEncounterRule {
@@ -177,6 +182,7 @@ export interface CommissionState {
   trackedObjectiveProgress: Record<string, Record<string, number>>;
   lastDailyCommissionRefreshDay: number;
   lastEncounterCheckDayByLocation?: Partial<Record<ContractSource, number>>;
+  issuerAffinity: Partial<Record<BoardIssuerId, number>>;
   hasSeenRecoveryFlow?: boolean; // New: Track if player has seen the recovery tutorial/flow
   hasHadInjuredMercenary?: boolean; // New: Track if player has ever had an injured mercenary
 }
@@ -275,6 +281,12 @@ export interface DialogueState {
   options: DialogueOption[];
 }
 
+export interface TavernState {
+  reputation: number;
+  lastInviteDay: number;
+  inviteCountToday: number;
+}
+
 export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED' | 'MARKET' | 'SMITHING';
 
 export interface AudioSettings {
@@ -307,6 +319,7 @@ export interface GameState {
   visitorsToday: string[]; 
   talkedToToday: string[]; 
   boughtDrinkToday: string[]; 
+  tavern: TavernState;
 
   marketStock: Record<string, number>; 
   garrickAffinity: number;

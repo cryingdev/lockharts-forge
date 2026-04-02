@@ -100,6 +100,11 @@ export const createInitialGameState = (): GameState => {
         visitorsToday: [],
         talkedToToday: [],
         boughtDrinkToday: [],
+        tavern: {
+            reputation: 0,
+            lastInviteDay: 0,
+            inviteCountToday: 0,
+        },
 
         // Market Initial Stock
         marketStock: MARKET_CATALOG.reduce((acc, item) => ({ ...acc, [item.id]: item.maxStock }), {}),

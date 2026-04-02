@@ -73,6 +73,12 @@ export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mer
             ...state.commission,
             namedEncounters: newNamedEncounters
         },
+        tavern: {
+            ...state.tavern,
+            reputation: Math.min(100, state.tavern.reputation + 3),
+            lastInviteDay: state.stats.day,
+            inviteCountToday: state.tavern.inviteCountToday + 1,
+        },
         knownMercenaries: updatedKnownMercenaries,
         logs: [`Paid ${cost} G to find new talent. ${mercenary.name} arrived at the tavern.`, ...state.logs]
     };
@@ -225,6 +231,10 @@ export const handleTalkMercenary = (state: GameState, payload: { mercenaryId: st
         ...state,
         knownMercenaries: newMercenaries,
         talkedToToday: [...state.talkedToToday, mercenaryId],
+        tavern: {
+            ...state.tavern,
+            reputation: Math.min(100, state.tavern.reputation + 1),
+        },
         logs: [`Talked with ${merc.name}. Affinity +1.`, ...state.logs]
     };
 };
@@ -253,6 +263,10 @@ export const handleBuyDrink = (state: GameState, payload: { mercenaryId: string 
         },
         knownMercenaries: newMercenaries,
         boughtDrinkToday: [...state.boughtDrinkToday, mercenaryId],
+        tavern: {
+            ...state.tavern,
+            reputation: Math.min(100, state.tavern.reputation + 2),
+        },
         logs: [`Bought a round of ale for ${merc.name}. Affinity +${AFFINITY_GAIN}.`, ...state.logs]
     };
 };

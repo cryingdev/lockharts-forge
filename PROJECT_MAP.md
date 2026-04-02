@@ -11,13 +11,15 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.44a`).
+- `metadata.json`: App metadata and versioning (`0.1.45a`).
 - `GAME_DESIGN.md`: Comprehensive game design document covering mechanics and world-building.
 - `TECH_DESIGN.md`: Technical architecture and implementation details.
 - `COMBAT_FORMULA.md`: Official combat calculation sequence and formulas.
 - `PROBABILITY_SYSTEM.md`: RNG standardization rules.
 - `ARCHITECTURE_POLICIES.md`: Economic balance, state transitions, and save migration policies.
 - `PROJECT_MAP.md`: This document.
+- `locales/en.ts`: English localization dictionary.
+- `locales/ko.ts`: Korean localization dictionary.
 
 ### Configuration (`config/`)
 - `config/game-config.ts`: General rules and energy costs (Repair, Shop, Craft).
@@ -45,6 +47,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `state/reducer/expedition.ts`: Auto-expedition lifecycle and reward claiming.
 - `state/reducer/manualDungeon.ts`: Grid movement, floor transitions, and **Immersive Narrative Logic**.
 - `state/reducer/shop.ts`: Shop open/close, queue management, and customer refusal.
+- `state/reducer/commission.ts`: Named recruitment contracts, board commissions, tavern minor contracts, and reward application.
 - `state/reducer/equipment.ts`: Equip/Unequip logic and level requirement checks.
 - `state/reducer/research.ts`: Research combination logic for discovering blueprints.
 - `state/reducer/market-affinity.ts`: Garrick relationship tracking.
@@ -135,6 +138,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `utils/random.ts`: Seeded RNG utility (LCG implementation).
 - `utils/dropLogic.ts`: Standardized loot calculation engine.
 - `utils/cacheManager.ts`: Automated web cache maintenance and version markers.
+- `utils/i18n.ts`: Localization lookup utility with key-based translation and parameter interpolation.
 
 ### Core Services (`services/`)
 - `services/AssetManager.tsx`: Centralized asset loading and memory cache management.
@@ -154,5 +158,10 @@ This document provides a comprehensive structural map of the project, detailing 
     *   Floating "Back" button overlay implemented with automatic visibility management during slot selection.
 *   **Persistence Overhaul**:
     *   Global settings (Audio, UI) now persist independently of save slots.
+    *   Language preference is stored in `settings.language` and shared across all saves.
+*   **Localization Foundation**:
+    *   Key-value locale dictionaries introduced in `locales/en.ts` and `locales/ko.ts`.
+    *   `utils/i18n.ts` added to resolve translated UI strings and formatted dialogue/log templates.
+    *   Tavern, shop, and commission UI flows now support English/Korean switching while keeping item names and proper nouns in English.
 *   **Skill Knowledge**:
     *   Skill Manuals and Scrolls fully integrated into the economic and crafting cycles.

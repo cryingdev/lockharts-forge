@@ -4,6 +4,7 @@ import { useGame } from '../../../../context/GameContext';
 import { Mercenary } from '../../../../models/Mercenary';
 import { calculateHiringCost, CONTRACT_CONFIG } from '../../../../config/contract-config';
 import { InventoryItem } from '../../../../types/inventory';
+import { resolveTavernTalkOutcome } from '../../../../state/helpers/tavernTalkHelpers';
 import { t } from '../../../../utils/i18n';
 
 export interface FloatingHeart {
@@ -21,6 +22,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
     const [dialogue, setDialogue] = useState(t(language, 'tavern.interaction_intro', { name: mercenary.name }));
     const [showGiftMenu, setShowGiftMenu] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
+    const [followupText, setFollowupText] = useState<string | null>(null);
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     const [step, setStep] = useState<InteractionStep>('IDLE');
@@ -42,22 +44,31 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
 
     const handleTalk = useCallback(() => {
         if (pendingGiftItem || step !== 'IDLE') return;
+        if (followupText) return;
 
+        const firstMeaningfulTalkToday = !state.talkedToToday.includes(mercenary.id);
         if (!state.talkedToToday.includes(mercenary.id)) {
             actions.talkMercenary(mercenary.id);
             spawnHearts();
         }
 
-        const lines = [
-            t(language, 'tavern.talk_1'),
-            t(language, 'tavern.talk_2'),
-            t(language, 'tavern.talk_3'),
-            t(language, 'tavern.talk_4'),
-            t(language, 'tavern.talk_5'),
-            t(language, 'tavern.talk_6'),
-        ];
-        setDialogue(lines[Math.floor(Math.random() * lines.length)]);
-    }, [language, mercenary.id, state.talkedToToday, pendingGiftItem, step, actions, spawnHearts]);
+        const outcome = resolveTavernTalkOutcome(state, mercenary);
+        const resolvedText = outcome.textKey ? t(language, outcome.textKey) : (outcome.text || t(language, 'tavern.talk_1'));
+        const resolvedFollowup = outcome.followupTextKey
+            ? t(language, outcome.followupTextKey)
+            : (outcome.followupText || null);
+
+        setDialogue(resolvedText);
+        setFollowupText(resolvedFollowup);
+
+        if (firstMeaningfulTalkToday && outcome.contractTemplateId) {
+            actions.generateTavernMinorContract(mercenary.id, outcome.contractTemplateId);
+        }
+
+        if (outcome.outcome === 'OPPORTUNITY' && outcome.unlockNamedId) {
+            actions.unlockNamedEncounter(outcome.unlockNamedId);
+        }
+    }, [language, mercenary, state, pendingGiftItem, step, followupText, actions, spawnHearts]);
 
     const handleBuyDrink = useCallback(() => {
         if (pendingGiftItem || step !== 'IDLE') return;
@@ -129,6 +140,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         state,
         actions,
         dialogue,
+        followupText,
         showGiftMenu,
         setShowGiftMenu,
         showDetail,
@@ -150,6 +162,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
             handleConfirmTerminate,
             handleSelectItemForGift,
             handleConfirmGift,
+            handleContinue: () => setFollowupText(null),
             handleCancelGift: () => { setPendingGiftItem(null); setDialogue(t(language, 'tavern.gift_cancel')); },
             handleCancelStep: () => { setStep('IDLE'); setDialogue(t(language, 'tavern.step_cancel')); }
         }

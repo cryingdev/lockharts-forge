@@ -94,6 +94,11 @@ Mercenaries are the player's primary agents in the world.
     -   Automatic discounts on hiring.
     -   Immediate loyalty, guaranteed acceptance, or reduced relationship difficulty.
 -   Design intent: the Tavern offers better opportunities as reputation rises, but building trust with an individual mercenary must still require effort.
+-   Current implementation notes:
+    -   Tavern Reputation now appears directly in the Tavern UI.
+    -   It currently increases through Tavern-centered social actions such as `Invite`, `Talk`, `Buy Drink`, and receiving Tavern personal requests.
+    -   It currently biases `Talk` outcomes away from pure flavor and toward `RUMOR`, `MINOR_CONTRACT`, and rare `OPPORTUNITY` results as reputation rises.
+    -   If too many Tavern-origin contracts are already active, the system shifts back toward `FLAVOR` and `RUMOR` to avoid overloading the player with personal requests.
 
 ##### 3.3.3.1 Suggested Tavern Reputation Bands
 | Tavern Reputation | Recruit Level Band | Recruit Pool Bias | Encounter Support |

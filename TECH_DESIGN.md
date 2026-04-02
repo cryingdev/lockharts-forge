@@ -79,8 +79,8 @@ The recommended addition is a contract-focused slice in `/types/game-state.ts`.
 export type ContractType = 'GENERAL' | 'SPECIAL';
 export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'BOSS';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
-export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
-export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
+export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM' | 'BOARD';
+export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT' | 'ISSUER_AFFINITY';
 
 export interface ContractItemRequirement {
   itemId: string;
@@ -93,7 +93,8 @@ export interface ContractObjectiveRequirement {
   objectiveId: string;
   targetCount: number;
   currentCount?: number;
-  targetType: 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
+  targetType: 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED' | 'TURN_IN';
+  label?: string;
   targetId?: string;
   floorNumber?: number;
 }
@@ -105,6 +106,7 @@ export interface ContractReward {
   itemId?: string;
   itemCount?: number;
   mercenaryId?: string;
+  issuerAffinity?: number;
 }
 
 export interface ContractEncounterRule {
@@ -128,6 +130,9 @@ export interface ContractDefinition {
   clientName: string;
   mercenaryId?: string;
   source: ContractSource;
+  issuerId?: BoardIssuerId;
+  issuerName?: string;
+  urgency?: 'NORMAL' | 'HIGH' | 'URGENT';
   description: string;
   requirements: ContractItemRequirement[];
   objectives?: ContractObjectiveRequirement[];
@@ -150,6 +155,10 @@ Recommended interpretation:
         -   `TURN_IN`: submit stackable loot or gathered materials
         -   `HUNT`: progress from kill tracking or combat results
         -   `BOSS`: high-reward `TURN_IN` variant for boss trophies
+-   `issuerId` / `issuerName`
+    -   Board issuer identity used for presentation, flavor, and issuer affinity rewards
+-   `urgency`
+    -   Deadline/reward pressure flag used in board and tavern contract presentation
 -   `requirements`
     -   Inventory-backed submission requirements
 -   `objectives`
@@ -158,9 +167,9 @@ Recommended interpretation:
 #### 4.4.1.1 General Contract Kind Mapping
 | `kind` | Uses `requirements` | Uses `objectives` | Primary completion mode | Typical source |
 | :--- | :--- | :--- | :--- | :--- |
-| `CRAFT` | Yes | Optional | Submit crafted item(s) | `SHOP`, `TAVERN`, `SYSTEM` |
-| `TURN_IN` | Yes | No | Submit material stack(s) | `SHOP`, `MARKET`, `SYSTEM` |
-| `HUNT` | Optional | Yes | Auto-progress from combat results, then claim | `TAVERN`, `SYSTEM` |
+| `CRAFT` | Yes | Optional | Submit crafted item(s) | `SHOP`, `TAVERN`, `BOARD` |
+| `TURN_IN` | Yes | No | Submit material stack(s) | `SHOP`, `MARKET`, `BOARD`, `TAVERN` |
+| `HUNT` | Optional | Yes | Auto-progress from combat results, then claim | `TAVERN`, `BOARD` |
 | `BOSS` | Yes | No | Submit boss trophy item | `BOARD`, `GUILD` |
 
 For named mercenary contracts, the design source should be stored in a registry-style structure that AI agents and reducers can read without inferring narrative text:
@@ -303,6 +312,7 @@ export interface CommissionState {
   namedEncounters: Record<string, NamedEncounterState>;
   lastDailyCommissionRefreshDay: number;
   trackedObjectiveProgress: Record<string, Record<string, number>>;
+  issuerAffinity: Partial<Record<BoardIssuerId, number>>;
 }
 ```
 
@@ -318,7 +328,7 @@ commission: CommissionState;
 trackedObjectiveProgress[contractId][objectiveId] = currentProgress;
 ```
 
-This allows `HUNT` and `EXPLORE` contracts to update incrementally from combat and dungeon reducers without mutating the original contract template shape.
+This allows `HUNT` and boss-trophy `TURN_IN` contracts to update and validate cleanly without mutating the original contract template shape.
 
 #### 4.4.2 Action Design (`state/actions.ts`)
 The reducer API should keep encounter logic and contract progress explicit.
@@ -470,7 +480,6 @@ interface BoardIssuerProfile {
   rewardBias: 'GOLD' | 'REPUTATION' | 'UTILITY' | 'DUNGEON';
   urgencyBias: 'LOW' | 'MEDIUM' | 'HIGH';
   flavorTone: string;
-  source: 'BOARD';
 }
 ```
 
@@ -481,11 +490,10 @@ const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
   {
     id: 'TOWN_GUARD',
     displayName: 'Town Guard',
-    favoredKinds: ['CRAFT', 'HUNT', 'EXPLORE'],
+    favoredKinds: ['CRAFT', 'HUNT', 'BOSS'],
     rewardBias: 'REPUTATION',
     urgencyBias: 'HIGH',
     flavorTone: 'Practical, defensive, and urgent',
-    source: 'BOARD',
   },
   {
     id: 'ASHFIELD_TRADERS',
@@ -494,25 +502,22 @@ const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
     rewardBias: 'GOLD',
     urgencyBias: 'MEDIUM',
     flavorTone: 'Commercial, deadline-aware, and transactional',
-    source: 'BOARD',
   },
   {
     id: 'CHAPEL_OF_EMBER',
     displayName: 'Chapel of Ember',
-    favoredKinds: ['TURN_IN', 'CRAFT', 'HUNT', 'EXPLORE'],
+    favoredKinds: ['TURN_IN', 'CRAFT', 'HUNT'],
     rewardBias: 'UTILITY',
     urgencyBias: 'MEDIUM',
     flavorTone: 'Protective, solemn, and recovery-focused',
-    source: 'BOARD',
   },
   {
     id: 'ADVENTURERS_GUILD',
     displayName: 'Adventurers\\' Guild',
-    favoredKinds: ['HUNT', 'EXPLORE', 'CRAFT', 'TURN_IN'],
+    favoredKinds: ['HUNT', 'BOSS', 'CRAFT', 'TURN_IN'],
     rewardBias: 'DUNGEON',
     urgencyBias: 'MEDIUM',
     flavorTone: 'Risk-tolerant, field-oriented, and opportunistic',
-    source: 'BOARD',
   },
 ];
 ```
@@ -642,6 +647,13 @@ And added to `GameState`:
 tavern: TavernState;
 ```
 
+Current implementation status:
+-   `tavern.reputation` is now stored in runtime state and shown in the Tavern UI.
+-   `Invite`, `Talk`, `Buy Drink`, and Tavern-origin personal-request generation currently provide small Tavern Reputation gains.
+-   `state/helpers/tavernTalkHelpers.ts` now uses Tavern Reputation and current active Tavern contract count to bias `Talk` outcomes.
+-   Higher reputation modestly increases the weight of `RUMOR`, `MINOR_CONTRACT`, and `OPPORTUNITY`.
+-   A high number of active Tavern contracts suppresses new personal requests and pushes the system back toward `FLAVOR` and `RUMOR`.
+
 #### 4.5.2 Recruit Quality Effects
 Tavern Reputation should drive recruit generation through weighted bounds rather than direct stat gifts.
 
@@ -662,10 +674,12 @@ Tavern Reputation should drive recruit generation through weighted bounds rather
 -   `state/reducer/tavern.ts` or Tavern interaction handler
     -   Increment Tavern Reputation from successful Tavern-origin commissions, positive social events, and high-value recruit outcomes.
     -   Apply daily limits or diminishing returns if repeated invites are spammed.
+    -   In the current codebase, this responsibility is distributed across Tavern-facing interaction reducers and `commission.ts` rather than a dedicated `tavern.ts` reducer.
 -   `state/reducer/commission.ts`
     -   Use Tavern Reputation as an optional unlock requirement for Tavern-based named encounters.
 -   `components/tabs/tavern/`
     -   Show Tavern Reputation and a lightweight explanation of what higher reputation improves.
+    -   The first-pass implementation now displays the current reputation value in the Tavern header area.
 
 #### 4.5.4 Suggested Reputation Buckets
 | Reputation | Recruit Level Effect | Class Pool Effect | Named Encounter Effect |
@@ -679,6 +693,22 @@ Tavern Reputation should drive recruit generation through weighted bounds rather
 -   **Responsive Design**: Mobile-first approach with Tailwind's `px-safe` and flex/grid layouts.
 -   **SfxButton**: A wrapper for standard buttons that integrates sound effects.
 -   **Modals**: Managed via state flags (e.g., `showSleepModal`) for immersive overlays.
+
+## 5.1 Localization Layer
+-   **Language State**:
+    -   Stored in `GameSettings.language`
+    -   Current supported values: `en`, `ko`
+-   **Locale Dictionaries**:
+    -   `/locales/en.ts`
+    -   `/locales/ko.ts`
+-   **Resolver Utility**:
+    -   `/utils/i18n.ts`
+    -   `t(language, key, params?)`
+
+Implementation policy:
+-   UI labels, system prompts, board copy, dialogue templates, and logs should use localization keys.
+-   Item names, mercenary names, and major proper nouns may remain in English and be interpolated into translated templates.
+-   Reducers that append player-facing logs should prefer localized templates instead of hardcoded English strings.
 
 ## 6. Performance Considerations
 -   Extensive use of `useMemo` and `useCallback` to prevent unnecessary re-renders in the complex game state.
