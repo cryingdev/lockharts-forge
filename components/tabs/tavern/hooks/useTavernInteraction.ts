@@ -53,10 +53,16 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         setDialogue(outcome.text);
         setFollowupText(outcome.followupText || null);
 
-        if (outcome.outcome === 'MINOR_CONTRACT' && outcome.contractTemplateId) {
+        if ((outcome.outcome === 'MINOR_CONTRACT' || outcome.outcome === 'OPPORTUNITY') && outcome.contractTemplateId) {
             // Only generate if it's the first talk today to prevent spamming contracts
             if (isFirstTalkToday) {
                 actions.generateTavernMinorContract(mercenary.id, outcome.contractTemplateId);
+            }
+        }
+
+        if (outcome.outcome === 'OPPORTUNITY' && outcome.unlockNamedId) {
+            if (isFirstTalkToday) {
+                actions.unlockNamedEncounter(outcome.unlockNamedId);
             }
         }
     }, [mercenary.id, state.talkedToToday, state.knownMercenaries, state.stats.tierLevel, pendingGiftItem, step, actions, spawnHearts, state]);

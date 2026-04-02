@@ -11,7 +11,7 @@ export type ContractType = 'GENERAL' | 'SPECIAL';
 export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'BOSS';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
 export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM' | 'BOARD';
-export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
+export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT' | 'ISSUER_AFFINITY';
 export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED' | 'TURN_IN';
 
 export type TavernTalkOutcome = 'FLAVOR' | 'RUMOR' | 'MINOR_CONTRACT' | 'OPPORTUNITY';
@@ -32,6 +32,7 @@ export interface TavernTalkEntry {
   followupText?: string;
   rumorTag?: string;
   contractTemplateId?: string;
+  unlockNamedId?: string;
 }
 
 export interface TavernMinorContractTemplate {
@@ -84,6 +85,7 @@ export interface ContractReward {
   type: ContractRewardType;
   gold?: number;
   affinity?: number;
+  issuerAffinity?: number;
   itemId?: string;
   itemCount?: number;
   mercenaryId?: string;

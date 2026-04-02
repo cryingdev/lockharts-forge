@@ -450,6 +450,8 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
     let newGold = state.stats.gold;
     let newKnownMercenaries = [...state.knownMercenaries];
     let newNamedEncounters = { ...state.commission.namedEncounters };
+    let newIssuerAffinity = { ...state.commission.issuerAffinity };
+    const logs = [...state.logs];
 
     contract.rewards.forEach(reward => {
         if (reward.type === 'GOLD' && reward.gold) {
@@ -478,6 +480,9 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
             newKnownMercenaries = newKnownMercenaries.map(m => 
                 m.id === reward.mercenaryId ? { ...m, affinity: (m.affinity || 0) + reward.affinity! } : m
             );
+        } else if (reward.type === 'ISSUER_AFFINITY' && reward.issuerAffinity && contract.issuerId) {
+            const currentAffinity = newIssuerAffinity[contract.issuerId] || 0;
+            newIssuerAffinity[contract.issuerId] = currentAffinity + reward.issuerAffinity;
         }
     });
 
@@ -505,7 +510,8 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
             ...state.commission,
             activeContracts: newActiveContracts,
             completedContractIds: newCompletedContractIds,
-            namedEncounters: newNamedEncounters
+            namedEncounters: newNamedEncounters,
+            issuerAffinity: newIssuerAffinity
         },
         activeDialogue: dialogue,
         logs: [...state.logs, `Contract completed: ${contract.title}!`]
@@ -608,9 +614,14 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
         if (reward.type === 'GOLD' && reward.gold) {
             newGold += reward.gold;
         }
-        if (reward.type === 'AFFINITY' && reward.affinity && contract.issuerId) {
+        if (reward.type === 'ISSUER_AFFINITY' && reward.issuerAffinity && contract.issuerId) {
             const currentAffinity = newIssuerAffinity[contract.issuerId] || 0;
-            newIssuerAffinity[contract.issuerId] = currentAffinity + reward.affinity;
+            newIssuerAffinity[contract.issuerId] = currentAffinity + reward.issuerAffinity;
+        }
+        if (reward.type === 'AFFINITY' && reward.mercenaryId && reward.affinity) {
+            newKnownMercenaries = newKnownMercenaries.map(m => 
+                m.id === reward.mercenaryId ? { ...m, affinity: (m.affinity || 0) + reward.affinity! } : m
+            );
         }
         if (reward.type === 'UNLOCK_RECRUIT' && reward.mercenaryId) {
             newNamedEncounters[reward.mercenaryId] = {
@@ -1029,7 +1040,7 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
         if (contract) {
             // Assign differentiated rewards based on issuer bias
             if (issuer.rewardBias === 'REPUTATION') {
-                contract.rewards.push({ type: 'AFFINITY', affinity: 5 });
+                contract.rewards.push({ type: 'ISSUER_AFFINITY', issuerAffinity: 5 });
             } else if (issuer.rewardBias === 'DUNGEON') {
                 contract.rewards.push({ type: 'GOLD', gold: 50 });
             } else if (issuer.rewardBias === 'UTILITY') {
@@ -1048,6 +1059,30 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
             lastDailyCommissionRefreshDay: state.stats.day
         },
         logs: ['The Commission Board has been updated with new requests.', ...state.logs]
+    };
+};
+
+export const handleUnlockNamedEncounter = (state: GameState, mercenaryId: string): GameState => {
+    const current = state.commission.namedEncounters[mercenaryId] || {
+        mercenaryId,
+        unlocked: false,
+        hasAppeared: false,
+        recruitUnlocked: false
+    };
+
+    return {
+        ...state,
+        commission: {
+            ...state.commission,
+            namedEncounters: {
+                ...state.commission.namedEncounters,
+                [mercenaryId]: {
+                    ...current,
+                    unlocked: true
+                }
+            }
+        },
+        logs: [`You've learned something new about ${mercenaryId}.`, ...state.logs]
     };
 };
 
@@ -1080,7 +1115,7 @@ export const handleGenerateTavernMinorContract = (state: GameState, payload: { m
         requirements: template.requirements,
         rewards: [
             { type: 'GOLD', gold: template.rewardGold },
-            { type: 'AFFINITY', affinity: template.rewardAffinity }
+            { type: 'AFFINITY', affinity: template.rewardAffinity, mercenaryId: mercenary.id }
         ],
         deadlineDay: state.stats.day + template.deadlineDays,
         status: 'ACTIVE', // Tavern requests are accepted immediately in this design

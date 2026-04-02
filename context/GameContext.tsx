@@ -173,6 +173,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     failContract: (contractId: string) => dispatch({ type: 'FAIL_CONTRACT', payload: { contractId } }),
     refreshCommissions: () => dispatch({ type: 'REFRESH_COMMISSIONS' }),
     generateTavernMinorContract: (mercenaryId: string, templateId: string) => dispatch({ type: 'GENERATE_TAVERN_MINOR_CONTRACT', payload: { mercenaryId, templateId } }),
+    unlockNamedEncounter: (mercenaryId: string) => dispatch({ type: 'UNLOCK_NAMED_ENCOUNTER', payload: { mercenaryId } }),
     setDialogue: (dialogue: any | null) => dispatch({ type: 'SET_DIALOGUE', payload: dialogue }),
     triggerEnergyHighlight,
     showToast,

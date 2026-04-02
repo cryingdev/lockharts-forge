@@ -84,4 +84,5 @@ export type GameAction =
   | { type: 'FAIL_CONTRACT'; payload: { contractId: string } }
   | { type: 'REFRESH_COMMISSIONS' }
   | { type: 'GENERATE_TAVERN_MINOR_CONTRACT'; payload: { mercenaryId: string; templateId: string } }
+  | { type: 'UNLOCK_NAMED_ENCOUNTER'; payload: { mercenaryId: string } }
   | { type: 'SET_DIALOGUE'; payload: any | null };

@@ -177,6 +177,7 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         minAffinity: 25,
         weight: 1,
         text: "I've heard whispers of a legendary smith who once lived in these parts. Maybe you can find their lost techniques.",
-        followupText: "They say the entrance to their hidden workshop is somewhere in the Whispering Woods."
+        followupText: "They say the entrance to their hidden workshop is somewhere in the Whispering Woods. If you help me prepare, I'll take you there.",
+        contractTemplateId: 'tavern_rare_opportunity_t1'
     }
 ];

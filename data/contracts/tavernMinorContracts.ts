@@ -72,5 +72,18 @@ export const TAVERN_MINOR_CONTRACT_TEMPLATES: TavernMinorContractTemplate[] = [
         rewardGold: 300,
         rewardAffinity: 7,
         deadlineDays: 5
+    },
+    {
+        id: 'tavern_rare_opportunity_t1',
+        title: 'The Smith\'s Legacy',
+        kind: 'TURN_IN',
+        description: "I've found a map to a hidden workshop. If you help me prepare, I'll share what I find.",
+        requirements: [
+            { itemId: 'potion_health_small', quantity: 3 },
+            { itemId: 'sword_bronze_t1', quantity: 1, minQuality: 3 }
+        ],
+        rewardGold: 500,
+        rewardAffinity: 15,
+        deadlineDays: 7
     }
 ];
