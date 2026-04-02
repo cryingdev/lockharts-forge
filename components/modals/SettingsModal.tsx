@@ -7,6 +7,7 @@ const ConfirmationModal = React.lazy(() => import('./ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
 import { CustomSlider } from '../common/ui/CustomSlider';
 import { t } from '../../utils/i18n';
+import { APP_VERSION } from '../../utils/appVersion';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -46,7 +47,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         index: null
     });
 
-    const APP_VERSION = "0.1.44a";
     if (!isOpen) return null;
 
     const audio = state.settings.audio;

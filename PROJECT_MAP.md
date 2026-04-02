@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.45a)
+# Project Map – Lockhart’s Forge (v0.1.46a)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -11,7 +11,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.45a`).
+- `metadata.json`: App metadata and versioning (`0.1.46a`).
 - `GAME_DESIGN.md`: Comprehensive game design document covering mechanics and world-building.
 - `TECH_DESIGN.md`: Technical architecture and implementation details.
 - `COMBAT_FORMULA.md`: Official combat calculation sequence and formulas.
@@ -148,7 +148,7 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 🔄 Recent Updates (v0.1.45a)
+## 🔄 Recent Updates (v0.1.46a)
 *   **Architecture & Governance**:
     *   `ARCHITECTURE_POLICIES.md` established for economic balance, state transitions, and save migration.
     *   RNG standardization (seeded LCG) fully integrated across all game systems.

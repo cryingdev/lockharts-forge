@@ -47,7 +47,7 @@ To prevent illegal states (e.g., sleeping while in a dungeon), follow these tran
 Ensures backward compatibility and data integrity across updates.
 
 ### Versioning Rules
-- **Format**: `MAJOR.MINOR.PATCH[suffix]` (e.g., `0.1.45a`).
+- **Format**: `MAJOR.MINOR.PATCH[suffix]` (e.g., `0.1.46a`).
 - **Major**: Breaking architectural changes (requires reset or complex migration).
 - **Minor**: New features, new fields (requires default value injection).
 - **Patch**: Bug fixes, no schema changes.
