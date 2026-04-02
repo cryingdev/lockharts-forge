@@ -4,6 +4,8 @@ import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Li
 import { useForge } from './hooks/useForge';
 import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
+import { t } from '../../../utils/i18n';
+import { useGame } from '../../../context/GameContext';
 
 // Sub-components
 import ForgeSkillHeader from './ui/ForgeSkillHeader';
@@ -17,14 +19,17 @@ import { UI_MODAL_LAYOUT } from '../../../config/ui-config';
 const SmithingMinigame = lazy(() => import('./ui/SmithingMinigame'));
 const WorkbenchMinigame = lazy(() => import('./ui/WorkbenchMinigame'));
 
-const MinigameLoading = () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-stone-950 z-[200]">
-        <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 border-4 border-amber-500/10 border-t-amber-500 rounded-full animate-spin" />
-            <span className="text-amber-500 font-serif italic text-xl animate-pulse">Igniting the Forge...</span>
+const MinigameLoading = () => {
+    const { state } = useGame();
+    return (
+        <div className="absolute inset-0 flex items-center justify-center bg-stone-950 z-[200]">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 border-4 border-amber-500/10 border-t-amber-500 rounded-full animate-spin" />
+                <span className="text-amber-500 font-serif italic text-xl animate-pulse">{t(state.settings.language, 'forge.loading')}</span>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 interface ForgeTabProps {
     onNavigate: (tab: any) => void;
@@ -40,6 +45,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
     groupedItems, hoveredItem, tooltipPos, quickCraftProgress, masteryInfo, 
     isFuelShortage, isQuickFuelShortage, isEnergyShortage, requiredEnergy, extraQuickFuel, smithingLevel, workbenchLevel 
   } = forge;
+  const language = state.settings.language;
 
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
 
@@ -111,7 +117,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                 className="absolute top-4 left-4 z-20 flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
             >
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                <span className="text-xs font-black uppercase tracking-widest">Back</span>
+                <span className="text-xs font-black uppercase tracking-widest">{t(language, 'common.back')}</span>
             </SfxButton>
         )}
 

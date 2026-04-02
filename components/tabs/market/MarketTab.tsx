@@ -7,6 +7,7 @@ import { ItemSelectorList } from '../../ItemSelectorList';
 import { ArrowLeft, Gift, X } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
+import { t } from '../../../utils/i18n';
 
 interface MarketTabProps {
     onNavigate: (tab: any) => void;
@@ -20,6 +21,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         floatingHearts, showGiftModal, setShowGiftModal, pendingGiftItem, 
         collapsedSections, setCollapsedSections 
     } = market;
+    const language = state.settings.language;
 
     useEffect(() => {
         actions.triggerNamedEncounterCheck('MARKET');
@@ -54,7 +56,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
             {(!isLocalTutorial || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
                 <SfxButton sfx="switch" onClick={handlers.handleBackToMain} data-tutorial-id="MARKET_BACK_BUTTON" className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 shadow-2xl backdrop-blur-md transition-all active:scale-90 group">
-                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="text-xs font-black uppercase tracking-widest">Back</span>
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="text-xs font-black uppercase tracking-widest">{t(language, 'common.back')}</span>
                 </SfxButton>
             )}
 
@@ -103,7 +105,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl h-[60vh] min-h-[400px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95">
                         <div className="p-3 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
-                            <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">Select Gift for Garrick</h3>
+                            <h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">{t(language, 'market.gift_modal_title')}</h3>
                             <SfxButton sfx="switch" onClick={() => setShowGiftModal(false)} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500"><X className="w-4 h-4" /></SfxButton>
                         </div>
                         <div className="flex-1 overflow-hidden flex flex-col">

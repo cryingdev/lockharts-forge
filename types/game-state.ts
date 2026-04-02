@@ -8,15 +8,17 @@ import { Monster } from '../models/Monster';
 export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP' | 'STAIRS' | 'ENEMY' | 'RESOURCE';
 
 export type ContractType = 'GENERAL' | 'SPECIAL';
-export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'BOSS';
+export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
+
 export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM' | 'BOARD';
 export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT' | 'ISSUER_AFFINITY';
-export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED' | 'TURN_IN';
+export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
 
 export type TavernTalkOutcome = 'FLAVOR' | 'RUMOR' | 'MINOR_CONTRACT' | 'OPPORTUNITY';
 export type TavernTalkTone = 'COLD' | 'NEUTRAL' | 'WARM';
 export type TavernTalkConditionJob = 'Fighter' | 'Mage' | 'Rogue' | 'Cleric' | 'Novice' | 'ANY';
+export type Language = 'en' | 'ko';
 
 export interface TavernTalkEntry {
   id: string;
@@ -85,10 +87,10 @@ export interface ContractReward {
   type: ContractRewardType;
   gold?: number;
   affinity?: number;
-  issuerAffinity?: number;
   itemId?: string;
   itemCount?: number;
   mercenaryId?: string;
+  issuerId?: BoardIssuerId;
 }
 
 export interface ContractEncounterRule {
@@ -110,6 +112,7 @@ export interface ContractDefinition {
   kind?: GeneralContractKind;
   title: string;
   clientName: string;
+  issuer?: string;
   issuerId?: BoardIssuerId;
   issuerName?: string;
   urgency?: 'NORMAL' | 'HIGH' | 'URGENT';
@@ -149,6 +152,7 @@ export interface NamedContractRegistryEntry {
   encounterDialogue: {
     text: string;
     speaker: string;
+    textKey?: string;
   };
 }
 
@@ -175,7 +179,6 @@ export interface CommissionState {
   lastEncounterCheckDayByLocation?: Partial<Record<ContractSource, number>>;
   hasSeenRecoveryFlow?: boolean; // New: Track if player has seen the recovery tutorial/flow
   hasHadInjuredMercenary?: boolean; // New: Track if player has ever had an injured mercenary
-  issuerAffinity: Record<BoardIssuerId, number>;
 }
 
 export interface ManualDungeonSession {
@@ -286,6 +289,7 @@ export interface AudioSettings {
 export interface GameSettings {
     showLogTicker: boolean;
     inventoryViewMode: 'GRID' | 'LIST';
+    language: Language;
     audio: AudioSettings;
 }
 

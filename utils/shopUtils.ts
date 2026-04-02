@@ -3,6 +3,8 @@ import { ShopCustomer } from '../types/index';
 import { EQUIPMENT_ITEMS } from '../data/equipment';
 import { JobClass } from '../models/JobClass';
 import { rng } from './random';
+import { Language } from '../types/game-state';
+import { t } from './i18n';
 
 // Define what kind of equipment each job is interested in
 const JOB_PREFERENCES: Record<JobClass, string[]> = {
@@ -23,7 +25,7 @@ const getTargetTierByLevel = (level: number): number => {
     return 1;
 };
 
-export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] = []): ShopCustomer => {
+export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] = [], language: Language = 'en'): ShopCustomer => {
     // STRICT RULE: Customers ONLY request Equipment.
     
     let requestedId = '';
@@ -69,23 +71,23 @@ export const generateShopRequest = (merc: Mercenary, unlockedRecipes: string[] =
     if (target) {
         requestedId = target.id;
         price = Math.ceil(target.baseValue * markup);
-        dialogue = `I require a ${target.name}.`;
+        dialogue = target.name;
     } else {
         const fallbackList = EQUIPMENT_ITEMS.filter(i => i.tier === 1 && allowedSubCats.includes(i.subCategoryId));
         const fallback = fallbackList.length > 0 ? fallbackList[0] : EQUIPMENT_ITEMS[0];
         requestedId = fallback.id;
         markup = 1.2;
         price = Math.ceil(fallback.baseValue * markup);
-        dialogue = `I'll take a ${fallback.name}.`;
+        dialogue = fallback.name;
     }
 
     // Personalized dialogue based on affinity
     if (merc.affinity >= 50) {
-        dialogue = `Always a pleasure, Lockhart! ${dialogue}`;
+        dialogue = t(language, target ? 'shop.request_affinity_high' : 'shop.request_affinity_high_fallback', { item: dialogue });
     } else if (merc.affinity >= 20) {
-        dialogue = `Good to see you again. ${dialogue}`;
+        dialogue = t(language, target ? 'shop.request_affinity_mid' : 'shop.request_affinity_mid_fallback', { item: dialogue });
     } else {
-        dialogue = `Greetings. ${dialogue}`;
+        dialogue = t(language, target ? 'shop.request_affinity_low' : 'shop.request_affinity_low_fallback', { item: dialogue });
     }
 
     return {

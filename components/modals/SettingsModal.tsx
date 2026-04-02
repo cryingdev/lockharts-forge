@@ -6,6 +6,7 @@ import { loadFromSlot } from '../../utils/saveSystem';
 const ConfirmationModal = React.lazy(() => import('./ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
 import { CustomSlider } from '../common/ui/CustomSlider';
+import { t } from '../../utils/i18n';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -49,6 +50,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
     if (!isOpen) return null;
 
     const audio = state.settings.audio;
+    const language = state.settings.language;
 
     const handleSlotAction = (slotIndex: number) => {
         if (slModal.mode === 'SAVE') {
@@ -73,7 +75,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                     <div className="flex items-center justify-between p-5 border-b border-stone-800 bg-stone-850 shrink-0">
                         <div className="flex items-center gap-3">
                             <Settings className="w-6 h-6 text-amber-500 animate-spin-slow" />
-                            <h3 className="font-bold font-serif uppercase tracking-widest text-base text-stone-100">System Menu</h3>
+                            <h3 className="font-bold font-serif uppercase tracking-widest text-base text-stone-100">{t(language, 'settings.title')}</h3>
                         </div>
                         <SfxButton onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-6 h-6" /></SfxButton>
                     </div>
@@ -81,13 +83,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                     <div className="flex-1 p-5 space-y-6 overflow-y-auto custom-scrollbar">
                         {!isTitleView && (
                             <div className="space-y-2">
-                                <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Persistence</h4>
+                                <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">{t(language, 'settings.persistence')}</h4>
                                 <div className="flex flex-col gap-2.5">
                                     <SfxButton onClick={() => setSlModal({ isOpen: true, mode: 'SAVE' })} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-stone-800 hover:border-amber-500 hover:bg-stone-750 text-stone-300 transition-all shadow-md active:scale-95">
-                                        <Save className="w-5 h-5 text-amber-500" /><div className="flex flex-col items-start leading-none"><span className="font-black text-[11px] uppercase tracking-widest">Manual Save</span><span className="text-[8px] text-stone-500 uppercase font-bold mt-1">Record progress</span></div>
+                                        <Save className="w-5 h-5 text-amber-500" /><div className="flex flex-col items-start leading-none"><span className="font-black text-[11px] uppercase tracking-widest">{t(language, 'settings.manual_save')}</span><span className="text-[8px] text-stone-500 uppercase font-bold mt-1">{t(language, 'settings.manual_save_desc')}</span></div>
                                     </SfxButton>
                                     <SfxButton onClick={() => setSlModal({ isOpen: true, mode: 'LOAD' })} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-stone-800 hover:border-stone-500 hover:bg-stone-750 text-stone-300 transition-all shadow-md active:scale-95">
-                                        <Upload className="w-5 h-5 text-indigo-400" /><div className="flex flex-col items-start leading-none"><span className="font-black text-[11px] uppercase tracking-widest">Restore Data</span><span className="text-[8px] text-stone-500 uppercase font-bold mt-1">Load records</span></div>
+                                        <Upload className="w-5 h-5 text-indigo-400" /><div className="flex flex-col items-start leading-none"><span className="font-black text-[11px] uppercase tracking-widest">{t(language, 'settings.restore_data')}</span><span className="text-[8px] text-stone-500 uppercase font-bold mt-1">{t(language, 'settings.restore_data_desc')}</span></div>
                                     </SfxButton>
                                 </div>
                             </div>
@@ -95,43 +97,65 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
 
                         <div className="space-y-3">
                             <div className="flex items-center justify-between px-1">
-                                <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest">Audio Engine</h4>
+                                <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest">{t(language, 'settings.audio_engine')}</h4>
                                 <SfxButton sfx="switch" className="flex items-center gap-2" onClick={() => actions.updateSettings({ audio: { ...audio, masterEnabled: !audio.masterEnabled } })}>
-                                    <span className="text-[8px] font-black text-stone-600 uppercase">{audio.masterEnabled ? 'ENABLED' : 'MUTED'}</span>
+                                    <span className="text-[8px] font-black text-stone-600 uppercase">{audio.masterEnabled ? t(language, 'settings.enabled') : t(language, 'settings.muted')}</span>
                                     <div className={`w-8 h-4 rounded-full p-0.5 transition-all duration-300 ${audio.masterEnabled ? 'bg-amber-600' : 'bg-stone-800'}`}><div className={`w-3 h-3 bg-white rounded-full transition-all duration-300 ${audio.masterEnabled ? 'translate-x-4' : 'translate-x-0'}`} /></div>
                                 </SfxButton>
                             </div>
                             <div className="flex flex-col gap-2.5">
                                 <VolumeSlider 
-                                    label="Master Output" 
+                                    label={t(language, 'settings.master_output')}
                                     value={audio.masterVolume} 
                                     disabled={false} // Always allow Master slider interaction to enable sound
                                     icon={audio.masterEnabled && audio.masterVolume > 0 ? Volume2 : VolumeX} 
                                     onChange={(v) => actions.updateSettings({ audio: { ...audio, masterVolume: v, masterEnabled: v > 0 } })} 
                                 />
-                                <VolumeSlider label="Music Tracks" value={audio.musicVolume} disabled={!audio.masterEnabled} icon={Music} onChange={(v) => actions.updateSettings({ audio: { ...audio, musicVolume: v, musicEnabled: v > 0 } })} />
-                                <VolumeSlider label="Sound Effects" value={audio.sfxVolume} disabled={!audio.masterEnabled} icon={Zap} onChange={(v) => actions.updateSettings({ audio: { ...audio, sfxVolume: v, sfxEnabled: v > 0 } })} />
+                                <VolumeSlider label={t(language, 'settings.music_tracks')} value={audio.musicVolume} disabled={!audio.masterEnabled} icon={Music} onChange={(v) => actions.updateSettings({ audio: { ...audio, musicVolume: v, musicEnabled: v > 0 } })} />
+                                <VolumeSlider label={t(language, 'settings.sound_effects')} value={audio.sfxVolume} disabled={!audio.masterEnabled} icon={Zap} onChange={(v) => actions.updateSettings({ audio: { ...audio, sfxVolume: v, sfxEnabled: v > 0 } })} />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Interface</h4>
+                            <h4 className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">{t(language, 'settings.interface')}</h4>
                             <SfxButton sfx="switch" className="w-full bg-stone-800/60 border border-stone-700 rounded-xl p-4 flex items-center justify-between group" onClick={() => actions.updateSettings({ showLogTicker: !state.settings.showLogTicker })}>
-                                <div className="flex items-center gap-3"><Layout className="w-5 h-5 text-indigo-400" /><div className="flex flex-col items-start"><span className="font-black text-xs uppercase tracking-widest text-stone-200">Header Logs</span><span className="text-[9px] text-stone-500 uppercase font-bold">Show/Hide Log Ticker</span></div></div>
+                                <div className="flex items-center gap-3"><Layout className="w-5 h-5 text-indigo-400" /><div className="flex flex-col items-start"><span className="font-black text-xs uppercase tracking-widest text-stone-200">{t(language, 'settings.header_logs')}</span><span className="text-[9px] text-stone-500 uppercase font-bold">{t(language, 'settings.header_logs_desc')}</span></div></div>
                                 <div className={`w-10 h-6 rounded-full p-1 transition-all duration-300 ${state.settings.showLogTicker ? 'bg-amber-600' : 'bg-stone-900 border border-stone-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 ${state.settings.showLogTicker ? 'translate-x-4' : 'translate-x-0'}`} /></div>
                             </SfxButton>
+                            <div className="w-full bg-stone-800/60 border border-stone-700 rounded-xl p-4 flex items-center justify-between gap-3">
+                                <div className="flex flex-col items-start">
+                                    <span className="font-black text-xs uppercase tracking-widest text-stone-200">{t(language, 'settings.language')}</span>
+                                    <span className="text-[9px] text-stone-500 uppercase font-bold">{t(language, 'settings.language_desc')}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <SfxButton
+                                        sfx="switch"
+                                        onClick={() => actions.updateSettings({ language: 'en' })}
+                                        className={`px-3 py-2 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${language === 'en' ? 'bg-amber-600 text-stone-950 border-amber-500' : 'bg-stone-900 text-stone-300 border-stone-700 hover:bg-stone-800'}`}
+                                    >
+                                        {t(language, 'settings.english')}
+                                    </SfxButton>
+                                    <SfxButton
+                                        sfx="switch"
+                                        onClick={() => actions.updateSettings({ language: 'ko' })}
+                                        className={`px-3 py-2 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${language === 'ko' ? 'bg-amber-600 text-stone-950 border-amber-500' : 'bg-stone-900 text-stone-300 border-stone-700 hover:bg-stone-800'}`}
+                                    >
+                                        {t(language, 'settings.korean')}
+                                    </SfxButton>
+                                </div>
+                            </div>
                         </div>
 
                         {!isTitleView && onQuit && (
                             <div className="pt-2 pb-4">
                                 <SfxButton onClick={onQuit} className="w-full flex items-center gap-4 p-4 rounded-xl border border-stone-700 bg-red-950/10 hover:border-red-500 hover:bg-red-950/20 text-red-400 transition-all">
-                                    <div className="text-red-500"><LogOut className="w-5 h-5" /></div><span className="font-black text-xs uppercase tracking-widest">Quit to Title</span>
+                                    <div className="text-red-500"><LogOut className="w-5 h-5" /></div><span className="font-black text-xs uppercase tracking-widest">{t(language, 'settings.quit_to_title')}</span>
                                 </SfxButton>
                             </div>
                         )}
                     </div>
 
-                    <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0"><span className="text-[10px] text-stone-600 font-mono uppercase tracking-[0.2em]">Build v{APP_VERSION}</span></div>
+                    <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0"><span className="text-[10px] text-stone-600 font-mono uppercase tracking-[0.2em]">{t(language, 'settings.build', { version: APP_VERSION })}</span></div>
                 </div>
             </div>
 
@@ -142,8 +166,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
             <React.Suspense fallback={null}>
                 <ConfirmationModal 
                     isOpen={loadConfirm.isOpen} 
-                    title="Overwrite Progress?" 
-                    message="Loading will discard unsaved progress." 
+                    title={t(language, 'settings.overwrite_progress')} 
+                    message={t(language, 'settings.overwrite_progress_desc')} 
                     onConfirm={() => { setLoadConfirm({ ...loadConfirm, isOpen: false }); setSlModal({ ...slModal, isOpen: false }); onClose(); if(onLoadRequest) onLoadRequest(loadConfirm.data, loadConfirm.index!); }} 
                     onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })} 
                 />

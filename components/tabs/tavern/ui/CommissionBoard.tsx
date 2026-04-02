@@ -29,6 +29,7 @@ import {
 } from '../../../../state/selectors/commissionSelectors';
 
 import { CommissionCard } from './CommissionCard';
+import { t } from '../../../../utils/i18n';
 
 interface CommissionBoardProps {
     onClose?: () => void;
@@ -39,6 +40,7 @@ type Tab = 'available' | 'accepted' | 'ready' | 'expired';
 export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => {
     const { state, actions } = useGame();
     const [activeTab, setActiveTab] = useState<Tab>('available');
+    const language = state.settings.language;
 
     const available = selectAvailableContracts(state);
     const accepted = selectAcceptedContracts(state);
@@ -66,8 +68,8 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                         <ClipboardList className="w-5 h-5 text-amber-500" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-black text-stone-100 uppercase tracking-tighter">Commission Board</h2>
-                        <p className="text-[10px] text-stone-500 uppercase tracking-widest font-bold">Guild Contract Management</p>
+                        <h2 className="text-lg font-black text-stone-100 uppercase tracking-tighter">{t(language, 'commission.board_title')}</h2>
+                        <p className="text-[10px] text-stone-500 uppercase tracking-widest font-bold">{t(language, 'commission.board_subtitle')}</p>
                     </div>
                 </div>
                 {onClose && (
@@ -98,7 +100,7 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                                 : 'text-stone-500 hover:bg-stone-800/50'
                             }`}
                         >
-                            {tab}
+                            {t(language, `commission.${tab}`)}
                             {count > 0 && (
                                 <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${isActive ? 'bg-stone-950 text-amber-500' : 'bg-stone-800 text-stone-400'}`}>
                                     {count}
@@ -114,8 +116,8 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                 {currentContracts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 text-stone-600">
                         <Package className="w-12 h-12 mb-4 opacity-20" />
-                        <p className="text-sm font-bold uppercase tracking-widest">No {activeTab} contracts</p>
-                        <p className="text-xs opacity-60 mt-1">Check back later for new opportunities.</p>
+                        <p className="text-sm font-bold uppercase tracking-widest">{t(language, 'commission.no_contracts', { tab: t(language, `commission.${activeTab}`).toLowerCase() })}</p>
+                        <p className="text-xs opacity-60 mt-1">{t(language, 'commission.no_contracts_desc')}</p>
                     </div>
                 ) : (
                     currentContracts.map(contract => (
@@ -130,4 +132,3 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
         </div>
     );
 };
-

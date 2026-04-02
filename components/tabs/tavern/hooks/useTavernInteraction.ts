@@ -4,7 +4,7 @@ import { useGame } from '../../../../context/GameContext';
 import { Mercenary } from '../../../../models/Mercenary';
 import { calculateHiringCost, CONTRACT_CONFIG } from '../../../../config/contract-config';
 import { InventoryItem } from '../../../../types/inventory';
-import { resolveTavernTalkOutcome } from '../../../../state/helpers/tavernTalkHelpers';
+import { t } from '../../../../utils/i18n';
 
 export interface FloatingHeart {
     id: number;
@@ -17,8 +17,8 @@ export type InteractionStep = 'IDLE' | 'CONFIRM_HIRE' | 'CONFIRM_FIRE';
 
 export const useTavernInteraction = (mercenary: Mercenary) => {
     const { state, actions } = useGame();
-    const [dialogue, setDialogue] = useState(`(You sit across from ${mercenary.name}.)`);
-    const [followupText, setFollowupText] = useState<string | null>(null);
+    const language = state.settings.language;
+    const [dialogue, setDialogue] = useState(t(language, 'tavern.interaction_intro', { name: mercenary.name }));
     const [showGiftMenu, setShowGiftMenu] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
@@ -43,108 +43,92 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
     const handleTalk = useCallback(() => {
         if (pendingGiftItem || step !== 'IDLE') return;
 
-        const isFirstTalkToday = !state.talkedToToday.includes(mercenary.id);
-        if (isFirstTalkToday) {
+        if (!state.talkedToToday.includes(mercenary.id)) {
             actions.talkMercenary(mercenary.id);
             spawnHearts();
         }
 
-        const outcome = resolveTavernTalkOutcome(state, mercenary);
-        setDialogue(outcome.text);
-        setFollowupText(outcome.followupText || null);
-
-        if ((outcome.outcome === 'MINOR_CONTRACT' || outcome.outcome === 'OPPORTUNITY') && outcome.contractTemplateId) {
-            // Only generate if it's the first talk today to prevent spamming contracts
-            if (isFirstTalkToday) {
-                actions.generateTavernMinorContract(mercenary.id, outcome.contractTemplateId);
-            }
-        }
-
-        if (outcome.outcome === 'OPPORTUNITY' && outcome.unlockNamedId) {
-            if (isFirstTalkToday) {
-                actions.unlockNamedEncounter(outcome.unlockNamedId);
-            }
-        }
-    }, [mercenary.id, state.talkedToToday, state.knownMercenaries, state.stats.tierLevel, pendingGiftItem, step, actions, spawnHearts, state]);
+        const lines = [
+            t(language, 'tavern.talk_1'),
+            t(language, 'tavern.talk_2'),
+            t(language, 'tavern.talk_3'),
+            t(language, 'tavern.talk_4'),
+            t(language, 'tavern.talk_5'),
+            t(language, 'tavern.talk_6'),
+        ];
+        setDialogue(lines[Math.floor(Math.random() * lines.length)]);
+    }, [language, mercenary.id, state.talkedToToday, pendingGiftItem, step, actions, spawnHearts]);
 
     const handleBuyDrink = useCallback(() => {
         if (pendingGiftItem || step !== 'IDLE') return;
         
         const DRINK_COST = 100;
         if (state.stats.gold < DRINK_COST) {
-            setDialogue("I'd love a drink, but it seems you're a bit short on coin today.");
+            setDialogue(t(language, 'tavern.drink_no_gold'));
             return;
         }
 
         if (state.boughtDrinkToday.includes(mercenary.id)) {
-            setDialogue("One is enough for now. I don't want to be too tipsy for my next quest.");
+            setDialogue(t(language, 'tavern.drink_already_bought'));
             return;
         }
 
         actions.buyDrink(mercenary.id);
         spawnHearts();
-        setDialogue(`"Ah, a fine brew! Cheers, Lockhart. This hits the spot."`);
-    }, [mercenary.id, state.stats.gold, state.boughtDrinkToday, pendingGiftItem, step, actions, spawnHearts]);
+        setDialogue(t(language, 'tavern.drink_thanks'));
+    }, [language, mercenary.id, state.stats.gold, state.boughtDrinkToday, pendingGiftItem, step, actions, spawnHearts]);
 
     const handleRecruitInit = useCallback(() => {
         if (!hasAffinity) {
-            setDialogue("I don't know you well enough to pledge my blade to your forge yet.");
+            setDialogue(t(language, 'tavern.hire_not_enough_affinity'));
             return;
         }
         if (!canAfford) {
-            setDialogue(`The contract is ${hiringCost} gold. Come back when you have the coin.`);
+            setDialogue(t(language, 'tavern.hire_not_enough_gold', { cost: hiringCost }));
             return;
         }
         setStep('CONFIRM_HIRE');
-        setDialogue(`"A contract for ${hiringCost} Gold? Are you certain you want me on your squad?"`);
-    }, [hasAffinity, canAfford, hiringCost]);
+        setDialogue(t(language, 'tavern.hire_confirm', { cost: hiringCost }));
+    }, [language, hasAffinity, canAfford, hiringCost]);
 
     const handleConfirmHire = useCallback(() => {
         actions.hireMercenary(mercenary.id, hiringCost);
         setStep('IDLE');
-        setDialogue("A fair contract. My strength is yours, Lockhart.");
-    }, [mercenary.id, hiringCost, actions]);
+        setDialogue(t(language, 'tavern.hire_success'));
+    }, [language, mercenary.id, hiringCost, actions]);
 
     const handleTerminateInit = useCallback(() => {
         setStep('CONFIRM_FIRE');
-        setDialogue(`(Surprised) "Terminate the contract? Did I fail you in some way?"`);
-    }, []);
+        setDialogue(t(language, 'tavern.fire_confirm'));
+    }, [language]);
 
     const handleConfirmTerminate = useCallback(() => {
         actions.fireMercenary(mercenary.id);
         setStep('IDLE');
-        setDialogue(`"I see. Perhaps our paths will cross again. Farewell, smith."`);
-    }, [mercenary.id, actions]);
+        setDialogue(t(language, 'tavern.fire_success'));
+    }, [language, mercenary.id, actions]);
 
     const handleSelectItemForGift = useCallback((item: InventoryItem) => {
         if (item.isLocked) {
-            actions.showToast("Cannot gift locked items.");
+            actions.showToast(t(language, 'tavern.gift_locked'));
             return;
         }
         setPendingGiftItem(item);
         setShowGiftMenu(false);
-        setDialogue(`(You hold out the ${item.name}.) "Would you like this?"`);
-    }, [actions]);
+        setDialogue(t(language, 'tavern.gift_offer', { item: item.name }));
+    }, [language, actions]);
 
     const handleConfirmGift = useCallback(() => {
         if (!pendingGiftItem) return;
         actions.giveGift(mercenary.id, pendingGiftItem.id);
-        setDialogue(`"For me? You're too kind, Lockhart."`);
+        setDialogue(t(language, 'tavern.gift_success'));
         setPendingGiftItem(null);
-    }, [pendingGiftItem, mercenary.id, actions]);
-
-    const handleContinue = useCallback(() => {
-        if (followupText) {
-            setDialogue(followupText);
-            setFollowupText(null);
-        }
-    }, [followupText]);
+    }, [language, pendingGiftItem, mercenary.id, actions]);
 
     return {
         state,
         actions,
         dialogue,
-        followupText,
         showGiftMenu,
         setShowGiftMenu,
         showDetail,
@@ -166,9 +150,8 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
             handleConfirmTerminate,
             handleSelectItemForGift,
             handleConfirmGift,
-            handleContinue,
-            handleCancelGift: () => { setPendingGiftItem(null); setDialogue("Actually, never mind."); },
-            handleCancelStep: () => { setStep('IDLE'); setDialogue("I'm glad we cleared that up."); }
+            handleCancelGift: () => { setPendingGiftItem(null); setDialogue(t(language, 'tavern.gift_cancel')); },
+            handleCancelStep: () => { setStep('IDLE'); setDialogue(t(language, 'tavern.step_cancel')); }
         }
     };
 };

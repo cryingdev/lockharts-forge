@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspens
 import { Pointer, FastForward } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import { SfxButton } from './common/ui/SfxButton';
+import { t } from '../utils/i18n';
 
 // Import Background Services
 import { useShopService } from '../services/shop/shop-service';
@@ -31,14 +32,17 @@ const DialogueBox = lazy(() => import('./DialogueBox'));
 const ConfirmationModal = lazy(() => import('./modals/ConfirmationModal'));
 const TutorialCompleteModal = lazy(() => import('./modals/TutorialCompleteModal'));
 
-const LoadingFallback = () => (
-    <div className="h-full w-full flex items-center justify-center bg-stone-950">
-        <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-amber-600/20 border-t-amber-600 rounded-full animate-spin" />
-            <span className="text-stone-500 font-black uppercase text-[10px] tracking-widest animate-pulse">Initializing...</span>
+const LoadingFallback = () => {
+    const { state } = useGame();
+    return (
+        <div className="h-full w-full flex items-center justify-center bg-stone-950">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-amber-600/20 border-t-amber-600 rounded-full animate-spin" />
+                <span className="text-stone-500 font-black uppercase text-[10px] tracking-widest animate-pulse">{t(state.settings.language, 'common.loading')}</span>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 interface MainGameLayoutProps {
     onQuit: () => void;
@@ -385,7 +389,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         {state.isResearchOpen && <div className="fixed inset-0 z-[100] bg-stone-950 animate-in fade-in duration-500"><ResearchTab onClose={() => actions.setResearchOpen(false)} /></div>}
         
         {state.toast?.visible && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-bottom-4 pointer-events-none"><div onClick={actions.hideToast} className="bg-stone-900 border-2 border-amber-600/50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto cursor-pointer"><span className="text-stone-100 font-black text-xs md:text-sm uppercase tracking-widest">{state.toast.message}</span></div></div>}
-        <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} /><TierUnlockModal /><TutorialCompleteModal /><ConfirmationModal isOpen={showSkipConfirm} title="Skip?" message="Unlock all systems immediately?" onConfirm={() => { actions.completeTutorial(); setShowSkipConfirm(false); }} onCancel={() => setShowSkipConfirm(false)} isDanger />
+        <EventModal /><SleepModal /><JournalModal /><DungeonResultModal /><CraftingResultModal /><SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onQuit={onQuit} onLoadRequest={onLoadFromSettings} /><TierUnlockModal /><TutorialCompleteModal /><ConfirmationModal isOpen={showSkipConfirm} title={t(state.settings.language, 'tutorial.skip_title')} message={t(state.settings.language, 'tutorial.skip_message')} onConfirm={() => { actions.completeTutorial(); setShowSkipConfirm(false); }} onCancel={() => setShowSkipConfirm(false)} isDanger />
       </Suspense>
     </div>
   );

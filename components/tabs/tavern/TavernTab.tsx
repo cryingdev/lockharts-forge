@@ -8,6 +8,7 @@ import { CommissionDetailModal } from './ui/CommissionDetailModal';
 import { MercenaryInviteModal } from '../../modals/MercenaryInviteModal';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { ArrowLeft, PlusCircle } from 'lucide-react';
+import { t } from '../../../utils/i18n';
 
 interface TavernTabProps {
     onNavigate?: (tab: any) => void;
@@ -18,6 +19,7 @@ import { selectReadyContracts, selectAvailableContracts, selectAcceptedContracts
 const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
     const tavern = useTavern();
     const { state, actions } = useGame();
+    const language = state.settings.language;
     const [showCommissionBoard, setShowCommissionBoard] = useState(false);
     const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
     
@@ -64,7 +66,7 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                                 className="flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
                             >
                                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                                <span className="text-xs font-black uppercase tracking-widest">Back</span>
+                                <span className="text-xs font-black uppercase tracking-widest">{t(language, 'common.back')}</span>
                             </SfxButton>
                         )}
                     </div>
@@ -77,7 +79,7 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                                 className="flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-amber-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
                             >
                                 <PlusCircle className="w-4 h-4 text-amber-500" />
-                                <span className="text-xs font-black uppercase tracking-widest">Invite ({inviteCost}G)</span>
+                                <span className="text-xs font-black uppercase tracking-widest">{t(language, 'tavern.invite', { cost: inviteCost })}</span>
                             </SfxButton>
                         </div>
                     )}

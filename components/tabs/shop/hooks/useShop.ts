@@ -5,6 +5,7 @@ import { materials } from '../../../../data/materials';
 import { GAME_CONFIG } from '../../../../config/game-config';
 import { InventoryItem } from '../../../../types/inventory';
 import { getAssetUrl as globalGetAssetUrl } from '../../../../utils';
+import { t } from '../../../../utils/i18n';
 
 interface FloatingHeart {
     id: number;
@@ -15,6 +16,7 @@ interface FloatingHeart {
 
 export const useShop = (onNavigate?: (tab: string) => void) => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
     const { isShopOpen } = state.forge;
     const { activeCustomer, shopQueue, tutorialStep, inventory, unlockedRecipes } = state;
 
@@ -70,7 +72,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
     const executeSell = useCallback((item: InventoryItem) => {
         if (!activeCustomer || !item) return;
         if (item.isLocked) {
-            actions.showToast("Item is locked and cannot be sold.");
+            actions.showToast(t(language, 'shop.locked_item'));
             return;
         }
         const { mercenary, request } = activeCustomer;
@@ -96,7 +98,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         setSaleCompleted(true);
         setShowInstanceSelector(false);
         setSelectedInstance(null);
-    }, [activeCustomer, tutorialStep, actions, spawnHearts]);
+    }, [language, activeCustomer, tutorialStep, actions, spawnHearts]);
 
     const handleSellClick = useCallback(() => {
         if (!activeCustomer) return;
@@ -144,65 +146,78 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
 
         if (lastSoldQuality >= 110) { // MASTERWORK
             if (isPip) {
-                return `"W-wait... is this for real? I've never seen a blade so beautiful! The edge... it's like it's made of starlight. I'll cherish this forever, Lockhart! I'll make sure everyone knows who the greatest smith in the world is!"`;
+                return t(language, 'shop.thanks_masterwork_pip');
             }
             return [
-                `"Unbelievable! This ${itemName} is a true masterpiece. The edge is unlike anything I've seen. You really have the Lockhart touch!"`,
-                `"Absolute perfection. I can feel the strength in this steel. I'll tell everyone in the tavern about your forge!"`,
-                `"This quality is beyond what I expected. A fair price for legendary work. Thank you, Lockhart!"`
+                t(language, 'shop.thanks_masterwork_1', { item: itemName }),
+                t(language, 'shop.thanks_masterwork_2'),
+                t(language, 'shop.thanks_masterwork_3')
             ][Math.floor(Math.random() * 3)];
         } 
         if (lastSoldQuality >= 100) { // PRISTINE
             if (isPip) {
-                return `"Wow! It's so shiny and sharp! This is exactly what I dreamed of. Thank you so much, Lockhart! I'm going to go practice right now!"`;
+                return t(language, 'shop.thanks_pristine_pip');
             }
             return [
-                `"Fantastic craftsmanship! This ${itemName} is exactly what I needed. Thank you, Lockhart!"`,
-                `"Superb work. I feel much safer with this by my side. I'll be back!"`,
-                `"A fair price for quality steel. May your bellows never tire, smith."`,
-                `"You truly have the Lockhart touch. This will serve me well in the ruins."`
+                t(language, 'shop.thanks_pristine_1', { item: itemName }),
+                t(language, 'shop.thanks_pristine_2'),
+                t(language, 'shop.thanks_pristine_3'),
+                t(language, 'shop.thanks_pristine_4')
             ][Math.floor(Math.random() * 4)];
         }
         if (lastSoldQuality < 80) {
             return [
-                `"It'll do for now, I suppose. Though the finish on this ${itemName} is a bit rough... I hope your next work is a bit more refined."`,
-                `"Hmm, not your best work, smith. I'll take it, but I was expecting that famous Lockhart quality. Try harder next time."`,
-                `"A bit crude, but I need a blade today. Next time, I hope the anvil's rhythm is more precise."`
+                t(language, 'shop.thanks_rough_1', { item: itemName }),
+                t(language, 'shop.thanks_rough_2'),
+                t(language, 'shop.thanks_rough_3')
             ][Math.floor(Math.random() * 3)];
         }
         return [
-            `"Fantastic craftsmanship! This ${itemName} is exactly what I needed. Thank you, Lockhart!"`,
-            `"Superb work. I feel much safer with this by my side. I'll be back!"`,
-            `"A fair price for quality steel. May your bellows never tire, smith."`,
-            `"You truly have the Lockhart touch. This will serve me well in the ruins."`
+            t(language, 'shop.thanks_pristine_1', { item: itemName }),
+            t(language, 'shop.thanks_pristine_2'),
+            t(language, 'shop.thanks_pristine_3'),
+            t(language, 'shop.thanks_pristine_4')
         ][Math.floor(Math.random() * 4)];
-    }, [activeCustomer, lastSoldQuality, getItemName]);
+    }, [language, activeCustomer, lastSoldQuality, getItemName]);
 
     const getRefusalDialogue = useCallback(() => {
         if (refusalReaction === 'POLITE') {
             return [
-                `"I see. Perhaps another time then. Safe forging, smith."`,
-                `"Ah, a shame. I'll keep looking elsewhere for now."`,
-                `"Understandable. A Lockhart's work shouldn't be rushed. Farewell."`,
-                `"I'll come back when your anvil is hotter. Until next time."`
+                t(language, 'shop.refuse_polite_1'),
+                t(language, 'shop.refuse_polite_2'),
+                t(language, 'shop.refuse_polite_3'),
+                t(language, 'shop.refuse_polite_4')
             ][(activeCustomer?.id.length || 0) % 4];
         } else {
             return [
-                `"What? I walked all this way for nothing? Hmph. Don't expect me back soon."`,
-                `"A cold welcome for a paying customer... I'll find a better forge."`,
-                `"Unbelievable. My old blade has more edge than your business sense!"`,
-                `"I thought the Lockharts were more reliable. Guess I was wrong."`
+                t(language, 'shop.refuse_angry_1'),
+                t(language, 'shop.refuse_angry_2'),
+                t(language, 'shop.refuse_angry_3'),
+                t(language, 'shop.refuse_angry_4')
             ][(activeCustomer?.id.length || 0) % 4];
         }
-    }, [refusalReaction, activeCustomer]);
+    }, [language, refusalReaction, activeCustomer]);
+
+    const getRequestDialogue = useCallback((itemName: string, isFallback = false) => {
+        const merc = activeCustomer?.mercenary;
+        if (!merc) return '';
+
+        if (merc.affinity >= 50) {
+            return t(language, isFallback ? 'shop.request_affinity_high_fallback' : 'shop.request_affinity_high', { item: itemName });
+        }
+        if (merc.affinity >= 20) {
+            return t(language, isFallback ? 'shop.request_affinity_mid_fallback' : 'shop.request_affinity_mid', { item: itemName });
+        }
+        return t(language, isFallback ? 'shop.request_affinity_low_fallback' : 'shop.request_affinity_low', { item: itemName });
+    }, [language, activeCustomer]);
 
     const tutorialContent = useMemo(() => {
         if (tutorialStep === 'PIP_INITIAL_FAREWELL_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: "Really? Thank you, Lockhart! I'll be back later today or tomorrow. Good luck with the forging!",
+                text: t(language, 'shop.pip_farewell_1'),
                 options: [{ 
-                    label: "Farewell", 
+                    label: t(language, 'shop.option_farewell'), 
                     action: () => {
                         handleFarewell();
                         actions.setTutorialStep('CRAFT_FIRST_SWORD_DIALOG_GUIDE');
@@ -214,9 +229,9 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         if (tutorialStep === 'CRAFT_FIRST_SWORD_DIALOG_GUIDE') {
             return {
                 speaker: "Lockhart",
-                text: "A Bronze Shortsword... it's been a while since I've forged one. I'll need to head to the Forge and use the furnace. I hope I still remember the rhythm of the hammer.",
+                text: t(language, 'shop.pip_forge_intro'),
                 options: [{ 
-                    label: "Go to Forge", 
+                    label: t(language, 'shop.option_go_forge'), 
                     action: () => { 
                         actions.setTutorialStep('CRAFT_FIRST_SWORD_GUIDE');
                         if (onNavigate) onNavigate('FORGE');
@@ -229,26 +244,26 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         if (tutorialStep === 'PIP_PRAISE_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: "This... this is incredible. I can feel the balance in the grip. It's much better than the scraps I found in the woods. You really are a Lockhart, aren't you?",
-                options: [{ label: "Continue", action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG_GUIDE'), variant: 'primary' as const }]
+                text: t(language, 'shop.pip_praise_1'),
+                options: [{ label: t(language, 'shop.option_continue'), action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG_GUIDE'), variant: 'primary' as const }]
             };
         }
         if (tutorialStep === 'DRAGON_TALK_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: "The village... it hasn't been the same since the Dragon's fire. I lost my brother that night. I see that same shadow in your eyes, smith. We all lost someone. Good luck with the forge.",
-                options: [{ label: "Farewell", action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_DIALOG_GUIDE'); }, variant: 'primary' as const }]
+                text: t(language, 'shop.pip_praise_2'),
+                options: [{ label: t(language, 'shop.option_farewell'), action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_DIALOG_GUIDE'); }, variant: 'primary' as const }]
             };
         }
         if (tutorialStep === 'TUTORIAL_END_DIALOG_GUIDE') {
             return {
                 speaker: "Lockhart",
-                text: "Finally... the first sale. It's a small spark, but enough to light the way. I'll reclaim our legacy, one blade at a time.",
-                options: [{ label: "Complete Tutorial", action: () => actions.completeTutorial(), variant: 'primary' as const }]
+                text: t(language, 'shop.pip_praise_3'),
+                options: [{ label: t(language, 'shop.option_complete_tutorial'), action: () => actions.completeTutorial(), variant: 'primary' as const }]
             };
         }
         return null;
-    }, [tutorialStep, activeCustomer, actions, handleFarewell, onNavigate]);
+    }, [language, tutorialStep, activeCustomer, actions, handleFarewell, onNavigate]);
 
     const dialogueState = useMemo(() => {
         if (tutorialContent) return tutorialContent;
@@ -258,7 +273,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             return {
                 speaker: activeCustomer.mercenary.name,
                 text: getThanksDialogue(),
-                options: [{ label: "Farewell", action: handleFarewell, variant: 'neutral' as const }]
+                options: [{ label: t(language, 'shop.option_farewell'), action: handleFarewell, variant: 'neutral' as const }]
             };
         }
 
@@ -266,7 +281,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             return {
                 speaker: activeCustomer.mercenary.name,
                 text: getRefusalDialogue(),
-                options: [{ label: "Farewell", action: handleFarewell, variant: 'neutral' as const }]
+                options: [{ label: t(language, 'shop.option_farewell'), action: handleFarewell, variant: 'neutral' as const }]
             };
         }
 
@@ -280,11 +295,11 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             if (!inventoryMatch) {
                 return {
                     speaker: mercenary.name,
-                    text: "Lockhart! I heard you fixed the furnace. I've been training with a wooden stick... Do you have a real Bronze Shortsword for sale?",
+                    text: t(language, 'shop.pip_request_missing', { item: getItemName(request.requestedId) }),
                     highlightTerm: "Bronze Shortsword",
                     options: [
                         { 
-                            label: "I'll have it ready. Come back later.", 
+                            label: t(language, 'shop.option_ready_later'), 
                             action: () => {
                                 // Instead of immediate navigation, we set a step that shows Pip's farewell
                                 actions.setTutorialStep('PIP_INITIAL_FAREWELL_DIALOG_GUIDE');
@@ -292,7 +307,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                             variant: 'primary' as const
                         },
                         { 
-                            label: "I'm too busy right now.", 
+                            label: t(language, 'shop.option_busy_now'), 
                             action: handleRefuse, 
                             variant: 'danger' as const 
                         }
@@ -301,16 +316,16 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             } else {
                 return {
                     speaker: mercenary.name,
-                    text: "Oh! You already have one? That's incredible. Can I buy it from you?",
+                    text: t(language, 'shop.pip_request_have_one'),
                     highlightTerm: "Bronze Shortsword",
                     options: [
                         { 
-                            label: "Of course, here it is.", 
+                            label: t(language, 'shop.option_sell_now'), 
                             action: handleSellClick, 
                             variant: 'primary' as const 
                         },
                         { 
-                            label: "I need this for something else.", 
+                            label: t(language, 'shop.option_need_elsewhere'), 
                             action: handleRefuse, 
                             variant: 'danger' as const 
                         }
@@ -323,17 +338,17 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         if (tutorialStep === 'PIP_RETURN_GUIDE' && mercenary.id === 'pip_green') {
             return {
                 speaker: mercenary.name,
-                text: "I'm back! Is the Bronze Shortsword ready? I can't wait to try it out!",
+                text: t(language, 'shop.pip_return_ready', { item: getItemName(request.requestedId) }),
                 highlightTerm: "Bronze Shortsword",
                 options: [
                     { 
-                        label: `Sell (${request.price} G)`, 
+                        label: t(language, 'shop.option_sell', { price: request.price }), 
                         action: handleSellClick, 
                         variant: 'primary' as const,
                         disabled: !inventoryMatch
                     },
                     { 
-                        label: "Wait a bit more", 
+                        label: t(language, 'shop.option_wait_more'), 
                         action: handleRefuse, 
                         variant: 'danger' as const 
                     }
@@ -352,7 +367,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
 
         return {
             speaker: mercenary.name,
-            text: request.dialogue,
+            text: getRequestDialogue(getItemName(request.requestedId), !recipe && !material),
             highlightTerm: getItemName(request.requestedId),
             itemDetail: {
                 id: request.requestedId,
@@ -364,19 +379,19 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             },
             options: [
                 { 
-                    label: `Sell (${request.price} G)`, 
+                    label: t(language, 'shop.option_sell', { price: request.price }), 
                     action: handleSellClick, 
                     variant: 'primary' as const, 
                     disabled: !inventoryMatch 
                 },
                 { 
-                    label: "Refuse", 
+                    label: t(language, 'shop.option_refuse'), 
                     action: handleRefuse, 
                     variant: 'danger' as const 
                 }
             ]
         };
-    }, [activeCustomer, saleCompleted, refusalReaction, matchingItems, tutorialContent, getThanksDialogue, getRefusalDialogue, handleFarewell, handleSellClick, handleRefuse, getItemName, unlockedRecipes]);
+    }, [language, activeCustomer, saleCompleted, refusalReaction, matchingItems, tutorialContent, getThanksDialogue, getRefusalDialogue, handleFarewell, handleSellClick, handleRefuse, getItemName, getRequestDialogue, unlockedRecipes]);
 
     return {
         state,

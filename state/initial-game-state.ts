@@ -37,6 +37,7 @@ export const createInitialGameState = (): GameState => {
     const defaultSettings: GameSettings = {
         showLogTicker: true,
         inventoryViewMode: 'LIST',
+        language: 'en',
         audio: {
             masterVolume: 0.5,
             musicVolume: 0.8,
