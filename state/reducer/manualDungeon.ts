@@ -180,13 +180,12 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
 
 import { handleUpdateContractObjectiveProgress } from './commission';
 
-const updateObjectives = (state: GameState, type: 'HUNT' | 'EXPLORE', targetId: string, amount: number): GameState => {
+const updateObjectives = (state: GameState, type: 'HUNT', targetId: string, amount: number): GameState => {
     let newState = state;
     state.commission.activeContracts.forEach(contract => {
         if (contract.status === 'ACTIVE' && contract.objectives) {
             contract.objectives.forEach(obj => {
-                const isMatch = (type === 'HUNT' && obj.targetType === 'KILL') || 
-                                (type === 'EXPLORE' && obj.targetType === 'NODE_DISCOVERED');
+                const isMatch = (type === 'HUNT' && obj.targetType === 'KILL');
                 if (isMatch && (!obj.targetId || obj.targetId === targetId)) {
                     newState = handleUpdateContractObjectiveProgress(newState, { 
                         contractId: contract.id, 
@@ -222,12 +221,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
 
     const isAlreadyVisited = session.visited[newY][newX];
     
-    let stateWithProgress = state;
-    if (!isAlreadyVisited) {
-        stateWithProgress = updateObjectives(state, 'EXPLORE', session.dungeonId, 1);
-    }
-
-    let updatedMercs = stateWithProgress.knownMercenaries.map(m => {
+    let updatedMercs = state.knownMercenaries.map(m => {
         if (session.partyIds.includes(m.id)) {
             let nextHp = m.currentHp;
             if (targetRoom === 'TRAP' && !isAlreadyVisited) nextHp = Math.max(0, m.currentHp - 15);
@@ -237,7 +231,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     });
 
     const isWipedOut = updatedMercs.filter(m => session.partyIds.includes(m.id)).every(m => m.currentHp <= 0);
-    if (isWipedOut) return handleRetreatManualDungeon({ ...stateWithProgress, knownMercenaries: updatedMercs });
+    if (isWipedOut) return handleRetreatManualDungeon({ ...state, knownMercenaries: updatedMercs });
 
     const newVisited = [...session.visited.map(row => [...row])];
     newVisited[newY][newX] = true;
@@ -249,7 +243,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     // FIXED: Reset actionMsg to a neutral default so old event messages don't persist
     let actionMsg = isAlreadyVisited ? "Backtracking through a cleared path." : "Advancing through the shadows...";
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
-    let newMaxFloorReached = { ...stateWithProgress.maxFloorReached };
+    let newMaxFloorReached = { ...state.maxFloorReached };
 
     if (targetRoom === 'GOLD' && !isAlreadyVisited) {
         extraGold = (dungeon.tier || 1) * 30;
@@ -294,7 +288,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     }
 
     return {
-        ...stateWithProgress,
+        ...state,
         knownMercenaries: updatedMercs,
         maxFloorReached: newMaxFloorReached,
         activeManualDungeon: {
@@ -309,7 +303,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
             collectedLoot: nextCollectedLoot, // 수동 탐사 자원 업데이트 반영
             lastActionMessage: actionMsg
         },
-        logs: logMsg ? [logMsg, ...stateWithProgress.logs] : stateWithProgress.logs
+        logs: logMsg ? [logMsg, ...state.logs] : state.logs
     };
 };
 

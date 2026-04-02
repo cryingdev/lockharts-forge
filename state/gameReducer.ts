@@ -14,7 +14,7 @@ import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 import { handleResearchCombination } from './reducer/research';
-import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleRefreshCommissions, handleUpdateContractObjectiveProgress, handleClaimObjectiveContract } from './reducer/commission';
+import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleRefreshCommissions, handleUpdateContractObjectiveProgress, handleClaimObjectiveContract, handleGenerateTavernMinorContract, handleUnlockNamedEncounter } from './reducer/commission';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -88,6 +88,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'CLAIM_OBJECTIVE_CONTRACT': return handleClaimObjectiveContract(state, action.payload.contractId);
     case 'FAIL_CONTRACT': return handleFailContract(state, action.payload.contractId);
     case 'REFRESH_COMMISSIONS': return handleRefreshCommissions(state);
+    case 'GENERATE_TAVERN_MINOR_CONTRACT': return handleGenerateTavernMinorContract(state, action.payload);
+    case 'UNLOCK_NAMED_ENCOUNTER': return handleUnlockNamedEncounter(state, action.payload.mercenaryId);
 
     // Expedition
     case 'START_EXPEDITION': return handleStartExpedition(state, action.payload);

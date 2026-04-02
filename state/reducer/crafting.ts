@@ -2,6 +2,7 @@ import { GameState, InventoryItem } from '../../types/index';
 import { EquipmentItem } from '../../types/inventory';
 import { getEnergyCost, generateEquipment, calcCraftExp, getSmithingLevel, getUnlockedTier } from '../../utils/craftingLogic';
 import { materials } from '../../data/materials';
+import { t } from '../../utils/i18n';
 
 const getQualityLabel = (q: number): string => {
     if (q >= 110) return "MASTERWORK";
@@ -46,6 +47,7 @@ export const handleStartCrafting = (state: GameState, payload: { item: Equipment
 
 export const handleCancelCrafting = (state: GameState, payload: { item: EquipmentItem }): GameState => {
     const { item } = payload;
+    const language = state.settings.language;
     const masteryCount = state.craftingMastery[item.id] || 0;
     const energyCost = getEnergyCost(item, masteryCount);
 
@@ -67,7 +69,7 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
         isCrafting: false,
         stats: { ...state.stats, energy: state.stats.energy + energyCost },
         inventory: newInventory,
-        logs: [`Cancelled work on ${item.name}. Materials restored.`, ...state.logs]
+        logs: [t(language, 'logs.cancelled_work', { item: item.name }), ...state.logs]
     };
 };
 

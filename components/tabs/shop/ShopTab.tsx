@@ -14,6 +14,7 @@ import { ShopQueueBadge } from './ui/ShopQueueBadge';
 import { ShopClosedOverlay } from './ui/ShopClosedOverlay';
 import { InstanceSelectorPopup } from './ui/InstanceSelectorPopup';
 import { SfxButton } from '../../common/ui/SfxButton';
+import { t } from '../../../utils/i18n';
 
 interface ShopTabProps {
     onNavigate: (tab: any) => void;
@@ -22,6 +23,7 @@ interface ShopTabProps {
 const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   const { state, actions } = useGame();
   const shop = useShop(onNavigate);
+  const language = state.settings.language;
 
   useEffect(() => {
     actions.triggerNamedEncounterCheck('SHOP');
@@ -59,7 +61,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         {/* Back Button - Immersive navigation */}
         {!shop.isTutorialActive && (
             <SfxButton sfx="switch" onClick={() => onNavigate('MAIN')} className="absolute top-4 left-4 z-[1050] flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group">
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="text-xs font-black uppercase tracking-widest">Back</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="text-xs font-black uppercase tracking-widest">{t(language, 'common.back')}</span>
             </SfxButton>
         )}
 
@@ -214,7 +216,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     <div className="w-20 h-20 md:w-28 md:h-28 bg-black/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 backdrop-blur-xl shadow-inner">
                         <Store className="w-10 h-10 md:w-12 md:h-12 text-stone-700 animate-pulse" />
                     </div>
-                    <h3 className="text-lg md:text-2xl font-black text-stone-50 uppercase tracking-[0.3em] opacity-40">Awaiting Customers</h3>
+                    <h3 className="text-lg md:text-2xl font-black text-stone-50 uppercase tracking-[0.3em] opacity-40">{t(language, 'shop.awaiting_customers')}</h3>
                 </div>
             </div>
         )}

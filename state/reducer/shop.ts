@@ -2,12 +2,14 @@
 import { GameState } from '../../types/index';
 import { ShopCustomer } from '../../types/shop';
 import { GAME_CONFIG } from '../../config/game-config';
+import { t } from '../../utils/i18n';
 
 export const handleToggleShop = (state: GameState): GameState => {
     const willOpen = !state.forge.isShopOpen;
+    const language = state.settings.language;
     
     if (willOpen && state.activeManualDungeon) {
-        return { ...state, logs: ["You cannot open the shop while exploring a dungeon!", ...state.logs] };
+        return { ...state, logs: [t(language, 'logs.shop_exploring_blocked'), ...state.logs] };
     }
 
     let newLogs = [willOpen ? 'Shop is now OPEN.' : 'Shop is now CLOSED.', ...state.logs];
@@ -27,11 +29,12 @@ export const handleToggleShop = (state: GameState): GameState => {
 };
 
 export const handleEnqueueCustomer = (state: GameState, customer: ShopCustomer): GameState => {
+    const language = state.settings.language;
     return {
         ...state,
         shopQueue: [...state.shopQueue, customer],
         visitorsToday: [...state.visitorsToday, customer.mercenary.id], 
-        logs: [`${customer.mercenary.name} has entered the shop.`, ...state.logs]
+        logs: [t(language, 'logs.customer_entered', { name: customer.mercenary.name }), ...state.logs]
     };
 };
 

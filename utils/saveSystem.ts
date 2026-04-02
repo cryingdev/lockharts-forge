@@ -1,10 +1,9 @@
 import { GameState, GameSettings } from '../types/game-state';
+import { APP_VERSION } from './appVersion';
 
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 const META_KEY = 'lockharts_forge_save_metadata';
 const GLOBAL_SETTINGS_KEY = 'lockharts_forge_global_settings';
-const APP_VERSION = '0.1.45a';
-
 /**
  * 마이그레이션 정책:
  * 1. 버전이 다를 경우 필드 추가/삭제 규칙 적용

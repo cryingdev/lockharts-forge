@@ -26,7 +26,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
 }) => {
     const inter = useTavernInteraction(mercenary);
     const { 
-        state, actions, dialogue, showGiftMenu, setShowGiftMenu,
+        state, actions, dialogue, followupText, showGiftMenu, setShowGiftMenu,
         pendingGiftItem, floatingHearts, step, hiringCost, canAfford, hasAffinity, handlers 
     } = inter;
 
@@ -154,6 +154,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                     speaker={mercenary.name} 
                     text={dialogue} 
                     options={
+                        followupText ? [{ label: "Continue", action: handlers.handleContinue, variant: 'primary' }] :
                         pendingGiftItem ? [{ label: `Give ${pendingGiftItem.name}`, action: handlers.handleConfirmGift, variant: 'primary' }, { label: "Cancel", action: handlers.handleCancelGift, variant: 'neutral' }] : 
                         step === 'CONFIRM_HIRE' ? [{ label: `Sign Contract (-${hiringCost}G)`, action: handlers.handleConfirmHire, variant: 'primary' }, { label: "Think again", action: handlers.handleCancelStep, variant: 'neutral' }] : 
                         step === 'CONFIRM_FIRE' ? [{ label: "Terminate Contract", action: handlers.handleConfirmTerminate, variant: 'danger' }, { label: "Stay with me", action: handlers.handleCancelStep, variant: 'neutral' }] : []

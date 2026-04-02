@@ -15,6 +15,7 @@ export const useShopService = () => {
     const { state, actions } = useGame();
     const { isShopOpen } = state.forge;
     const { activeCustomer, shopQueue, visitorsToday, unlockedRecipes } = state;
+    const language = state.settings.language;
 
     const arrivalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const patienceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -65,13 +66,17 @@ export const useShopService = () => {
                         }
 
                         if (pip) {
-                            const customer = generateShopRequest(pip, unlockedRecipes);
+                            const customer = generateShopRequest(pip, unlockedRecipes, language);
                             customer.request.requestedId = 'sword_bronze_t1';
                             
                             if (isTutorialSignStep || isFirstVisitorEver) {
-                                customer.request.dialogue = "Lockhart! I heard you fixed the furnace. I've been training with a wooden stick... Do you have a real Bronze Shortsword for sale?";
+                                customer.request.dialogue = language === 'ko'
+                                    ? '록하트! 화로를 고쳤다면서요. 전 나무 막대기로만 훈련해왔어요... 진짜 Bronze Shortsword 하나 살 수 있을까요?'
+                                    : "Lockhart! I heard you fixed the furnace. I've been training with a wooden stick... Do you have a real Bronze Shortsword for sale?";
                             } else {
-                                customer.request.dialogue = "I'm back! Is the Bronze Shortsword ready? I can't wait to try it out!";
+                                customer.request.dialogue = language === 'ko'
+                                    ? '다녀왔어요! Bronze Shortsword은 준비됐나요? 빨리 휘둘러 보고 싶어요!'
+                                    : "I'm back! Is the Bronze Shortsword ready? I can't wait to try it out!";
                             }
                             
                             customer.request.price = 550;
@@ -113,7 +118,7 @@ export const useShopService = () => {
                             maxMp
                         };
 
-                        const customer = generateShopRequest(visitingMerc, unlockedRecipes);
+                        const customer = generateShopRequest(visitingMerc, unlockedRecipes, language);
                         actions.enqueueCustomer(customer);
                     }
                 }
@@ -127,7 +132,7 @@ export const useShopService = () => {
         return () => {
             if (arrivalTimerRef.current) clearTimeout(arrivalTimerRef.current);
         };
-    }, [isShopOpen, visitorsToday, state.knownMercenaries, state.tutorialStep, activeCustomer, shopQueue.length, actions, unlockedRecipes]);
+    }, [isShopOpen, visitorsToday, state.knownMercenaries, state.tutorialStep, activeCustomer, shopQueue.length, actions, unlockedRecipes, language]);
 
     // --- 2. Queue Processing Logic ---
     useEffect(() => {

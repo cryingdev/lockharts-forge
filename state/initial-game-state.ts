@@ -37,6 +37,7 @@ export const createInitialGameState = (): GameState => {
     const defaultSettings: GameSettings = {
         showLogTicker: true,
         inventoryViewMode: 'LIST',
+        language: 'en',
         audio: {
             masterVolume: 0.5,
             musicVolume: 0.8,
@@ -99,6 +100,11 @@ export const createInitialGameState = (): GameState => {
         visitorsToday: [],
         talkedToToday: [],
         boughtDrinkToday: [],
+        tavern: {
+            reputation: 0,
+            lastInviteDay: 0,
+            inviteCountToday: 0,
+        },
 
         // Market Initial Stock
         marketStock: MARKET_CATALOG.reduce((acc, item) => ({ ...acc, [item.id]: item.maxStock }), {}),
@@ -164,6 +170,12 @@ export const createInitialGameState = (): GameState => {
             hasSeenRecoveryFlow: false,
             hasHadInjuredMercenary: false,
             trackedObjectiveProgress: {},
+            issuerAffinity: {
+                TOWN_GUARD: 0,
+                ASHFIELD_TRADERS: 0,
+                CHAPEL_OF_EMBER: 0,
+                ADVENTURERS_GUILD: 0,
+            },
         },
         activeDialogue: null,
 

@@ -1,19 +1,22 @@
 import { GameState } from '../../types/game-state';
 import { EquipmentRarity } from '../../models/Equipment';
+import { t } from '../../utils/i18n';
 
 export const handleTalkGarrick = (state: GameState): GameState => {
     if (state.talkedToGarrickToday) return state;
+    const language = state.settings.language;
 
     return {
         ...state,
         garrickAffinity: Math.min(100, state.garrickAffinity + 2),
         talkedToGarrickToday: true,
-        logs: ["Talked with Garrick. Affinity +2.", ...state.logs]
+        logs: [t(language, 'logs.talked_garrick'), ...state.logs]
     };
 };
 
 export const handleGiftGarrick = (state: GameState, payload: { itemId: string }): GameState => {
     const { itemId } = payload;
+    const language = state.settings.language;
     const invItemIndex = state.inventory.findIndex(i => i.id === itemId);
     if (invItemIndex === -1) return state;
 
@@ -41,6 +44,6 @@ export const handleGiftGarrick = (state: GameState, payload: { itemId: string })
         ...state,
         inventory: newInventory,
         garrickAffinity: Math.min(100, state.garrickAffinity + affinityGain),
-        logs: [`Gifted ${item.name} to Garrick. Affinity +${affinityGain}.`, ...state.logs]
+        logs: [t(language, 'logs.gifted_garrick', { item: item.name, amount: affinityGain }), ...state.logs]
     };
 };

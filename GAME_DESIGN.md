@@ -94,6 +94,11 @@ Mercenaries are the player's primary agents in the world.
     -   Automatic discounts on hiring.
     -   Immediate loyalty, guaranteed acceptance, or reduced relationship difficulty.
 -   Design intent: the Tavern offers better opportunities as reputation rises, but building trust with an individual mercenary must still require effort.
+-   Current implementation notes:
+    -   Tavern Reputation now appears directly in the Tavern UI.
+    -   It currently increases through Tavern-centered social actions such as `Invite`, `Talk`, `Buy Drink`, and receiving Tavern personal requests.
+    -   It currently biases `Talk` outcomes away from pure flavor and toward `RUMOR`, `MINOR_CONTRACT`, and rare `OPPORTUNITY` results as reputation rises.
+    -   If too many Tavern-origin contracts are already active, the system shifts back toward `FLAVOR` and `RUMOR` to avoid overloading the player with personal requests.
 
 ##### 3.3.3.1 Suggested Tavern Reputation Bands
 | Tavern Reputation | Recruit Level Band | Recruit Pool Bias | Encounter Support |
@@ -141,13 +146,13 @@ The commission system adds medium-term goals to the daily economy loop and acts 
 | `CRAFT` | Produce and deliver forged equipment | `SHOP`, `BOARD`, `TAVERN` | Bronze sword `GOOD`+, shield set, light armor piece | Submit crafted item directly from inventory | Gold-heavy, small reputation or affinity bonus | Missed payout, small trust loss, request cooldown |
 | `TURN_IN` | Deliver dungeon materials, monster parts, or gathered resources | `BOARD`, `MARKET`, `SHOP` | `fire_essence`, wolf fangs, healing herbs, ore bundles | Submit stackable material items | Gold plus materials, vouchers, recipe hints | Missed payout, reduced chance of similar requests soon |
 | `HUNT` | Defeat specific enemy types a target number of times | `BOARD`, `TAVERN` | Slay cave bats x5, ash spiders x3, bandit scouts x4 | Completion tracked from combat results or kill log | Gold, district reputation, occasional combat supply crate | Trust loss with issuer, hunt board cooldown |
-| `EXPLORE` | Reach a location, recover an object, or clear a floor milestone | `BOARD`, `TAVERN`, `EVENT` | Reach floor 2, recover survey notes, reveal a ruin node | Completion tracked from dungeon exploration state | Gold, map intel, rare material, future encounter unlock | Missed opportunity, delayed follow-up contract chain |
+| `BOSS` | Deliver a specific trophy from a defeated dungeon boss | `BOARD`, `GUILD` | Rat King's Tail, Goblin King's Scepter, Werewolf Pelt | Submit boss trophy item directly from inventory | High Gold, high reputation, unique materials | Significant trust loss, long board cooldown |
 
 ##### 3.3.4.1.2 General Commission Type Rules
 -   `CRAFT` commissions are the most common and should anchor the early economy loop.
 -   `TURN_IN` commissions reinforce the value of dungeon materials and gathering outputs.
 -   `HUNT` commissions should use lightweight combat tracking and should not require manual trophy bookkeeping unless the item itself matters.
--   `EXPLORE` commissions should be less frequent, more flavorful, and often act as bridges to future contracts or district events.
+-   `BOSS` commissions are high-urgency, high-reward variants of `TURN_IN` that require specific boss drops. They appear less frequently but offer significant progression boosts.
 -   Mixed commissions are allowed in later tiers, but early game should favor single-type clarity.
 
 ##### 3.3.4.2 Commission Board Role
@@ -195,12 +200,12 @@ The commission system adds medium-term goals to the daily economy loop and acts 
 -   Every Board card should clearly display:
     -   Contract title
     -   Issuer or district
-    -   Contract type (`CRAFT`, `TURN_IN`, `HUNT`, `EXPLORE`)
+    -   Contract type (`CRAFT`, `TURN_IN`, `HUNT`, `BOSS`)
     -   Time remaining
     -   Reward summary
     -   Current progress summary
 -   Cards in `Ready to Submit` should visually stand apart from ordinary in-progress work.
--   `HUNT` and `EXPLORE` contracts should show progress counters rather than inventory icons as their primary status signal.
+-   `HUNT` and `BOSS` contracts should show progress or item requirements as their primary status signal.
 -   `CRAFT` and `TURN_IN` contracts should show item and quality expectations as the dominant information.
 
 ##### 3.3.4.3 Special Contract Rules

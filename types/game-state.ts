@@ -8,11 +8,67 @@ import { Monster } from '../models/Monster';
 export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP' | 'STAIRS' | 'ENEMY' | 'RESOURCE';
 
 export type ContractType = 'GENERAL' | 'SPECIAL';
-export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
+export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE' | 'BOSS';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
-export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
-export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
-export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
+
+export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM' | 'BOARD';
+export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT' | 'ISSUER_AFFINITY';
+export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED' | 'TURN_IN';
+
+export type TavernTalkOutcome = 'FLAVOR' | 'RUMOR' | 'MINOR_CONTRACT' | 'OPPORTUNITY';
+export type TavernTalkTone = 'COLD' | 'NEUTRAL' | 'WARM';
+export type TavernTalkConditionJob = 'Fighter' | 'Mage' | 'Rogue' | 'Cleric' | 'Novice' | 'ANY';
+export type Language = 'en' | 'ko';
+
+export interface TavernTalkEntry {
+  id: string;
+  outcome: TavernTalkOutcome;
+  speakerJob: TavernTalkConditionJob;
+  minAffinity?: number;
+  maxAffinity?: number;
+  minTier?: number;
+  requiresHired?: boolean;
+  requiresVisitor?: boolean;
+  weight: number;
+  text?: string;
+  textKey?: string;
+  followupText?: string;
+  followupTextKey?: string;
+  rumorTag?: string;
+  contractTemplateId?: string;
+  unlockNamedId?: string;
+}
+
+export interface TavernMinorContractTemplate {
+  id: string;
+  title?: string;
+  titleKey?: string;
+  kind: GeneralContractKind;
+  description?: string;
+  descriptionKey?: string;
+  requirements: ContractItemRequirement[];
+  rewardGold: number;
+  rewardAffinity: number;
+  deadlineDays: number;
+}
+
+export type BoardIssuerId =
+  | 'TOWN_GUARD'
+  | 'ASHFIELD_TRADERS'
+  | 'CHAPEL_OF_EMBER'
+  | 'ADVENTURERS_GUILD';
+
+export type BoardRewardBias = 'GOLD' | 'REPUTATION' | 'UTILITY' | 'DUNGEON';
+export type BoardUrgencyBias = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface BoardIssuerProfile {
+  id: BoardIssuerId;
+  displayName: string;
+  favoredKinds: GeneralContractKind[];
+  rewardBias: BoardRewardBias;
+  urgencyBias: BoardUrgencyBias;
+  flavorTone: string;
+}
 
 export interface ContractItemRequirement {
   itemId: string;
@@ -38,6 +94,8 @@ export interface ContractReward {
   itemId?: string;
   itemCount?: number;
   mercenaryId?: string;
+  issuerId?: BoardIssuerId;
+  issuerAffinity?: number;
 }
 
 export interface ContractEncounterRule {
@@ -60,6 +118,8 @@ export interface ContractDefinition {
   title: string;
   clientName: string;
   issuer?: string;
+  issuerId?: BoardIssuerId;
+  issuerName?: string;
   urgency?: 'NORMAL' | 'HIGH' | 'URGENT';
   mercenaryId?: string;
   source: ContractSource;
@@ -97,6 +157,7 @@ export interface NamedContractRegistryEntry {
   encounterDialogue: {
     text: string;
     speaker: string;
+    textKey?: string;
   };
 }
 
@@ -121,6 +182,7 @@ export interface CommissionState {
   trackedObjectiveProgress: Record<string, Record<string, number>>;
   lastDailyCommissionRefreshDay: number;
   lastEncounterCheckDayByLocation?: Partial<Record<ContractSource, number>>;
+  issuerAffinity: Partial<Record<BoardIssuerId, number>>;
   hasSeenRecoveryFlow?: boolean; // New: Track if player has seen the recovery tutorial/flow
   hasHadInjuredMercenary?: boolean; // New: Track if player has ever had an injured mercenary
 }
@@ -219,6 +281,12 @@ export interface DialogueState {
   options: DialogueOption[];
 }
 
+export interface TavernState {
+  reputation: number;
+  lastInviteDay: number;
+  inviteCountToday: number;
+}
+
 export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED' | 'MARKET' | 'SMITHING';
 
 export interface AudioSettings {
@@ -233,6 +301,7 @@ export interface AudioSettings {
 export interface GameSettings {
     showLogTicker: boolean;
     inventoryViewMode: 'GRID' | 'LIST';
+    language: Language;
     audio: AudioSettings;
 }
 
@@ -250,6 +319,7 @@ export interface GameState {
   visitorsToday: string[]; 
   talkedToToday: string[]; 
   boughtDrinkToday: string[]; 
+  tavern: TavernState;
 
   marketStock: Record<string, number>; 
   garrickAffinity: number;

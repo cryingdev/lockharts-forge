@@ -26,9 +26,14 @@ export const selectAcceptedContracts = (state: GameState): ContractDefinition[] 
 export const isContractReady = (state: GameState, contract: ContractDefinition): boolean => {
     if (contract.status !== 'ACTIVE') return false;
 
-    // 1. Check Progress-based (HUNT, EXPLORE)
+    // 1. Check Progress-based (HUNT, BOSS, TURN_IN objectives)
     if (contract.objectives && contract.objectives.length > 0) {
         return contract.objectives.every(obj => {
+            if (obj.targetType === 'TURN_IN' && obj.targetId) {
+                const matchingItems = getContractMatchingItems(state.inventory, obj.targetId);
+                const totalQty = matchingItems.reduce((sum, item) => sum + item.quantity, 0);
+                return totalQty >= obj.targetCount;
+            }
             const progress = state.commission.trackedObjectiveProgress[contract.id]?.[obj.objectiveId] || 0;
             return progress >= obj.targetCount;
         });

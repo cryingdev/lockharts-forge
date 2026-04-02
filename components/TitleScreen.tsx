@@ -6,6 +6,7 @@ import SaveLoadModal from './modals/SaveLoadModal';
 const SettingsModal = React.lazy(() => import('./modals/SettingsModal'));
 import { SfxButton } from './common/ui/SfxButton';
 import { UI_MODAL_LAYOUT } from '../config/ui-config';
+import { APP_VERSION } from '../utils/appVersion';
 
 interface TitleScreenProps {
     onNewGame: (skipTutorial: boolean) => void;
@@ -18,8 +19,6 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showSettings, setShowSettings] = useState(false);
     const [showNewGameModal, setShowNewGameModal] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
-    const VERSION = "0.1.45a";
-
     const checkSaves = useCallback(() => {
         const metadata = getSaveMetadataList();
         setHasSaves(metadata.length > 0);
@@ -38,8 +37,8 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const handleContinue = () => {
         const info = getLatestSaveInfo();
         if (info) {
-            if (info.data.version !== VERSION) {
-                alert(`Cannot load: Version mismatch.\n\nSave: v${info.data.version || '0.1.36'}\nApp: v${VERSION}`);
+            if (info.data.version !== APP_VERSION) {
+                alert(`Cannot load: Version mismatch.\n\nSave: v${info.data.version || '0.1.36'}\nApp: v${APP_VERSION}`);
                 return;
             }
             onLoadGame(info.data, info.index);
@@ -49,8 +48,8 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const handleLoadFromSlot = (index: number) => {
         const data = loadFromSlot(index);
         if (data) {
-            if (data.version !== VERSION) {
-                alert(`Cannot load: Version mismatch.\n\nSave: v${data.version || '0.1.36'}\nApp: v${VERSION}`);
+            if (data.version !== APP_VERSION) {
+                alert(`Cannot load: Version mismatch.\n\nSave: v${data.version || '0.1.36'}\nApp: v${APP_VERSION}`);
                 return;
             }
             onLoadGame(data, index);
@@ -79,7 +78,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         </h1>
                         <div className="h-0.5 md:h-1 w-16 md:w-32 bg-amber-800 mx-auto mt-[1dvh] md:mt-4 rounded-full"></div>
                         <p className="mt-[0.5dvh] md:mt-4 text-stone-500 font-sans tracking-[0.3em] text-[clamp(10px,1.2dvh,14px)] md:text-sm uppercase font-bold">The Ember of Retribution</p>
-                        <p className="mt-1 text-stone-600 font-mono text-[9px] md:text-xs">Build v{VERSION}</p>
+                        <p className="mt-1 text-stone-600 font-mono text-[9px] md:text-xs">Build v{APP_VERSION}</p>
                     </div>
 
                     <div className="flex flex-col gap-1.5 md:gap-4 w-48 md:w-64 shrink-0">

@@ -7,15 +7,20 @@ import { MercenaryPickerModal } from './ui/MercenaryPickerModal';
 const ConfirmationModal = React.lazy(() => import('../../modals/ConfirmationModal'));
 import { SfxButton } from '../../common/ui/SfxButton';
 import { ArrowLeft } from 'lucide-react';
+import { useGame } from '../../../context/GameContext';
+import { t } from '../../../utils/i18n';
 
 const AssaultNavigator = lazy(() => import('./AssaultNavigator'));
 
-const NavigatorLoading = () => (
-    <div className="absolute inset-0 z-[1000] bg-stone-950 flex flex-col items-center justify-center">
-        <div className="w-16 h-16 border-4 border-red-900/20 border-t-red-600 rounded-full animate-spin mb-4" />
-        <span className="text-red-500 font-black uppercase tracking-[0.3em] animate-pulse">Entering Danger Zone...</span>
-    </div>
-);
+const NavigatorLoading = () => {
+    const { state } = useGame();
+    return (
+        <div className="absolute inset-0 z-[1000] bg-stone-950 flex flex-col items-center justify-center">
+            <div className="w-16 h-16 border-4 border-red-900/20 border-t-red-600 rounded-full animate-spin mb-4" />
+            <span className="text-red-500 font-black uppercase tracking-[0.3em] animate-pulse">{t(state.settings.language, 'dungeon.loading')}</span>
+        </div>
+    );
+};
 
 interface DungeonTabProps {
     onNavigate?: (tab: any) => void;
@@ -32,6 +37,7 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
         inspectedMercId, setInspectedMercId,
         handlers
     } = dungeon;
+    const language = state.settings.language;
 
     const handleBack = () => {
         // If mercenary inspection is open, close it first
@@ -57,7 +63,7 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
                     className="absolute top-4 left-4 z-[1100] flex items-center gap-2 px-4 py-2 bg-stone-900/60 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group animate-in fade-in duration-300"
                 >
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    <span className="text-xs font-black uppercase tracking-widest">Back</span>
+                    <span className="text-xs font-black uppercase tracking-widest">{t(language, 'common.back')}</span>
                 </SfxButton>
             )}
 

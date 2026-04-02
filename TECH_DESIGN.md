@@ -77,10 +77,10 @@ The recommended addition is a contract-focused slice in `/types/game-state.ts`.
 
 ```ts
 export type ContractType = 'GENERAL' | 'SPECIAL';
-export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE';
+export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'BOSS';
 export type ContractStatus = 'OFFERED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
-export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM';
-export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT';
+export type ContractSource = 'SHOP' | 'TAVERN' | 'MARKET' | 'SYSTEM' | 'BOARD';
+export type ContractRewardType = 'GOLD' | 'AFFINITY' | 'ITEM' | 'UNLOCK_RECRUIT' | 'ISSUER_AFFINITY';
 
 export interface ContractItemRequirement {
   itemId: string;
@@ -93,7 +93,8 @@ export interface ContractObjectiveRequirement {
   objectiveId: string;
   targetCount: number;
   currentCount?: number;
-  targetType: 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED';
+  targetType: 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED' | 'NPC_RESCUED' | 'ITEM_RECOVERED' | 'TURN_IN';
+  label?: string;
   targetId?: string;
   floorNumber?: number;
 }
@@ -105,6 +106,7 @@ export interface ContractReward {
   itemId?: string;
   itemCount?: number;
   mercenaryId?: string;
+  issuerAffinity?: number;
 }
 
 export interface ContractEncounterRule {
@@ -128,6 +130,9 @@ export interface ContractDefinition {
   clientName: string;
   mercenaryId?: string;
   source: ContractSource;
+  issuerId?: BoardIssuerId;
+  issuerName?: string;
+  urgency?: 'NORMAL' | 'HIGH' | 'URGENT';
   description: string;
   requirements: ContractItemRequirement[];
   objectives?: ContractObjectiveRequirement[];
@@ -149,7 +154,11 @@ Recommended interpretation:
         -   `CRAFT`: submit crafted equipment
         -   `TURN_IN`: submit stackable loot or gathered materials
         -   `HUNT`: progress from kill tracking or combat results
-        -   `EXPLORE`: progress from dungeon exploration milestones
+        -   `BOSS`: high-reward `TURN_IN` variant for boss trophies
+-   `issuerId` / `issuerName`
+    -   Board issuer identity used for presentation, flavor, and issuer affinity rewards
+-   `urgency`
+    -   Deadline/reward pressure flag used in board and tavern contract presentation
 -   `requirements`
     -   Inventory-backed submission requirements
 -   `objectives`
@@ -158,10 +167,10 @@ Recommended interpretation:
 #### 4.4.1.1 General Contract Kind Mapping
 | `kind` | Uses `requirements` | Uses `objectives` | Primary completion mode | Typical source |
 | :--- | :--- | :--- | :--- | :--- |
-| `CRAFT` | Yes | Optional | Submit crafted item(s) | `SHOP`, `TAVERN`, `SYSTEM` |
-| `TURN_IN` | Yes | No | Submit material stack(s) | `SHOP`, `MARKET`, `SYSTEM` |
-| `HUNT` | Optional | Yes | Auto-progress from combat results, then claim | `TAVERN`, `SYSTEM` |
-| `EXPLORE` | Optional | Yes | Auto-progress from exploration state, then claim | `TAVERN`, `SYSTEM` |
+| `CRAFT` | Yes | Optional | Submit crafted item(s) | `SHOP`, `TAVERN`, `BOARD` |
+| `TURN_IN` | Yes | No | Submit material stack(s) | `SHOP`, `MARKET`, `BOARD`, `TAVERN` |
+| `HUNT` | Optional | Yes | Auto-progress from combat results, then claim | `TAVERN`, `BOARD` |
+| `BOSS` | Yes | No | Submit boss trophy item | `BOARD`, `GUILD` |
 
 For named mercenary contracts, the design source should be stored in a registry-style structure that AI agents and reducers can read without inferring narrative text:
 
@@ -303,6 +312,7 @@ export interface CommissionState {
   namedEncounters: Record<string, NamedEncounterState>;
   lastDailyCommissionRefreshDay: number;
   trackedObjectiveProgress: Record<string, Record<string, number>>;
+  issuerAffinity: Partial<Record<BoardIssuerId, number>>;
 }
 ```
 
@@ -318,7 +328,7 @@ commission: CommissionState;
 trackedObjectiveProgress[contractId][objectiveId] = currentProgress;
 ```
 
-This allows `HUNT` and `EXPLORE` contracts to update incrementally from combat and dungeon reducers without mutating the original contract template shape.
+This allows `HUNT` and boss-trophy `TURN_IN` contracts to update and validate cleanly without mutating the original contract template shape.
 
 #### 4.4.2 Action Design (`state/actions.ts`)
 The reducer API should keep encounter logic and contract progress explicit.
@@ -352,7 +362,7 @@ The reducer API should keep encounter logic and contract progress explicit.
 -   `state/reducer/combat.ts`
     -   Increments `HUNT` contract objectives when matching enemies are defeated.
 -   `state/reducer/dungeon.ts`
-    -   Increments `EXPLORE` contract objectives for floor reach, node discovery, rescues, and recovery events.
+    -   Handles boss encounter triggers and special narrative events.
 -   `state/reducer/inventory.ts`
     -   Validates submission requirements.
     -   Removes delivered items only on successful submission.
@@ -366,8 +376,8 @@ The reducer API should keep encounter logic and contract progress explicit.
 4.  Entering Shop, Tavern, or Market dispatches `TRIGGER_NAMED_ENCOUNTER_CHECK`.
 5.  If the roll succeeds or the guarantee day is reached, `OFFER_SPECIAL_CONTRACT` fires.
 6.  Once accepted, the contract is stored in `commission.activeContracts`.
-7.  `CRAFT` and `TURN_IN` contracts complete through inventory submission and requirement validation.
-8.  `HUNT` and `EXPLORE` contracts update progress passively through combat and dungeon reducers.
+7.  `CRAFT`, `TURN_IN`, and `BOSS` contracts complete through inventory submission and requirement validation.
+8.  `HUNT` contracts update progress passively through combat results.
 9.  Once objective progress reaches all targets, the contract becomes claimable.
 10. `COMPLETE_CONTRACT` applies rewards.
 11. If the reward includes `UNLOCK_RECRUIT`, the mercenary becomes recruitable through normal hire flow.
@@ -427,8 +437,8 @@ Status derivation notes:
     -   `READY` requires matching material counts in inventory
 -   `HUNT`
     -   `READY` requires objective progress target met
--   `EXPLORE`
-    -   `READY` requires objective progress target met and any event flags satisfied
+-   `BOSS`
+    -   `READY` requires boss trophy presence in inventory
 
 Detail panel expectations:
 
@@ -450,6 +460,163 @@ Reducer and selector guidance:
     -   inventory state
     -   current day for deadline urgency
 -   Expiration should still be authoritative in reducers; the Board only reflects current state.
+
+#### 4.4.7 Board Issuer Profiles And Implementation Order
+To make the Board feel like a public town contract system rather than a generic quest list, each Board contract should come from a defined issuer profile.
+
+Canonical issuer set:
+
+```ts
+type BoardIssuerId =
+  | 'TOWN_GUARD'
+  | 'ASHFIELD_TRADERS'
+  | 'CHAPEL_OF_EMBER'
+  | 'ADVENTURERS_GUILD';
+
+interface BoardIssuerProfile {
+  id: BoardIssuerId;
+  displayName: string;
+  favoredKinds: GeneralContractKind[];
+  rewardBias: 'GOLD' | 'REPUTATION' | 'UTILITY' | 'DUNGEON';
+  urgencyBias: 'LOW' | 'MEDIUM' | 'HIGH';
+  flavorTone: string;
+}
+```
+
+Recommended defaults:
+
+```ts
+const BOARD_ISSUER_PROFILES: BoardIssuerProfile[] = [
+  {
+    id: 'TOWN_GUARD',
+    displayName: 'Town Guard',
+    favoredKinds: ['CRAFT', 'HUNT', 'BOSS'],
+    rewardBias: 'REPUTATION',
+    urgencyBias: 'HIGH',
+    flavorTone: 'Practical, defensive, and urgent',
+  },
+  {
+    id: 'ASHFIELD_TRADERS',
+    displayName: 'Ashfield Traders',
+    favoredKinds: ['CRAFT', 'TURN_IN'],
+    rewardBias: 'GOLD',
+    urgencyBias: 'MEDIUM',
+    flavorTone: 'Commercial, deadline-aware, and transactional',
+  },
+  {
+    id: 'CHAPEL_OF_EMBER',
+    displayName: 'Chapel of Ember',
+    favoredKinds: ['TURN_IN', 'CRAFT', 'HUNT'],
+    rewardBias: 'UTILITY',
+    urgencyBias: 'MEDIUM',
+    flavorTone: 'Protective, solemn, and recovery-focused',
+  },
+  {
+    id: 'ADVENTURERS_GUILD',
+    displayName: 'Adventurers\\' Guild',
+    favoredKinds: ['HUNT', 'BOSS', 'CRAFT', 'TURN_IN'],
+    rewardBias: 'DUNGEON',
+    urgencyBias: 'MEDIUM',
+    flavorTone: 'Risk-tolerant, field-oriented, and opportunistic',
+  },
+];
+```
+
+Implementation goal:
+
+-   A Board contract should always be traceable back to an issuer profile.
+-   Issuer profile should influence:
+    -   Which contract kinds are likely to appear.
+    -   Reward composition.
+    -   Deadline urgency.
+    -   Contract title and flavor text.
+-   Issuer profile should not directly alter core completion rules. Completion logic still belongs to contract kind and objective definitions.
+
+Recommended implementation order for AI-assisted coding:
+
+1.  Add issuer profile types and registry.
+    -   Files:
+        -   `types/game-state.ts`
+        -   `data/contracts/boardIssuers.ts` (new)
+    -   Tasks:
+        -   Add `BoardIssuerId`.
+        -   Add `BoardIssuerProfile`.
+        -   Add `issuerId?: BoardIssuerId` and `issuerName?: string` to `ContractDefinition`.
+    -   Done when:
+        -   Every Board contract can store an issuer identifier without breaking existing named or non-Board contracts.
+
+2.  Attach issuer selection to Board contract generation.
+    -   Files:
+        -   `state/reducer/commission.ts`
+        -   optional helper: `utils/contracts/boardContractGenerator.ts` (new)
+    -   Tasks:
+        -   During `REFRESH_DAILY_CONTRACTS`, pick an issuer first.
+        -   Use `favoredKinds` and the current progression tier to choose a valid contract kind.
+        -   Populate `issuerId`, `issuerName`, and flavor text fields on generated contracts.
+    -   Done when:
+        -   Freshly generated Board contracts always display a valid issuer and contract kind that matches that issuer profile.
+
+3.  Bias rewards and deadlines using issuer profile.
+    -   Files:
+        -   `state/reducer/commission.ts`
+        -   optional helper: `utils/contracts/contractRewardUtils.ts` (new)
+    -   Tasks:
+        -   Map `rewardBias` to reward tables:
+            -   `GOLD`: higher payout, lower utility rewards
+            -   `REPUTATION`: moderate gold, more district or issuer trust value
+            -   `UTILITY`: recovery items, supplies, small gold
+            -   `DUNGEON`: rarer materials, supply crates, moderate gold
+        -   Map `urgencyBias` to deadline range.
+    -   Done when:
+        -   Guard contracts feel shorter and more urgent than trader contracts.
+        -   Chapel and Guild contracts produce meaningfully different reward shapes.
+
+4.  Generate issuer-specific titles and flavor text.
+    -   Files:
+        -   `data/contracts/boardTextTemplates.ts` (new)
+        -   `state/reducer/commission.ts`
+    -   Tasks:
+        -   Add template pools keyed by `issuerId` and `GeneralContractKind`.
+        -   Build contract titles and one-line summaries from template data rather than generic strings.
+    -   Done when:
+        -   A player can distinguish Guard, Traders, Chapel, and Guild postings by text alone.
+
+5.  Surface issuer identity in Board UI.
+    -   Files:
+        -   `components/tabs/tavern/ui/CommissionBoard.tsx`
+        -   optional selector updates in `state/selectors/commissionSelectors.ts`
+    -   Tasks:
+        -   Show issuer name prominently on every card.
+        -   Keep reward summary and time remaining near the issuer label.
+        -   Optionally tint or badge cards per issuer, but keep the first pass simple and text-led.
+    -   Done when:
+        -   Contract cards read as public notices from recognizable town factions instead of anonymous jobs.
+
+6.  Add balancing safeguards.
+    -   Files:
+        -   `state/reducer/commission.ts`
+        -   optional config file: `config/board-contract-config.ts` (new)
+    -   Tasks:
+        -   Prevent the Board from filling with only one issuer.
+        -   Prevent duplicate contract kinds from the same issuer if better variety exists.
+        -   Keep early-game Board output biased toward `CRAFT` and `TURN_IN`.
+    -   Done when:
+        -   Daily Board refreshes feel varied and readable.
+
+Recommended low-risk delivery sequence:
+
+1.  Data layer only: issuer types, registry, and `ContractDefinition` fields.
+2.  Generation layer: assign `issuerId` and `issuerName` to all newly created Board contracts.
+3.  Reward/deadline bias layer.
+4.  Text template layer.
+5.  UI layer.
+6.  Variety and balancing pass.
+
+Notes for implementation:
+
+-   Keep Board issuer logic separate from named contract issuer logic. Named encounters are character-driven, not public-faction driven.
+-   Avoid coupling issuer identity to exact item ids. Issuers should prefer categories and contract kinds, then resolve concrete items through the normal progression-aware generator.
+-   If implementation scope must stay small, complete steps 1, 2, and 5 first. That is the minimum version that makes the Board feel authored rather than generic.
 
 ### 4.5 Tavern Reputation System
 `Tavern Reputation` should be modeled as a Tavern-level progression value that affects recruit quality, not recruit affinity.
@@ -480,6 +647,13 @@ And added to `GameState`:
 tavern: TavernState;
 ```
 
+Current implementation status:
+-   `tavern.reputation` is now stored in runtime state and shown in the Tavern UI.
+-   `Invite`, `Talk`, `Buy Drink`, and Tavern-origin personal-request generation currently provide small Tavern Reputation gains.
+-   `state/helpers/tavernTalkHelpers.ts` now uses Tavern Reputation and current active Tavern contract count to bias `Talk` outcomes.
+-   Higher reputation modestly increases the weight of `RUMOR`, `MINOR_CONTRACT`, and `OPPORTUNITY`.
+-   A high number of active Tavern contracts suppresses new personal requests and pushes the system back toward `FLAVOR` and `RUMOR`.
+
 #### 4.5.2 Recruit Quality Effects
 Tavern Reputation should drive recruit generation through weighted bounds rather than direct stat gifts.
 
@@ -500,10 +674,12 @@ Tavern Reputation should drive recruit generation through weighted bounds rather
 -   `state/reducer/tavern.ts` or Tavern interaction handler
     -   Increment Tavern Reputation from successful Tavern-origin commissions, positive social events, and high-value recruit outcomes.
     -   Apply daily limits or diminishing returns if repeated invites are spammed.
+    -   In the current codebase, this responsibility is distributed across Tavern-facing interaction reducers and `commission.ts` rather than a dedicated `tavern.ts` reducer.
 -   `state/reducer/commission.ts`
     -   Use Tavern Reputation as an optional unlock requirement for Tavern-based named encounters.
 -   `components/tabs/tavern/`
     -   Show Tavern Reputation and a lightweight explanation of what higher reputation improves.
+    -   The first-pass implementation now displays the current reputation value in the Tavern header area.
 
 #### 4.5.4 Suggested Reputation Buckets
 | Reputation | Recruit Level Effect | Class Pool Effect | Named Encounter Effect |
@@ -517,6 +693,22 @@ Tavern Reputation should drive recruit generation through weighted bounds rather
 -   **Responsive Design**: Mobile-first approach with Tailwind's `px-safe` and flex/grid layouts.
 -   **SfxButton**: A wrapper for standard buttons that integrates sound effects.
 -   **Modals**: Managed via state flags (e.g., `showSleepModal`) for immersive overlays.
+
+## 5.1 Localization Layer
+-   **Language State**:
+    -   Stored in `GameSettings.language`
+    -   Current supported values: `en`, `ko`
+-   **Locale Dictionaries**:
+    -   `/locales/en.ts`
+    -   `/locales/ko.ts`
+-   **Resolver Utility**:
+    -   `/utils/i18n.ts`
+    -   `t(language, key, params?)`
+
+Implementation policy:
+-   UI labels, system prompts, board copy, dialogue templates, and logs should use localization keys.
+-   Item names, mercenary names, and major proper nouns may remain in English and be interpolated into translated templates.
+-   Reducers that append player-facing logs should prefer localized templates instead of hardcoded English strings.
 
 ## 6. Performance Considerations
 -   Extensive use of `useMemo` and `useCallback` to prevent unnecessary re-renders in the complex game state.

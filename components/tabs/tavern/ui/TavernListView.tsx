@@ -38,7 +38,7 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
     const getKindIcon = (kind?: string) => {
         switch (kind) {
             case 'HUNT': return <Sword className="w-3 h-3" />;
-            case 'EXPLORE': return <Compass className="w-3 h-3" />;
+            case 'BOSS': return <Trophy className="w-3 h-3 text-amber-500" />;
             case 'CRAFT': return <Hammer className="w-3 h-3" />;
             case 'TURN_IN': return <Package className="w-3 h-3" />;
             default: return <Package className="w-3 h-3" />;
