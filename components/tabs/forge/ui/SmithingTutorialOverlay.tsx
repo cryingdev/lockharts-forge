@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Pointer } from 'lucide-react';
 import DialogueBox from '../../../DialogueBox';
 import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface SmithingTutorialOverlayProps {
     step: string;
@@ -15,7 +16,8 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
     targetCoord, 
     onResume 
 }) => {
-    const { actions } = useGame();
+    const { actions, state } = useGame();
+    const language = state.settings.language;
     const [animatedRadius, setAnimatedRadius] = useState(2000);
     const [isDismissed, setIsDismissed] = useState(false);
     
@@ -26,24 +28,24 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
 
     const script = useMemo(() => {
         if (step === 'PRE_IGNITE_DIALOG_1_GUIDE' || step === 'START_FORGING_GUIDE') 
-            return "The furnace stands ready, but the hearth is cold. I must strike the flint and wake the fire to life.";
+            return t(language, 'smithingTutorial.dialogue.pre_ignite_1');
         if (step === 'PRE_IGNITE_DIALOG_2_GUIDE' || step === 'PRE_IGNITE_INDICATE_GUIDE') 
-            return "Tap the Ignite button on the right, it will heat furnace up and be ready.";
+            return t(language, 'smithingTutorial.dialogue.pre_ignite_2');
         if (step === 'PRE_PUMP_DIALOG_GUIDE') 
-            return "The flame has taken, but it is weak and gasping. It needs breath—the steady rhythm of the bellows—to reach forging heat.";
+            return t(language, 'smithingTutorial.dialogue.pre_pump');
         if (step === 'PRE_PUMP_INDICATE_GUIDE' || step === 'SMITHING_MINIGAME_PUMP') 
-            return "Pump the bellows repeatedly. Feed the fire until the gauge reaches its peak and the stone begins to hum.";
+            return t(language, 'smithingTutorial.dialogue.pump');
         if (step === 'POST_PUMP_DIALOG_GUIDE')
-            return "The steel glows with the heat of a dying star! It's perfectly tempered. Now, I must strike while the iron is hot.";
+            return t(language, 'smithingTutorial.dialogue.post_pump');
         
         if (step === 'SMITHING_MINIGAME_HIT_GUIDE') 
-            return "The steel glows with the color of the rising sun! Tap the target rings as they shrink to strike. Precision is our legacy.";
+            return t(language, 'smithingTutorial.dialogue.hit');
         
         if (step === 'FIRST_HIT_DIALOG_GUIDE') 
-            return "Magnificent! The sound of steel on steel... it sings. Keep striking until the blade finds its form.";
+            return t(language, 'smithingTutorial.dialogue.first_hit');
         
         return "";
-    }, [step]);
+    }, [step, language]);
 
     // 하이라이트 원 애니메이션 로직
     // DIALOG 단계에서는 다이얼로그만 보여주고, INDICATE 단계부터 버튼을 강조합니다.
@@ -113,7 +115,7 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
                         <div className="flex items-center flex-row-reverse animate-bounce-x-reverse">
                             <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ transform: 'rotate(90deg)' }} />
                             <div className="mr-3 px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase rounded-full shadow-2xl border-2 border-amber-400 whitespace-nowrap">
-                                {step.includes('IGNITE') ? 'Ignite' : step.includes('PUMP') ? 'Pump' : 'Strike!'}
+                                {step.includes('IGNITE') ? t(language, 'smithingTutorial.indicator.ignite') : step.includes('PUMP') ? t(language, 'smithingTutorial.indicator.pump') : t(language, 'smithingTutorial.indicator.strike')}
                             </div>
                         </div>
                     </div>
@@ -124,11 +126,11 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
             {!isDismissed && showDialogue && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90vw] max-w-4xl pointer-events-none z-[6000]">
                     <DialogueBox 
-                        speaker="Lockhart" 
+                        speaker={t(language, 'names.lockhart')} 
                         text={script} 
                         options={[
                             { 
-                                label: (step === 'SMITHING_MINIGAME_HIT_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE') ? "I'm ready" : "Continue", 
+                                label: (step === 'SMITHING_MINIGAME_HIT_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE') ? t(language, 'smithingTutorial.option_ready') : t(language, 'common.continue'), 
                                 action: () => {
                                     if (step === 'PRE_IGNITE_DIALOG_1_GUIDE' || step === 'START_FORGING_GUIDE') {
                                         actions.setTutorialStep('PRE_IGNITE_DIALOG_2_GUIDE');

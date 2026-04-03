@@ -2,6 +2,9 @@ import { APP_VERSION } from './appVersion';
 
 const VERSION_MARKER_KEY = 'lockharts_forge_version_marker';
 const SAVE_PREFIX = 'lockharts_forge_slot_';
+const SAVE_METADATA_KEY = 'lockharts_forge_save_metadata';
+const GLOBAL_SETTINGS_KEY = 'lockharts_forge_global_settings';
+const VERSION_REFRESH_ATTEMPT_KEY = 'lockharts_forge_version_refresh_attempt';
 
 /**
  * 웹 환경의 캐시와 로컬 저장소를 관리하고 초기화합니다.
@@ -13,7 +16,7 @@ export const initializeWebCache = async (): Promise<void> => {
 
     try {
         // 프리뷰 환경 도메인 문제를 피하기 위해 런타임에 상대 경로로 가져옵니다.
-        const response = await fetch('./metadata.json');
+        const response = await fetch('./metadata.json', { cache: 'no-store' });
         if (response.ok) {
             const metadata = await response.json();
             currentVersion = metadata.version;
@@ -64,9 +67,10 @@ export const initializeWebCache = async (): Promise<void> => {
                 const isSaveSlot = key.startsWith(SAVE_PREFIX);
                 const isVersionMarker = key === VERSION_MARKER_KEY;
                 const isDpadConfig = key.startsWith('dpad_');
-                const isSaveMetadata = key === 'lockharts_forge_save_metadata';
+                const isSaveMetadata = key === SAVE_METADATA_KEY;
+                const isGlobalSettings = key === GLOBAL_SETTINGS_KEY;
 
-                if (!isSaveSlot && !isVersionMarker && !isDpadConfig && !isSaveMetadata) {
+                if (!isSaveSlot && !isVersionMarker && !isDpadConfig && !isSaveMetadata && !isGlobalSettings) {
                     keysToRemove.push(key);
                 }
             }
@@ -78,6 +82,22 @@ export const initializeWebCache = async (): Promise<void> => {
 
             // 새로운 버전 마커 기록
             localStorage.setItem(VERSION_MARKER_KEY, JSON.stringify({ version: currentVersion, timestamp: Date.now() }));
+        }
+
+        const attemptedRefreshVersion = sessionStorage.getItem(VERSION_REFRESH_ATTEMPT_KEY);
+        const needsReloadForNewBuild = currentVersion !== APP_VERSION;
+
+        if (needsReloadForNewBuild) {
+            if (attemptedRefreshVersion !== currentVersion) {
+                console.log(`- New build detected (${APP_VERSION} -> ${currentVersion}). Reloading once...`);
+                sessionStorage.setItem(VERSION_REFRESH_ATTEMPT_KEY, currentVersion);
+                window.location.reload();
+                return;
+            }
+
+            console.warn(`- Reload for version ${currentVersion} was already attempted in this session.`);
+        } else if (attemptedRefreshVersion) {
+            sessionStorage.removeItem(VERSION_REFRESH_ATTEMPT_KEY);
         }
 
         console.log("- Web environment is now clean.");

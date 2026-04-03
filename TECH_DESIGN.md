@@ -651,6 +651,7 @@ Current implementation status:
 -   `tavern.reputation` is now stored in runtime state and shown in the Tavern UI.
 -   `Invite`, `Talk`, `Buy Drink`, and Tavern-origin personal-request generation currently provide small Tavern Reputation gains.
 -   `state/helpers/tavernTalkHelpers.ts` now uses Tavern Reputation and current active Tavern contract count to bias `Talk` outcomes.
+-   `state/helpers/tavernTalkHelpers.ts` also resolves Tavern dialogue against mercenary temperament, speaking voice, and a coarse progress-stage helper so content can scale with campaign state without hardcoding dialogue in UI hooks.
 -   Higher reputation modestly increases the weight of `RUMOR`, `MINOR_CONTRACT`, and `OPPORTUNITY`.
 -   A high number of active Tavern contracts suppresses new personal requests and pushes the system back toward `FLAVOR` and `RUMOR`.
 
@@ -688,6 +689,31 @@ Tavern Reputation should drive recruit generation through weighted bounds rather
 | `20-39` | Slightly wider level band | Rogue/support weight increases | Mid-early encounters may unlock |
 | `40-59` | Veteran recruits appear | Mage/Cleric weight rises | Most Tavern named encounters eligible |
 | `60+` | High-end candidate band | Rare classes/traits more common | Late Tavern named encounters can appear |
+
+#### 4.5.5 Tavern Talk Content Filters
+-   `TavernTalkEntry` may optionally constrain dialogue by:
+    -   `temperament`
+    -   `voice`
+    -   `minProgressStage`
+    -   `maxProgressStage`
+-   Progress stage is currently derived from broad game state markers such as day count, forge tier, and total sales count.
+-   Randomly generated mercenaries should receive temperament and voice values at creation time.
+-   Named mercenaries should define explicit temperament and voice values so their dialogue identity remains stable across playthroughs.
+
+#### 4.5.6 Named Conversation Prompt Registry
+-   Named-only relationship questions should live in a dedicated data registry rather than being hardcoded in Tavern UI hooks.
+-   A prompt entry should minimally contain:
+    -   `mercenaryId`
+    -   `eventTag`
+    -   `textKey`
+    -   one-time or gating metadata
+    -   answer options with `affinityDelta` and `responseTextKey`
+-   The current codebase now includes a first-pass prompt registry in:
+    -   `/data/dialogue/namedConversationPrompts.ts`
+-   This registry is intended as content scaffolding for a future interactive flow where:
+    -   prompt history is tracked per named mercenary,
+    -   already-answered prompts are excluded,
+    -   scenario tags can be unlocked by campaign events such as injury, retreat, boss kills, or economic growth.
 
 ## 5. UI/UX Patterns
 -   **Responsive Design**: Mobile-first approach with Tailwind's `px-safe` and flex/grid layouts.

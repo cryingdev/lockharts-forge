@@ -4,6 +4,8 @@ import { MessageSquare, Gift, ShoppingBag, Heart } from 'lucide-react';
 import { GarrickSprite } from './GarrickSprite';
 import DialogueBox from '../../../DialogueBox';
 import { SfxButton } from '../../../common/ui/SfxButton';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface MarketLobbyViewProps {
     dialogue: string;
@@ -24,6 +26,8 @@ export const MarketLobbyView: React.FC<MarketLobbyViewProps> = ({
     onTalk, onOpenGiftModal, onOpenCatalog, onConfirmGift, onCancelGift,
     isTutorialActive = false // 추가됨
 }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     return (
         <div className="absolute inset-0 flex flex-col items-center justify-end">
             <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
@@ -32,7 +36,7 @@ export const MarketLobbyView: React.FC<MarketLobbyViewProps> = ({
                         <div className="bg-stone-900/85 border-2 border-stone-700 px-3 py-1.5 rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2">
                             <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
                             <div className="flex flex-col leading-none">
-                                <span className="text-[7px] text-stone-500 font-black uppercase">Garrick's Trust</span>
+                                <span className="text-[7px] text-stone-500 font-black uppercase">{t(language, 'market.garricks_trust')}</span>
                                 <span className="text-sm font-black font-mono text-pink-400">{garrickAffinity}</span>
                             </div>
                         </div>
@@ -46,15 +50,15 @@ export const MarketLobbyView: React.FC<MarketLobbyViewProps> = ({
                     <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3 w-full">
                         <SfxButton onClick={onTalk} disabled={isTutorialActive} className={`flex items-center gap-2 px-4 py-2 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-amber-500 transition-all shadow-xl active:scale-95 ${talkedToday ? 'opacity-50' : ''}`}>
                             <MessageSquare className="w-4 h-4 text-amber-500" />
-                            <span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Talk</span>
+                            <span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">{t(language, 'market.talk')}</span>
                         </SfxButton>
                         <SfxButton onClick={onOpenGiftModal} disabled={isTutorialActive} className="flex items-center gap-2 px-4 py-2 bg-stone-900/90 border border-stone-700 rounded-xl hover:border-pink-500 transition-all shadow-xl active:scale-95">
                             <Gift className="w-4 h-4 text-pink-500" />
-                            <span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">Gift</span>
+                            <span className="font-black text-[9px] text-stone-200 uppercase tracking-widest">{t(language, 'market.gift')}</span>
                         </SfxButton>
                         <SfxButton onClick={onOpenCatalog} data-tutorial-id="BROWSE_GOODS_BUTTON" className="flex items-center gap-2 px-6 py-2 bg-amber-700/90 border border-amber-500 rounded-xl shadow-xl active:scale-95">
                             <ShoppingBag className="w-4 h-4 text-white" />
-                            <span className="font-black text-[9px] text-white uppercase tracking-widest">Browse Goods</span>
+                            <span className="font-black text-[9px] text-white uppercase tracking-widest">{t(language, 'market.browse_goods')}</span>
                         </SfxButton>
                     </div>
                 </div>
@@ -65,8 +69,8 @@ export const MarketLobbyView: React.FC<MarketLobbyViewProps> = ({
                         speaker="Garrick" 
                         text={dialogue} 
                         options={pendingGiftItem ? [
-                            { label: `Give ${pendingGiftItem.name}`, action: onConfirmGift, variant: 'primary' }, 
-                            { label: "Cancel", action: onCancelGift, variant: 'neutral' }
+                            { label: t(language, 'market.give_item', { item: pendingGiftItem.name }), action: onConfirmGift, variant: 'primary' }, 
+                            { label: t(language, 'common.cancel'), action: onCancelGift, variant: 'neutral' }
                         ] : []} 
                         className="w-full relative pointer-events-auto" 
                     />

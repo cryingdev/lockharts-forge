@@ -9,7 +9,8 @@ import { BOSS_TROPHIES } from '../../data/contracts/bossTrophies';
 import { TAVERN_MINOR_CONTRACT_TEMPLATES } from '../../data/contracts/tavernMinorContracts';
 import { materials } from '../../data/materials';
 import { DUNGEONS } from '../../data/dungeons';
-import { t } from '../../utils/i18n';
+import { MONSTERS } from '../../data/monsters';
+import { hasTranslation, t } from '../../utils/i18n';
 import { rng } from '../../utils/random';
 
 // --- Shared Helpers -------------------------------------------------------
@@ -20,11 +21,63 @@ const getCommissionText = (
     params?: Record<string, string | number>
 ) => t(state.settings.language, key, params);
 
-const getNamedEncounterText = (state: GameState, contractId: string, fallback: string) => {
+const getNamedEncounterText = (state: GameState, contractId: string, fallback?: string) => {
     const registryEntry = NAMED_CONTRACT_REGISTRY.find(entry => entry.contractId === contractId);
     return registryEntry?.encounterDialogue.textKey
         ? getCommissionText(state, registryEntry.encounterDialogue.textKey)
-        : fallback;
+        : (fallback || getCommissionText(state, 'named.generic_offer'));
+};
+
+const getNamedRequestCompletionDialogue = (state: GameState, mercenaryId?: string, clientName?: string) => {
+    if (!mercenaryId) return null;
+
+    const keyMap: Record<string, string> = {
+        tilly_footloose: 'commission.named_request_complete_tilly',
+        pip_green: 'commission.named_request_complete_pip',
+        adeline_shield: 'commission.named_request_complete_adeline',
+        garret_shield: 'commission.named_request_complete_garret',
+        elara_flame: 'commission.named_request_complete_elara',
+        ylva_ironvein: 'commission.named_request_complete_ylva',
+        lucian_ravenscar: 'commission.named_request_complete_lucian',
+        skeld_stormblood: 'commission.named_request_complete_skeld',
+        sister_aria: 'commission.named_request_complete_aria',
+        sly_vargo: 'commission.named_request_complete_sly',
+        jade_nightbinder: 'commission.named_request_complete_jade',
+    };
+
+    const textKey = keyMap[mercenaryId] && hasTranslation(state.settings.language, keyMap[mercenaryId])
+        ? keyMap[mercenaryId]
+        : 'commission.named_request_complete_generic';
+
+    const followupKeyMap: Record<string, string> = {
+        pip_green: 'commission.named_request_followup_pip',
+        adeline_shield: 'commission.named_request_followup_adeline',
+        elara_flame: 'commission.named_request_followup_elara',
+        sister_aria: 'commission.named_request_followup_aria',
+        sly_vargo: 'commission.named_request_followup_sly',
+    };
+    const followupKey = followupKeyMap[mercenaryId];
+    const hasFollowup = !!followupKey && hasTranslation(state.settings.language, followupKey);
+    const speaker = clientName || 'Mercenary';
+
+    return {
+        speaker,
+        text: getCommissionText(state, textKey, { name: speaker }),
+        options: hasFollowup
+            ? [{
+                label: getCommissionText(state, 'commission.option_continue'),
+                variant: 'primary' as const,
+                action: {
+                    type: 'SET_DIALOGUE',
+                    payload: {
+                        speaker,
+                        text: getCommissionText(state, followupKey!, { name: speaker }),
+                        options: [{ label: getCommissionText(state, 'commission.option_continue'), variant: 'primary' as const }]
+                    }
+                }
+            }]
+            : [{ label: getCommissionText(state, 'commission.option_continue'), variant: 'primary' as const }]
+    };
 };
 
 export const isNamedMercenaryEligible = (state: GameState, entry: any): boolean => {
@@ -102,6 +155,66 @@ const getContractMatchingItems = (inventory: InventoryItem[], itemId: string, ac
 
         return (idMatch || tagMatch) && qualityMatch;
     });
+};
+
+type IssuerAffinityTier = 'NEUTRAL' | 'TRUSTED' | 'FAVORED' | 'ELITE';
+
+const getIssuerAffinityTier = (affinity: number): IssuerAffinityTier => {
+    if (affinity >= 80) return 'ELITE';
+    if (affinity >= 50) return 'FAVORED';
+    if (affinity >= 20) return 'TRUSTED';
+    return 'NEUTRAL';
+};
+
+const getIssuerContractModifiers = (affinity: number) => {
+    const tier = getIssuerAffinityTier(affinity);
+
+    switch (tier) {
+        case 'ELITE':
+            return {
+                tier,
+                rewardMultiplier: 1.35,
+                craftQualityBonus: 15,
+                maxTierBonus: 1,
+                bossChanceBonus: 0.12,
+                turnInQuantityDelta: -2,
+                huntTargetLevelFloor: 3,
+                issuerFavorRewardBonus: 3,
+            };
+        case 'FAVORED':
+            return {
+                tier,
+                rewardMultiplier: 1.2,
+                craftQualityBonus: 10,
+                maxTierBonus: 1,
+                bossChanceBonus: 0.07,
+                turnInQuantityDelta: -1,
+                huntTargetLevelFloor: 2,
+                issuerFavorRewardBonus: 2,
+            };
+        case 'TRUSTED':
+            return {
+                tier,
+                rewardMultiplier: 1.1,
+                craftQualityBonus: 5,
+                maxTierBonus: 0,
+                bossChanceBonus: 0.03,
+                turnInQuantityDelta: 0,
+                huntTargetLevelFloor: 2,
+                issuerFavorRewardBonus: 1,
+            };
+        default:
+            return {
+                tier,
+                rewardMultiplier: 1,
+                craftQualityBonus: 0,
+                maxTierBonus: 0,
+                bossChanceBonus: 0,
+                turnInQuantityDelta: 0,
+                huntTargetLevelFloor: 1,
+                issuerFavorRewardBonus: 0,
+            };
+    }
 };
 
 type RewardApplicationResult = {
@@ -538,6 +651,9 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
     });
 
     const rewardResult = applyContractRewards(state, contract);
+    const namedRequestDialogue = contract.source === 'TAVERN' && contract.unique
+        ? getNamedRequestCompletionDialogue(state, contract.mercenaryId, contract.clientName)
+        : null;
 
     const newActiveContracts = state.commission.activeContracts.filter(c => c.id !== contractId);
     const newCompletedContractIds = [...state.commission.completedContractIds, contractId];
@@ -557,7 +673,7 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
             namedEncounters: rewardResult.namedEncounters,
             issuerAffinity: rewardResult.issuerAffinity
         },
-        activeDialogue: rewardResult.dialogue,
+        activeDialogue: namedRequestDialogue || rewardResult.dialogue,
         logs: [...state.logs, getCommissionText(state, 'logs.completed_contract', { title: contract.title })]
     };
 };
@@ -649,6 +765,9 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
     });
 
     const rewardResult = applyContractRewards(state, contract);
+    const namedRequestDialogue = contract.source === 'TAVERN' && contract.unique
+        ? getNamedRequestCompletionDialogue(state, contract.mercenaryId, contract.clientName)
+        : null;
 
     const newActiveContracts = state.commission.activeContracts.filter(c => c.id !== contractId);
     const newCompletedContractIds = [...state.commission.completedContractIds, contractId];
@@ -673,7 +792,7 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
             trackedObjectiveProgress: newTrackedProgress,
             issuerAffinity: rewardResult.issuerAffinity
         },
-        activeDialogue: rewardResult.dialogue,
+        activeDialogue: namedRequestDialogue || rewardResult.dialogue,
         logs: [...state.logs, getCommissionText(state, 'logs.claimed_contract', { title: contract.title })]
     };
 };
@@ -686,19 +805,21 @@ const pickBoardIssuer = (): BoardIssuerProfile => {
 
 const pickBoardContractKind = (
     issuer: BoardIssuerProfile,
-    tierLevel: number
+    tierLevel: number,
+    issuerAffinity: number
 ): GeneralContractKind => {
     // 1. Determine base weights for kinds
     // Early game (tier 0-1) favors CRAFT and TURN_IN
     // Later game increases HUNT and EXPLORE
     const isEarlyGame = tierLevel <= 1;
     
+    const modifiers = getIssuerContractModifiers(issuerAffinity);
     const kindWeights: Record<GeneralContractKind, number> = {
         CRAFT: isEarlyGame ? 45 : 30,
         TURN_IN: isEarlyGame ? 45 : 30,
         HUNT: isEarlyGame ? 10 : 30,
         EXPLORE: 0,
-        BOSS: isEarlyGame ? 0 : 10, // BOSS contracts are rare and late game
+        BOSS: isEarlyGame ? 0 : Math.round(10 + (modifiers.bossChanceBonus * 100)), // BOSS contracts scale with issuer trust
     };
 
     // 2. Filter to only favoredKinds to strengthen issuer identity
@@ -738,9 +859,11 @@ const createCraftBoardContract = (
     index: number,
     usedRecipeIds: Set<string>
 ): ContractDefinition | null => {
+    const issuerAffinity = state.commission.issuerAffinity[issuer.id] || 0;
+    const modifiers = getIssuerContractModifiers(issuerAffinity);
     const availableRecipes = EQUIPMENT_ITEMS.filter(item => {
         const isUnlocked = item.unlockedByDefault !== false || state.unlockedRecipes.includes(item.id);
-        const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1);
+        const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1 + modifiers.maxTierBonus);
         
         // Strengthen issuer identity:
         if (issuer.id === 'TOWN_GUARD') {
@@ -766,7 +889,7 @@ const createCraftBoardContract = (
         // If no thematic recipes are available, fallback to any available recipe
         const fallbackRecipes = EQUIPMENT_ITEMS.filter(item => {
             const isUnlocked = item.unlockedByDefault !== false || state.unlockedRecipes.includes(item.id);
-            const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1);
+            const withinTier = item.tier <= Math.max(1, state.stats.tierLevel + 1 + modifiers.maxTierBonus);
             return isUnlocked && !usedRecipeIds.has(item.id) && withinTier;
         });
         if (fallbackRecipes.length === 0) return null;
@@ -777,8 +900,10 @@ const createCraftBoardContract = (
     usedRecipeIds.add(recipe.id);
 
     const urgency = getUrgencyFromBias(issuer.urgencyBias);
-    const payout = Math.max(80, Math.floor(recipe.baseValue * rng.range(1.1, 1.3)));
-    const minQuality = recipe.tier <= 1 ? 70 : 80;
+    const basePayout = Math.max(80, Math.floor(recipe.baseValue * rng.range(1.1, 1.3)));
+    const payout = Math.max(80, Math.floor(basePayout * modifiers.rewardMultiplier));
+    const baseMinQuality = recipe.tier <= 1 ? 70 : 80;
+    const minQuality = Math.min(95, baseMinQuality + modifiers.craftQualityBonus);
     
     // High urgency reduces deadline
     let daysRemaining = rng.rangeInt(2, 4);
@@ -796,7 +921,7 @@ const createCraftBoardContract = (
         title: getCommissionText(state, 'commission.board_craft_title', { issuer: issuer.displayName, item: recipe.name }),
         clientName: issuer.displayName,
         urgency,
-        description: getCommissionText(state, 'commission.board_craft_desc', { issuer: issuer.displayName, item: recipe.name, tone: issuer.flavorTone }),
+        description: getCommissionText(state, 'commission.board_craft_desc', { issuer: issuer.displayName, item: recipe.name }),
         requirements: [
             {
                 itemId: recipe.id,
@@ -818,6 +943,8 @@ const createTurnInBoardContract = (
     issuer: BoardIssuerProfile,
     index: number
 ): ContractDefinition => {
+    const issuerAffinity = state.commission.issuerAffinity[issuer.id] || 0;
+    const modifiers = getIssuerContractModifiers(issuerAffinity);
     let materialOptions: string[] = ['copper_ore', 'tin_ore'];
     
     // Thematic selection based on issuer
@@ -832,7 +959,18 @@ const createTurnInBoardContract = (
         materialOptions = ['bat_sonar_gland', 'mold_spore_sac', 'ember_beetle_gland'];
     }
 
-    const selectedMaterialId = rng.pick(materialOptions);
+    const weightedOptions = materialOptions
+        .map(id => materials[id])
+        .filter(Boolean)
+        .sort((a, b) => {
+            const scoreA = (a.tier || 1) * 100 + a.baseValue;
+            const scoreB = (b.tier || 1) * 100 + b.baseValue;
+            return scoreB - scoreA;
+        });
+    const preferredPool = modifiers.tier === 'NEUTRAL'
+        ? weightedOptions
+        : weightedOptions.slice(0, Math.max(1, Math.ceil(weightedOptions.length / 2)));
+    const selectedMaterialId = rng.pick(preferredPool).id;
     const material = materials[selectedMaterialId];
     
     // Quantity based on tier
@@ -841,6 +979,7 @@ const createTurnInBoardContract = (
         if (material.tier === 2) quantity = rng.rangeInt(2, 5);
         if (material.tier && material.tier >= 3) quantity = rng.rangeInt(1, 3);
     }
+    quantity = Math.max(1, quantity + modifiers.turnInQuantityDelta);
     
     const urgency = getUrgencyFromBias(issuer.urgencyBias);
     let daysRemaining = rng.rangeInt(2, 4);
@@ -848,7 +987,7 @@ const createTurnInBoardContract = (
     if (urgency === 'URGENT') daysRemaining = 1;
 
     const baseValue = material?.baseValue || 100;
-    const goldReward = Math.floor(baseValue * quantity * rng.range(1.1, 1.3));
+    const goldReward = Math.floor(baseValue * quantity * rng.range(1.1, 1.3) * modifiers.rewardMultiplier);
 
     return {
         id: `contract_board_${state.stats.day}_${index}_turnin`,
@@ -861,7 +1000,7 @@ const createTurnInBoardContract = (
         title: getCommissionText(state, 'commission.board_turn_in_title', { issuer: issuer.displayName }),
         clientName: issuer.displayName,
         urgency,
-        description: getCommissionText(state, 'commission.board_turn_in_desc', { issuer: issuer.displayName, tone: issuer.flavorTone }),
+        description: getCommissionText(state, 'commission.board_turn_in_desc', { issuer: issuer.displayName }),
         requirements: [
             { itemId: selectedMaterialId, quantity }
         ],
@@ -878,6 +1017,8 @@ const createHuntBoardContract = (
     issuer: BoardIssuerProfile,
     index: number
 ): ContractDefinition => {
+    const issuerAffinity = state.commission.issuerAffinity[issuer.id] || 0;
+    const modifiers = getIssuerContractModifiers(issuerAffinity);
     let monsterOptions = [
         { id: 'giant_rat', name: 'Giant Rats' },
         { id: 'sewer_slime', name: 'Sewer Slimes' }
@@ -897,9 +1038,11 @@ const createHuntBoardContract = (
             { id: 'ember_beetle', name: 'Ember Beetles' }
         ];
     }
-    
-    const selectedMonster = rng.pick(monsterOptions);
-    const count = rng.rangeInt(3, 6);
+
+    const weightedMonsters = monsterOptions
+        .filter(monster => (MONSTERS[monster.id]?.level || 1) >= modifiers.huntTargetLevelFloor);
+    const selectedMonster = rng.pick(weightedMonsters.length > 0 ? weightedMonsters : monsterOptions);
+    const count = Math.max(2, rng.rangeInt(3, 6) + (modifiers.tier === 'ELITE' ? -1 : 0));
 
     const urgency = getUrgencyFromBias(issuer.urgencyBias);
     let daysRemaining = rng.rangeInt(3, 5);
@@ -917,7 +1060,7 @@ const createHuntBoardContract = (
         title: getCommissionText(state, 'commission.board_hunt_title', { issuer: issuer.displayName }),
         clientName: issuer.displayName,
         urgency,
-        description: getCommissionText(state, 'commission.board_hunt_desc', { issuer: issuer.displayName, tone: issuer.flavorTone }),
+        description: getCommissionText(state, 'commission.board_hunt_desc', { issuer: issuer.displayName }),
         requirements: [],
         objectives: [
             {
@@ -929,7 +1072,7 @@ const createHuntBoardContract = (
             }
         ],
         rewards: [
-            { type: 'GOLD', gold: 100 + (count * 30) }
+            { type: 'GOLD', gold: Math.floor((100 + (count * 30)) * modifiers.rewardMultiplier) }
         ],
         deadlineDay: state.stats.day + daysRemaining,
         daysRemaining,
@@ -941,19 +1084,21 @@ const createBossTurnInContract = (
     issuer: BoardIssuerProfile,
     index: number
 ): ContractDefinition => {
+    const issuerAffinity = state.commission.issuerAffinity[issuer.id] || 0;
+    const modifiers = getIssuerContractModifiers(issuerAffinity);
     // Pick a boss trophy based on tier
-    const availableBosses = BOSS_TROPHIES.filter(trophy => trophy.tier <= Math.max(1, state.stats.tierLevel + 1));
+    const availableBosses = BOSS_TROPHIES.filter(trophy => trophy.tier <= Math.max(1, state.stats.tierLevel + 1 + modifiers.maxTierBonus));
     const trophy = rng.pick(availableBosses) || BOSS_TROPHIES[0];
 
     const urgency = 'URGENT'; // Boss trophies are always urgent
     const daysRemaining = 2; // Short deadline for high reward
 
-    const goldReward = 800 + (trophy.tier * 500);
+    const goldReward = Math.floor((800 + (trophy.tier * 500)) * modifiers.rewardMultiplier);
 
     return {
         id: `contract_board_${state.stats.day}_${index}_boss`,
         type: 'GENERAL',
-        kind: 'TURN_IN',
+        kind: 'BOSS',
         status: 'OFFERED',
         source: 'BOARD',
         issuerId: issuer.id,
@@ -963,8 +1108,7 @@ const createBossTurnInContract = (
         urgency,
         description: getCommissionText(state, 'commission.board_boss_desc', {
             boss: trophy.bossName,
-            trophy: trophy.trophyName,
-            tone: issuer.flavorTone
+            trophy: trophy.trophyName
         }),
         requirements: [],
         objectives: [
@@ -978,7 +1122,7 @@ const createBossTurnInContract = (
         ],
         rewards: [
             { type: 'GOLD', gold: goldReward },
-            { type: 'AFFINITY', affinity: 15 } // Higher affinity for boss trophies
+            { type: 'ISSUER_AFFINITY', issuerAffinity: 15 + modifiers.issuerFavorRewardBonus }
         ],
         deadlineDay: state.stats.day + daysRemaining,
         daysRemaining,
@@ -1011,19 +1155,21 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
             attempts++;
         }
         usedIssuerIds.add(issuer.id);
+        const issuerAffinity = state.commission.issuerAffinity[issuer.id] || 0;
+        const modifiers = getIssuerContractModifiers(issuerAffinity);
 
         // Try to pick a unique kind if possible
-        let kind = pickBoardContractKind(issuer, state.stats.tierLevel);
+        let kind = pickBoardContractKind(issuer, state.stats.tierLevel, issuerAffinity);
         
-        // 10% chance to force a BOSS contract if it's not already used
-        const isBossAttempt = rng.chance(0.1);
+        // Boss contracts become more likely as issuer trust rises
+        const isBossAttempt = rng.chance(0.05 + modifiers.bossChanceBonus);
         if (isBossAttempt && !usedKinds.has('BOSS')) {
             kind = 'BOSS' as any;
         }
 
         attempts = 0;
         while (usedKinds.has(kind) && attempts < 5) {
-            kind = pickBoardContractKind(issuer, state.stats.tierLevel);
+            kind = pickBoardContractKind(issuer, state.stats.tierLevel, issuerAffinity);
             attempts++;
         }
         usedKinds.add(kind);
@@ -1049,11 +1195,11 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
         if (contract) {
             // Assign differentiated rewards based on issuer bias
             if (issuer.rewardBias === 'REPUTATION') {
-                contract.rewards.push({ type: 'ISSUER_AFFINITY', issuerAffinity: 5 });
+                contract.rewards.push({ type: 'ISSUER_AFFINITY', issuerAffinity: 5 + modifiers.issuerFavorRewardBonus });
             } else if (issuer.rewardBias === 'DUNGEON') {
-                contract.rewards.push({ type: 'GOLD', gold: 50 });
+                contract.rewards.push({ type: 'GOLD', gold: Math.floor(50 * modifiers.rewardMultiplier) });
             } else if (issuer.rewardBias === 'UTILITY') {
-                contract.rewards.push({ type: 'GOLD', gold: 30 });
+                contract.rewards.push({ type: 'GOLD', gold: Math.floor(30 * modifiers.rewardMultiplier) });
             }
 
             newBoardContracts.push(contract);

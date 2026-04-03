@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Upload, Volume2, VolumeX, LogOut, X, Settings, Layout, Check, Music, Zap } from 'lucide-react';
+import { Save, Upload, Volume2, VolumeX, LogOut, X, Settings, Layout, Check, Music, Zap, ChevronDown, Globe } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
 const SaveLoadModal = React.lazy(() => import('./SaveLoadModal'));
 import { loadFromSlot } from '../../utils/saveSystem';
@@ -8,6 +8,7 @@ import { SfxButton } from '../common/ui/SfxButton';
 import { CustomSlider } from '../common/ui/CustomSlider';
 import { t } from '../../utils/i18n';
 import { APP_VERSION } from '../../utils/appVersion';
+import { createInitialGameState } from '../../state/initial-game-state';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -41,6 +42,7 @@ const VolumeSlider = ({ label, value, icon: Icon, onChange, disabled }: { label:
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, onLoadRequest, isTitleView = false }) => {
     const { state, actions } = useGame();
     const [slModal, setSlModal] = useState<{ isOpen: boolean, mode: 'SAVE' | 'LOAD' }>({ isOpen: false, mode: 'SAVE' });
+    const [showLanguageList, setShowLanguageList] = useState(false);
     const [loadConfirm, setLoadConfirm] = useState<{ isOpen: boolean, data: any, index: number | null }>({
         isOpen: false,
         data: null,
@@ -56,7 +58,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         if (slModal.mode === 'SAVE') {
             actions.saveGame(slotIndex);
         } else {
-            const data = loadFromSlot(slotIndex);
+            const data = loadFromSlot(slotIndex, createInitialGameState());
             if (data) {
                 if (data.version !== APP_VERSION) {
                     actions.showToast(`Load Failed: Version mismatch.`);
@@ -127,21 +129,48 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                                     <span className="font-black text-xs uppercase tracking-widest text-stone-200">{t(language, 'settings.language')}</span>
                                     <span className="text-[9px] text-stone-500 uppercase font-bold">{t(language, 'settings.language_desc')}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="relative w-[150px] shrink-0">
                                     <SfxButton
                                         sfx="switch"
-                                        onClick={() => actions.updateSettings({ language: 'en' })}
-                                        className={`px-3 py-2 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${language === 'en' ? 'bg-amber-600 text-stone-950 border-amber-500' : 'bg-stone-900 text-stone-300 border-stone-700 hover:bg-stone-800'}`}
+                                        onClick={() => setShowLanguageList(prev => !prev)}
+                                        className="w-full px-3 py-2 rounded-lg border border-stone-700 bg-stone-900 text-stone-200 hover:bg-stone-800 transition-all"
                                     >
-                                        {t(language, 'settings.english')}
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <Globe className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest truncate">
+                                                    {t(language, `languages.${language}`)}
+                                                </span>
+                                            </div>
+                                            <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform ${showLanguageList ? 'rotate-180' : ''}`} />
+                                        </div>
                                     </SfxButton>
-                                    <SfxButton
-                                        sfx="switch"
-                                        onClick={() => actions.updateSettings({ language: 'ko' })}
-                                        className={`px-3 py-2 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${language === 'ko' ? 'bg-amber-600 text-stone-950 border-amber-500' : 'bg-stone-900 text-stone-300 border-stone-700 hover:bg-stone-800'}`}
-                                    >
-                                        {t(language, 'settings.korean')}
-                                    </SfxButton>
+
+                                    {showLanguageList && (
+                                        <div className="absolute top-full mt-2 w-full max-h-40 overflow-y-auto custom-scrollbar rounded-xl border border-stone-700 bg-stone-950 shadow-2xl z-20">
+                                            {(['en', 'ko'] as const).map(option => {
+                                                const selected = option === language;
+                                                return (
+                                                    <SfxButton
+                                                        key={option}
+                                                        sfx="switch"
+                                                        onClick={() => {
+                                                            actions.updateSettings({ language: option });
+                                                            setShowLanguageList(false);
+                                                        }}
+                                                        className={`w-full px-3 py-3 text-left transition-all border-b border-stone-800 last:border-b-0 ${selected ? 'bg-amber-600/15 text-amber-100' : 'text-stone-300 hover:bg-stone-900'}`}
+                                                    >
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                                                {t(language, `languages.${option}`)}
+                                                            </span>
+                                                            {selected && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                                                        </div>
+                                                    </SfxButton>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

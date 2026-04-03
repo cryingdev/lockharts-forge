@@ -1,7 +1,7 @@
 import { InventoryItem } from './inventory';
 import { GameEvent } from './events';
 import { ShopCustomer } from './shop';
-import { Mercenary } from '../models/Mercenary';
+import { Mercenary, MercenaryTemperament, MercenaryVoice } from '../models/Mercenary';
 import { Expedition } from '../models/Dungeon';
 import { Monster } from '../models/Monster';
 
@@ -18,6 +18,8 @@ export type ContractObjectiveType = 'KILL' | 'FLOOR_REACHED' | 'NODE_DISCOVERED'
 export type TavernTalkOutcome = 'FLAVOR' | 'RUMOR' | 'MINOR_CONTRACT' | 'OPPORTUNITY';
 export type TavernTalkTone = 'COLD' | 'NEUTRAL' | 'WARM';
 export type TavernTalkConditionJob = 'Fighter' | 'Mage' | 'Rogue' | 'Cleric' | 'Novice' | 'ANY';
+export type DialogueProgressStage = 'EARLY' | 'MID' | 'LATE';
+export type NamedConversationEventTag = 'INJURY' | 'RETREAT' | 'BOSS_CLEAR' | 'SHOP_GROWTH' | 'MORALITY' | 'TRUST' | 'PAYMENT';
 export type Language = 'en' | 'ko';
 
 export interface TavernTalkEntry {
@@ -29,6 +31,10 @@ export interface TavernTalkEntry {
   minTier?: number;
   requiresHired?: boolean;
   requiresVisitor?: boolean;
+  temperament?: MercenaryTemperament | 'ANY';
+  voice?: MercenaryVoice | 'ANY';
+  minProgressStage?: DialogueProgressStage;
+  maxProgressStage?: DialogueProgressStage;
   weight: number;
   text?: string;
   textKey?: string;
@@ -50,6 +56,26 @@ export interface TavernMinorContractTemplate {
   rewardGold: number;
   rewardAffinity: number;
   deadlineDays: number;
+}
+
+export interface NamedConversationPromptOption {
+  id: string;
+  textKey: string;
+  responseTextKey: string;
+  affinityDelta: number;
+  tavernReputationDelta?: number;
+  followupTextKey?: string;
+}
+
+export interface NamedConversationPrompt {
+  id: string;
+  mercenaryId: string;
+  eventTag: NamedConversationEventTag;
+  once?: boolean;
+  minAffinity?: number;
+  minProgressStage?: DialogueProgressStage;
+  textKey: string;
+  options: NamedConversationPromptOption[];
 }
 
 export type BoardIssuerId =
@@ -155,7 +181,7 @@ export interface NamedContractRegistryEntry {
   rewards: ContractReward[];
   daysRemaining?: number;
   encounterDialogue: {
-    text: string;
+    text?: string;
     speaker: string;
     textKey?: string;
   };
@@ -302,6 +328,8 @@ export interface GameSettings {
     showLogTicker: boolean;
     inventoryViewMode: 'GRID' | 'LIST';
     language: Language;
+    playerName: string;
+    forgeName?: string;
     audio: AudioSettings;
 }
 
@@ -319,6 +347,9 @@ export interface GameState {
   visitorsToday: string[]; 
   talkedToToday: string[]; 
   boughtDrinkToday: string[]; 
+  namedConversationHistory: Record<string, string[]>;
+  namedConversationAlignment: Record<string, number>;
+  namedConversationRewarded: Record<string, boolean>;
   tavern: TavernState;
 
   marketStock: Record<string, number>; 

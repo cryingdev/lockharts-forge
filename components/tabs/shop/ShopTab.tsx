@@ -143,10 +143,10 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                         
                         <ScrollText className="w-5 h-5 md:w-6 md:h-6 text-amber-700 mb-1" />
                         <span className="text-[8px] md:text-[10px] font-black text-amber-900 uppercase tracking-tighter text-center leading-none">
-                            Pip's Order:<br/>Bronze Sword
+                            {t(language, 'tutorial.pip_order_note_title')}<br/>{t(language, 'tutorial.pip_order_note_item')}
                         </span>
                         <div className="mt-1 w-full h-0.5 bg-amber-200/50"></div>
-                        <span className="text-[6px] md:text-[8px] text-amber-700/60 font-serif italic mt-1">"I'll be back!"</span>
+                        <span className="text-[6px] md:text-[8px] text-amber-700/60 font-serif italic mt-1">"{t(language, 'tutorial.pip_order_note_quote')}"</span>
                     </div>
                 </div>
             )}

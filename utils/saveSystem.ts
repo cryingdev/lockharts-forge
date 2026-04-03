@@ -1,5 +1,13 @@
 import { GameState, GameSettings } from '../types/game-state';
 import { APP_VERSION } from './appVersion';
+import {
+    extractLegacyPlayerName,
+    getDefaultForgeName,
+    getDefaultPlayerName,
+    getForgeName,
+    getForgeNameFromPlayerName,
+    getPlayerName
+} from './gameText';
 
 const SAVE_PREFIX = 'lockharts_forge_slot_';
 const META_KEY = 'lockharts_forge_save_metadata';
@@ -13,25 +21,61 @@ const GLOBAL_SETTINGS_KEY = 'lockharts_forge_global_settings';
 export const migrateSaveData = (loadedData: any, initialState: GameState): GameState => {
     const savedVersion = loadedData.version || '0.0.0';
     
+    const loadedCommission = loadedData.commission || {};
+    const loadedStats = loadedData.stats || {};
+    const loadedSettings = loadedData.settings || {};
+
     // 1. 기본 구조 병합 (Deep Merge for critical objects)
     const migrated: GameState = {
         ...initialState,
         ...loadedData,
         stats: {
             ...initialState.stats,
-            ...(loadedData.stats || {}),
+            ...loadedStats,
             dailyFinancials: {
                 ...initialState.stats.dailyFinancials,
-                ...(loadedData.stats?.dailyFinancials || {})
+                ...(loadedStats.dailyFinancials || {})
             }
         },
         forge: {
             ...initialState.forge,
             ...(loadedData.forge || {})
         },
+        tavern: {
+            ...initialState.tavern,
+            ...(loadedData.tavern || {})
+        },
+        commission: {
+            ...initialState.commission,
+            ...loadedCommission,
+            namedEncounters: {
+                ...initialState.commission.namedEncounters,
+                ...(loadedCommission.namedEncounters || {})
+            },
+            lastEncounterCheckDayByLocation: {
+                ...initialState.commission.lastEncounterCheckDayByLocation,
+                ...(loadedCommission.lastEncounterCheckDayByLocation || {})
+            },
+            trackedObjectiveProgress: {
+                ...initialState.commission.trackedObjectiveProgress,
+                ...(loadedCommission.trackedObjectiveProgress || {})
+            },
+            issuerAffinity: {
+                ...initialState.commission.issuerAffinity,
+                ...(loadedCommission.issuerAffinity || {})
+            }
+        },
+        uiEffects: {
+            ...initialState.uiEffects,
+            ...(loadedData.uiEffects || {})
+        },
         settings: {
             ...initialState.settings,
-            ...(loadedData.settings || {})
+            ...loadedSettings,
+            audio: {
+                ...initialState.settings.audio,
+                ...(loadedSettings.audio || {})
+            }
         }
     };
 
@@ -39,6 +83,16 @@ export const migrateSaveData = (loadedData: any, initialState: GameState): GameS
     if (savedVersion < '0.1.44a') {
         // 예: 특정 필드 이름 변경이나 구조 변경 대응
         console.log(`Migrating save from ${savedVersion} to ${APP_VERSION}`);
+    }
+
+    if (!migrated.settings.playerName) {
+        migrated.settings.playerName =
+            extractLegacyPlayerName(loadedSettings.forgeName, migrated.settings.language) ||
+            getDefaultPlayerName(migrated.settings.language);
+    }
+
+    if (!migrated.settings.forgeName && loadedSettings.forgeName) {
+        migrated.settings.forgeName = loadedSettings.forgeName;
     }
 
     return migrated;
@@ -51,6 +105,8 @@ export interface SaveMetadata {
     gold: number;
     label: string;
     version: string;
+    playerName?: string;
+    forgeName?: string;
 }
 
 /**
@@ -102,6 +158,11 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
         const dataToSave = {
             ...state,
             version: APP_VERSION,
+            settings: {
+                ...state.settings,
+                playerName: getPlayerName(state),
+                forgeName: getForgeName(state)
+            },
             activeEvent: null,
             showSleepModal: false,
             showJournal: false,
@@ -125,7 +186,9 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
             day: state.stats.day,
             gold: state.stats.gold,
             label: `Slot ${slotIndex + 1}`,
-            version: APP_VERSION
+            version: APP_VERSION,
+            playerName: getPlayerName(state),
+            forgeName: getForgeName(state)
         };
         
         const filteredMeta = currentMeta.filter(m => m.index !== slotIndex);
@@ -154,12 +217,23 @@ export const loadFromSlot = (slotIndex: number, initialState?: GameState): (Game
     }
 };
 
-export const getLatestSaveInfo = (): { data: GameState & { version?: string }, index: number } | null => {
+export const getLatestSaveInfo = (initialState?: GameState): { data: GameState & { version?: string }, index: number } | null => {
     const meta = getSaveMetadataList();
     if (meta.length === 0) return null;
     const index = meta[0].index;
-    const data = loadFromSlot(index);
+    const data = loadFromSlot(index, initialState);
     return data ? { data, index } : null;
+};
+
+export const getDisplayForgeNameFromMetadata = (
+    meta: SaveMetadata,
+    settings: Pick<GameSettings, 'language'>
+): string => {
+    if (meta.forgeName?.trim()) return meta.forgeName.trim();
+    if (meta.playerName?.trim()) {
+        return getForgeNameFromPlayerName(settings.language, meta.playerName.trim());
+    }
+    return getDefaultForgeName(settings.language);
 };
 
 export const deleteSlot = (slotIndex: number) => {

@@ -3,6 +3,8 @@ import { JobClass } from './JobClass';
 import { Equipment, EquipmentSlotType } from './Equipment';
 
 export type Gender = 'Male' | 'Female';
+export type MercenaryTemperament = 'bold' | 'cautious' | 'greedy' | 'kind' | 'stoic';
+export type MercenaryVoice = 'formal' | 'blunt' | 'cheerful' | 'dry';
 
 export type MercenaryStatus = 'VISITOR' | 'HIRED' | 'ON_EXPEDITION' | 'INJURED' | 'DEAD' | 'ENCOUNTERED' | 'CONTRACT_ACTIVE' | 'DEPARTED';
 
@@ -34,6 +36,8 @@ export interface Mercenary {
   affinity: number;
   visitCount: number;
   isUnique: boolean;
+  temperament: MercenaryTemperament;
+  voice: MercenaryVoice;
   
   // State
   lastVisitDay?: number;

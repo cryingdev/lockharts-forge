@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.46a)
+# Project Map – Lockhart’s Forge (v0.1.46b)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -7,17 +7,18 @@ This document provides a comprehensive structural map of the project, detailing 
 ## 🏗️ 1. Core & Infrastructure
 
 ### Root Directory
-- `index.html`: Entry HTML. Defines **Grenze/Gotisch** font integration and Tailwind configuration.
+- `index.html`: Entry HTML. Defines **Grenze/Gotisch** plus **NanumMyeongjoEco** font integration, language-aware typography defaults, and Tailwind configuration.
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.46a`).
+- `metadata.json`: App metadata and versioning (`0.1.46b`).
 - `GAME_DESIGN.md`: Comprehensive game design document covering mechanics and world-building.
 - `TECH_DESIGN.md`: Technical architecture and implementation details.
 - `COMBAT_FORMULA.md`: Official combat calculation sequence and formulas.
 - `PROBABILITY_SYSTEM.md`: RNG standardization rules.
 - `ARCHITECTURE_POLICIES.md`: Economic balance, state transitions, and save migration policies.
 - `PROJECT_MAP.md`: This document.
+- `TODO.md`: Follow-up backlog for Korean typography, version-refresh handling, and helper/file review notes.
 - `locales/en.ts`: English localization dictionary.
 - `locales/ko.ts`: Korean localization dictionary.
 
@@ -43,11 +44,11 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Reducer Modules (`state/reducer/`)
 - `state/reducer/crafting.ts`: Start/Finish crafting, exp gain, and mastery tracking.
 - `state/reducer/inventory.ts`: Item acquisition, consumption, selling, locking, and **Skill Application**.
-- `state/reducer/mercenary.ts`: Scouting, hiring, stat allocation, and gifting.
+- `state/reducer/mercenary.ts`: Scouting, hiring, stat allocation, gifting, named conversation answers, and relationship-based tavern progression.
 - `state/reducer/expedition.ts`: Auto-expedition lifecycle and reward claiming.
 - `state/reducer/manualDungeon.ts`: Grid movement, floor transitions, and **Immersive Narrative Logic**.
 - `state/reducer/shop.ts`: Shop open/close, queue management, and customer refusal.
-- `state/reducer/commission.ts`: Named recruitment contracts, board commissions, tavern minor contracts, and reward application.
+- `state/reducer/commission.ts`: Named recruitment contracts, board commissions, tavern minor contracts, named personal requests, boss trophy contracts, and reward application.
 - `state/reducer/equipment.ts`: Equip/Unequip logic and level requirement checks.
 - `state/reducer/research.ts`: Research combination logic for discovering blueprints.
 - `state/reducer/market-affinity.ts`: Garrick relationship tracking.
@@ -61,7 +62,7 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ### High-Level Layout
 - `components/Header.tsx`: HUD for Day, Gold, Energy, and Log Ticker.
-- `components/MainGameLayout.tsx`: Tab navigation, tutorial overlays, and full-screen transitions.
+- `components/MainGameLayout.tsx`: Tab navigation, tutorial overlays, full-screen transitions, and document language sync (`lang`, `lang-ko`) for Korean typography.
 - `components/DialogueBox.tsx`: The narrative engine. Handles typing effects and item tooltips.
 
 ### Functional Tabs (`components/tabs/`)
@@ -122,6 +123,9 @@ This document provides a comprehensive structural map of the project, detailing 
 - `data/monsters.ts`: Combat stat snapshots for all enemies.
 - `data/monster-drops.ts`: Loot tables for manual/auto expeditions.
 - `data/mercenaries.ts`: Named character data (Pip, Adeline, Sister Aria).
+- `data/dialogue/tavernTalk.ts`: Data-driven tavern talk pool filtered by job, temperament, voice, and progress stage.
+- `data/dialogue/namedConversationPrompts.ts`: Named-only question/answer prompts with affinity and relationship outcomes.
+- `data/contracts/bossTrophies.ts`: Boss trophy registry used by rare public boss commission generation.
 - `data/skills.ts`: Combat skill registry (Players & Monsters).
 - `data/market/market-catalog.ts`: Garrick’s base stock configuration.
 
@@ -138,7 +142,9 @@ This document provides a comprehensive structural map of the project, detailing 
 - `utils/random.ts`: Seeded RNG utility (LCG implementation).
 - `utils/dropLogic.ts`: Standardized loot calculation engine.
 - `utils/cacheManager.ts`: Automated web cache maintenance and version markers.
-- `utils/i18n.ts`: Localization lookup utility with key-based translation and parameter interpolation.
+- `utils/i18n.ts`: Localization lookup utility with key-based translation, parameter interpolation, and translation existence checks.
+- `state/helpers/tavernTalkHelpers.ts`: Tavern talk selection, weighting, and progress-stage filtering.
+- `state/helpers/namedConversationHelpers.ts`: Named prompt selection and non-repeating conversation gating.
 
 ### Core Services (`services/`)
 - `services/AssetManager.tsx`: Centralized asset loading and memory cache management.
@@ -148,7 +154,7 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 🔄 Recent Updates (v0.1.46a)
+## 🔄 Recent Updates (v0.1.46b)
 *   **Architecture & Governance**:
     *   `ARCHITECTURE_POLICIES.md` established for economic balance, state transitions, and save migration.
     *   RNG standardization (seeded LCG) fully integrated across all game systems.
@@ -159,9 +165,16 @@ This document provides a comprehensive structural map of the project, detailing 
 *   **Persistence Overhaul**:
     *   Global settings (Audio, UI) now persist independently of save slots.
     *   Language preference is stored in `settings.language` and shared across all saves.
+    *   Save/load paths now normalize loaded state against the current initial-state shape for safer current-version restores.
+    *   Startup cache initialization now fetches `metadata.json` with `no-store` semantics and silently reloads once when a newer deployed build is detected.
 *   **Localization Foundation**:
     *   Key-value locale dictionaries introduced in `locales/en.ts` and `locales/ko.ts`.
     *   `utils/i18n.ts` added to resolve translated UI strings and formatted dialogue/log templates.
     *   Tavern, shop, and commission UI flows now support English/Korean switching while keeping item names and proper nouns in English.
+    *   Korean UI now uses `NanumMyeongjoEco` as the Hangul-capable fallback while preserving the existing fantasy-styled English font stack.
+*   **Conversation & Relationship Expansion**:
+    *   Tavern talk is now data-driven and varies by job, temperament, voice, tavern reputation, and overall game progress.
+    *   Named mercenaries can trigger non-repeating personal question prompts whose answers affect Affinity, Tavern Reputation, and relationship alignment.
+    *   Strong alignment with certain named mercenaries can unlock personal requests and extended completion follow-up dialogue.
 *   **Skill Knowledge**:
     *   Skill Manuals and Scrolls fully integrated into the economic and crafting cycles.

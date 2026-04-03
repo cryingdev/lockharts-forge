@@ -12,11 +12,11 @@ export const handleToggleShop = (state: GameState): GameState => {
         return { ...state, logs: [t(language, 'logs.shop_exploring_blocked'), ...state.logs] };
     }
 
-    let newLogs = [willOpen ? 'Shop is now OPEN.' : 'Shop is now CLOSED.', ...state.logs];
+    let newLogs = [t(language, willOpen ? 'tutorial.shop_opened' : 'tutorial.shop_closed'), ...state.logs];
     
     // Pip이 떠날 때 특별 로그 (튜토리얼 단계 확인)
     if (!willOpen && state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE') {
-        newLogs = ["Pip left to wait for his Bronze Shortsword. Better get to the forge!", ...newLogs];
+        newLogs = [t(language, 'tutorial.pip_waiting_forge'), ...newLogs];
     }
 
     return {

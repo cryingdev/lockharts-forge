@@ -22,6 +22,13 @@ const getNestedValue = (obj: Record<string, unknown>, key: string): string | und
   return typeof value === 'string' ? value : undefined;
 };
 
+export const hasTranslation = (language: Language, key: string): boolean => {
+  return !!(
+    getNestedValue(dictionaries[language] as unknown as Record<string, unknown>, key) ??
+    getNestedValue(dictionaries.en as unknown as Record<string, unknown>, key)
+  );
+};
+
 export const t = (
   language: Language,
   key: string,

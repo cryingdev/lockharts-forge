@@ -36,6 +36,12 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
     const isReady = isContractReady(state, contract);
     const progressSummary = state.commission.trackedObjectiveProgress[contract.id] || {};
     const issuerAffinity = contract.issuerId ? state.commission.issuerAffinity[contract.issuerId] || 0 : null;
+    const getIssuerAffinityTier = (affinity: number) => {
+        if (affinity >= 80) return 'elite';
+        if (affinity >= 50) return 'favored';
+        if (affinity >= 20) return 'trusted';
+        return 'neutral';
+    };
 
     const getKindIcon = (kind?: string) => {
         switch (kind) {
@@ -65,20 +71,63 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
         }
     };
 
+    const getContractAccentClasses = (kind?: string) => {
+        switch (kind) {
+            case 'BOSS':
+                return 'border-amber-500/40 bg-gradient-to-br from-amber-950/20 via-stone-900/80 to-stone-950/80 shadow-[0_0_24px_rgba(245,158,11,0.12)]';
+            case 'HUNT':
+                return 'border-red-500/30 bg-gradient-to-br from-red-950/15 via-stone-900/80 to-stone-950/80 shadow-[0_0_18px_rgba(239,68,68,0.08)]';
+            case 'TURN_IN':
+                return 'border-sky-500/25 bg-gradient-to-br from-sky-950/10 via-stone-900/80 to-stone-950/80 shadow-[0_0_16px_rgba(56,189,248,0.06)]';
+            default:
+                return 'border-stone-800 bg-stone-900/80';
+        }
+    };
+
+    const getContractHighlightBadge = (kind?: string) => {
+        switch (kind) {
+            case 'BOSS':
+                return { icon: <Trophy className="w-3 h-3" />, label: t(language, 'commission.highlight_boss') };
+            case 'HUNT':
+                return { icon: <Sword className="w-3 h-3" />, label: t(language, 'commission.highlight_hunt') };
+            case 'TURN_IN':
+                return { icon: <Package className="w-3 h-3" />, label: t(language, 'commission.highlight_turn_in') };
+            default:
+                return null;
+        }
+    };
+
+    const highlightBadge = getContractHighlightBadge(contract.kind);
+    const isNamedPersonalRequest = contract.source === 'TAVERN' && contract.unique && !!contract.mercenaryId;
+
     return (
-        <div className={`bg-stone-900/80 border rounded-xl p-4 flex flex-col gap-4 hover:border-stone-700 transition-colors relative overflow-hidden ${
-            contract.source === 'TAVERN' 
-            ? 'border-indigo-500/30 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]' 
-            : 'border-stone-800'
+        <div className={`border rounded-xl p-4 flex flex-col gap-4 hover:border-stone-700 transition-colors relative overflow-hidden ${
+            isNamedPersonalRequest
+            ? 'border-fuchsia-500/35 shadow-[inset_0_0_28px_rgba(217,70,239,0.08)] bg-gradient-to-br from-fuchsia-950/20 via-stone-900/85 to-stone-950/90'
+            : contract.source === 'TAVERN' 
+            ? 'border-indigo-500/30 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)] bg-stone-900/80'
+            : getContractAccentClasses(contract.kind)
         }`}>
             {isReady && activeTab !== 'ready' && (
                 <div className="absolute top-0 right-0 bg-emerald-500 text-stone-950 text-[8px] font-black px-2 py-0.5 uppercase tracking-tighter rounded-bl-lg shadow-lg">
                     {t(language, 'commission.ready_badge')}
                 </div>
             )}
+            {highlightBadge && contract.source !== 'TAVERN' && (
+                <div className="absolute top-0 left-0 rounded-br-lg border-r border-b border-stone-800/60 bg-stone-950/80 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-stone-200 flex items-center gap-1">
+                    {highlightBadge.icon}
+                    <span>{highlightBadge.label}</span>
+                </div>
+            )}
+            {isNamedPersonalRequest && (
+                <div className="absolute top-0 left-0 rounded-br-lg border-r border-b border-fuchsia-500/30 bg-fuchsia-950/70 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-fuchsia-100 flex items-center gap-1">
+                    <Heart className="w-3 h-3 text-fuchsia-300" />
+                    <span>{t(language, 'commission.highlight_named_personal')}</span>
+                </div>
+            )}
 
             {/* Card Header */}
-            <div className="flex justify-between items-start">
+            <div className={`flex justify-between items-start ${(highlightBadge && contract.source !== 'TAVERN') || isNamedPersonalRequest ? 'pt-5' : ''}`}>
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                         <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black border ${getUrgencyColor(contract.urgency)}`}>
@@ -88,13 +137,17 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                         </span>
                         {(contract.issuerName || contract.issuerId || contract.source === 'TAVERN') && (
                             <span className={`flex items-center gap-1 text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded border ${
-                                contract.source === 'TAVERN' 
+                                isNamedPersonalRequest
+                                ? 'text-fuchsia-200 bg-fuchsia-950/50 border-fuchsia-500/30'
+                                : contract.source === 'TAVERN' 
                                 ? 'text-indigo-400 bg-indigo-950/40 border-indigo-500/30' 
                                 : 'text-stone-500 bg-stone-950/40 border-stone-800/50'
                             }`}>
-                                {contract.source === 'TAVERN' ? <User className="w-3 h-3 text-indigo-400/50" /> : getIssuerIcon(contract.issuerId)}
                                 {contract.source === 'TAVERN'
-                                    ? t(language, 'commission.personal_badge', { name: contract.clientName })
+                                    ? <User className={`w-3 h-3 ${isNamedPersonalRequest ? 'text-fuchsia-300/70' : 'text-indigo-400/50'}`} />
+                                    : getIssuerIcon(contract.issuerId)}
+                                {contract.source === 'TAVERN'
+                                    ? t(language, isNamedPersonalRequest ? 'commission.named_personal_badge' : 'commission.personal_badge', { name: contract.clientName })
                                     : (contract.issuerName || contract.issuerId)}
                             </span>
                         )}
@@ -102,9 +155,15 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                     <h3 className="text-amber-200 font-bold text-sm uppercase tracking-tight">{contract.title}</h3>
                     <p className="text-xs text-stone-400 mt-1 leading-relaxed italic opacity-80">"{contract.description}"</p>
                     {issuerAffinity !== null && (
-                        <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-sky-300 bg-sky-950/30 border border-sky-500/20 rounded-md px-2 py-1">
-                            <Heart className="w-3 h-3 text-sky-300" />
-                            <span>{t(language, 'commission.issuer_affinity', { value: issuerAffinity })}</span>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-sky-300 bg-sky-950/30 border border-sky-500/20 rounded-md px-2 py-1">
+                                <Heart className="w-3 h-3 text-sky-300" />
+                                <span>{t(language, 'commission.issuer_affinity', { value: issuerAffinity })}</span>
+                            </div>
+                            <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-amber-200 bg-amber-950/20 border border-amber-500/20 rounded-md px-2 py-1">
+                                <Shield className="w-3 h-3 text-amber-300" />
+                                <span>{t(language, `commission.affinity_tier_${getIssuerAffinityTier(issuerAffinity)}`)}</span>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -144,7 +203,14 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
 
                             return (
                                 <div key={idx} className="flex items-center justify-between text-[11px] bg-stone-950/50 p-1.5 rounded-lg border border-stone-800/50">
-                                    <span className="text-stone-300 truncate mr-2">{displayName}</span>
+                                    <div className="flex min-w-0 items-center gap-2 mr-2">
+                                        <span className="text-stone-300 truncate">{displayName}</span>
+                                        {req.minQuality !== undefined && (
+                                            <span className="shrink-0 px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-950/20 text-[9px] font-black uppercase tracking-widest text-amber-300">
+                                                {t(language, 'commission.quality_requirement', { value: req.minQuality })}
+                                            </span>
+                                        )}
+                                    </div>
                                     <span className={`font-mono ${isMet ? 'text-emerald-500' : 'text-stone-500'}`}>
                                         {currentQty}/{req.quantity}
                                     </span>

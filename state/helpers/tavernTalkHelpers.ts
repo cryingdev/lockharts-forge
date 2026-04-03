@@ -1,4 +1,4 @@
-import { GameState, TavernTalkEntry, TavernTalkOutcome } from '../../types/game-state';
+import { DialogueProgressStage, GameState, TavernTalkEntry, TavernTalkOutcome } from '../../types/game-state';
 import { Mercenary } from '../../models/Mercenary';
 import { TAVERN_TALK_ENTRIES } from '../../data/dialogue/tavernTalk';
 import { rng } from '../../utils/random';
@@ -57,11 +57,26 @@ const pickOutcome = (weights: Record<TavernTalkOutcome, number>): TavernTalkOutc
     return 'FLAVOR';
 };
 
+const PROGRESS_ORDER: DialogueProgressStage[] = ['EARLY', 'MID', 'LATE'];
+
+export const getDialogueProgressStage = (state: GameState): DialogueProgressStage => {
+    if (state.stats.tierLevel >= 3 || state.stats.day >= 16) return 'LATE';
+    if (state.stats.tierLevel >= 2 || state.stats.day >= 7 || state.stats.totalSalesCount >= 10) return 'MID';
+    return 'EARLY';
+};
+
+const isStageAtLeast = (current: DialogueProgressStage, minimum: DialogueProgressStage) =>
+    PROGRESS_ORDER.indexOf(current) >= PROGRESS_ORDER.indexOf(minimum);
+
+const isStageAtMost = (current: DialogueProgressStage, maximum: DialogueProgressStage) =>
+    PROGRESS_ORDER.indexOf(current) <= PROGRESS_ORDER.indexOf(maximum);
+
 export const resolveTavernTalkOutcome = (state: GameState, mercenary: Mercenary): TavernTalkEntry => {
     const affinity = mercenary.affinity || 0;
     const isHired = ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(mercenary.status);
     const isVisitor = mercenary.status === 'VISITOR';
     const tier = state.stats.tierLevel;
+    const progressStage = getDialogueProgressStage(state);
 
     // Base outcome weights are adjusted by Tavern reputation and current tavern contract load.
     const selectedOutcome = pickOutcome(getOutcomeWeights(state));
@@ -85,6 +100,14 @@ export const resolveTavernTalkOutcome = (state: GameState, mercenary: Mercenary)
         if (entry.requiresHired && !isHired) return false;
         if (entry.requiresVisitor && !isVisitor) return false;
 
+        // Temperament / voice match
+        if (entry.temperament && entry.temperament !== 'ANY' && entry.temperament !== mercenary.temperament) return false;
+        if (entry.voice && entry.voice !== 'ANY' && entry.voice !== mercenary.voice) return false;
+
+        // Progress stage match
+        if (entry.minProgressStage && !isStageAtLeast(progressStage, entry.minProgressStage)) return false;
+        if (entry.maxProgressStage && !isStageAtMost(progressStage, entry.maxProgressStage)) return false;
+
         return true;
     });
 
@@ -92,7 +115,11 @@ export const resolveTavernTalkOutcome = (state: GameState, mercenary: Mercenary)
     if (availableEntries.length === 0) {
         const fallbackEntries = TAVERN_TALK_ENTRIES.filter(entry => 
             entry.outcome === 'FLAVOR' && 
-            (entry.speakerJob === 'ANY' || entry.speakerJob === mercenary.job)
+            (entry.speakerJob === 'ANY' || entry.speakerJob === mercenary.job) &&
+            (!entry.temperament || entry.temperament === 'ANY' || entry.temperament === mercenary.temperament) &&
+            (!entry.voice || entry.voice === 'ANY' || entry.voice === mercenary.voice) &&
+            (!entry.minProgressStage || isStageAtLeast(progressStage, entry.minProgressStage)) &&
+            (!entry.maxProgressStage || isStageAtMost(progressStage, entry.maxProgressStage))
         );
         return rng.pick(fallbackEntries);
     }

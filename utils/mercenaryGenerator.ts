@@ -1,5 +1,5 @@
 
-import { Mercenary, Gender } from '../models/Mercenary';
+import { Mercenary, Gender, MercenaryTemperament, MercenaryVoice } from '../models/Mercenary';
 import { NAMED_MERCENARIES } from '../data/mercenaries';
 import { JobClass, JOB_STAT_WEIGHTS } from '../models/JobClass';
 import { calculateMaxHp, calculateMaxMp, PrimaryStats, mergePrimaryStats } from '../models/Stats';
@@ -71,6 +71,9 @@ const defaultEquipment: Record<EquipmentSlotType, Equipment | null> = {
     ACCESSORY: null
 };
 
+const MERCENARY_TEMPERAMENTS: MercenaryTemperament[] = ['bold', 'cautious', 'greedy', 'kind', 'stoic'];
+const MERCENARY_VOICES: MercenaryVoice[] = ['formal', 'blunt', 'cheerful', 'dry'];
+
 const calculateLevelDataFromTotalXp = (totalXp: number) => {
     let level = 1;
     let xpToNext = 100;
@@ -105,6 +108,8 @@ export const createRandomMercenary = (currentDay: number, knownMercenaries: Merc
     const maxMp = calculateMaxMp(merged, level);
     
     const fullName = generateFullName(gender, job);
+    const temperament = rng.pick(MERCENARY_TEMPERAMENTS);
+    const voice = rng.pick(MERCENARY_VOICES);
 
     // --- 무작위 외형(이미지) 할당 로직 ---
     let assetConfig = MERCENARY_ASSETS[gender]?.[job];
@@ -150,6 +155,8 @@ export const createRandomMercenary = (currentDay: number, knownMercenaries: Merc
         affinity: 0,
         visitCount: 1,
         isUnique: false,
+        temperament,
+        voice,
         lastVisitDay: currentDay,
         icon: '👤',
         fullBodyImage: sprite || undefined, // 랜덤 생성 캐릭터는 fullBodyImage를 가짐

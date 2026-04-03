@@ -25,7 +25,6 @@ export const NAMED_CONTRACT_REGISTRY: NamedContractRegistryEntry[] = [
     ],
     encounterDialogue: {
       speaker: 'Pip the Green',
-      text: "Hey there! I've heard your forge produces some fine blades. I'm looking for a Bronze Shortsword that won't break on the first swing. Can you help a traveler out?",
       textKey: 'named.pip_offer',
     },
   },
@@ -53,7 +52,6 @@ export const NAMED_CONTRACT_REGISTRY: NamedContractRegistryEntry[] = [
     ],
     encounterDialogue: {
       speaker: 'Adeline Ashford',
-      text: "The roads are getting dangerous. I need a proper set of equipment—a sturdy shield and a sharp blade. If you can provide them, I'd be honored to join your cause.",
       textKey: 'named.adeline_offer',
     },
   },
@@ -80,7 +78,6 @@ export const NAMED_CONTRACT_REGISTRY: NamedContractRegistryEntry[] = [
     ],
     encounterDialogue: {
       speaker: 'Elara of the Flame',
-      text: "Fire is my element, but even I need a focus to channel it. Bring me some Fire Essence and a well-crafted Oak Staff, and I shall show you the true power of the flame.",
       textKey: 'named.elara_offer',
     },
   },
@@ -107,7 +104,6 @@ export const NAMED_CONTRACT_REGISTRY: NamedContractRegistryEntry[] = [
     ],
     encounterDialogue: {
       speaker: 'Sister Aria',
-      text: "I've seen many wounded warriors pass through here. I wish to help them, but I lack the tools. A small health potion and a solid mace would allow me to protect and heal those in need.",
       textKey: 'named.aria_offer',
     },
   },
