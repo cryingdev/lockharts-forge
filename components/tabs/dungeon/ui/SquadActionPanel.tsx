@@ -5,6 +5,8 @@ import { Trophy, Timer, CheckCircle, Ban, User, XCircle, AlertTriangle, Skull, A
 import { SfxButton } from '../../../common/ui/SfxButton';
 import { Mercenary } from '../../../../models/Mercenary';
 import { MercenaryPortrait } from '../../../common/ui/MercenaryPortrait';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface SquadActionPanelProps {
     hasActiveMission: boolean;
@@ -30,17 +32,20 @@ export const SquadActionPanel: React.FC<SquadActionPanelProps> = ({
     hiredMercs, failedMercs, lowHpMercs, isFloorCleared, onClaim, onRecall, onToggleMercenary,
     onOpenPicker, onStartAuto, onStartManual
 }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
+    const [showKiaHint, setShowKiaHint] = React.useState(false);
     if (hasActiveMission) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center animate-in fade-in duration-700">
                 <Trophy className={`w-12 h-12 sm:w-28 mb-8 ${currentExpedition?.status === 'COMPLETED' ? 'text-emerald-500 animate-bounce' : 'text-stone-800 opacity-30'}`} />
-                <h2 className="text-lg sm:text-4xl font-black text-stone-100 mb-2 uppercase tracking-tighter font-serif italic">Mission Underway</h2>
+                <h2 className="text-lg sm:text-4xl font-black text-stone-100 mb-2 uppercase tracking-tighter font-serif italic">{t(language, 'squadAction.mission_underway')}</h2>
                 <div className="bg-stone-900/80 border-2 border-stone-800 px-10 py-5 rounded-2xl font-mono text-2xl sm:text-4xl font-black text-amber-50 shadow-2xl flex items-center gap-3 mb-8"><Timer className="w-8 h-8 animate-pulse text-amber-600" /><span>{timeLeft || '---'}</span></div>
                 <div className="flex gap-3">
                     {currentExpedition?.status === 'COMPLETED' ? (
-                        <SfxButton onClick={onClaim} className="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-xl flex items-center gap-2 border-b-4 border-emerald-800 active:scale-95 transition-all uppercase tracking-widest"><CheckCircle className="w-5 h-5" /> Secure Loot</SfxButton>
+                        <SfxButton onClick={onClaim} className="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-xl flex items-center gap-2 border-b-4 border-emerald-800 active:scale-95 transition-all uppercase tracking-widest"><CheckCircle className="w-5 h-5" /> {t(language, 'squadAction.secure_loot')}</SfxButton>
                     ) : (
-                        <SfxButton onClick={onRecall} className="px-6 py-3 bg-red-950/30 hover:bg-red-900/50 border border-red-900/50 rounded-xl text-red-500 font-black text-xs uppercase tracking-widest transition-all active:scale-95"><Ban className="w-4 h-4 mr-2 inline" /> Recall Squad</SfxButton>
+                        <SfxButton onClick={onRecall} className="px-6 py-3 bg-red-950/30 hover:bg-red-900/50 border border-red-900/50 rounded-xl text-red-500 font-black text-xs uppercase tracking-widest transition-all active:scale-95"><Ban className="w-4 h-4 mr-2 inline" /> {t(language, 'squadAction.recall_squad')}</SfxButton>
                     )}
                 </div>
             </div>
@@ -52,7 +57,7 @@ export const SquadActionPanel: React.FC<SquadActionPanelProps> = ({
             <div className="flex-1 flex flex-col items-center justify-start p-3 sm:p-6 min-h-0 overflow-hidden">
                 <div className="w-full max-w-xl space-y-4">
                     <div className="flex justify-between items-end px-1">
-                        <h3 className="text-[10px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">Squad Assembly</h3>
+                        <h3 className="text-[10px] sm:text-xs font-black text-stone-500 uppercase tracking-widest">{t(language, 'squadAction.squad_assembly')}</h3>
                         <span className="text-[9px] font-mono text-stone-600">{party.length} / {maxPartySize}</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2 md:gap-4">
@@ -76,12 +81,26 @@ export const SquadActionPanel: React.FC<SquadActionPanelProps> = ({
                                                 <div className="text-[5px] md:text-[8px] font-bold text-stone-500 uppercase tracking-tighter">{merc.job} • Lv.{merc.level}</div>
                                             </div>
                                             <div className="absolute top-1 right-1 md:top-2 md:right-2 opacity-0 group-hover:opacity-100 transition-opacity"><XCircle className="w-4 md:w-5 text-red-600" /></div>
-                                            {isInjured && <div className="absolute inset-0 bg-red-950/60 backdrop-blur-[1px] flex flex-col items-center justify-center"><AlertTriangle className="w-6 md:w-8 text-red-500 mb-0.5" /><span className="text-[6px] md:text-[8px] font-black text-red-200 uppercase">Injured</span></div>}
-                                            {isDead && <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] flex flex-col items-center justify-center"><Skull className="w-6 md:w-8 text-stone-500 mb-0.5" /><span className="text-[6px] md:text-[8px] font-black text-stone-400 uppercase">K.I.A</span></div>}
+                                            {isInjured && <div className="absolute inset-0 bg-red-950/60 backdrop-blur-[1px] flex flex-col items-center justify-center"><AlertTriangle className="w-6 md:w-8 text-red-500 mb-0.5" /><span className="text-[6px] md:text-[8px] font-black text-red-200 uppercase">{t(language, 'squadAction.injured')}</span></div>}
+                                            {isDead && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowKiaHint(prev => !prev)}
+                                                    className="absolute inset-0 bg-black/80 backdrop-blur-[1px] flex flex-col items-center justify-center"
+                                                >
+                                                    <Skull className="w-6 md:w-8 text-stone-500 mb-0.5" />
+                                                    <span className="text-[6px] md:text-[8px] font-black text-stone-400 uppercase">{t(language, 'squadAction.kia')}</span>
+                                                    {showKiaHint && (
+                                                        <span className="absolute bottom-2 rounded-md border border-stone-700 bg-stone-950/95 px-2 py-1 text-[7px] font-bold normal-case tracking-normal text-stone-200 shadow-xl">
+                                                            {t(language, 'squadAction.kia_full')}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            )}
                                             {hasError && !isInjured && !isDead && <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[1px] flex items-center justify-center"><AlertCircle className="w-6 md:w-8 text-white" /></div>}
                                         </SfxButton>
                                     ) : (
-                                        <SfxButton onClick={onOpenPicker} className="w-full h-full flex flex-col items-center justify-center gap-1 md:gap-2 text-stone-700 hover:text-amber-500 hover:bg-stone-850 transition-all"><User className="w-6 h-6 md:w-10 md:h-10 opacity-20" /><span className="text-[6px] md:text-[8px] font-black uppercase tracking-tighter">Add</span></SfxButton>
+                                        <SfxButton onClick={onOpenPicker} className="w-full h-full flex flex-col items-center justify-center gap-1 md:gap-2 text-stone-700 hover:text-amber-500 hover:bg-stone-850 transition-all"><User className="w-6 h-6 md:w-10 md:h-10 opacity-20" /><span className="text-[6px] md:text-[8px] font-black uppercase tracking-tighter">{t(language, 'squadAction.add')}</span></SfxButton>
                                     )}
                                 </div>
                             );
@@ -93,10 +112,10 @@ export const SquadActionPanel: React.FC<SquadActionPanelProps> = ({
             <div className="p-4 sm:p-6 bg-stone-900/50 border-t border-stone-800 shrink-0 mt-auto">
                 <div className="grid grid-cols-2 gap-3 max-w-xl mx-auto">
                     <SfxButton onClick={onStartAuto} disabled={party.length === 0 || isOngoingManual || !isFloorCleared} className={`flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all shadow-xl ${party.length > 0 && !isOngoingManual && isFloorCleared ? 'bg-indigo-700 hover:bg-indigo-600 border-indigo-900 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 opacity-60'}`}>
-                        <div className="flex items-center gap-2">{!isFloorCleared ? <LockIcon className="w-3.5" /> : <Timer className="w-4" />}<span className="font-black uppercase text-[10px] sm:text-xs">Strategic Deploy</span></div>
-                        <span className="text-[7px] sm:text-[8px] font-bold opacity-60 uppercase">{isFloorCleared ? "Auto Expedition" : "Requires Manual Clear"}</span>
+                        <div className="flex items-center gap-2">{!isFloorCleared ? <LockIcon className="w-3.5" /> : <Timer className="w-4" />}<span className="font-black uppercase text-[10px] sm:text-xs">{t(language, 'squadAction.strategic_deploy')}</span></div>
+                        <span className="text-[7px] sm:text-[8px] font-bold opacity-60 uppercase">{isFloorCleared ? t(language, 'squadAction.auto_expedition') : t(language, 'squadAction.requires_manual_clear')}</span>
                     </SfxButton>
-                    <SfxButton onClick={onStartManual} disabled={party.length === 0 && !isOngoingManual} className={`flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all shadow-xl ${party.length > 0 || isOngoingManual ? 'bg-amber-600 hover:bg-amber-500 border-amber-800 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 opacity-60'}`}><div className="flex items-center gap-2"><Gamepad2 className="w-4" /><span className="font-black uppercase text-[10px] sm:text-xs">{isOngoingManual ? 'Resume' : 'Direct Assault'}</span></div><span className="text-[7px] sm:text-[8px] font-bold opacity-60 uppercase">Manual Exploration</span></SfxButton>
+                    <SfxButton onClick={onStartManual} disabled={party.length === 0 && !isOngoingManual} className={`flex flex-col items-center justify-center gap-1 py-2 sm:py-4 rounded-xl border-b-4 transition-all shadow-xl ${party.length > 0 || isOngoingManual ? 'bg-amber-600 hover:bg-amber-500 border-amber-800 text-white' : 'bg-stone-800 text-stone-600 border-stone-900 opacity-60'}`}><div className="flex items-center gap-2"><Gamepad2 className="w-4" /><span className="font-black uppercase text-[10px] sm:text-xs">{isOngoingManual ? t(language, 'squadAction.resume') : t(language, 'squadAction.direct_assault')}</span></div><span className="text-[7px] sm:text-[8px] font-bold opacity-60 uppercase">{t(language, 'squadAction.manual_exploration')}</span></SfxButton>
                 </div>
             </div>
         </div>

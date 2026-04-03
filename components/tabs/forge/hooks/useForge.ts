@@ -9,11 +9,13 @@ import { materials } from '../../../../data/materials';
 import { getSmithingLevel, getUnlockedTier, getEnergyCost } from '../../../../utils/craftingLogic';
 import { getAssetUrl } from '../../../../utils';
 import { GAME_CONFIG } from '../../../../config/game-config';
+import { t } from '../../../../utils/i18n';
 
 export const useForge = (onNavigate: (tab: any) => void) => {
   const { state, actions } = useGame();
   const { inventory, stats, isCrafting, craftingMastery, unlockedRecipes, tutorialStep, forgeTemperature, lastForgeTime } = state;
   const { hasFurnace, hasWorkbench, hasResearchTable } = state.forge;
+  const language = state.settings.language;
 
   const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
@@ -186,9 +188,29 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     if (!isRequirementMet) {
       actions.triggerEvent({
         id: 'NONE',
-        title: 'Installation Required',
-        description: `Requires ${selectedItem.craftingType === 'FORGE' ? 'Furnace' : 'Workbench'}.`,
-        options: [{ label: 'Visit Market', action: () => onNavigate('MARKET') }, { label: 'Stay here', action: () => {} }]
+        title: t(language, 'eventModal.install_required_title'),
+        titleKey: 'eventModal.install_required_title',
+        description: t(
+          language,
+          selectedItem.craftingType === 'FORGE'
+            ? 'eventModal.requires_furnace'
+            : 'eventModal.requires_workbench'
+        ),
+        descriptionKey: selectedItem.craftingType === 'FORGE'
+          ? 'eventModal.requires_furnace'
+          : 'eventModal.requires_workbench',
+        options: [
+          {
+            label: t(language, 'eventModal.visit_market'),
+            labelKey: 'eventModal.visit_market',
+            action: () => onNavigate('MARKET')
+          },
+          {
+            label: t(language, 'eventModal.stay_here'),
+            labelKey: 'eventModal.stay_here',
+            action: () => {}
+          }
+        ]
       });
       return;
     }

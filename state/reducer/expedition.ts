@@ -8,12 +8,15 @@ import { SPECIAL_RECRUITS_REGISTRY } from '../../data/mercenaries';
 import { MONSTER_DROPS } from '../../data/monster-drops';
 import { MONSTERS } from '../../data/monsters';
 import { MercenaryStatus } from '../../models/Mercenary';
+import { t } from '../../utils/i18n';
+import { getLocalizedItemName } from '../../utils/itemText';
 import { rng } from '../../utils/random';
 
 export const handleStartExpedition = (state: GameState, payload: { dungeonId: string; partyIds: string[] }): GameState => {
     const { dungeonId, partyIds } = payload;
     const dungeon = DUNGEONS.find(d => d.id === dungeonId);
     if (!dungeon) return state;
+    const language = state.settings.language;
 
     const newExpeditionId = `exp_${Date.now()}`;
 
@@ -42,7 +45,7 @@ export const handleStartExpedition = (state: GameState, payload: { dungeonId: st
         ...state,
         knownMercenaries: updatedMercenaries,
         activeExpeditions: [...state.activeExpeditions, newExpedition],
-        logs: [`Expedition sent to ${dungeon.name}.`, ...state.logs]
+        logs: [t(language, 'expedition.sent', { dungeon: dungeon.name }), ...state.logs]
     };
 };
 
@@ -51,6 +54,7 @@ export const handleCompleteExpedition = (state: GameState, payload: { expedition
     const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
     
     if (!expedition || expedition.status !== 'ACTIVE') return state;
+    const language = state.settings.language;
 
     const dungeon = DUNGEONS.find(d => d.id === expedition.dungeonId);
     const dungeonName = dungeon ? dungeon.name : 'Unknown';
@@ -65,7 +69,7 @@ export const handleCompleteExpedition = (state: GameState, payload: { expedition
     return {
         ...state,
         activeExpeditions: updatedExpeditions,
-        logs: [`Expedition to ${dungeonName} is ready for return.`, ...state.logs]
+        logs: [t(language, 'expedition.ready_return', { dungeon: dungeonName }), ...state.logs]
     };
 };
 
@@ -73,6 +77,7 @@ export const handleAbortExpedition = (state: GameState, payload: { expeditionId:
     const { expeditionId } = payload;
     const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
     if (!expedition) return state;
+    const language = state.settings.language;
 
     const updatedMercs = state.knownMercenaries.map(m => {
         if (expedition.partyIds.includes(m.id)) {
@@ -85,7 +90,7 @@ export const handleAbortExpedition = (state: GameState, payload: { expeditionId:
         ...state,
         knownMercenaries: updatedMercs,
         activeExpeditions: state.activeExpeditions.filter(e => e.id !== expeditionId),
-        logs: [`Mission aborted. The squad has been recalled with no rewards.`, ...state.logs]
+        logs: [t(language, 'expedition.aborted'), ...state.logs]
     };
 };
 
@@ -114,6 +119,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
     const { expeditionId, rescuedNpcId, isFullClear = true } = payload;
     const expedition = state.activeExpeditions.find(e => e.id === expeditionId);
     if (!expedition) return state;
+    const language = state.settings.language;
 
     const dungeon = DUNGEONS.find(d => d.id === expedition.dungeonId);
     if (!dungeon) return state;
@@ -298,12 +304,25 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
         rescuedMercenary
     };
 
-    const luckMsg = luckMultiplier > 1.1 ? ` (Luck Bonus x${luckMultiplier.toFixed(1)})` : '';
-    let logStr = gainedItems.length > 0 
-        ? `Returned from ${dungeon.name}${luckMsg}. Gained: ${gainedItems.map(i => `${i.name} x${i.count}`).join(', ')}`
-        : `Returned from ${dungeon.name}. No loot found.`;
-    
-    if (goldGained > 0) logStr += ` and ${goldGained} Gold.`;
+    const localizedRewards = gainedItems.map(item => ({
+        ...item,
+        name: getLocalizedItemName(language, { id: item.id, name: item.name } as InventoryItem)
+    }));
+    const rewardsText = localizedRewards.map(item => `${item.name} x${item.count}`).join(', ');
+    const luckText = luckMultiplier > 1.1
+        ? t(language, 'expedition.luck_bonus', { bonus: luckMultiplier.toFixed(1) })
+        : '';
+    let logStr = localizedRewards.length > 0
+        ? t(language, 'expedition.returned_with_loot', {
+            dungeon: dungeon.name,
+            luck: luckText,
+            rewards: rewardsText,
+        })
+        : t(language, 'expedition.returned_empty', { dungeon: dungeon.name });
+
+    if (goldGained > 0) {
+        logStr += t(language, 'expedition.gold_suffix', { gold: goldGained });
+    }
 
     const hasAnyInjured = mercenaryResults.some(r => r.statusChange === 'INJURED');
 

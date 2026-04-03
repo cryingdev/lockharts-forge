@@ -135,10 +135,10 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
             <React.Suspense fallback={null}>
                 <ConfirmationModal 
                     isOpen={!!showRecallConfirm} 
-                    title="Abort Mission?" 
-                    message="Recalling the squad now will forfeit all progress and potential loot. Continue?" 
-                    confirmLabel="Confirm Recall" 
-                    cancelLabel="Stay Deployed" 
+                    title={t(language, 'dungeonTab.abort_title')}
+                    message={t(language, 'dungeonTab.abort_message')}
+                    confirmLabel={t(language, 'dungeonTab.abort_confirm')}
+                    cancelLabel={t(language, 'dungeonTab.abort_cancel')}
                     isDanger 
                     onConfirm={() => { 
                         if(showRecallConfirm === 'AUTO') actions.abortExpedition(currentExpedition!.id); 
