@@ -4,6 +4,46 @@ import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 import { PrimaryStats, mergePrimaryStats, calculateMaxHp, calculateMaxMp } from '../../models/Stats';
 import { EquipmentRarity } from '../../models/Equipment';
+import { NAMED_CONVERSATION_PROMPTS } from '../../data/dialogue/namedConversationPrompts';
+import { TAVERN_MINOR_CONTRACT_TEMPLATES } from '../../data/contracts/tavernMinorContracts';
+import { ContractDefinition } from '../../types/game-state';
+import { t } from '../../utils/i18n';
+import { rng } from '../../utils/random';
+import { JobClass } from '../../models/JobClass';
+
+const getNamedConversationRewardTemplateId = (mercenary: Mercenary): string => {
+    switch (mercenary.id) {
+        case 'pip_green':
+        case 'tilly_footloose':
+            return 'tavern_gloves_request_t1';
+        case 'adeline_shield':
+        case 'sister_aria':
+            return 'tavern_shield_request_t1';
+        case 'garret_shield':
+        case 'ylva_ironvein':
+        case 'skeld_stormblood':
+            return 'tavern_sword_request_t1';
+        case 'elara_flame':
+        case 'lucian_ravenscar':
+            return 'tavern_ring_request_t1';
+        case 'sly_vargo':
+        case 'jade_nightbinder':
+            return 'tavern_boots_request_t1';
+        default:
+            switch (mercenary.job) {
+                case JobClass.FIGHTER:
+                    return 'tavern_sword_request_t1';
+                case JobClass.MAGE:
+                    return 'tavern_ring_request_t1';
+                case JobClass.ROGUE:
+                    return 'tavern_boots_request_t1';
+                case JobClass.CLERIC:
+                    return 'tavern_shield_request_t1';
+                default:
+                    return 'tavern_gloves_request_t1';
+            }
+    }
+};
 
 export const handleAddKnownMercenary = (state: GameState, merc: Mercenary): GameState => {
     if (state.knownMercenaries.some(m => m.id === merc.id)) return state;
@@ -236,6 +276,111 @@ export const handleTalkMercenary = (state: GameState, payload: { mercenaryId: st
             reputation: Math.min(100, state.tavern.reputation + 1),
         },
         logs: [`Talked with ${merc.name}. Affinity +1.`, ...state.logs]
+    };
+};
+
+export const handleAnswerNamedConversationPrompt = (
+    state: GameState,
+    payload: { mercenaryId: string; promptId: string; optionId: string }
+): GameState => {
+    const { mercenaryId, promptId, optionId } = payload;
+    const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
+    if (mercIndex === -1) return state;
+
+    const prompt = NAMED_CONVERSATION_PROMPTS.find(entry => entry.id === promptId && entry.mercenaryId === mercenaryId);
+    if (!prompt) return state;
+
+    const option = prompt.options.find(entry => entry.id === optionId);
+    if (!option) return state;
+
+    const updatedMercenaries = [...state.knownMercenaries];
+    const mercenary = { ...updatedMercenaries[mercIndex] };
+    mercenary.affinity = Math.max(0, Math.min(100, (mercenary.affinity || 0) + option.affinityDelta));
+    updatedMercenaries[mercIndex] = mercenary;
+    const reputationDelta = option.tavernReputationDelta ?? (option.affinityDelta > 0 ? 1 : option.affinityDelta < 0 ? -1 : 0);
+    const alignmentDelta = option.affinityDelta >= 3 ? 1 : option.affinityDelta <= -2 ? -1 : 0;
+
+    const language = state.settings.language;
+    const history = state.namedConversationHistory[mercenaryId] || [];
+    const deltaLabel = option.affinityDelta >= 0 ? `+${option.affinityDelta}` : `${option.affinityDelta}`;
+    const reputationLabel = reputationDelta >= 0 ? `+${reputationDelta}` : `${reputationDelta}`;
+    const currentAlignment = state.namedConversationAlignment[mercenaryId] || 0;
+    const nextAlignment = Math.max(0, currentAlignment + alignmentDelta);
+    const alreadyRewarded = !!state.namedConversationRewarded[mercenaryId];
+
+    let newActiveContracts = state.commission.activeContracts;
+    let activeDialogue = state.activeDialogue;
+    let rewardUnlocked = false;
+
+    if (!alreadyRewarded && nextAlignment >= 2) {
+        const existingTavernContract = state.commission.activeContracts.find(
+            c => c.mercenaryId === mercenaryId && c.source === 'TAVERN'
+        );
+        const totalTavernContracts = state.commission.activeContracts.filter(c => c.source === 'TAVERN').length;
+        const templateId = getNamedConversationRewardTemplateId(mercenary);
+        const template = TAVERN_MINOR_CONTRACT_TEMPLATES.find(entry => entry.id === templateId);
+
+        if (!existingTavernContract && totalTavernContracts < 3 && template) {
+            const newContract: ContractDefinition = {
+                id: `tavern_named_${mercenaryId}_${state.stats.day}_${rng.next().toString(36).slice(2, 7)}`,
+                type: 'GENERAL',
+                kind: template.kind,
+                title: template.titleKey ? t(language, template.titleKey) : (template.title || template.id),
+                clientName: mercenary.name,
+                mercenaryId: mercenary.id,
+                source: 'TAVERN',
+                description: template.descriptionKey ? t(language, template.descriptionKey) : (template.description || template.id),
+                requirements: template.requirements,
+                rewards: [
+                    { type: 'GOLD', gold: template.rewardGold },
+                    { type: 'AFFINITY', affinity: template.rewardAffinity, mercenaryId: mercenary.id }
+                ],
+                deadlineDay: state.stats.day + template.deadlineDays,
+                status: 'ACTIVE',
+                unique: true
+            };
+            newActiveContracts = [newContract, ...state.commission.activeContracts];
+            rewardUnlocked = true;
+        }
+
+        activeDialogue = {
+            speaker: mercenary.name,
+            text: t(language, rewardUnlocked ? 'namedConversations.special_request_unlocked' : 'namedConversations.special_dialogue_unlocked', { name: mercenary.name }),
+            options: [
+                { label: t(language, 'namedConversations.special_continue'), variant: 'primary' }
+            ]
+        };
+    }
+
+    return {
+        ...state,
+        knownMercenaries: updatedMercenaries,
+        namedConversationHistory: {
+            ...state.namedConversationHistory,
+            [mercenaryId]: history.includes(promptId) ? history : [...history, promptId]
+        },
+        namedConversationAlignment: {
+            ...state.namedConversationAlignment,
+            [mercenaryId]: nextAlignment
+        },
+        namedConversationRewarded: {
+            ...state.namedConversationRewarded,
+            [mercenaryId]: alreadyRewarded || nextAlignment >= 2
+        },
+        tavern: {
+            ...state.tavern,
+            reputation: Math.max(0, Math.min(100, state.tavern.reputation + reputationDelta))
+        },
+        commission: {
+            ...state.commission,
+            activeContracts: newActiveContracts
+        },
+        activeDialogue,
+        logs: [
+            ...(rewardUnlocked ? [t(language, 'commission.personal_request_received', { name: mercenary.name })] : []),
+            t(language, 'logs.named_conversation_answered', { name: mercenary.name, delta: deltaLabel, reputation: reputationLabel }),
+            ...state.logs
+        ]
     };
 };
 

@@ -128,6 +128,275 @@ export const TAVERN_TALK_ENTRIES: TavernTalkEntry[] = [
         weight: 5,
         textKey: 'tavernTalk.any_flavor_02'
     },
+    {
+        id: 'bold_early_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'bold',
+        maxProgressStage: 'EARLY',
+        weight: 6,
+        textKey: 'tavernTalk.bold_early_flavor_01'
+    },
+    {
+        id: 'cautious_early_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'cautious',
+        maxProgressStage: 'EARLY',
+        weight: 6,
+        textKey: 'tavernTalk.cautious_early_flavor_01'
+    },
+    {
+        id: 'greedy_mid_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'greedy',
+        minProgressStage: 'MID',
+        weight: 6,
+        textKey: 'tavernTalk.greedy_mid_flavor_01'
+    },
+    {
+        id: 'kind_mid_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'kind',
+        minProgressStage: 'MID',
+        weight: 6,
+        textKey: 'tavernTalk.kind_mid_flavor_01'
+    },
+    {
+        id: 'stoic_late_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'stoic',
+        minProgressStage: 'LATE',
+        weight: 6,
+        textKey: 'tavernTalk.stoic_late_flavor_01'
+    },
+    {
+        id: 'fighter_bold_mid_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'Fighter',
+        temperament: 'bold',
+        minProgressStage: 'MID',
+        weight: 6,
+        textKey: 'tavernTalk.fighter_bold_mid_01'
+    },
+    {
+        id: 'mage_cautious_mid_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'Mage',
+        temperament: 'cautious',
+        minProgressStage: 'MID',
+        weight: 6,
+        textKey: 'tavernTalk.mage_cautious_mid_01'
+    },
+    {
+        id: 'rogue_greedy_mid_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'Rogue',
+        temperament: 'greedy',
+        minProgressStage: 'MID',
+        weight: 6,
+        textKey: 'tavernTalk.rogue_greedy_mid_01'
+    },
+    {
+        id: 'cleric_kind_late_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'Cleric',
+        temperament: 'kind',
+        minProgressStage: 'LATE',
+        weight: 6,
+        textKey: 'tavernTalk.cleric_kind_late_01'
+    },
+    {
+        id: 'any_mid_reputation_01',
+        outcome: 'RUMOR',
+        speakerJob: 'ANY',
+        minProgressStage: 'MID',
+        weight: 4,
+        textKey: 'tavernTalk.any_mid_reputation_01'
+    },
+    {
+        id: 'any_late_growth_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        minProgressStage: 'LATE',
+        weight: 5,
+        textKey: 'tavernTalk.any_late_growth_01'
+    },
+    {
+        id: 'voice_formal_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'formal',
+        weight: 5,
+        textKey: 'tavernTalk.voice_formal_flavor_01'
+    },
+    {
+        id: 'voice_formal_mid_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'formal',
+        minProgressStage: 'MID',
+        weight: 5,
+        textKey: 'tavernTalk.voice_formal_mid_01'
+    },
+    {
+        id: 'voice_blunt_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'blunt',
+        weight: 5,
+        textKey: 'tavernTalk.voice_blunt_flavor_01'
+    },
+    {
+        id: 'voice_blunt_mid_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'blunt',
+        minProgressStage: 'MID',
+        weight: 5,
+        textKey: 'tavernTalk.voice_blunt_mid_01'
+    },
+    {
+        id: 'voice_cheerful_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'cheerful',
+        weight: 5,
+        textKey: 'tavernTalk.voice_cheerful_flavor_01'
+    },
+    {
+        id: 'voice_cheerful_late_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'cheerful',
+        minProgressStage: 'LATE',
+        weight: 5,
+        textKey: 'tavernTalk.voice_cheerful_late_01'
+    },
+    {
+        id: 'voice_dry_flavor_01',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'dry',
+        weight: 5,
+        textKey: 'tavernTalk.voice_dry_flavor_01'
+    },
+    {
+        id: 'voice_dry_mid_01',
+        outcome: 'RUMOR',
+        speakerJob: 'ANY',
+        voice: 'dry',
+        minProgressStage: 'MID',
+        weight: 4,
+        textKey: 'tavernTalk.voice_dry_mid_01'
+    },
+    {
+        id: 'fighter_late_flavor_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'Fighter',
+        minProgressStage: 'LATE',
+        weight: 6,
+        textKey: 'tavernTalk.fighter_late_flavor_02'
+    },
+    {
+        id: 'mage_late_flavor_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'Mage',
+        minProgressStage: 'LATE',
+        weight: 6,
+        textKey: 'tavernTalk.mage_late_flavor_02'
+    },
+    {
+        id: 'rogue_late_rumor_02',
+        outcome: 'RUMOR',
+        speakerJob: 'Rogue',
+        minProgressStage: 'LATE',
+        weight: 5,
+        textKey: 'tavernTalk.rogue_late_rumor_02'
+    },
+    {
+        id: 'cleric_mid_flavor_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'Cleric',
+        minProgressStage: 'MID',
+        weight: 6,
+        textKey: 'tavernTalk.cleric_mid_flavor_02'
+    },
+    {
+        id: 'bold_mid_flavor_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'bold',
+        minProgressStage: 'MID',
+        weight: 5,
+        textKey: 'tavernTalk.bold_mid_flavor_02'
+    },
+    {
+        id: 'cautious_late_flavor_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'cautious',
+        minProgressStage: 'LATE',
+        weight: 5,
+        textKey: 'tavernTalk.cautious_late_flavor_02'
+    },
+    {
+        id: 'kind_early_flavor_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'kind',
+        maxProgressStage: 'EARLY',
+        weight: 5,
+        textKey: 'tavernTalk.kind_early_flavor_02'
+    },
+    {
+        id: 'stoic_mid_flavor_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        temperament: 'stoic',
+        minProgressStage: 'MID',
+        weight: 5,
+        textKey: 'tavernTalk.stoic_mid_flavor_02'
+    },
+    {
+        id: 'voice_formal_late_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'formal',
+        minProgressStage: 'LATE',
+        weight: 5,
+        textKey: 'tavernTalk.voice_formal_late_02'
+    },
+    {
+        id: 'voice_cheerful_mid_02',
+        outcome: 'FLAVOR',
+        speakerJob: 'ANY',
+        voice: 'cheerful',
+        minProgressStage: 'MID',
+        weight: 5,
+        textKey: 'tavernTalk.voice_cheerful_mid_02'
+    },
+    {
+        id: 'voice_dry_late_02',
+        outcome: 'RUMOR',
+        speakerJob: 'ANY',
+        voice: 'dry',
+        minProgressStage: 'LATE',
+        weight: 4,
+        textKey: 'tavernTalk.voice_dry_late_02'
+    },
+    {
+        id: 'any_reputation_high_02',
+        outcome: 'RUMOR',
+        speakerJob: 'ANY',
+        minProgressStage: 'MID',
+        minAffinity: 15,
+        weight: 4,
+        textKey: 'tavernTalk.any_reputation_high_02'
+    },
 
     // --- MINOR CONTRACTS ---
     {

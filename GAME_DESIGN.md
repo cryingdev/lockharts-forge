@@ -99,6 +99,7 @@ Mercenaries are the player's primary agents in the world.
     -   It currently increases through Tavern-centered social actions such as `Invite`, `Talk`, `Buy Drink`, and receiving Tavern personal requests.
     -   It currently biases `Talk` outcomes away from pure flavor and toward `RUMOR`, `MINOR_CONTRACT`, and rare `OPPORTUNITY` results as reputation rises.
     -   If too many Tavern-origin contracts are already active, the system shifts back toward `FLAVOR` and `RUMOR` to avoid overloading the player with personal requests.
+    -   Tavern `Talk` dialogue now also varies by mercenary temperament, speaking voice, and broad campaign progress stage so repeated conversations feel less interchangeable.
 
 ##### 3.3.3.1 Suggested Tavern Reputation Bands
 | Tavern Reputation | Recruit Level Band | Recruit Pool Bias | Encounter Support |
@@ -107,6 +108,29 @@ Mercenaries are the player's primary agents in the world.
 | `20-39` | Slightly stronger recruits | Rogue and support classes appear more often | Mid-early Tavern encounters may unlock |
 | `40-59` | Veteran-grade candidates | Mage and Cleric appearance weight increases | Most Tavern named encounters can enter the pool |
 | `60+` | High-end adventurer pool | Rare classes and stronger trait rolls become more common | Late Tavern named encounters become possible |
+
+##### 3.3.3.2 Tavern Talk Variation
+-   Tavern `Talk` should react to more than affinity alone.
+-   Dialogue selection now considers:
+    -   Mercenary job
+    -   Affinity band
+    -   Visitor / hired state
+    -   Tavern Reputation and current Tavern contract load
+    -   Mercenary temperament
+    -   Mercenary speaking voice
+    -   Broad game progress stage (`EARLY`, `MID`, `LATE`)
+-   Design intent: the same mercenary should feel more recognizable over time, and the Tavern should comment on the player's overall rise rather than repeating static flavor lines forever.
+
+##### 3.3.3.3 Named Conversation Prompts
+-   Named mercenaries should have access to bespoke conversation prompts that reveal their values rather than only generic Tavern flavor.
+-   These prompts should present a short scenario and a small set of player responses.
+-   Responses should adjust Affinity based on value alignment, not on a universal "correct" answer.
+-   Prompts should normally be one-time events per named mercenary so the same question does not repeat endlessly.
+-   Good prompt themes include:
+    -   Injury response and battlefield priorities
+    -   Retreat discipline versus stubbornness
+    -   Mercy, trust, payment fairness, and acceptable risk
+-   Design intent: named mercenaries should feel like distinct people whose loyalty is shaped by how the player thinks, not just by gifts and repeated Talk actions.
 
 #### 3.3.4 Commission & Recruitment Contracts
 The commission system adds medium-term goals to the daily economy loop and acts as the primary unlock path for named mercenaries.

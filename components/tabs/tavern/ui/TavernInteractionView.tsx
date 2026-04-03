@@ -10,6 +10,7 @@ import { SfxButton } from '../../../common/ui/SfxButton';
 import { getAssetUrl } from '../../../../utils';
 import { useTavernInteraction } from '../hooks/useTavernInteraction';
 import { Mercenary } from '../../../../models/Mercenary';
+import { t } from '../../../../utils/i18n';
 
 interface TavernInteractionViewProps {
     mercenary: Mercenary;
@@ -26,9 +27,10 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
 }) => {
     const inter = useTavernInteraction(mercenary);
     const { 
-        state, actions, dialogue, followupText, showGiftMenu, setShowGiftMenu,
+        state, actions, dialogue, followupText, activeNamedPrompt, showGiftMenu, setShowGiftMenu,
         pendingGiftItem, floatingHearts, step, hiringCost, canAfford, hasAffinity, handlers 
     } = inter;
+    const language = state.settings.language;
 
     const isHired = ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(mercenary.status);
     const isOnExpedition = mercenary.status === 'ON_EXPEDITION';
@@ -154,6 +156,11 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                     speaker={mercenary.name} 
                     text={dialogue} 
                     options={
+                        activeNamedPrompt ? activeNamedPrompt.options.map(option => ({
+                            label: t(language, option.textKey),
+                            action: () => handlers.handleNamedPromptOption(option.id),
+                            variant: 'primary' as const
+                        })) :
                         followupText ? [{ label: "Continue", action: handlers.handleContinue, variant: 'primary' }] :
                         pendingGiftItem ? [{ label: `Give ${pendingGiftItem.name}`, action: handlers.handleConfirmGift, variant: 'primary' }, { label: "Cancel", action: handlers.handleCancelGift, variant: 'neutral' }] : 
                         step === 'CONFIRM_HIRE' ? [{ label: `Sign Contract (-${hiringCost}G)`, action: handlers.handleConfirmHire, variant: 'primary' }, { label: "Think again", action: handlers.handleCancelStep, variant: 'neutral' }] : 

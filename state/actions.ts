@@ -38,6 +38,7 @@ export type GameAction =
   | { type: 'FIRE_MERCENARY'; payload: { mercenaryId: string } }
   | { type: 'GIVE_GIFT'; payload: { mercenaryId: string; itemId: string } }
   | { type: 'TALK_MERCENARY'; payload: { mercenaryId: string } }
+  | { type: 'ANSWER_NAMED_CONVERSATION_PROMPT'; payload: { mercenaryId: string; promptId: string; optionId: string } }
   | { type: 'BUY_DRINK'; payload: { mercenaryId: string } }
   | { type: 'START_EXPEDITION'; payload: { dungeonId: string; partyIds: string[] } }
   | { type: 'COMPLETE_EXPEDITION'; payload: { expeditionId: string } }

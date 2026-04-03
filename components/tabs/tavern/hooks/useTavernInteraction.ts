@@ -5,7 +5,9 @@ import { Mercenary } from '../../../../models/Mercenary';
 import { calculateHiringCost, CONTRACT_CONFIG } from '../../../../config/contract-config';
 import { InventoryItem } from '../../../../types/inventory';
 import { resolveTavernTalkOutcome } from '../../../../state/helpers/tavernTalkHelpers';
+import { getNextNamedConversationPrompt } from '../../../../state/helpers/namedConversationHelpers';
 import { t } from '../../../../utils/i18n';
+import { NamedConversationPrompt } from '../../../../types/game-state';
 
 export interface FloatingHeart {
     id: number;
@@ -23,6 +25,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
     const [showGiftMenu, setShowGiftMenu] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
     const [followupText, setFollowupText] = useState<string | null>(null);
+    const [activeNamedPrompt, setActiveNamedPrompt] = useState<NamedConversationPrompt | null>(null);
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     const [step, setStep] = useState<InteractionStep>('IDLE');
@@ -44,12 +47,24 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
 
     const handleTalk = useCallback(() => {
         if (pendingGiftItem || step !== 'IDLE') return;
-        if (followupText) return;
+        if (followupText || activeNamedPrompt) return;
 
         const firstMeaningfulTalkToday = !state.talkedToToday.includes(mercenary.id);
         if (!state.talkedToToday.includes(mercenary.id)) {
             actions.talkMercenary(mercenary.id);
             spawnHearts();
+        }
+
+        const promptMercenary = firstMeaningfulTalkToday
+            ? { ...mercenary, affinity: Math.min(100, (mercenary.affinity || 0) + 1) }
+            : mercenary;
+        const namedPrompt = firstMeaningfulTalkToday ? getNextNamedConversationPrompt(state, promptMercenary) : null;
+
+        if (namedPrompt) {
+            setActiveNamedPrompt(namedPrompt);
+            setFollowupText(null);
+            setDialogue(t(language, namedPrompt.textKey));
+            return;
         }
 
         const outcome = resolveTavernTalkOutcome(state, mercenary);
@@ -68,7 +83,28 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         if (outcome.outcome === 'OPPORTUNITY' && outcome.unlockNamedId) {
             actions.unlockNamedEncounter(outcome.unlockNamedId);
         }
-    }, [language, mercenary, state, pendingGiftItem, step, followupText, actions, spawnHearts]);
+    }, [language, mercenary, state, pendingGiftItem, step, followupText, activeNamedPrompt, actions, spawnHearts]);
+
+    const handleNamedPromptOption = useCallback((optionId: string) => {
+        if (!activeNamedPrompt) return;
+
+        const selectedOption = activeNamedPrompt.options.find(option => option.id === optionId);
+        if (!selectedOption) return;
+
+        actions.answerNamedConversationPrompt(mercenary.id, activeNamedPrompt.id, optionId);
+        setActiveNamedPrompt(null);
+        const resolvedFollowup = selectedOption.followupTextKey
+            ? t(language, selectedOption.followupTextKey)
+            : (
+                selectedOption.affinityDelta >= 3
+                    ? t(language, 'namedConversations.followup_positive')
+                    : selectedOption.affinityDelta <= -2
+                        ? t(language, 'namedConversations.followup_negative')
+                        : t(language, 'namedConversations.followup_neutral')
+            );
+        setFollowupText(resolvedFollowup);
+        setDialogue(t(language, selectedOption.responseTextKey));
+    }, [activeNamedPrompt, actions, language, mercenary.id]);
 
     const handleBuyDrink = useCallback(() => {
         if (pendingGiftItem || step !== 'IDLE') return;
@@ -141,6 +177,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         actions,
         dialogue,
         followupText,
+        activeNamedPrompt,
         showGiftMenu,
         setShowGiftMenu,
         showDetail,
@@ -155,6 +192,7 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         hasAffinity,
         handlers: {
             handleTalk,
+            handleNamedPromptOption,
             handleBuyDrink,
             handleRecruitInit,
             handleConfirmHire,

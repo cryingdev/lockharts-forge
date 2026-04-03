@@ -44,6 +44,19 @@ const LoadingFallback = () => {
     );
 };
 
+const DocumentLanguageSync = () => {
+    const { state } = useGame();
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const language = state.settings.language;
+        root.lang = language;
+        root.classList.toggle('lang-ko', language === 'ko');
+    }, [state.settings.language]);
+
+    return null;
+};
+
 interface MainGameLayoutProps {
     onQuit: () => void;
     onLoadFromSettings: (data: any, index: number) => void;
@@ -300,6 +313,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
   return (
     <div className="h-[100dvh] w-full bg-stone-950 text-stone-200 flex flex-col overflow-hidden px-safe selection:bg-amber-500/30">
+      <DocumentLanguageSync />
       {/* Cinematic / Prologue Scene Overlay */}
       {state.activeTutorialScene && !['MARKET', 'SMITHING'].includes(state.activeTutorialScene) && (
         <div className="fixed inset-0 z-[5000]"><TutorialScene /></div>

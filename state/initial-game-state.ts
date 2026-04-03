@@ -100,6 +100,9 @@ export const createInitialGameState = (): GameState => {
         visitorsToday: [],
         talkedToToday: [],
         boughtDrinkToday: [],
+        namedConversationHistory: {},
+        namedConversationAlignment: {},
+        namedConversationRewarded: {},
         tavern: {
             reputation: 0,
             lastInviteDay: 0,
