@@ -50,6 +50,9 @@ export class SmithingTutorialHandler {
       hitX: number;
       hitY: number;
       targetRadius: number;
+      currentRadius: number;
+      tutorialFirstHitReady: boolean;
+      perfectCount: number;
     }
   ) {
     if (!isTutorial || !tutorialStep) return null;
@@ -72,12 +75,16 @@ export class SmithingTutorialHandler {
           h: 100 * components.bellowsBtn.scaleY 
         };
       case 'SMITHING_MINIGAME_HIT_GUIDE':
-        if (isPlaying) {
+        if (isPlaying && components.perfectCount === 0) {
+          const shouldFocus = components.tutorialFirstHitReady || Math.abs(components.currentRadius - components.targetRadius) <= Math.max(28, components.targetRadius * 0.8);
+          if (!shouldFocus) {
+            return null;
+          }
           return { 
             x: components.hitX, 
             y: components.hitY, 
-            w: components.targetRadius * 3, 
-            h: components.targetRadius * 3 
+            w: components.targetRadius * 2.2, 
+            h: components.targetRadius * 2.2 
           };
         }
         return null;

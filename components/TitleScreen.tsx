@@ -4,6 +4,7 @@ import { getAssetUrl } from '../utils';
 import { getDisplayForgeNameFromMetadata, getLatestSaveInfo, getSaveMetadataList, loadFromSlot } from '../utils/saveSystem';
 import SaveLoadModal from './modals/SaveLoadModal';
 const SettingsModal = React.lazy(() => import('./modals/SettingsModal'));
+const ConfirmationModal = React.lazy(() => import('./modals/ConfirmationModal'));
 import { SfxButton } from './common/ui/SfxButton';
 import { UI_MODAL_LAYOUT } from '../config/ui-config';
 import { APP_VERSION } from '../utils/appVersion';
@@ -24,14 +25,17 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showNameModal, setShowNameModal] = useState(false);
+    const [showNameConfirmModal, setShowNameConfirmModal] = useState(false);
     const [showNewGameModal, setShowNewGameModal] = useState(false);
     const [showLanguageList, setShowLanguageList] = useState(false);
     const [hasSaves, setHasSaves] = useState(false);
-    const [playerNameInput, setPlayerNameInput] = useState(state.settings.playerName || getDefaultPlayerName(language));
+    const [playerNameInput, setPlayerNameInput] = useState(getDefaultPlayerName(language));
     const [latestSaveForgeName, setLatestSaveForgeName] = useState<string | null>(null);
-    const currentTitleForgeName = showNewGameModal
-        ? getForgeNameFromPlayerName(language, playerNameInput)
-        : (latestSaveForgeName || getForgeName(state));
+    const defaultTitleForgeName = getForgeNameFromPlayerName(language, getDefaultPlayerName(language));
+    const previewForgeName = getForgeNameFromPlayerName(language, playerNameInput.trim() || getDefaultPlayerName(language));
+    const currentTitleForgeName = (showNameModal || showNewGameModal)
+        ? previewForgeName
+        : (latestSaveForgeName || defaultTitleForgeName);
     const [titleLineOne, titleLineTwo] = useMemo(() => splitTitleName(currentTitleForgeName.toUpperCase()), [currentTitleForgeName]);
     const checkSaves = useCallback(() => {
         const metadata = getSaveMetadataList();
@@ -51,14 +55,13 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
 
     useEffect(() => {
         if (showNameModal) {
-            setPlayerNameInput(state.settings.playerName || getDefaultPlayerName(language));
+            setPlayerNameInput(getDefaultPlayerName(language));
         }
-    }, [showNameModal, state.settings.playerName, language]);
+    }, [showNameModal, language]);
 
     const commitPlayerName = () => {
         const nextName = playerNameInput.trim() || getDefaultPlayerName(language);
         actions.updateSettings({ playerName: nextName });
-        setLatestSaveForgeName(getForgeNameFromPlayerName(language, nextName));
         return nextName;
     };
 
@@ -226,11 +229,8 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                             </div>
                             
                             <div className="p-4 md:p-6 space-y-3 md:space-y-4 overflow-y-auto custom-scrollbar">
-                                <div className="rounded-2xl border border-stone-700 bg-stone-900/70 p-4 space-y-2">
-                                    <div className="flex flex-col gap-1">
-                                        <label htmlFor="player-name-input" className="font-black text-stone-100 text-[11px] md:text-sm uppercase tracking-widest">{t(language, 'title.player_name_label')}</label>
-                                        <p className="text-[9px] md:text-[10px] text-stone-500 font-bold leading-tight">{t(language, 'title.player_name_desc', { playerName: playerNameInput.trim() || getDefaultPlayerName(language) })}</p>
-                                    </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="player-name-input" className="font-black text-stone-100 text-[11px] md:text-sm uppercase tracking-widest">{t(language, 'title.player_name_label')}</label>
                                     <input
                                         id="player-name-input"
                                         value={playerNameInput}
@@ -241,25 +241,11 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                                     />
                                 </div>
                                 <SfxButton 
-                                    onClick={() => {
-                                        commitPlayerName();
-                                        setShowNameModal(false);
-                                        setShowNewGameModal(true);
-                                    }}
-                                    className="w-full group relative p-4 bg-stone-800 border-2 border-stone-700 hover:border-amber-500 rounded-2xl transition-all text-left flex items-center gap-4 shadow-lg active:scale-[0.98]"
+                                    onClick={() => setShowNameConfirmModal(true)}
+                                    className="w-full py-3.5 bg-amber-700 hover:bg-amber-600 text-white font-black rounded-xl shadow-xl transition-all border-b-4 border-amber-900 uppercase tracking-widest text-sm"
                                 >
-                                    <div className="w-12 h-12 bg-amber-900/20 rounded-xl flex items-center justify-center border border-amber-700/30 group-hover:bg-amber-600/20 transition-colors shrink-0">
-                                        <BookOpen className="w-6 h-6 text-amber-500" />
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-black text-stone-100 text-[11px] md:text-sm uppercase tracking-widest mb-0.5 group-hover:text-amber-400 transition-colors">{t(language, 'title.player_name_confirm')}</span>
-                                        <span className="text-[9px] md:text-[10px] text-stone-500 font-bold uppercase tracking-tight leading-tight">{t(language, 'title.player_name_confirm_desc')}</span>
-                                    </div>
+                                    {t(language, 'title.player_name_confirm')}
                                 </SfxButton>
-                            </div>
-
-                            <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0">
-                                <p className="text-[8px] md:text-[9px] text-stone-600 font-mono uppercase tracking-[0.2em]">{t(language, 'title.player_name_footer')}</p>
                             </div>
                         </div>
                     </div>
@@ -275,12 +261,6 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                             </div>
                             
                             <div className="p-4 md:p-6 space-y-3 md:space-y-4 overflow-y-auto custom-scrollbar">
-                                <div className="rounded-2xl border border-stone-700 bg-stone-900/70 p-4">
-                                    <div className="text-[9px] md:text-[10px] text-stone-500 font-bold uppercase tracking-[0.18em]">{t(language, 'title.player_name_preview_label')}</div>
-                                    <div className="mt-2 text-lg md:text-xl font-serif font-black text-amber-100">
-                                        {getForgeNameFromPlayerName(language, playerNameInput.trim() || getDefaultPlayerName(language))}
-                                    </div>
-                                </div>
                                 <SfxButton 
                                     onClick={() => { onNewGame(false); }}
                                     className="w-full group relative p-4 bg-stone-800 border-2 border-stone-700 hover:border-indigo-500 rounded-2xl transition-all text-left flex items-center gap-4 shadow-lg active:scale-[0.98]"
@@ -328,6 +308,22 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         isOpen={showSettings}
                         onClose={() => setShowSettings(false)}
                         isTitleView={true}
+                    />
+                    <ConfirmationModal
+                        isOpen={showNameConfirmModal}
+                        title={t(language, 'title.player_name_confirm_title')}
+                        message={t(language, 'title.player_name_confirm_message', {
+                            playerName: playerNameInput.trim() || getDefaultPlayerName(language)
+                        })}
+                        confirmLabel={t(language, 'common.accept')}
+                        cancelLabel={t(language, 'common.cancel')}
+                        onConfirm={() => {
+                            commitPlayerName();
+                            setShowNameConfirmModal(false);
+                            setShowNameModal(false);
+                            setShowNewGameModal(true);
+                        }}
+                        onCancel={() => setShowNameConfirmModal(false)}
                     />
                 </React.Suspense>
 

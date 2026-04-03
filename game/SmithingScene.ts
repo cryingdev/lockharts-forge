@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
 import { SmithingTutorialHandler } from './SmithingTutorialHandler';
 import { SMITHING_CONFIG } from '../config/smithing-config';
+import { MASTERY_THRESHOLDS } from '../config/mastery-config';
 import { rng } from '../utils/random';
 
 export interface SmithingSceneData {
@@ -10,8 +11,10 @@ export interface SmithingSceneData {
   onHeatUpRequest?: () => void;
   onHeatBtnUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   onTutorialTargetUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
+  onTutorialStrikeReadyChange?: (ready: boolean) => void;
   onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => void;
   difficulty: number;
+  masteryCount?: number;
   initialTemp: number;
   charcoalCount: number | string;
   isTutorial?: boolean;
@@ -103,6 +106,8 @@ export default class SmithingScene extends Phaser.Scene {
   private currentQuality = 100;
   private perfectCount = 0;
   private enhancementCount = 0; 
+  private masteryCount = 0;
+  private qualityCap = 100;
   private pinnedTexts: Phaser.GameObjects.Text[] = [];
 
   private temperature = 0;
@@ -143,6 +148,7 @@ export default class SmithingScene extends Phaser.Scene {
   private onHeatUpRequest?: () => void;
   private onHeatBtnUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   private onTutorialTargetUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
+  private onTutorialStrikeReadyChange?: (ready: boolean) => void;
   private onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => void;
   private isTutorial = false;
 
@@ -151,6 +157,8 @@ export default class SmithingScene extends Phaser.Scene {
   private isPortrait = false;
   private lastPortrait?: boolean;
   private isRelayouting = false;
+  private lastTutorialUiStep: string | null = null;
+  private tutorialFirstHitReady = false;
 
   private readonly BILLET_W_ON_ANVIL = 0.80; 
   private readonly BILLET_ANGLE_DEG = -12;
@@ -193,11 +201,13 @@ export default class SmithingScene extends Phaser.Scene {
     this.onHeatUpRequest = data.onHeatUpRequest;
     this.onHeatBtnUpdate = data.onHeatBtnUpdate;
     this.onTutorialTargetUpdate = data.onTutorialTargetUpdate;
+    this.onTutorialStrikeReadyChange = data.onTutorialStrikeReadyChange;
     this.onTutorialAction = data.onTutorialAction;
     this.isTutorial = !!data.isTutorial;
     this.charcoalCount = data.charcoalCount;
     
     const tier = data.difficulty || 1;
+    this.masteryCount = data.masteryCount || 0;
     const requiredHits = 8 + (tier - 1) * 4;
     this.scoreIncrement = 100 / requiredHits;
 
@@ -211,11 +221,85 @@ export default class SmithingScene extends Phaser.Scene {
     this.isFinished = false;
     this.isPlaying = false;
     this.isReadyToStart = this.temperature > 0;
-    this.currentQuality = 100;
+    this.currentQuality = this.getInitialQuality();
+    this.qualityCap = this.getQualityCap();
     this.perfectCount = 0;
     this.outlineCache.clear();
     this.currentTool = 'HAMMER';
     this.isSnapped = true;
+    this.tutorialFirstHitReady = false;
+    if (this.onTutorialStrikeReadyChange) {
+      this.onTutorialStrikeReadyChange(false);
+    }
+  }
+
+  private getInitialQuality() {
+    if (this.masteryCount >= MASTERY_THRESHOLDS.ARTISAN) {
+      return 88;
+    }
+    if (this.masteryCount >= MASTERY_THRESHOLDS.ADEPT) {
+      return 80;
+    }
+    return 72;
+  }
+
+  private getQualityCap() {
+    if (this.masteryCount >= MASTERY_THRESHOLDS.ARTISAN) {
+      return 120;
+    }
+    if (this.masteryCount >= MASTERY_THRESHOLDS.ADEPT) {
+      return 108;
+    }
+    return 98;
+  }
+
+  private getQualityGainForPerfect() {
+    if (this.currentTempStage === 'AURA') {
+      if (this.masteryCount >= MASTERY_THRESHOLDS.ARTISAN) return 4;
+      if (this.masteryCount >= MASTERY_THRESHOLDS.ADEPT) return 3;
+      return 2;
+    }
+    if (this.currentTempStage === 'HOT') {
+      if (this.masteryCount >= MASTERY_THRESHOLDS.ARTISAN) return 3;
+      if (this.masteryCount >= MASTERY_THRESHOLDS.ADEPT) return 2;
+      return 1;
+    }
+    return 1;
+  }
+
+  private isTutorialHitLockPhase(step?: string | null) {
+    return this.isTutorial && (step === 'SMITHING_MINIGAME_HIT_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE');
+  }
+
+  private isTutorialDialogueBlockingInput(step?: string | null) {
+    if (!this.isTutorial || !step) return false;
+    return step === 'START_FORGING_GUIDE' || step.includes('_DIALOG');
+  }
+
+  private shouldDisableUtilityActions(step?: string | null) {
+    return this.isTutorial && (step === 'FIRST_HIT_DIALOG_GUIDE' || step === 'SMITHING_MINIGAME_HIT_GUIDE');
+  }
+
+  private redrawTargetRing(overlapProximity = 0) {
+    const prox = Phaser.Math.Clamp(overlapProximity, 0, 1);
+    const baseColor = Phaser.Display.Color.IntegerToColor(this.currentTargetColor);
+    const highlightColor = Phaser.Display.Color.Interpolate.ColorWithColor(
+      baseColor,
+      new Phaser.Display.Color(255, 248, 200),
+      100,
+      Math.round(prox * 100)
+    );
+    const fillColor = Phaser.Display.Color.GetColor(highlightColor.r, highlightColor.g, highlightColor.b);
+    const fillAlpha = 0.25 + prox * 0.28;
+    const strokeAlpha = 0.8 + prox * 0.18;
+    const strokeWidth = 5 + prox * 3;
+
+    this.targetRing
+      .clear()
+      .fillStyle(fillColor, fillAlpha)
+      .fillCircle(this.hitX, this.hitY, this.targetRadius)
+      .lineStyle(strokeWidth, fillColor, strokeAlpha)
+      .strokeCircle(this.hitX, this.hitY, this.targetRadius);
   }
 
   preload() {
@@ -292,9 +376,17 @@ export default class SmithingScene extends Phaser.Scene {
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer, objs: any[]) => {
         const x = pointer.x; const y = pointer.y;
+        const currentStep = (this.game as any).tutorialStep as string | null;
+        if (this.isTutorialDialogueBlockingInput(currentStep)) {
+          return;
+        }
         const isBellowsClick = this.isBellowsClick(objs);
         const isHeatUpClick = this.isHeatUpClick(objs);
         const isSwitcherClick = objs.some(obj => obj.parentContainer === this.toolSwitcherContainer || obj === this.toolSwitcherContainer);
+
+        if (this.shouldDisableUtilityActions(currentStep) && (isBellowsClick || isHeatUpClick)) {
+          return;
+        }
         
         if (isBellowsClick) { this.pumpBellows(); return; }
         if (isHeatUpClick) { this.requestHeatUp(); return; }
@@ -303,9 +395,16 @@ export default class SmithingScene extends Phaser.Scene {
         if (!this.isPlaying) { this.handleStartTap(x, y); return; }
 
         if (this.currentTool === 'HAMMER') {
+          if (this.isTutorial && currentStep === 'SMITHING_MINIGAME_HIT_GUIDE' && this.perfectCount === 0) {
+            if (!this.tutorialFirstHitReady) return;
+            if (!this.isPointerInHitArea(x, y)) return;
+          }
           if (this.isPointerInHitArea(x, y)) {
             this.handleHammerSwing(x, y);
           } else { 
+            if (this.isInsideUtilityPanel(x, y)) {
+              return;
+            }
             const isOnAnvil = this.anvilImage.getBounds().contains(x, y);
             this.handleMiss(x, y, isOnAnvil ? 'STRUCK ANVIL' : 'MISS'); 
           }
@@ -487,6 +586,19 @@ export default class SmithingScene extends Phaser.Scene {
 
   private isBellowsClick(objs: any[]) { return objs.includes(this.bellowsContainer) || this.bellowsContainer.list.some((c) => objs.includes(c)); }
   private isHeatUpClick(objs: any[]) { return objs.includes(this.heatUpBtnContainer) || this.heatUpBtnContainer.list.some((c) => objs.includes(c)); }
+  private isInsideUtilityPanel(px: number, py: number) {
+    const heatX = this.heatUpBtnContainer?.x ?? 0;
+    const heatY = this.heatUpBtnContainer?.y ?? 0;
+    const bellowsX = this.bellowsContainer?.x ?? 0;
+    const bellowsY = this.bellowsContainer?.y ?? 0;
+    const uiRadius = Math.max(54, 54 * (this.heatUpBtnContainer?.scaleX || 1));
+    const panelLeft = Math.min(heatX, bellowsX) - uiRadius - 28;
+    const panelRight = Math.max(heatX, bellowsX) + uiRadius + 28;
+    const panelTop = Math.min(bellowsY, heatY) - uiRadius - 70;
+    const panelBottom = Math.max(bellowsY, heatY) + uiRadius + 32;
+
+    return px >= panelLeft && px <= panelRight && py >= panelTop && py <= panelBottom;
+  }
 
   private setupUI() {
     this.progBg = this.add.graphics(); this.progressBar = this.add.graphics();
@@ -636,11 +748,16 @@ export default class SmithingScene extends Phaser.Scene {
 
   private repositionUI(sw: number, sh: number, portrait: boolean, isCompact: boolean) {
     if (!this.uiContainer) return;
+    const currentStep = ((this.game as any).tutorialStep as string | null) ?? null;
     this.updateProgressBar(); this.qualityText.setPosition(this.centerX, this.UI_PAD_TOP + 45 + 10).setFontSize(isCompact ? '16px' : '18px');
     const sideAreaWidth = Math.min(sw, sh) * 0.18; const rightX = sw - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
-    const panelStartY = sh * 0.45; const panelEndY = sh - this.UI_PAD_BOTTOM;
+    const panelStartY = sh * 0.45;
     const btnScale = sideAreaWidth / 100; const btnH = 100 * btnScale;
-    const heatUpY = panelEndY - (btnH / 2); const bellowsY = heatUpY - (btnH / 2) - this.UI_GAP - (btnH / 2);
+    const isTutorialControlFocus = this.isTutorial && !!currentStep && (currentStep.includes('IGNITE') || currentStep.includes('PUMP') || currentStep === 'POST_PUMP_DIALOG_GUIDE');
+    const bottomReservedSpace = isTutorialControlFocus ? Math.max(150, sh * 0.2) : this.UI_PAD_BOTTOM;
+    const panelEndY = sh - bottomReservedSpace;
+    const controlGap = isTutorialControlFocus ? Math.max(10, this.UI_GAP - 6) : this.UI_GAP;
+    const heatUpY = panelEndY - (btnH / 2); const bellowsY = heatUpY - (btnH / 2) - controlGap - (btnH / 2);
     this.heatUpBtnContainer.setPosition(rightX, heatUpY).setScale(btnScale); this.bellowsContainer.setPosition(rightX, bellowsY).setScale(btnScale);
     
     // Always notify Heat button position
@@ -648,7 +765,7 @@ export default class SmithingScene extends Phaser.Scene {
         this.onHeatBtnUpdate({ x: rightX, y: heatUpY, w: 100 * btnScale, h: 100 * btnScale });
     }
 
-    const gaugeTopLimit = panelStartY + 35; const gaugeBottomLimit = bellowsY - (btnH / 2) - this.UI_GAP;
+    const gaugeTopLimit = panelStartY + 35; const gaugeBottomLimit = bellowsY - (btnH / 2) - controlGap;
     const gaugeH = Math.max(this.TEMP_GAUGE_H_MIN, gaugeBottomLimit - gaugeTopLimit); const gaugeCenterY = gaugeTopLimit + (gaugeH / 2);
     this.tempValueText.setPosition(rightX, gaugeCenterY - gaugeH / 2 - 25).setFontSize(isCompact ? '12px' : '14px');
     this.refreshTempGaugeVisuals(rightX, gaugeCenterY, gaugeH);
@@ -714,7 +831,9 @@ export default class SmithingScene extends Phaser.Scene {
     
     this.triggerHammerAnimation(x, y);
 
-    const diff = Math.abs(this.currentRadius - this.targetRadius);
+    const tutorialStep = (this.game as any).tutorialStep as string | null;
+    const isForcedTutorialPerfect = this.isTutorial && tutorialStep === 'SMITHING_MINIGAME_HIT_GUIDE' && this.perfectCount === 0 && this.tutorialFirstHitReady;
+    const diff = isForcedTutorialPerfect ? 0 : Math.abs(this.currentRadius - this.targetRadius);
     const eff = this.currentTempStage === 'AURA' ? 1.5 : this.currentTempStage === 'HOT' ? 1.0 : 0.5;
     
     if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.PERFECT_THRESHOLD) {
@@ -722,14 +841,18 @@ export default class SmithingScene extends Phaser.Scene {
       this.score += this.scoreIncrement * eff; this.combo++; this.perfectCount++;
       
       // Quality gain based on temperature stage
-      const qGain = this.currentTempStage === 'AURA' ? 5 : this.currentTempStage === 'HOT' ? 3 : 1;
-      this.currentQuality = Math.min(120, this.currentQuality + qGain);
+      const qGain = this.getQualityGainForPerfect();
+      this.currentQuality = Math.min(this.qualityCap, this.currentQuality + qGain);
       
       if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(x, y);
       this.createSparks(30, this.currentTargetColor, 1.5, 'spark_perfect', x, y); this.showFeedback('PERFECT!', 0xffb300, 1.4, x, y); this.cameras.main.shake(150, 0.02);
       this.applyKickback(0.05); 
       
       if (this.isTutorial && this.perfectCount === 1 && this.onTutorialAction) {
+          this.tutorialFirstHitReady = false;
+          if (this.onTutorialStrikeReadyChange) {
+            this.onTutorialStrikeReadyChange(false);
+          }
           this.onTutorialAction('FIRST_HIT_DONE');
           this.targetRing.clear(); 
           this.approachRing.clear(); 
@@ -748,8 +871,27 @@ export default class SmithingScene extends Phaser.Scene {
 
   public resumeTutorialCrafting() {
       if (this.isTutorial && this.perfectCount === 1) {
+          this.tutorialFirstHitReady = false;
+          if (this.onTutorialStrikeReadyChange) {
+            this.onTutorialStrikeReadyChange(false);
+          }
           this.resetRing();
       }
+  }
+
+  public startTutorialHitGuide() {
+      if (!this.isTutorial) return;
+      this.temperature = 100;
+      this.isReadyToStart = true;
+      this.isPlaying = true;
+      this.infoText.setVisible(false);
+      this.targetRing.setVisible(true);
+      this.approachRing.setVisible(true);
+      this.tutorialFirstHitReady = false;
+      if (this.onTutorialStrikeReadyChange) {
+        this.onTutorialStrikeReadyChange(false);
+      }
+      this.resetRing();
   }
 
   private handleEnhancement(x: number, y: number) {
@@ -770,13 +912,22 @@ export default class SmithingScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.isFinished) return;
     const currentStep = (this.game as any).tutorialStep;
+    if (this.isTutorial && currentStep !== this.lastTutorialUiStep) {
+        this.lastTutorialUiStep = currentStep ?? null;
+        this.handleResize();
+    }
     const isTutorialDialogueActive = this.isTutorial && (currentStep === 'FIRST_HIT_DIALOG_GUIDE' || currentStep?.includes('_DIALOG'));
     if (this.isPlaying && this.currentTool === 'HAMMER' && !isTutorialDialogueActive) {
         this.handleRingLogic(delta);
     }
+    if (this.isTutorialHitLockPhase(currentStep)) {
+        this.temperature = 100;
+        this.isReadyToStart = true;
+        this.infoText.setVisible(false);
+    }
     const floorVal = SmithingTutorialHandler.getTemperatureFloor(this.isTutorial);
     const isPeakInTutorialWait = this.isTutorial && !this.isPlaying && this.temperature >= 98;
-    if (!isPeakInTutorialWait) {
+    if (!isPeakInTutorialWait && !this.isTutorialHitLockPhase(currentStep)) {
         this.temperature = Math.max(floorVal, this.temperature - this.coolingRate * (delta / 1000));
     }
     this.refreshVisuals();
@@ -790,7 +941,10 @@ export default class SmithingScene extends Phaser.Scene {
           bellowsBtn: this.bellowsContainer,
           hitX: this.hitX,
           hitY: this.hitY,
-          targetRadius: this.targetRadius
+          targetRadius: this.targetRadius,
+          currentRadius: this.currentRadius,
+          tutorialFirstHitReady: this.tutorialFirstHitReady,
+          perfectCount: this.perfectCount
         });
         this.onTutorialTargetUpdate(activeRect);
     }
@@ -837,7 +991,35 @@ export default class SmithingScene extends Phaser.Scene {
     const targetRGB = Phaser.Display.Color.IntegerToColor(this.currentTargetColor);
     const ringColor = Phaser.Display.Color.GetColor(Math.floor(255 + (targetRGB.red - 255) * colorT), Math.floor(255 + (targetRGB.green - 255) * colorT), Math.floor(255 + (targetRGB.blue - 255) * colorT));
     const ringAlpha = 0.6 + (colorT * 0.3);
+    const overlapDistance = Math.abs(this.currentRadius - this.targetRadius);
+    const overlapWindow = Math.max(18, this.targetRadius * 0.65);
+    const overlapProximity = Phaser.Math.Clamp(1 - overlapDistance / overlapWindow, 0, 1);
+
+    if (this.isTutorial && tutorialStep === 'SMITHING_MINIGAME_HIT_GUIDE' && this.perfectCount === 0) {
+      const readyThreshold = Math.max(6, this.targetRadius * 0.12);
+      if (!this.tutorialFirstHitReady && overlapDistance <= readyThreshold) {
+        this.tutorialFirstHitReady = true;
+        this.currentRadius = this.targetRadius;
+        this.ringTimer = this.shrinkDuration;
+        if (this.onTutorialStrikeReadyChange) {
+          this.onTutorialStrikeReadyChange(true);
+        }
+      }
+
+      if (this.tutorialFirstHitReady) {
+        this.approachRing
+          .clear()
+          .lineStyle(8, 0xfff4c2, 1)
+          .fillStyle(0xfff4c2, 0.18)
+          .fillCircle(this.hitX, this.hitY, this.targetRadius)
+          .strokeCircle(this.hitX, this.hitY, this.targetRadius);
+        this.redrawTargetRing(1);
+        return;
+      }
+    }
+
     this.approachRing.clear().lineStyle(6, ringColor, ringAlpha).fillStyle(ringColor, ringAlpha * 0.15).fillCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius)).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
+    this.redrawTargetRing(overlapProximity);
     if (this.currentRadius < this.targetRadius - 30) { 
         // Remove swing animation when too late
         this.handleMiss(undefined, undefined, 'TOO LATE'); 
@@ -888,7 +1070,7 @@ export default class SmithingScene extends Phaser.Scene {
         this.hitX = p.x; this.hitY = p.y;
     }
     if (this.isPlaying && this.currentTool === 'HAMMER') { 
-        this.targetRing.clear().fillStyle(this.currentTargetColor, 0.25).fillCircle(this.hitX, this.hitY, this.targetRadius).lineStyle(5, this.currentTargetColor, 0.8) .strokeCircle(this.hitX, this.hitY, this.targetRadius); 
+        this.redrawTargetRing(0);
     }
   }
 

@@ -86,6 +86,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                             onComplete={handlers.handleMinigameComplete}
                             onClose={() => actions.cancelCrafting(selectedItem)}
                             difficulty={selectedItem.tier}
+                            masteryCount={masteryInfo?.count || 0}
                             isTutorial={state.activeTutorialScene === 'SMITHING'}
                         />
                     ) : (
@@ -122,7 +123,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         )}
 
         {/* Paging Button - To Shop (좌측 중앙 배치) */}
-        {!isCrafting && (!state.tutorialStep || ['OPEN_SHOP_TAB_GUIDE', 'CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE'].includes(state.tutorialStep)) && (
+        {!isCrafting && (!state.tutorialStep || ['OPEN_SHOP_TAB_GUIDE', 'CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE', 'PIP_RETURN_DIALOG_GUIDE'].includes(state.tutorialStep)) && (
             <SfxButton 
                 sfx="switch" 
                 onClick={() => {

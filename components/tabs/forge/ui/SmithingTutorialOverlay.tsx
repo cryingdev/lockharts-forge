@@ -4,20 +4,26 @@ import { Pointer } from 'lucide-react';
 import DialogueBox from '../../../DialogueBox';
 import { useGame } from '../../../../context/GameContext';
 import { t } from '../../../../utils/i18n';
+import { getPlayerName } from '../../../../utils/gameText';
 
 interface SmithingTutorialOverlayProps {
     step: string;
     targetCoord: { x: number, y: number, w: number, h: number } | null;
+    strikePromptVisible?: boolean;
     onResume?: () => void;
+    onFirstHitTutorialComplete?: () => void;
 }
 
 export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = ({ 
     step, 
     targetCoord, 
-    onResume 
+    strikePromptVisible = false,
+    onResume,
+    onFirstHitTutorialComplete
 }) => {
     const { actions, state } = useGame();
     const language = state.settings.language;
+    const playerName = getPlayerName(state);
     const [animatedRadius, setAnimatedRadius] = useState(2000);
     const [isDismissed, setIsDismissed] = useState(false);
     
@@ -51,11 +57,12 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
     // DIALOG 단계에서는 다이얼로그만 보여주고, INDICATE 단계부터 버튼을 강조합니다.
     const showDialogue = step.includes('_DIALOG') || step === 'START_FORGING_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE' || step.includes('_INDICATE');
     const isIndicateStep = step.includes('_INDICATE') || step.startsWith('SMITHING_MINIGAME');
-    const isMaskHidden = isDismissed || step === 'TUTORIAL_END_DIALOG_GUIDE' || step === 'CRAFT_RESULT_DIALOG_GUIDE' || step === 'SMITHING_MINIGAME_HIT_GUIDE';
+    const shouldShowMask = !isDismissed && !!targetCoord && isIndicateStep && step !== 'POST_PUMP_DIALOG_GUIDE';
+    const isMaskHidden = !shouldShowMask || step === 'TUTORIAL_END_DIALOG_GUIDE' || step === 'CRAFT_RESULT_DIALOG_GUIDE';
     
     useEffect(() => {
         // 지시 단계(INDICATE)가 아니고 타겟 좌표가 없으면 원을 크게 유지
-        if (!targetCoord || !isIndicateStep || step === 'SMITHING_MINIGAME_HIT_GUIDE' || step === 'POST_PUMP_DIALOG_GUIDE') {
+        if (!targetCoord || !isIndicateStep || step === 'POST_PUMP_DIALOG_GUIDE') {
             setAnimatedRadius(2000);
             return;
         }
@@ -73,7 +80,7 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
         };
         const rid = requestAnimationFrame(animate);
         return () => cancelAnimationFrame(rid);
-    }, [step, !!targetCoord, isIndicateStep]);
+    }, [step, targetCoord?.x, targetCoord?.y, targetCoord?.w, targetCoord?.h, isIndicateStep]);
 
     if (!script && !isIndicateStep) return null;
 
@@ -94,7 +101,7 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
                 <defs>
                     <mask id="smithing-tutorial-mask">
                         <rect width="100%" height="100%" fill="white" />
-                        {targetCoord && isIndicateStep && step !== 'POST_PUMP_DIALOG_GUIDE' && (
+                        {shouldShowMask && (
                             <circle cx={centerX} cy={centerY} r={animatedRadius} fill="black" />
                         )}
                     </mask>
@@ -103,7 +110,7 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
             </svg>
 
             {/* 클릭 방지 월 및 가이드 포인터 - 지시 단계(INDICATE)에서만 노출 */}
-            {!isDismissed && targetCoord && isIndicateStep && step !== 'POST_PUMP_DIALOG_GUIDE' && (
+            {shouldShowMask && (
                 <>
                     <div className="absolute inset-0 pointer-events-none">
                         <div className="absolute top-0 left-0 w-full pointer-events-auto" style={{ height: centerY - h/2 }} />
@@ -111,14 +118,16 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
                         <div className="absolute top-0 left-0 pointer-events-auto" style={{ top: centerY - h/2, height: h, width: centerX - w/2 }} />
                         <div className="absolute top-0 pointer-events-auto" style={{ top: centerY - h/2, height: h, left: centerX + w/2, right: 0 }} />
                     </div>
-                    <div className="absolute animate-in fade-in zoom-in-95 duration-300" style={{ left: centerX - w/2 - 12, top: centerY, transform: 'translate(-100%, -50%)' }}>
-                        <div className="flex items-center flex-row-reverse animate-bounce-x-reverse">
-                            <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ transform: 'rotate(90deg)' }} />
-                            <div className="mr-3 px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase rounded-full shadow-2xl border-2 border-amber-400 whitespace-nowrap">
-                                {step.includes('IGNITE') ? t(language, 'smithingTutorial.indicator.ignite') : step.includes('PUMP') ? t(language, 'smithingTutorial.indicator.pump') : t(language, 'smithingTutorial.indicator.strike')}
+                    {(!step.startsWith('SMITHING_MINIGAME_HIT') || strikePromptVisible) && (
+                        <div className="absolute animate-in fade-in zoom-in-95 duration-300" style={{ left: centerX - w/2 - 12, top: centerY, transform: 'translate(-100%, -50%)' }}>
+                            <div className="flex items-center flex-row-reverse animate-bounce-x-reverse">
+                                <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ transform: 'rotate(90deg)' }} />
+                                <div className="mr-3 px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase rounded-full shadow-2xl border-2 border-amber-400 whitespace-nowrap">
+                                    {step.includes('IGNITE') ? t(language, 'smithingTutorial.indicator.ignite') : step.includes('PUMP') ? t(language, 'smithingTutorial.indicator.pump') : t(language, 'smithingTutorial.indicator.strike')}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </>
             )}
 
@@ -126,7 +135,7 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
             {!isDismissed && showDialogue && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90vw] max-w-4xl pointer-events-none z-[6000]">
                     <DialogueBox 
-                        speaker={t(language, 'names.lockhart')} 
+                        speaker={playerName}
                         text={script} 
                         options={[
                             { 
@@ -146,6 +155,7 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
                                         actions.setTutorialStep('SMITHING_MINIGAME_HIT_GUIDE');
                                     } else if (step === 'FIRST_HIT_DIALOG_GUIDE') {
                                         // 첫 타격 성공 다이얼로그 종료 시 타격 단계로 원복하여 게임 로직 재개
+                                        if (onFirstHitTutorialComplete) onFirstHitTutorialComplete();
                                         actions.setTutorialStep('SMITHING_MINIGAME_HIT_GUIDE');
                                         setIsDismissed(true);
                                         if (onResume) onResume();

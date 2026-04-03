@@ -201,18 +201,34 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         }
     }, [language, refusalReaction, activeCustomer]);
 
+    const composeShopLine = useCallback((greetingKey: string, bodyKey: string, params: Record<string, string> = {}) => {
+        return `${t(language, greetingKey, params)}\n${t(language, bodyKey, params)}`;
+    }, [language]);
+
     const getRequestDialogue = useCallback((itemName: string, isFallback = false) => {
         const merc = activeCustomer?.mercenary;
         if (!merc) return '';
 
         if (merc.affinity >= 50) {
-            return t(language, isFallback ? 'shop.request_affinity_high_fallback' : 'shop.request_affinity_high', { item: itemName, playerName });
+            return composeShopLine(
+                'shop.greeting.high',
+                isFallback ? 'shop.request_body.buy_high' : 'shop.request_body.need_high',
+                { item: itemName, playerName }
+            );
         }
         if (merc.affinity >= 20) {
-            return t(language, isFallback ? 'shop.request_affinity_mid_fallback' : 'shop.request_affinity_mid', { item: itemName });
+            return composeShopLine(
+                'shop.greeting.mid',
+                isFallback ? 'shop.request_body.buy_mid' : 'shop.request_body.need_mid',
+                { item: itemName }
+            );
         }
-        return t(language, isFallback ? 'shop.request_affinity_low_fallback' : 'shop.request_affinity_low', { item: itemName });
-    }, [language, activeCustomer, playerName]);
+        return composeShopLine(
+            isFallback ? 'shop.greeting.low_buy' : 'shop.greeting.low_need',
+            isFallback ? 'shop.request_body.buy_low' : 'shop.request_body.need_low',
+            { item: itemName }
+        );
+    }, [activeCustomer, composeShopLine, playerName]);
 
     const tutorialContent = useMemo(() => {
         if (tutorialStep === 'PIP_INITIAL_FAREWELL_DIALOG_GUIDE') {
@@ -236,6 +252,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                 options: [{ 
                     label: t(language, 'shop.option_go_forge'), 
                     action: () => { 
+                        actions.setTutorialScene('SMITHING');
                         actions.setTutorialStep('CRAFT_FIRST_SWORD_GUIDE');
                         if (onNavigate) onNavigate('FORGE');
                     }, 
@@ -337,6 +354,21 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             }
         }
 
+        if (tutorialStep === 'PIP_RETURN_DIALOG_GUIDE' && mercenary.id === 'pip_green') {
+            return {
+                speaker: mercenary.name,
+                text: t(language, 'shop.pip_return_intro', { item: getItemName(request.requestedId), playerName }),
+                highlightTerm: "Bronze Shortsword",
+                options: [
+                    {
+                        label: t(language, 'shop.option_continue'),
+                        action: () => actions.setTutorialStep('PIP_RETURN_GUIDE'),
+                        variant: 'primary' as const
+                    }
+                ]
+            };
+        }
+
         // Pip's return dialogue
         if (tutorialStep === 'PIP_RETURN_GUIDE' && mercenary.id === 'pip_green') {
             return {
@@ -409,7 +441,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         matchingItems,
         showInstanceSelector,
         selectedInstance,
-        isTutorialActive: !!tutorialStep && !['CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE'].includes(tutorialStep),
+        isTutorialActive: !!tutorialStep && !['CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE', 'PIP_RETURN_DIALOG_GUIDE'].includes(tutorialStep),
         handlers: {
             handleToggleShop,
             handleFarewell,

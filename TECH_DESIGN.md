@@ -59,6 +59,11 @@ Core entities are defined as TypeScript interfaces in `/models/`:
 -   State-driven tutorial steps (`tutorialStep`).
 -   Spotlight overlays and forced navigation to guide new players.
 -   **Location**: `/components/MainGameLayout.tsx` (Overlay logic) and `/components/tutorial/`.
+-   The smithing minigame tutorial now uses a guarded first-hit flow:
+    -   it skips separate `HEAT` / `PUMP` instruction phases once the player enters the minigame,
+    -   blocks gameplay input while tutorial dialogue is visible,
+    -   forces the first strike into a guided perfect-timing state before returning to normal ring play.
+-   The first shop tutorial now routes through `SHOP_INTRO_DIALOG_GUIDE` before smithing, so Pip places the Bronze Shortsword order first, leaves, and only later returns through `PIP_RETURN_DIALOG_GUIDE` for delivery.
 
 ### 4.4 Commission System
 The commission system is split into repeatable economy contracts and named recruitment contracts.
