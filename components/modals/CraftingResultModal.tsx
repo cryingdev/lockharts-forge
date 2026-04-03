@@ -8,10 +8,13 @@ import { EQUIPMENT_ITEMS } from '../../data/equipment';
 import { MASTERY_THRESHOLDS } from '../../config/mastery-config';
 import { UI_MODAL_LAYOUT } from '../../config/ui-config';
 import { SfxButton } from '../common/ui/SfxButton';
+import { getLocalizedItemDescription, getLocalizedItemName } from '../../utils/itemText';
+import { t } from '../../utils/i18n';
 
 const CraftingResultModal = () => {
     const { state, actions } = useGame();
     const item = state.lastCraftedItem;
+    const language = state.settings.language;
     const [animatedProgress, setAnimatedProgress] = useState(0);
 
     const masteryInfo = useMemo(() => {
@@ -88,6 +91,12 @@ const CraftingResultModal = () => {
 
     const label = getQualityLabel(data.quality);
     const qColor = getQualityColor(data.quality);
+    const localizedItemName = recipe
+        ? getLocalizedItemName(language, { id: recipe.id, name: data.name })
+        : data.name;
+    const localizedItemDescription = recipe
+        ? getLocalizedItemDescription(language, { id: recipe.id, description: item.description })
+        : item.description;
 
     const isLockedByTutorial = state.tutorialStep === 'CRAFT_RESULT_DIALOG_GUIDE';
 
@@ -150,20 +159,20 @@ const CraftingResultModal = () => {
                         </div>
                     </div>
 
-                    <h2 className="text-base md:text-2xl font-bold text-stone-100 font-serif leading-tight px-2 truncate w-full">{data.name}</h2>
+                    <h2 className="text-base md:text-2xl font-bold text-stone-100 font-serif leading-tight px-2 truncate w-full">{localizedItemName}</h2>
                     
                     <div className="flex flex-col items-center gap-1 mt-1 md:mt-2">
                         <div className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-stone-950 border border-stone-800 font-black uppercase tracking-widest text-[7px] md:text-[10px] ${qColor} flex items-center gap-1 shadow-inner`}>
-                            <Sparkles className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-current" /> {label} Quality
+                            <Sparkles className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-current" /> {t(language, `craftingResult.quality_${label.toLowerCase()}`)}
                         </div>
                         <div className="flex items-center gap-1 text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest">
-                            <Award className="w-2 h-2 md:w-2.5 md:h-2.5" /> Mastery: {Math.round(masteryInfo.progress)}%
+                            <Award className="w-2 h-2 md:w-2.5 md:h-2.5" /> {t(language, 'craftingResult.mastery')}: {Math.round(masteryInfo.progress)}%
                         </div>
                     </div>
                 </div>
 
                 <div className="p-3 md:p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-                    <p className="text-stone-400 text-[9px] md:text-sm text-center italic leading-tight px-2">"{item.description}"</p>
+                    <p className="text-stone-400 text-[9px] md:text-sm text-center italic leading-tight px-2">"{localizedItemDescription}"</p>
                     
                     {/* Unified Stats Grid - 2 columns */}
                     <div className="grid grid-cols-2 gap-1.5 md:gap-2">
@@ -193,9 +202,9 @@ const CraftingResultModal = () => {
                         }`}
                     >
                         {isLockedByTutorial ? (
-                            <><Lock className="w-3 h-3 md:w-4 md:h-4" /> Reviewing...</>
+                            <><Lock className="w-3 h-3 md:w-4 md:h-4" /> {t(language, 'craftingResult.reviewing')}</>
                         ) : (
-                            <><Check className="w-3 h-3 md:w-4 md:h-4" /> Finalize Forge</>
+                            <><Check className="w-3 h-3 md:w-4 md:h-4" /> {t(language, 'craftingResult.finalize')}</>
                         )}
                     </SfxButton>
                 </div>

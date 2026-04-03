@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Save, Upload, X, Trash2, Clock, Coins, Calendar, ChevronRight } from 'lucide-react';
-import { getSaveMetadataList, SaveMetadata, deleteSlot } from '../../utils/saveSystem';
+import { deleteSlot, getDisplayForgeNameFromMetadata, getSaveMetadataList, SaveMetadata } from '../../utils/saveSystem';
 const ConfirmationModal = React.lazy(() => import('./ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
+import { useGame } from '../../context/GameContext';
+import { t } from '../../utils/i18n';
 
 interface SaveLoadModalProps {
     isOpen: boolean;
@@ -13,6 +15,8 @@ interface SaveLoadModalProps {
 }
 
 const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, onAction }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const [metaList, setMetaList] = useState<SaveMetadata[]>([]);
     const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean, index: number | null }>({
         isOpen: false,
@@ -30,7 +34,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
     const slots = [0, 1, 2]; // 3개의 슬롯 지원
 
     const formatDate = (ts: number) => {
-        return new Intl.DateTimeFormat('ko-KR', {
+        return new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', {
             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
         }).format(new Date(ts));
     };
@@ -114,14 +118,19 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
 
                                     {meta ? (
                                         <div className="flex items-center justify-between w-full gap-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Calendar className="w-3.5 h-3.5 text-stone-500" />
-                                                    <span className="text-xs md:text-sm font-bold text-stone-200">Day {meta.day}</span>
+                                            <div className="flex flex-col items-start gap-1 min-w-0">
+                                                <div className="text-[11px] md:text-xs font-black text-amber-100 font-serif truncate max-w-[180px] md:max-w-[220px]">
+                                                    {getDisplayForgeNameFromMetadata(meta, state.settings)}
                                                 </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <Coins className="w-3.5 h-3.5 text-amber-500" />
-                                                    <span className="text-xs md:text-sm font-bold text-amber-400 font-mono">{meta.gold}G</span>
+                                                <div className="flex items-center gap-4 flex-wrap">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Calendar className="w-3.5 h-3.5 text-stone-500" />
+                                                        <span className="text-xs md:text-sm font-bold text-stone-200">{t(language, 'save.day_label', { day: meta.day })}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Coins className="w-3.5 h-3.5 text-amber-500" />
+                                                        <span className="text-xs md:text-sm font-bold text-amber-400 font-mono">{meta.gold}G</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <ChevronRight className="w-5 h-5 text-stone-600 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" />
@@ -129,7 +138,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                     ) : (
                                         <div className="w-full py-0.5">
                                             <div className="text-center text-[10px] font-black uppercase tracking-[0.2em] italic opacity-70">
-                                                {mode === 'SAVE' ? 'Click to Record Progress' : 'Empty Data Slot'}
+                                                {mode === 'SAVE' ? t(language, 'save.click_to_record') : t(language, 'save.empty_slot')}
                                             </div>
                                         </div>
                                     )}
@@ -139,7 +148,7 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                     </div>
 
                     <div className="p-3 bg-stone-950 text-center border-t border-stone-800 shrink-0">
-                        <p className="text-[9px] md:text-[10px] text-stone-600 font-mono uppercase tracking-tighter">Your progress is kept in browser local storage.</p>
+                        <p className="text-[9px] md:text-[10px] text-stone-600 font-mono uppercase tracking-tighter">{t(language, 'save.browser_storage_notice')}</p>
                     </div>
                 </div>
             </div>
@@ -147,9 +156,9 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
             <React.Suspense fallback={null}>
                 <ConfirmationModal 
                     isOpen={deleteConfirm.isOpen}
-                    title="Delete Save Data"
-                    message={`Are you sure you want to delete the data in Slot ${deleteConfirm.index !== null ? deleteConfirm.index + 1 : ''}? This action cannot be undone.`}
-                    confirmLabel="Delete Forever"
+                    title={t(language, 'save.delete_title')}
+                    message={t(language, 'save.delete_desc', { slot: deleteConfirm.index !== null ? deleteConfirm.index + 1 : '' })}
+                    confirmLabel={t(language, 'save.delete_confirm')}
                     onConfirm={handleConfirmDelete}
                     onCancel={() => setDeleteConfirm({ isOpen: false, index: null })}
                     isDanger={true}

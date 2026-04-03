@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { InventoryItem } from '../../../../types/inventory';
 import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
+import { t } from '../../../../utils/i18n';
 
 export type ResearchResultType = 'SUCCESS' | 'RESONATE' | 'FAIL';
 
@@ -12,6 +13,7 @@ export interface ResearchResult {
 
 export const useResearch = () => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
     const [selectedSlots, setSelectedSlots] = useState<(InventoryItem | null)[]>([null, null, null, null]);
     const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
     const [isResearching, setIsResearching] = useState(false);
@@ -35,18 +37,18 @@ export const useResearch = () => {
             if (currentInSlot.quantity < item.quantity) {
                 newSlots[existingIdx] = { ...currentInSlot, quantity: currentInSlot.quantity + 1 };
             } else {
-                actions.showToast("Maximum inventory reached in research slots.");
+                actions.showToast(t(language, 'research.toast_slot_max'));
             }
         } else {
             const emptyIdx = selectedSlots.findIndex(s => !s);
             if (emptyIdx === -1) {
-                actions.showToast("Research slots are full.");
+                actions.showToast(t(language, 'research.toast_slots_full'));
                 return;
             }
             newSlots[emptyIdx] = { ...item, quantity: 1 };
         }
         setSelectedSlots(newSlots);
-    }, [selectedSlots, actions, isResearching, result]);
+    }, [selectedSlots, actions, isResearching, result, language]);
 
     const handleIncrementQuantity = useCallback((idx: number) => {
         if (isResearching || result) return;
@@ -59,9 +61,9 @@ export const useResearch = () => {
             newSlots[idx] = { ...itemInSlot, quantity: itemInSlot.quantity + 1 };
             setSelectedSlots(newSlots);
         } else {
-            actions.showToast("No more items available in inventory.");
+            actions.showToast(t(language, 'research.toast_inventory_empty'));
         }
-    }, [selectedSlots, state.inventory, actions, isResearching, result]);
+    }, [selectedSlots, state.inventory, actions, isResearching, result, language]);
 
     const handleDecrementQuantity = useCallback((idx: number) => {
         if (isResearching || result) return;

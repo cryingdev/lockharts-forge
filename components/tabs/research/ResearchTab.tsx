@@ -7,12 +7,16 @@ import { useResearch } from './hooks/useResearch';
 import { ResearchSlots } from './ui/ResearchSlots';
 import { ResearchInventoryModal } from './ui/ResearchInventoryModal';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
+import { t } from '../../../utils/i18n';
+import { getLocalizedItemName } from '../../../utils/itemText';
 
 interface ResearchTabProps {
     onClose?: () => void;
 }
 
 const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: () => void }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const isSuccess = result.type === 'SUCCESS';
     const isResonate = result.type === 'RESONATE';
     const discoveredRecipe = isSuccess ? EQUIPMENT_ITEMS.find(r => r.id === result.recipeId) : null;
@@ -40,10 +44,12 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
                         </div>
                         
                         <div>
-                            <h3 className="text-4xl font-black text-amber-500 font-serif uppercase tracking-tighter mb-1 drop-shadow-lg">Eureka!</h3>
-                            <p className="text-stone-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Lost Blueprint Deciphered</p>
+                            <h3 className="text-4xl font-black text-amber-500 font-serif uppercase tracking-tighter mb-1 drop-shadow-lg">{t(language, 'research.result_success_title')}</h3>
+                            <p className="text-stone-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4">{t(language, 'research.result_success_subtitle')}</p>
                             <div className="bg-stone-950 px-6 py-4 rounded-2xl border border-amber-500/30 shadow-inner">
-                                <span className="text-xl md:text-2xl font-black text-stone-100 uppercase tracking-tighter">{discoveredRecipe.name}</span>
+                                <span className="text-xl md:text-2xl font-black text-stone-100 uppercase tracking-tighter">
+                                    {getLocalizedItemName(language, { id: discoveredRecipe.id, name: discoveredRecipe.name })}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -53,10 +59,10 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
                             <Sparkles className="w-14 h-14 text-indigo-400 animate-pulse" />
                         </div>
                         <div>
-                            <h3 className="text-2xl md:text-3xl font-black text-indigo-400 font-serif uppercase tracking-tight mb-2">Unstable Resonance</h3>
+                            <h3 className="text-2xl md:text-3xl font-black text-indigo-400 font-serif uppercase tracking-tight mb-2">{t(language, 'research.result_resonate_title')}</h3>
                             <p className="text-stone-400 text-xs md:text-sm font-bold uppercase tracking-widest leading-relaxed px-4">
-                                The materials pulse with energy, but the proportions are incorrect. <br/>
-                                <span className="text-indigo-300/80 font-mono text-[10px] mt-2 block">(Ingredients match, but quantities vary!)</span>
+                                {t(language, 'research.result_resonate_desc')} <br/>
+                                <span className="text-indigo-300/80 font-mono text-[10px] mt-2 block">{t(language, 'research.result_resonate_hint')}</span>
                             </p>
                         </div>
                     </div>
@@ -66,9 +72,9 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
                             <Ghost className="w-12 h-12 text-stone-600" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-black text-stone-500 font-serif uppercase tracking-tight mb-1">Ashen Failure</h3>
+                            <h3 className="text-2xl font-black text-stone-500 font-serif uppercase tracking-tight mb-1">{t(language, 'research.result_fail_title')}</h3>
                             <p className="text-stone-600 text-xs font-bold uppercase tracking-widest leading-relaxed px-4">
-                                The catalyst has failed. The materials turned to cold grey ash without a sound.
+                                {t(language, 'research.result_fail_desc')}
                             </p>
                         </div>
                     </div>
@@ -78,7 +84,7 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
                     onClick={onConfirm}
                     className="mt-8 w-full py-4 bg-stone-800 hover:bg-stone-750 text-stone-300 font-black uppercase tracking-[0.3em] rounded-2xl border-b-4 border-stone-950 transition-all active:translate-y-1 shadow-xl"
                 >
-                    Clear Workspace
+                    {t(language, 'research.clear_workspace')}
                 </button>
             </div>
         </div>
@@ -87,6 +93,7 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
 
 const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
     const { state } = useGame();
+    const language = state.settings.language;
     const research = useResearch();
     const { selectedSlots, isInventoryModalOpen, inventoryItems, isResearching, isFlashing, result, handlers } = research;
 
@@ -128,18 +135,22 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
                             <div className="hidden xs:block p-2 bg-indigo-900/30 rounded-xl border border-indigo-500/30">
                                 <Microscope className="w-5 h-5 text-indigo-400" />
                             </div>
-                            <h2 className="text-xl md:text-4xl font-black text-stone-100 font-serif uppercase tracking-tighter leading-none">Scholars Desk</h2>
+                            <h2 className="text-xl md:text-4xl font-black text-stone-100 font-serif uppercase tracking-tighter leading-none">{t(language, 'research.title')}</h2>
                         </div>
-                        <p className="text-stone-500 text-[7px] md:text-xs font-bold uppercase tracking-[0.2em] leading-none">Combine materials to rediscover ancient patterns</p>
+                        <p className="text-stone-500 text-[7px] md:text-xs font-bold uppercase tracking-[0.2em] leading-none">{t(language, 'research.subtitle')}</p>
                     </div>
                 </div>
                 
                 <div className="flex flex-col items-end shrink-0">
-                    <span className="text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest leading-none mb-1">Current State</span>
+                    <span className="text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest leading-none mb-1">{t(language, 'research.current_state')}</span>
                     <div className="flex items-center gap-1.5 bg-stone-950/80 px-3 py-1 rounded-full border border-white/5 shadow-inner">
                         <Sparkles className={`w-3 h-3 text-amber-500 ${isResearching ? 'animate-spin' : 'animate-pulse'}`} />
                         <span className="text-[9px] md:text-xs font-mono font-bold text-stone-300">
-                            {isResearching ? 'Alchemizing...' : result && !isResearching ? 'Analysis Complete' : 'Resonating'}
+                            {isResearching
+                                ? t(language, 'research.state_alchemizing')
+                                : result && !isResearching
+                                    ? t(language, 'research.state_complete')
+                                    : t(language, 'research.state_idle')}
                         </span>
                     </div>
                 </div>
@@ -181,12 +192,12 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
                                 {isResearching ? (
                                     <>
                                         <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
-                                        Synthesizing...
+                                        {t(language, 'research.synthesizing')}
                                     </>
                                 ) : (
                                     <>
                                         <Beaker className="w-5 h-5 md:w-6 md:h-6" />
-                                        Initiate Extraction
+                                        {t(language, 'research.initiate')}
                                     </>
                                 )}
                                 
@@ -197,7 +208,7 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
                                 )}
                             </button>
                             <p className={`text-[8px] md:text-[10px] text-stone-600 font-bold uppercase tracking-widest text-center px-6 transition-opacity duration-300 ${isResearching ? 'opacity-0' : 'opacity-100'}`}>
-                                Warning: All items in slots are permanently consumed during the reaction.
+                                {t(language, 'research.warning')}
                             </p>
                         </>
                     )}

@@ -4,6 +4,10 @@ import { materials } from '../../../../data/materials';
 import { MARKET_CATALOG } from '../../../../data/market/index';
 import { InventoryItem } from '../../../../types/inventory';
 import { GAME_CONFIG } from '../../../../config/game-config';
+import { t } from '../../../../utils/i18n';
+import { getPlayerName } from '../../../../utils/gameText';
+import { EquipmentRarity } from '../../../../models/Equipment';
+import { getLocalizedItemName } from '../../../../utils/itemText';
 
 export type MarketViewMode = 'INTERACTION' | 'CATALOG';
 
@@ -16,8 +20,10 @@ export interface FloatingHeart {
 
 export const useMarket = (onNavigate: (tab: any) => void) => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
+    const playerName = getPlayerName(state);
     const [viewMode, setViewMode] = useState<MarketViewMode>('INTERACTION');
-    const [dialogue, setDialogue] = useState("Ah, Lockhart. I heard the hammer falling on that old anvil again. Good to see you haven't given up on the family trade.");
+    const [dialogue, setDialogue] = useState(t(language, 'market.garrick_intro', { playerName }));
     const [cart, setCart] = useState<Record<string, number>>({});
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [itemMultipliers, setItemMultipliers] = useState<Record<string, number>>({});
@@ -28,6 +34,14 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
 
     const { hasFurnace, hasWorkbench } = state.forge;
     const currentTier = state.stats.tierLevel;
+
+    useEffect(() => {
+        setDialogue(prev =>
+            prev === '' || prev === t(language, 'market.garrick_intro', { playerName })
+                ? t(language, 'market.garrick_intro', { playerName })
+                : prev
+        );
+    }, [language, playerName]);
 
     // Tutorial Sync
     useEffect(() => {
@@ -90,24 +104,24 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         });
 
         return [
-            { id: 'tier1', name: 'Tier 1 Resources', items: groups.t1 },
-            { id: 'tier2', name: 'Tier 2 Resources', items: groups.t2 },
-            { id: 'tier3', name: 'Tier 3 Resources', items: groups.t3 },
-            { id: 'tier4', name: 'Tier 4 Resources', items: groups.t4 },
-            { id: 'sup', name: 'Potions & Supplies', items: groups.sup },
-            { id: 'skill', name: 'Skill Knowledge', items: groups.skill },
-            { id: 'tech', name: 'Techniques', items: groups.tech },
-            { id: 'fac', name: 'Facilities', items: groups.fac },
+            { id: 'tier1', nameKey: 'market.section_tier1', items: groups.t1 },
+            { id: 'tier2', nameKey: 'market.section_tier2', items: groups.t2 },
+            { id: 'tier3', nameKey: 'market.section_tier3', items: groups.t3 },
+            { id: 'tier4', nameKey: 'market.section_tier4', items: groups.t4 },
+            { id: 'sup', nameKey: 'market.section_supplies', items: groups.sup },
+            { id: 'skill', nameKey: 'market.section_skills', items: groups.skill },
+            { id: 'tech', nameKey: 'market.section_techniques', items: groups.tech },
+            { id: 'fac', nameKey: 'market.section_facilities', items: groups.fac },
         ].filter(g => g.items.length > 0);
     }, [hasFurnace, hasWorkbench, currentTier, state.tutorialStep]);
 
     const addToCart = (itemId: string, amount: number = 1) => {
         if (itemId === 'scroll_t2' && state.garrickAffinity < 20) {
-            setDialogue("Requires 20 Affinity with Garrick.");
+            setDialogue(t(language, 'market.affinity_requirement', { amount: 20 }));
             return false;
         }
         if (itemId === 'scroll_t3' && state.garrickAffinity < 40) {
-            setDialogue("Requires 40 Affinity with Garrick.");
+            setDialogue(t(language, 'market.affinity_requirement', { amount: 40 }));
             return false;
         }
         const available = (state.marketStock[itemId] || 0) - (cart[itemId] || 0);
@@ -152,6 +166,28 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         onNavigate('MAIN');
     }, [state.tutorialStep, actions, onNavigate]);
 
+    const getGarrickTalkKey = useCallback(() => {
+        const affinity = state.garrickAffinity;
+        const isLate = state.stats.tierLevel >= 2 || state.stats.day >= 10;
+        const isMid = state.stats.tierLevel >= 1 || state.stats.day >= 4;
+
+        if (affinity >= 40) {
+            return isLate
+                ? 'market.garrick_talk_trusted_late'
+                : 'market.garrick_talk_trusted_mid';
+        }
+
+        if (affinity >= 20) {
+            return isLate
+                ? 'market.garrick_talk_warm_late'
+                : 'market.garrick_talk_warm_mid';
+        }
+
+        if (isLate) return 'market.garrick_talk_late';
+        if (isMid) return 'market.garrick_talk_mid';
+        return 'market.garrick_talk_early';
+    }, [state.garrickAffinity, state.stats.day, state.stats.tierLevel]);
+
     return {
         state, actions, viewMode, setViewMode, dialogue, setDialogue, cart, isCartOpen, setIsCartOpen,
         itemMultipliers, setItemMultipliers, floatingHearts, showGiftModal, setShowGiftModal,
@@ -160,18 +196,30 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         handlers: {
             handleTalk: () => {
                 if (!state.talkedToGarrickToday) actions.talkGarrick();
-                const lines = ["Roads are dangerous lately.", "Your grandfather was a legend.", "Need rarity? Prove your worth."];
-                setDialogue(lines[Math.floor(Math.random() * lines.length)]);
+                setDialogue(t(language, getGarrickTalkKey(), { playerName }));
             },
             handleGiftInit: (item: InventoryItem) => {
-                if (item.isLocked) return actions.showToast("Item is locked.");
+                if (item.isLocked) return actions.showToast(t(language, 'market.locked_item'));
                 setPendingGiftItem(item); setShowGiftModal(false);
-                setDialogue(`"Would you like this, Garrick?"`);
+                setDialogue(t(language, 'market.gift_offer', { item: getLocalizedItemName(language, item) }));
             },
             handleConfirmGift: () => {
                 if (!pendingGiftItem) return;
                 actions.giftGarrick({ itemId: pendingGiftItem.id });
-                setPendingGiftItem(null); setDialogue("For me? Hah, you're a thoughtful one.");
+                let responseKey = 'market.gift_thanks';
+                const rarity = pendingGiftItem.equipmentData?.rarity;
+
+                if (rarity === EquipmentRarity.RARE || rarity === EquipmentRarity.EPIC || rarity === EquipmentRarity.LEGENDARY) {
+                    responseKey = 'market.gift_thanks_rare';
+                } else if (pendingGiftItem.type === 'EQUIPMENT') {
+                    responseKey = 'market.gift_thanks_equipment';
+                } else if (pendingGiftItem.type === 'CONSUMABLE' || pendingGiftItem.type === 'GIFT') {
+                    responseKey = 'market.gift_thanks_supply';
+                } else {
+                    responseKey = 'market.gift_thanks_material';
+                }
+                setPendingGiftItem(null);
+                setDialogue(t(language, responseKey, { playerName, item: getLocalizedItemName(language, pendingGiftItem) }));
             },
             addToCart, removeFromCart, deleteFromCart: (id: string) => setCart(prev => { const n = {...prev}; delete n[id]; return n; }),
             handleBuy, 

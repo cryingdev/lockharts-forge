@@ -4,6 +4,7 @@ import { Heart, Box, Coins, ScrollText } from 'lucide-react';
 import { EquipmentItem } from '../../../../types';
 import { useAudio } from '../../../../hooks/useAudio';
 import { useGame } from '../../../../context/GameContext';
+import { getLocalizedItemName } from '../../../../utils/itemText';
 
 interface RecipeCardProps {
     item: EquipmentItem;
@@ -23,6 +24,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
     onMouseEnter, onMouseMove, onMouseLeave, imageUrl
 }) => {
     const { state } = useGame();
+    const language = state.settings.language;
     const { playClick } = useAudio();
 
     const isPipOrder = state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE' && item.id === 'sword_bronze_t1';
@@ -61,7 +63,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
             </div>
             <div className="w-full text-center pb-1.5 px-1 flex flex-col items-center gap-1">
                 <div className={`text-[10px] md:text-xs font-bold leading-tight truncate w-full ${isSelected ? 'text-amber-200' : 'text-stone-300'}`}>
-                    {item.name}
+                    {getLocalizedItemName(language, item)}
                 </div>
                 
                 <div className="flex items-center gap-1">

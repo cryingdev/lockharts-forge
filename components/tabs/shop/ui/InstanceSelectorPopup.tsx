@@ -4,6 +4,8 @@ import { X, Check, Search, Sword, Shield, Zap, Brain, Sparkles, Lock, Info } fro
 import { InventoryItem } from '../../../../types/inventory';
 import { ItemSelectorList } from '../../../ItemSelectorList';
 import { getAssetUrl } from '../../../../utils';
+import { useGame } from '../../../../context/GameContext';
+import { getLocalizedItemName } from '../../../../utils/itemText';
 
 interface InstanceSelectorPopupProps {
     show: boolean;
@@ -19,6 +21,8 @@ interface InstanceSelectorPopupProps {
 export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
     show, onClose, matchingItems, selectedInstance, onSelect, onSell, onToggleLock, customerMarkup
 }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     if (!show) return null;
 
     const getQualityLabel = (q: number): string => {
@@ -103,7 +107,7 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
                                             </div>
                                         )}
                                     </div>
-                                    <h4 className="text-xl font-bold text-amber-500 font-serif leading-none">{selectedInstance.name}</h4>
+                                    <h4 className="text-xl font-bold text-amber-500 font-serif leading-none">{getLocalizedItemName(language, selectedInstance)}</h4>
                                     <div className="flex flex-col items-center gap-1.5 mt-2.5">
                                         <div className={`px-3 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm ${getRarityColor(selectedInstance.equipmentData?.rarity)}`}>
                                             {selectedInstance.equipmentData?.rarity}

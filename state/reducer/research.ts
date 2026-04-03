@@ -1,9 +1,12 @@
 import { GameState } from '../../types/game-state';
 import { EQUIPMENT_ITEMS } from '../../data/equipment';
+import { t } from '../../utils/i18n';
+import { getLocalizedItemName } from '../../utils/itemText';
 
 export const handleResearchCombination = (state: GameState, payload: { items: { id: string; count: number }[] }): GameState => {
     const { items } = payload;
     const { unlockedRecipes } = state;
+    const language = state.settings.language;
 
     // 1. Consume the materials
     let newInventory = [...state.inventory];
@@ -52,11 +55,13 @@ export const handleResearchCombination = (state: GameState, payload: { items: { 
     if (discoveredRecipeId) {
         const recipe = EQUIPMENT_ITEMS.find(r => r.id === discoveredRecipeId)!;
         newUnlockedRecipes.push(discoveredRecipeId);
-        logMsg = `EUREKA! You discovered the lost blueprint for ${recipe.name}!`;
+        logMsg = t(language, 'research.log_eureka', {
+            item: getLocalizedItemName(language, { id: recipe.id, name: recipe.name })
+        });
     } else if (resonating) {
-        logMsg = "The materials resonate with magical energy, but the proportions feel unstable... (Ingredients are correct, but quantities are wrong!)";
+        logMsg = t(language, 'research.log_resonate');
     } else {
-        logMsg = "The materials turn to ash. Your research yielded nothing but grey dust.";
+        logMsg = t(language, 'research.log_fail');
     }
 
     return {

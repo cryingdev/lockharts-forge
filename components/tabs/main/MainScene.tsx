@@ -10,9 +10,9 @@ interface MainSceneProps {
     onSettingsClick: () => void;
 }
 
-const LogTicker = ({ message }: { message: string }) => {
+const LogTicker = ({ message, language }: { message: string; language: 'en' | 'ko' }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const targetMessage = message || 'The forge is quiet...';
+  const targetMessage = message || t(language, 'header.quiet');
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -116,7 +116,7 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                 {settings.showLogTicker && (
                     <SfxButton onClick={actions.toggleJournal} className="w-fit max-w-[80%] mx-auto flex items-center gap-3 px-4 py-1.5 bg-stone-950/40 backdrop-blur-md rounded-full border border-white/5 hover:bg-black/40 hover:border-amber-500/30 transition-all group pointer-events-auto shadow-2xl">
                         <BookOpen className="w-3.5 h-3.5 text-stone-600 group-hover:text-amber-500 shrink-0 transition-colors" />
-                        <div className="min-w-0"><LogTicker message={state.logs[0] || ''} /></div>
+                        <div className="min-w-0"><LogTicker message={state.logs[0] || ''} language={language} /></div>
                     </SfxButton>
                 )}
             </div>
@@ -223,8 +223,8 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                             <Beer className="w-3 h-3 text-orange-400/80" />
                         </div>
                         <div className="flex flex-col items-start leading-none pr-1">
-                            <span className="text-[6px] font-black text-stone-500 uppercase tracking-widest">Tavern District</span>
-                            <span className="text-[9px] font-black text-stone-100 font-serif uppercase tracking-wider mt-0.5">The Broken Anvil</span>
+                            <span className="text-[6px] font-black text-stone-500 uppercase tracking-widest">{t(language, 'mainScene.tavern_category')}</span>
+                            <span className="text-[9px] font-black text-stone-100 font-serif uppercase tracking-wider mt-0.5">{t(language, 'mainScene.tavern_label')}</span>
                         </div>
                     </SfxButton>
                 </div>
@@ -241,8 +241,8 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                             <Store className="w-3 h-3 text-amber-400/80" />
                         </div>
                         <div className="flex flex-col items-end leading-none pl-1">
-                            <span className="text-[6px] font-black text-amber-50/60 uppercase tracking-widest text-right">Blacksmith</span>
-                            <span className="text-[10px] font-black text-stone-100 font-serif uppercase tracking-wider mt-0.5 text-right">Lockhart's Forge</span>
+                            <span className="text-[6px] font-black text-amber-50/60 uppercase tracking-widest text-right">{t(language, 'mainScene.forge_category')}</span>
+                            <span className="text-[10px] font-black text-stone-100 font-serif uppercase tracking-wider mt-0.5 text-right">{t(language, 'mainScene.forge_label')}</span>
                         </div>
                     </SfxButton>
                 </div>

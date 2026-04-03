@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { ShoppingCart, X, Minus, Plus, ShoppingBag, Coins } from 'lucide-react';
 import { materials } from '../../../../data/materials';
 import { getAssetUrl } from '../../../../utils';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
+import { getLocalizedItemName } from '../../../../utils/itemText';
 
 const RomanTierOverlay = ({ id }: { id: string }) => {
     if (id === 'scroll_t2') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-[10px] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] translate-y-0.5">II</span></div>;
@@ -41,12 +44,15 @@ interface ShoppingCartDrawerProps {
 }
 
 export const ShoppingCartDrawer: React.FC<ShoppingCartDrawerProps> = ({ isOpen, cart, total, gold, onRemove, onAdd, onDelete, onBuy }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
+
     return (
         <div className={`h-full bg-stone-950/80 border-l border-stone-800 shadow-2xl flex flex-col transition-all duration-500 ${isOpen ? 'w-48 md:w-72' : 'w-0 overflow-hidden border-none'}`}>
-            <div className="bg-stone-850 p-4 border-b border-stone-800 shrink-0"><h3 className="font-serif font-black text-stone-100 uppercase truncate">Cart Contents</h3></div>
+            <div className="bg-stone-850 p-4 border-b border-stone-800 shrink-0"><h3 className="font-serif font-black text-stone-100 uppercase truncate">{t(language, 'market.cart_contents')}</h3></div>
             <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
                 {Object.entries(cart).length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center opacity-10"><ShoppingCart className="w-10 h-10 mb-2"/><p className="text-[10px] font-black uppercase">Empty</p></div>
+                    <div className="h-full flex flex-col items-center justify-center opacity-10"><ShoppingCart className="w-10 h-10 mb-2"/><p className="text-[10px] font-black uppercase">{t(language, 'market.empty')}</p></div>
                 ) : (
                     Object.entries(cart).map(([id, count]) => {
                         const meta = materials[id];
@@ -56,7 +62,7 @@ export const ShoppingCartDrawer: React.FC<ShoppingCartDrawerProps> = ({ isOpen, 
                             <div key={id} className="bg-stone-900/60 p-2 rounded-xl border border-stone-800">
                                 <div className="flex items-center gap-2 mb-2">
                                     <CartItemImage id={id} meta={meta} />
-                                    <div className="flex-1 min-w-0"><div className="text-stone-100 font-bold text-[10px] truncate">{meta?.name || id}</div><div className="text-amber-600 font-mono text-[9px] font-black">{ (meta?.baseValue || 0) * currentCount } G</div></div>
+                                    <div className="flex-1 min-w-0"><div className="text-stone-100 font-bold text-[10px] truncate">{meta ? getLocalizedItemName(language, meta) : id}</div><div className="text-amber-600 font-mono text-[9px] font-black">{ (meta?.baseValue || 0) * currentCount } G</div></div>
                                     <button onClick={() => onDelete(id)} className="text-stone-600 hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                 </div>
                                 <div className="flex items-center justify-between bg-black/40 rounded p-1">
@@ -69,8 +75,8 @@ export const ShoppingCartDrawer: React.FC<ShoppingCartDrawerProps> = ({ isOpen, 
                 )}
             </div>
             <div className="bg-stone-850 p-4 border-t border-stone-800 space-y-2 shrink-0">
-                <div className="flex justify-between items-center text-[10px] text-stone-500 font-bold uppercase"><span>Total</span><span className={`text-lg font-mono font-black ${total > gold ? 'text-red-500' : 'text-emerald-400'}`}>{total}G</span></div>
-                <button onClick={onBuy} disabled={total === 0 || total > gold} className={`w-full py-3 rounded-xl font-black text-[10px] transition-all flex items-center justify-center gap-2 shadow-xl ${total > gold ? 'bg-red-900/60 text-red-100 border border-red-500/50' : total === 0 ? 'bg-stone-800 text-stone-600 opacity-60' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}><ShoppingBag className="w-4 h-4" /><span>{total > gold ? 'Shortage' : 'Buy Now'}</span></button>
+                <div className="flex justify-between items-center text-[10px] text-stone-500 font-bold uppercase"><span>{t(language, 'market.total')}</span><span className={`text-lg font-mono font-black ${total > gold ? 'text-red-500' : 'text-emerald-400'}`}>{total}G</span></div>
+                <button onClick={onBuy} disabled={total === 0 || total > gold} className={`w-full py-3 rounded-xl font-black text-[10px] transition-all flex items-center justify-center gap-2 shadow-xl ${total > gold ? 'bg-red-900/60 text-red-100 border border-red-500/50' : total === 0 ? 'bg-stone-800 text-stone-600 opacity-60' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}><ShoppingBag className="w-4 h-4" /><span>{total > gold ? t(language, 'market.checkout_shortage') : t(language, 'market.buy_now')}</span></button>
             </div>
         </div>
     );

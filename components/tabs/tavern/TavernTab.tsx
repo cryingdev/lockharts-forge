@@ -76,7 +76,7 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                             <div className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md shadow-2xl">
                                 <Star className="w-4 h-4 text-amber-400" />
                                 <div className="flex flex-col leading-none">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">{t(language, 'tavern.reputation')}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">{t(language, 'tavern.standing')}</span>
                                     <span className="text-sm font-black text-amber-300">{state.tavern.reputation}</span>
                                 </div>
                             </div>

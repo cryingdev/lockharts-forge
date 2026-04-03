@@ -3,6 +3,7 @@ import { EquipmentItem } from '../../types/inventory';
 import { getEnergyCost, generateEquipment, calcCraftExp, getSmithingLevel, getUnlockedTier } from '../../utils/craftingLogic';
 import { materials } from '../../data/materials';
 import { t } from '../../utils/i18n';
+import { getLocalizedItemName } from '../../utils/itemText';
 
 const getQualityLabel = (q: number): string => {
     if (q >= 110) return "MASTERWORK";
@@ -50,6 +51,7 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
     const language = state.settings.language;
     const masteryCount = state.craftingMastery[item.id] || 0;
     const energyCost = getEnergyCost(item, masteryCount);
+    const localizedItemName = getLocalizedItemName(language, { id: item.id, name: item.name });
 
     let newInventory = [...state.inventory];
     item.requirements.forEach(req => {
@@ -69,7 +71,7 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
         isCrafting: false,
         stats: { ...state.stats, energy: state.stats.energy + energyCost },
         inventory: newInventory,
-        logs: [t(language, 'logs.cancelled_work', { item: item.name }), ...state.logs]
+        logs: [t(language, 'logs.cancelled_work', { item: localizedItemName }), ...state.logs]
     };
 };
 
@@ -78,6 +80,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     const { item, quality, bonus = 0, masteryGain = 1 } = payload;
     const masteryCount = state.craftingMastery[item.id] || 0;
     const isFirstCraft = masteryCount === 0;
+    const localizedItemName = getLocalizedItemName(language, { id: item.id, name: item.name });
 
     // Calculate EXP - 퀄리티 수치를 직접 전달
     const expGain = calcCraftExp({
@@ -114,9 +117,13 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     const newInventory = [...state.inventory, newItem];
     
     const label = getQualityLabel(quality);
-    let logMsg = `Successfully crafted ${label.toLowerCase()} quality ${item.name}! (+${expGain} XP)`;
-    if (bonus > 0) logMsg += ` Pinned technique applied +${bonus} enhancements.`;
-    if (newLevel > oldLevel) logMsg += ` Level Up! (Lv.${newLevel})`;
+    let logMsg = t(language, 'logs.crafted_item', {
+        quality: t(language, `craftingResult.quality_${label.toLowerCase()}`).toLowerCase(),
+        item: localizedItemName,
+        xp: expGain
+    });
+    if (bonus > 0) logMsg += ` ${t(language, 'logs.crafted_bonus', { bonus })}`;
+    if (newLevel > oldLevel) logMsg += ` ${t(language, 'logs.level_up', { level: newLevel })}`;
 
     // Tutorial progression: If we were waiting for the first sword to be crafted
     let newTutorialStep = state.tutorialStep;

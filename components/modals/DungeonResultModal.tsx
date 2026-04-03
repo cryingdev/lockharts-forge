@@ -5,6 +5,8 @@ import { getAssetUrl } from '../../utils';
 import { materials } from '../../data/materials';
 import { MercenaryPortrait } from '../common/ui/MercenaryPortrait';
 import { SfxButton } from '../common/ui/SfxButton';
+import { t } from '../../utils/i18n';
+import { getLocalizedItemName } from '../../utils/itemText';
 
 /**
  * 용병별 경험치 게이지 컴포넌트
@@ -31,6 +33,7 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
     isDefeat
 }) => {
     const { state } = useGame();
+    const language = state.settings.language;
     const [progress, setProgress] = useState(0);
     const radius = 46;
     const circumference = 2 * Math.PI * radius;
@@ -81,7 +84,7 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
 
                     <div className={`absolute -bottom-1 -right-1 md:bottom-0 md:right-0 z-30 px-1.5 py-0.5 rounded-full border shadow-xl flex items-center gap-0.5 ${isDead ? 'bg-black border-red-600' : isInjured ? 'bg-red-900 border-red-500' : isLevelUp ? 'bg-blue-600 border-blue-400 animate-bounce' : 'bg-stone-800 border-stone-700'}`}>
                         <span className="text-[8px] md:text-[10px] font-black text-white font-mono uppercase">
-                            {isDead ? 'DEAD' : isInjured ? 'INJ' : `LV.${result.levelAfter}`}
+                            {isDead ? t(language, 'dungeonResult.dead') : isInjured ? t(language, 'dungeonResult.injured') : `LV.${result.levelAfter}`}
                         </span>
                     </div>
                 </div>
@@ -90,10 +93,10 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
             <div className="text-center min-w-0 px-1">
                 <div className={`text-[10px] md:text-sm font-black truncate uppercase leading-none ${isDead ? 'text-red-600' : 'text-stone-200'}`}>{result.name.split(' ')[0]}</div>
                 {isDead ? (
-                    <div className="text-[8px] text-red-500 font-bold mt-1 uppercase">Lost in Action</div>
+                    <div className="text-[8px] text-red-500 font-bold mt-1 uppercase">{t(language, 'dungeonResult.lost_in_action')}</div>
                 ) : (
                     <div className={`text-[8px] md:text-[10px] font-bold mt-1 ${isLevelUp ? 'text-blue-400' : 'text-amber-500'}`}>
-                        +{result.xpGained} XP {isLevelUp && 'UP!'}
+                        +{result.xpGained} XP {isLevelUp && t(language, 'dungeonResult.level_up_suffix')}
                     </div>
                 )}
             </div>
@@ -104,6 +107,7 @@ const MercenaryExpRadial: React.FC<MercenaryExpRadialProps> = ({
 const DungeonResultModal = () => {
     const { state, actions } = useGame();
     const { dungeonResult } = state;
+    const language = state.settings.language;
 
     if (!dungeonResult) return null;
 
@@ -133,7 +137,7 @@ const DungeonResultModal = () => {
                         {isDefeat ? <Skull className="w-5 h-5 md:w-8 md:h-8" /> : <Trophy className="w-5 h-5 md:w-8 md:h-8" />}
                     </div>
                     <h2 className={`text-lg md:text-2xl font-bold font-serif tracking-wide leading-tight uppercase px-4 ${isDefeat ? 'text-red-500' : 'text-amber-100'}`}>
-                        {isDefeat ? 'Mission Failed' : 'Mission Complete'}
+                        {isDefeat ? t(language, 'dungeonResult.mission_failed') : t(language, 'dungeonResult.mission_complete')}
                     </h2>
                     <p className="text-stone-400 text-[10px] md:text-sm mt-0.5 uppercase tracking-widest font-black truncate max-w-full px-6">{dungeonResult.dungeonName}</p>
                 </div>
@@ -144,7 +148,7 @@ const DungeonResultModal = () => {
                     {/* Squad Status Section */}
                     <div className="space-y-4">
                         <h3 className={`font-black uppercase text-[8px] md:text-xs tracking-[0.2em] border-b pb-1 flex items-center gap-2 ${isDefeat ? 'text-red-500 border-red-900/30' : 'text-stone-500 border-stone-800'}`}>
-                            <Award className={`w-3 h-3 ${isDefeat ? 'text-red-500' : 'text-amber-500'}`} /> {isDefeat ? 'Casualty Report' : 'Squad Growth'}
+                            <Award className={`w-3 h-3 ${isDefeat ? 'text-red-500' : 'text-amber-500'}`} /> {isDefeat ? t(language, 'dungeonResult.casualty_report') : t(language, 'dungeonResult.squad_growth')}
                         </h3>
                         <div className="flex wrap justify-center gap-6 md:gap-10 py-2">
                             {dungeonResult.mercenaryResults.map((m, idx) => (
@@ -156,7 +160,7 @@ const DungeonResultModal = () => {
                     {!isDefeat && dungeonResult.rescuedMercenary && (
                         <div className="animate-in slide-in-from-top-4 duration-1000">
                             <h3 className="text-amber-500 font-black uppercase text-[8px] md:text-xs tracking-[0.2em] flex items-center gap-2 mb-2">
-                                <Sparkles className="w-3 h-3" /> Rescued Survivor
+                                <Sparkles className="w-3 h-3" /> {t(language, 'dungeonResult.rescued_survivor')}
                             </h3>
                             <div className="bg-gradient-to-br from-amber-950/40 to-stone-900 p-3 rounded-xl border border-amber-600/30 flex items-center gap-3">
                                 <MercenaryPortrait 
@@ -173,7 +177,7 @@ const DungeonResultModal = () => {
 
                     {!isDefeat && dungeonResult.goldGained !== undefined && dungeonResult.goldGained > 0 && (
                          <div className="bg-amber-900/10 border border-amber-700/30 rounded-xl p-4 flex flex-col items-center justify-center gap-1">
-                            <span className="text-[8px] md:text-[10px] text-stone-500 font-black uppercase tracking-widest">Total Treasury Gain</span>
+                            <span className="text-[8px] md:text-[10px] text-stone-500 font-black uppercase tracking-widest">{t(language, 'dungeonResult.total_treasury_gain')}</span>
                             <div className="flex items-center gap-3">
                                 <Coins className="w-5 h-5 md:w-8 md:h-8 text-amber-500" />
                                 <span className="text-2xl md:text-4xl font-mono font-black text-amber-400">+{dungeonResult.goldGained} G</span>
@@ -184,7 +188,7 @@ const DungeonResultModal = () => {
                     {!isDefeat && dungeonResult.rewards.length > 0 && (
                         <div className="space-y-3 px-2">
                             <h3 className="font-black uppercase text-[8px] md:text-xs tracking-widest border-b pb-1 text-stone-500 border-stone-800">
-                                Acquired Materials
+                                {t(language, 'dungeonResult.acquired_materials')}
                             </h3>
                             <div className="grid grid-cols-2 gap-2">
                                 {dungeonResult.rewards.map((reward, idx) => (
@@ -193,7 +197,9 @@ const DungeonResultModal = () => {
                                             <img src={getItemImageUrl(reward.id)} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="text-[10px] md:text-xs font-black text-stone-200 truncate">{reward.name}</div>
+                                            <div className="text-[10px] md:text-xs font-black text-stone-200 truncate">
+                                                {getLocalizedItemName(language, { id: reward.id, name: reward.name })}
+                                            </div>
                                             <div className="text-amber-500 font-mono text-[9px] font-bold">x{reward.count}</div>
                                         </div>
                                     </div>
@@ -206,7 +212,7 @@ const DungeonResultModal = () => {
                 <div className={`p-4 border-t shrink-0 ${isDefeat ? 'bg-stone-900 border-red-900/30' : 'bg-stone-850 border-stone-700'}`}>
                     <SfxButton onClick={actions.dismissDungeonResult} className={`w-full py-3 md:py-4 font-black rounded-xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 border-b-4 border-emerald-800 text-xs md:text-base uppercase tracking-widest ${isDefeat ? 'bg-red-700 hover:bg-red-600 text-white border-red-900' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800'}`}>
                         {isDefeat ? <AlertTriangle className="w-4 h-4 md:w-6 md:h-6" /> : <Check className="w-4 h-4 md:w-6 md:h-6" />}
-                        {isDefeat ? 'Emergency Return' : 'Acknowledge & Close'}
+                        {isDefeat ? t(language, 'dungeonResult.emergency_return') : t(language, 'dungeonResult.acknowledge_close')}
                     </SfxButton>
                 </div>
             </div>

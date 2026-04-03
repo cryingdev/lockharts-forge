@@ -618,8 +618,8 @@ Notes for implementation:
 -   Avoid coupling issuer identity to exact item ids. Issuers should prefer categories and contract kinds, then resolve concrete items through the normal progression-aware generator.
 -   If implementation scope must stay small, complete steps 1, 2, and 5 first. That is the minimum version that makes the Board feel authored rather than generic.
 
-### 4.5 Tavern Reputation System
-`Tavern Reputation` should be modeled as a Tavern-level progression value that affects recruit quality, not recruit affinity.
+### 4.5 Adventurer Standing System
+`Adventurer Standing` should be modeled as a Tavern-level progression value that affects recruit quality, not recruit affinity.
 
 -   Primary purpose:
     -   Improve the quality of candidates returned by Tavern recruitment interactions such as `Invite`.
@@ -648,15 +648,15 @@ tavern: TavernState;
 ```
 
 Current implementation status:
--   `tavern.reputation` is now stored in runtime state and shown in the Tavern UI.
--   `Invite`, `Talk`, `Buy Drink`, and Tavern-origin personal-request generation currently provide small Tavern Reputation gains.
--   `state/helpers/tavernTalkHelpers.ts` now uses Tavern Reputation and current active Tavern contract count to bias `Talk` outcomes.
+-   `tavern.reputation` is now stored in runtime state and shown in the Tavern UI as `Adventurer Standing`.
+-   `Invite`, `Talk`, `Buy Drink`, and Tavern-origin personal-request generation currently provide small Adventurer Standing gains.
+-   `state/helpers/tavernTalkHelpers.ts` now uses Adventurer Standing and current active Tavern contract count to bias `Talk` outcomes.
 -   `state/helpers/tavernTalkHelpers.ts` also resolves Tavern dialogue against mercenary temperament, speaking voice, and a coarse progress-stage helper so content can scale with campaign state without hardcoding dialogue in UI hooks.
 -   Higher reputation modestly increases the weight of `RUMOR`, `MINOR_CONTRACT`, and `OPPORTUNITY`.
 -   A high number of active Tavern contracts suppresses new personal requests and pushes the system back toward `FLAVOR` and `RUMOR`.
 
 #### 4.5.2 Recruit Quality Effects
-Tavern Reputation should drive recruit generation through weighted bounds rather than direct stat gifts.
+Adventurer Standing should drive recruit generation through weighted bounds rather than direct stat gifts.
 
 -   Suggested effects:
     -   Increase the minimum and maximum level range for random Tavern recruits.
@@ -670,16 +670,16 @@ Tavern Reputation should drive recruit generation through weighted bounds rather
 
 #### 4.5.3 Integration Points
 -   `utils/mercenaryGenerator.ts`
-    -   Accept Tavern Reputation as an input when generating Tavern invite candidates.
+    -   Accept Adventurer Standing as an input when generating Tavern invite candidates.
     -   Derive recruit level band and class weights from reputation buckets.
 -   `state/reducer/tavern.ts` or Tavern interaction handler
-    -   Increment Tavern Reputation from successful Tavern-origin commissions, positive social events, and high-value recruit outcomes.
+    -   Increment Adventurer Standing from successful Tavern-origin commissions, positive social events, and high-value recruit outcomes.
     -   Apply daily limits or diminishing returns if repeated invites are spammed.
     -   In the current codebase, this responsibility is distributed across Tavern-facing interaction reducers and `commission.ts` rather than a dedicated `tavern.ts` reducer.
 -   `state/reducer/commission.ts`
-    -   Use Tavern Reputation as an optional unlock requirement for Tavern-based named encounters.
+    -   Use Adventurer Standing as an optional unlock requirement for Tavern-based named encounters.
 -   `components/tabs/tavern/`
-    -   Show Tavern Reputation and a lightweight explanation of what higher reputation improves.
+    -   Show Adventurer Standing and a lightweight explanation of what higher reputation improves.
     -   The first-pass implementation now displays the current reputation value in the Tavern header area.
 
 #### 4.5.4 Suggested Reputation Buckets

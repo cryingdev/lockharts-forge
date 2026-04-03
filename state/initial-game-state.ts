@@ -7,7 +7,8 @@ import { DUNGEONS } from '../data/dungeons';
 import { loadGlobalSettings } from '../utils/saveSystem';
 import { createRandomMercenary } from '../utils/mercenaryGenerator';
 import { NAMED_CONTRACT_REGISTRY } from '../data/contracts/namedContracts';
-import { extractLegacyPlayerName } from '../utils/gameText';
+import { extractLegacyPlayerName, getForgeNameFromPlayerName } from '../utils/gameText';
+import { t } from '../utils/i18n';
 
 const createInitialInventory = (): InventoryItem[] => [
     { ...materials.anvil, type: 'TOOL', quantity: 1 },
@@ -66,6 +67,8 @@ export const createInitialGameState = (): GameState => {
             defaultSettings.playerName;
     }
 
+    const initialForgeName = getForgeNameFromPlayerName(finalSettings.language, finalSettings.playerName);
+
     return {
         stats: {
             gold: 1500,
@@ -96,7 +99,10 @@ export const createInitialGameState = (): GameState => {
             isShopOpen: false,
         },
         activeEvent: null,
-        logs: ['You stand amidst the ruins of Lockhart\'s Forge.', 'The equipment is cold and broken. You need to gather gold to rebuild.'],
+        logs: [
+            t(finalSettings.language, 'logs.initial_ruins', { forgeName: initialForgeName }),
+            t(finalSettings.language, 'logs.initial_rebuild'),
+        ],
         knownMercenaries: [
             // Plus 5 random mercenaries
             ...Array.from({ length: 5 }).map(() => createRandomMercenary(1))

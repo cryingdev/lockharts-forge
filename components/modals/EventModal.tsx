@@ -3,10 +3,14 @@ import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { User, XCircle, CheckCircle, Flame, AlertCircle } from 'lucide-react';
 import { SfxButton } from '../common/ui/SfxButton';
+import { t } from '../../utils/i18n';
+import { getForgeName } from '../../utils/gameText';
 
 const EventModal = () => {
   const { state, actions } = useGame();
   const { activeEvent, inventory, stats } = state;
+  const language = state.settings.language;
+  const forgeName = getForgeName(state);
 
   if (!activeEvent) return null;
 
@@ -79,7 +83,7 @@ const EventModal = () => {
 
         {/* Footer */}
         <div className="bg-stone-950 px-4 py-2 border-t border-stone-800 text-[8px] md:text-[10px] text-stone-600 uppercase font-black tracking-[0.3em] text-right shrink-0">
-            Lockhart's Chronicles
+            {t(language, 'eventModal.footer', { forgeName })}
         </div>
       </div>
     </div>

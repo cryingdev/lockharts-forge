@@ -3,7 +3,7 @@ import { Pointer, FastForward } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import { SfxButton } from './common/ui/SfxButton';
 import { t } from '../utils/i18n';
-import { getForgeName } from '../utils/gameText';
+import { getForgeName, getPlayerName } from '../utils/gameText';
 
 // Import Background Services
 import { useShopService } from '../services/shop/shop-service';
@@ -82,17 +82,18 @@ const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
 };
 
 const TUTORIAL_CONTEXT_SCRIPTS: Record<string, { speaker: string, textKey: string }> = {
-    MARKET_POI_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.market_poi_guide' },
-    FORGE_POI_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.forge_poi_guide' },
-    OPEN_RECIPE_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.open_recipe_guide' },
-    SELECT_SWORD_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.select_sword_guide' },
-    OPEN_SHOP_TAB_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.open_shop_tab_guide' },
-    OPEN_SHOP_SIGN_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.open_shop_sign_guide' },
+    MARKET_POI_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.market_poi_guide' },
+    FORGE_POI_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.forge_poi_guide' },
+    OPEN_RECIPE_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.open_recipe_guide' },
+    SELECT_SWORD_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.select_sword_guide' },
+    OPEN_SHOP_TAB_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.open_shop_tab_guide' },
+    OPEN_SHOP_SIGN_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.open_shop_sign_guide' },
 };
 
 const TutorialOverlay = ({ step }: { step: string }) => {
     const { state } = useGame();
     const language = state.settings.language;
+    const playerName = getPlayerName(state);
     const { targetId } = TUTORIAL_STEPS_CONFIG[step] || {};
     const script = TUTORIAL_CONTEXT_SCRIPTS[step];
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -229,7 +230,12 @@ const TutorialOverlay = ({ step }: { step: string }) => {
 
             {script && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
-                    <DialogueBox speaker={script.speaker} text={t(language, script.textKey, { forgeName: getForgeName(state) })} options={[]} className="w-full relative pointer-events-auto" />
+                    <DialogueBox
+                        speaker={script.speaker === 'PLAYER' ? playerName : script.speaker}
+                        text={t(language, script.textKey, { forgeName: getForgeName(state), playerName })}
+                        options={[]}
+                        className="w-full relative pointer-events-auto"
+                    />
                 </div>
             )}
         </div>
@@ -240,6 +246,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const { state, actions } = useGame();
   const language = state.settings.language;
   const forgeName = getForgeName(state);
+  const playerName = getPlayerName(state);
   const [activeTab, setActiveTab] = useState<'MAIN' | 'FORGE' | 'MARKET' | 'SHOP' | 'TAVERN' | 'DUNGEON' | 'SIMULATION'>('MAIN');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
@@ -281,21 +288,20 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
     switch (state.tutorialStep) {
         case 'CRAFT_START_DIALOG_GUIDE': 
             return { 
-                speaker: "Lockhart", 
-                text: t(language, 'tutorial.dialogue.craft_start', { forgeName }), 
+                speaker: playerName,
+                text: t(language, 'tutorial.dialogue.craft_start', { forgeName, playerName }),
                 action: () => {
                     setActiveTab('FORGE');
                     actions.setTutorialStep('OPEN_RECIPE_GUIDE');
                 }
             };
-        case 'CRAFT_RESULT_DIALOG_GUIDE': return { speaker: "Lockhart", text: t(language, 'tutorial.dialogue.craft_result', { forgeName }), nextStep: 'FINALIZE_FORGE_GUIDE' as const };
-        case 'SHOP_INTRO_DIALOG_GUIDE': return { speaker: "Lockhart", text: t(language, 'tutorial.dialogue.shop_intro', { forgeName }), nextStep: 'OPEN_SHOP_TAB_GUIDE' as const };
-        case 'PIP_PRAISE_DIALOG_GUIDE': return { speaker: "Pip", text: t(language, 'tutorial.dialogue.pip_praise', { forgeName }), nextStep: 'DRAGON_TALK_DIALOG_GUIDE' as const };
-        case 'DRAGON_TALK_DIALOG_GUIDE': return { speaker: "Ignis", text: t(language, 'tutorial.dialogue.dragon_talk'), nextStep: 'TUTORIAL_END_DIALOG_GUIDE' as const };
-        case 'TUTORIAL_END_DIALOG_GUIDE': return { speaker: "Lockhart", text: t(language, 'tutorial.dialogue.end', { forgeName }), action: () => actions.completeTutorial() };
+        case 'CRAFT_RESULT_DIALOG_GUIDE':
+            return { speaker: playerName, text: t(language, 'tutorial.dialogue.craft_result', { forgeName, playerName }), nextStep: 'FINALIZE_FORGE_GUIDE' as const };
+        case 'SHOP_INTRO_DIALOG_GUIDE':
+            return { speaker: playerName, text: t(language, 'tutorial.dialogue.shop_intro', { forgeName, playerName }), nextStep: 'OPEN_SHOP_TAB_GUIDE' as const };
         default: return null;
     }
-  }, [state.tutorialStep, actions, language, forgeName]);
+  }, [state.tutorialStep, actions, language, forgeName, playerName]);
 
   // MainScene 등의 자식 컴포넌트에서 건물 클릭 시 호출할 지능형 내비게이션 핸들러
   const handleSceneNavigation = useCallback((target: string) => {

@@ -4,7 +4,7 @@ import DialogueBox from '../DialogueBox';
 import { getAssetUrl } from '../../utils';
 import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
 import { t } from '../../utils/i18n';
-import { getForgeName } from '../../utils/gameText';
+import { getForgeName, getPlayerName } from '../../utils/gameText';
 const ConfirmationModal = React.lazy(() => import('../modals/ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
 
@@ -179,6 +179,7 @@ const TutorialScene: React.FC = () => {
     const [showSkipConfirm, setShowSkipConfirm] = useState(false);
     
     const mode = state.activeTutorialScene || 'PROLOGUE';
+    const playerName = getPlayerName(state);
 
     useEffect(() => {
         setIsStarted(false);
@@ -327,7 +328,7 @@ const TutorialScene: React.FC = () => {
             {isStarted && !isIndicateStep && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto z-[5000]">
                     <DialogueBox 
-                        speaker={mode === 'PROLOGUE' || seq !== 'FURNACE_FINAL_DIALOG' ? "Lockhart" : t(language, 'tutorial.master_smith')} 
+                        speaker={mode === 'PROLOGUE' || seq !== 'FURNACE_FINAL_DIALOG' ? playerName : t(language, 'tutorial.master_smith')} 
                         text={dialogue.text} 
                         options={[{ label: t(language, 'common.continue'), action: handleNext, variant: 'primary' }]} 
                         className="w-full relative" 

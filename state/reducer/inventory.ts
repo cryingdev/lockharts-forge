@@ -4,11 +4,15 @@ import { Mercenary } from '../../models/Mercenary';
 import { DUNGEON_CONFIG } from '../../config/dungeon-config';
 import { SKILLS } from '../../data/skills';
 import { JobClass } from '../../models/JobClass';
+import { t } from '../../utils/i18n';
+import { getLocalizedItemName } from '../../utils/itemText';
 
 export const handleAcquireItem = (state: GameState, payload: { id: string; quantity: number }): GameState => {
     const { id, quantity } = payload;
+    const language = state.settings.language;
     const itemDef = (materials as any)[id];
     if (!itemDef) return state;
+    const localizedItemName = getLocalizedItemName(language, { id: itemDef.id, name: itemDef.name });
 
     const existingItem = state.inventory.find(i => i.id === id);
     const newInventory = existingItem
@@ -18,7 +22,7 @@ export const handleAcquireItem = (state: GameState, payload: { id: string; quant
     return {
     ...state,
     inventory: newInventory,
-    logs: [`Acquired ${itemDef.name} x${quantity}.`, ...state.logs],
+    logs: [t(language, 'logs.acquired_item', { item: localizedItemName, quantity }), ...state.logs],
     };
 };
 
@@ -47,6 +51,7 @@ export const handlePayCost = (state: GameState, payload: { gold?: number; items?
 
 export const handleBuyMarketItems = (state: GameState, payload: { items: { id: string; count: number }[]; totalCost: number }): GameState => {
     const { items, totalCost } = payload;
+    const language = state.settings.language;
     
     const newGold = state.stats.gold - totalCost;
     if (newGold < 0) return state; 
@@ -54,13 +59,13 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
     let newInventory = [...state.inventory];
     let newTierLevel = state.stats.tierLevel;
     let newForgeState = { ...state.forge };
-    let logUpdates: string[] = [`Bought supplies for ${totalCost} Gold.`];
+    let logUpdates: string[] = [t(language, 'logs.bought_supplies', { gold: totalCost })];
     let newMarketStock = { ...state.marketStock };
     let newUnlockedTabs = [...state.unlockedTabs];
 
     if (!newUnlockedTabs.includes('INVENTORY')) {
         newUnlockedTabs.push('INVENTORY');
-        logUpdates.unshift("Access granted: Inventory facility is now operational.");
+        logUpdates.unshift(t(language, 'logs.inventory_operational'));
     }
 
     items.forEach(buyItem => {
@@ -69,23 +74,23 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
 
             if (buyItem.id === 'scroll_t2') {
                 newTierLevel = Math.max(newTierLevel, 2);
-                logUpdates.unshift('Upgrade Complete: Market Tier 2 Unlocked!');
+                logUpdates.unshift(t(language, 'logs.market_tier_unlocked', { tier: 2 }));
                 return; 
             }
             if (buyItem.id === 'scroll_t3') {
                 newTierLevel = Math.max(newTierLevel, 3);
-                logUpdates.unshift('Upgrade Complete: Market Tier 3 Unlocked!');
+                logUpdates.unshift(t(language, 'logs.market_tier_unlocked', { tier: 3 }));
                 return; 
             }
             if (buyItem.id === 'furnace') {
                 newForgeState.hasFurnace = true;
                 if (newTierLevel === 0) newTierLevel = 1; 
-                logUpdates.unshift('Furnace acquired! The restoration process has begun.');
+                logUpdates.unshift(t(language, 'logs.furnace_acquired'));
                 return; 
             }
             if (buyItem.id === 'workbench') {
                 newForgeState.hasWorkbench = true;
-                logUpdates.unshift('Workbench installed! You can now craft leather and wood equipment.');
+                logUpdates.unshift(t(language, 'logs.workbench_installed'));
                 return;
             }
             if (buyItem.id === 'research_table') {
@@ -93,7 +98,7 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
                 if (!newUnlockedTabs.includes('RESEARCH')) {
                     newUnlockedTabs.push('RESEARCH');
                 }
-                logUpdates.unshift('Research Table installed! You can now experiment with materials to find lost blueprints.');
+                logUpdates.unshift(t(language, 'logs.research_table_installed'));
                 return;
             }
             const itemDef = (materials as any)[buyItem.id];
@@ -131,18 +136,20 @@ export const handleBuyMarketItems = (state: GameState, payload: { items: { id: s
  * Sets the forge status to indicate a furnace is installed.
  */
 export const handleInstallFurnace = (state: GameState): GameState => {
+    const language = state.settings.language;
     return {
         ...state,
         forge: {
             ...state.forge,
             hasFurnace: true
         },
-        logs: ["The furnace has been installed and is ready for use.", ...state.logs]
+        logs: [t(language, 'logs.furnace_ready'), ...state.logs]
     };
 };
 
 export const handleSellItem = (state: GameState, payload: { itemId: string; count: number; price: number; equipmentInstanceId?: string; customer?: Mercenary }): GameState => {
     const { itemId, count, price, equipmentInstanceId, customer } = payload;
+    const language = state.settings.language;
     
     let newInventory = [...state.inventory];
     let itemName = 'Item';
@@ -160,7 +167,10 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
             if (newInventory[itemIndex].isLocked) return state;
 
             const targetItem = newInventory[itemIndex];
-            itemName = targetItem.name;
+            itemName = getLocalizedItemName(language, {
+                id: targetItem.equipmentData?.recipeId || targetItem.id,
+                name: targetItem.name
+            });
             
             // 품질 보너스 계산
             if (targetItem.equipmentData) {
@@ -179,7 +189,10 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
 
         newInventory = newInventory.map(item => {
             if (item.id === itemId) {
-                itemName = item.name;
+                itemName = getLocalizedItemName(language, {
+                    id: item.equipmentData?.recipeId || item.id,
+                    name: item.name
+                });
                 return { ...item, quantity: item.quantity - count };
             }
             return item;
@@ -201,8 +214,12 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
             merc.lastVisitDay = state.stats.day;
             newKnownMercenaries[existingMercIdx] = merc;
             
-            const qualityNote = qualityBonus > 0 ? " (Masterwork Bonus!)" : qualityBonus < 0 ? " (Poor Quality Penalty)" : "";
-            logMessage = `Sold ${itemName} to ${customer.name}. Affinity rose by ${finalAffinityGain}${qualityNote}.`;
+            const qualityNote = qualityBonus > 0
+                ? ` ${t(language, 'logs.sale_quality_bonus')}`
+                : qualityBonus < 0
+                    ? ` ${t(language, 'logs.sale_quality_penalty')}`
+                    : '';
+            logMessage = t(language, 'logs.sold_to_customer', { item: itemName, customer: customer.name, amount: finalAffinityGain }) + qualityNote;
         } else {
             const newMerc: Mercenary = {
                 ...customer,
@@ -215,7 +232,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
                 status: 'VISITOR'
             };
             newKnownMercenaries.push(newMerc);
-            logMessage = `Sold ${itemName} to ${customer.name}. (New Contact, Affinity +${finalAffinityGain})`;
+            logMessage = t(language, 'logs.sold_to_customer_new', { item: itemName, customer: customer.name, amount: finalAffinityGain });
         }
 
         if (newActiveCustomer && newActiveCustomer.mercenary.id === customer.id) {
@@ -232,7 +249,7 @@ export const handleSellItem = (state: GameState, payload: { itemId: string; coun
             newTutorialStep = 'PIP_PRAISE_DIALOG_GUIDE';
         }
     } else {
-        logMessage = `Sold ${itemName} for ${price} Gold.`;
+        logMessage = t(language, 'logs.sold_item_gold', { item: itemName, gold: price });
     }
 
     return {
@@ -265,6 +282,7 @@ const POTION_EFFECTS: Record<string, Record<string, number | 'FULL'>> = {
 export const handleUseItem = (state: GameState, payload: { itemId: string; mercenaryId?: string }): GameState => {
     const { itemId, mercenaryId } = payload;
     const inventoryItem = state.inventory.find(i => i.id === itemId);
+    const language = state.settings.language;
 
     if (!inventoryItem || inventoryItem.quantity <= 0) return state;
 
@@ -290,17 +308,21 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
 
             // Check if already learned
             if (merc.skillIds?.includes(inventoryItem.skillId)) {
-                return { ...state, toastQueue: [...state.toastQueue, `${merc.name} already knows ${skill.name}.`] };
+                return { ...state, toastQueue: [...state.toastQueue, t(language, 'inventory.skill_known', { name: merc.name, skill: skill.name })] };
             }
 
             // Check job compatibility (empty job list means universal, NOVICE in job list means any job can learn)
             const isCompatible = skill.job.length === 0 || skill.job.includes(merc.job) || skill.job.includes(JobClass.NOVICE);
             if (!isCompatible) {
-                return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is not compatible with this skill type.`] };
+                return { ...state, toastQueue: [...state.toastQueue, t(language, 'inventory.skill_incompatible', { name: merc.name })] };
             }
 
             merc.skillIds = [...(merc.skillIds || []), inventoryItem.skillId];
-            logMsg = `${merc.name} studied the ${inventoryItem.name} and learned ${skill.name}!`;
+            logMsg = t(language, 'logs.learned_skill', {
+                name: merc.name,
+                item: getLocalizedItemName(language, { id: inventoryItem.id, name: inventoryItem.name }),
+                skill: skill.name
+            });
             itemUsed = true;
             newKnownMercenaries[mercIdx] = merc;
         }
@@ -321,17 +343,21 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
                 if (mercIdx > -1) {
                     const merc = { ...newKnownMercenaries[mercIdx] };
                     if (merc.currentHp >= merc.maxHp && merc.currentMp >= merc.maxMp) {
-                        return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is already at full vitals.`] };
+                        return { ...state, toastQueue: [...state.toastQueue, t(language, 'inventory.full_vitals', { name: merc.name })] };
                     }
                     const amount = recoverValue === 'FULL' ? Math.max(merc.maxHp, merc.maxMp) : (recoverValue as number);
                     merc.currentHp = Math.min(merc.maxHp, merc.currentHp + amount);
                     merc.currentMp = Math.min(merc.maxMp, merc.currentMp + amount);
-                    logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} HP and MP.`;
+                    logMsg = t(language, 'logs.recovered_hp_mp', {
+                        name: merc.name,
+                        item: getLocalizedItemName(language, { id: inventoryItem.id, name: inventoryItem.name }),
+                        amount
+                    });
                     itemUsed = true;
                     newKnownMercenaries[mercIdx] = merc;
                 }
             } else {
-                return { ...state, toastQueue: [...state.toastQueue, `This potion must be used on a mercenary.`] };
+                return { ...state, toastQueue: [...state.toastQueue, t(language, 'inventory.potion_target_required')] };
             }
         } else if (mercenaryId) {
             const mercIdx = newKnownMercenaries.findIndex(m => m.id === mercenaryId);
@@ -339,27 +365,39 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
                 const merc = { ...newKnownMercenaries[mercIdx] };
                 if (type === 'health') {
                     if (merc.currentHp >= merc.maxHp) {
-                        return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is already at full health.`] };
+                        return { ...state, toastQueue: [...state.toastQueue, t(language, 'inventory.full_health', { name: merc.name })] };
                     }
                     const amount = recoverValue === 'FULL' ? merc.maxHp : (recoverValue as number);
                     merc.currentHp = Math.min(merc.maxHp, merc.currentHp + amount);
-                    logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} HP.`;
+                    logMsg = t(language, 'logs.recovered_hp', {
+                        name: merc.name,
+                        item: getLocalizedItemName(language, { id: inventoryItem.id, name: inventoryItem.name }),
+                        amount
+                    });
                     itemUsed = true;
                 } else if (type === 'mana') {
                     if (merc.currentMp >= merc.maxMp) {
-                        return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is already at full mana.`] };
+                        return { ...state, toastQueue: [...state.toastQueue, t(language, 'inventory.full_mana', { name: merc.name })] };
                     }
                     const amount = recoverValue === 'FULL' ? merc.maxMp : (recoverValue as number);
                     merc.currentMp = Math.min(merc.maxMp, merc.currentMp + amount);
-                    logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} MP.`;
+                    logMsg = t(language, 'logs.recovered_mp', {
+                        name: merc.name,
+                        item: getLocalizedItemName(language, { id: inventoryItem.id, name: inventoryItem.name }),
+                        amount
+                    });
                     itemUsed = true;
                 } else if (type === 'stamina') {
                     if ((merc.expeditionEnergy || 0) >= DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY) {
-                        return { ...state, toastQueue: [...state.toastQueue, `${merc.name} is already at full stamina.`] };
+                        return { ...state, toastQueue: [...state.toastQueue, t(language, 'inventory.full_stamina', { name: merc.name })] };
                     }
                     const amount = typeof recoverValue === 'number' ? recoverValue : 100;
                     merc.expeditionEnergy = Math.min(DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, (merc.expeditionEnergy || 0) + amount);
-                    logMsg = `${merc.name} consumed ${inventoryItem.name}. Recovered ${amount} Stamina.`;
+                    logMsg = t(language, 'logs.recovered_stamina', {
+                        name: merc.name,
+                        item: getLocalizedItemName(language, { id: inventoryItem.id, name: inventoryItem.name }),
+                        amount
+                    });
                     itemUsed = true;
                 }
                 newKnownMercenaries[mercIdx] = merc;
@@ -395,6 +433,7 @@ export const handleUseItem = (state: GameState, payload: { itemId: string; merce
 
 export const handleApplySkillScroll = (state: GameState, payload: { scrollItemId: string; targetEquipmentId: string }): GameState => {
     const { scrollItemId, targetEquipmentId } = payload;
+    const language = state.settings.language;
     const scroll = state.inventory.find(i => i.id === scrollItemId);
     const target = state.inventory.find(i => i.id === targetEquipmentId);
 
@@ -425,7 +464,10 @@ export const handleApplySkillScroll = (state: GameState, payload: { scrollItemId
     return {
         ...state,
         inventory: newInventory,
-        logs: [`Successfully imbued ${target.name} with ${skill.name}.`, ...state.logs]
+        logs: [t(language, 'logs.imbued_skill', {
+            item: getLocalizedItemName(language, { id: target.equipmentData?.recipeId || target.id, name: target.name }),
+            skill: skill.name
+        }), ...state.logs]
     };
 };
 

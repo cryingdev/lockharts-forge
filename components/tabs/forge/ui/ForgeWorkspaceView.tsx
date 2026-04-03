@@ -5,6 +5,8 @@ import MasteryRadialGauge from './MasteryRadialGauge';
 import ForgeStatsGrid from './ForgeStatsGrid';
 import { SfxButton } from '../../../common/ui/SfxButton';
 import { EquipmentItem } from '../../../../types';
+import { useGame } from '../../../../context/GameContext';
+import { getLocalizedItemDescription, getLocalizedItemName } from '../../../../utils/itemText';
 
 interface ForgeWorkspaceViewProps {
     selectedItem: EquipmentItem | null;
@@ -24,6 +26,9 @@ export const ForgeWorkspaceView: React.FC<ForgeWorkspaceViewProps> = ({
     selectedItem, masteryInfo, imageUrl, canEnterForge, isFuelShortage, isQuickFuelShortage,
     isEnergyShortage, quickCraftProgress, extraFuelCost, onStartCrafting, onQuickCraft
 }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
+
     if (!selectedItem) {
         return (
             <div className="z-10 flex flex-col items-center text-stone-600 text-center animate-in fade-in duration-700">
@@ -39,8 +44,8 @@ export const ForgeWorkspaceView: React.FC<ForgeWorkspaceViewProps> = ({
     return (
         <div className="z-10 flex flex-col items-center animate-in fade-in zoom-in duration-300 w-full max-w-lg mx-auto">
             <MasteryRadialGauge imageUrl={imageUrl} masteryInfo={masteryInfo} />
-            <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1.5 font-serif tracking-wide">{selectedItem.name}</h2>
-            <p className="text-stone-500 mb-6 italic text-[9px] md:text-sm px-6">"{selectedItem.description}"</p>
+            <h2 className="text-xl md:text-3xl font-bold text-amber-500 mb-1.5 font-serif tracking-wide">{getLocalizedItemName(language, selectedItem)}</h2>
+            <p className="text-stone-500 mb-6 italic text-[9px] md:text-sm px-6">"{getLocalizedItemDescription(language, selectedItem)}"</p>
             <ForgeStatsGrid item={selectedItem} />
             
             <div className="flex flex-col sm:flex-row gap-3 w-full items-center justify-center px-4">

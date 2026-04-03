@@ -8,6 +8,7 @@ import { NAMED_CONVERSATION_PROMPTS } from '../../data/dialogue/namedConversatio
 import { TAVERN_MINOR_CONTRACT_TEMPLATES } from '../../data/contracts/tavernMinorContracts';
 import { ContractDefinition } from '../../types/game-state';
 import { t } from '../../utils/i18n';
+import { getLocalizedItemName } from '../../utils/itemText';
 import { rng } from '../../utils/random';
 import { JobClass } from '../../models/JobClass';
 
@@ -47,6 +48,7 @@ const getNamedConversationRewardTemplateId = (mercenary: Mercenary): string => {
 
 export const handleAddKnownMercenary = (state: GameState, merc: Mercenary): GameState => {
     if (state.knownMercenaries.some(m => m.id === merc.id)) return state;
+    const language = state.settings.language;
     const mercWithData = { 
         ...merc, 
         expeditionEnergy: merc.expeditionEnergy ?? DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY,
@@ -58,13 +60,14 @@ export const handleAddKnownMercenary = (state: GameState, merc: Mercenary): Game
     return {
         ...state,
         knownMercenaries: [...state.knownMercenaries, mercWithData],
-        logs: [`${merc.name} is now a regular at the tavern.`, ...state.logs]
+        logs: [t(language, 'mercenary.log_regular', { name: merc.name }), ...state.logs]
     };
 };
 
 export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mercenary; cost: number }): GameState => {
     const { mercenary, cost } = payload;
     if (state.stats.gold < cost) return state;
+    const language = state.settings.language;
 
     const existingIndex = state.knownMercenaries.findIndex(m => m.id === mercenary.id);
     let updatedKnownMercenaries = [...state.knownMercenaries];
@@ -120,13 +123,14 @@ export const handleScoutMercenary = (state: GameState, payload: { mercenary: Mer
             inviteCountToday: state.tavern.inviteCountToday + 1,
         },
         knownMercenaries: updatedKnownMercenaries,
-        logs: [`Paid ${cost} G to find new talent. ${mercenary.name} arrived at the tavern.`, ...state.logs]
+        logs: [t(language, 'mercenary.log_scouted', { cost, name: mercenary.name }), ...state.logs]
     };
 };
 
 export const handleHireMercenary = (state: GameState, payload: { mercenaryId: string; cost: number }): GameState => {
     const { mercenaryId, cost } = payload;
     if (state.stats.gold < cost) return state;
+    const language = state.settings.language;
 
     const targetMercenary = state.knownMercenaries.find(m => m.id === mercenaryId);
     if (!targetMercenary) return state;
@@ -136,7 +140,7 @@ export const handleHireMercenary = (state: GameState, payload: { mercenaryId: st
         if (!namedState?.recruitUnlocked) {
             return {
                 ...state,
-                logs: [`${targetMercenary.name} will not join until their special contract is completed.`, ...state.logs]
+                logs: [t(language, 'mercenary.log_special_contract_required', { name: targetMercenary.name }), ...state.logs]
             };
         }
     }
@@ -151,11 +155,11 @@ export const handleHireMercenary = (state: GameState, payload: { mercenaryId: st
     
     const hiredMerc = updatedMercenaries.find(m => m.id === mercenaryId);
     const name = hiredMerc ? hiredMerc.name : 'Mercenary';
-    logUpdates.push(`Contract signed! ${name} has joined your service. -${cost} G`);
+    logUpdates.push(t(language, 'mercenary.log_hired', { name, cost }));
 
     if (!newUnlockedTabs.includes('DUNGEON')) {
         newUnlockedTabs.push('DUNGEON');
-        logUpdates.unshift("Objective Unlocked: You can now deploy squads to explore Dungeons.");
+        logUpdates.unshift(t(language, 'mercenary.log_dungeon_unlocked'));
     }
 
     return {
@@ -176,6 +180,7 @@ export const handleHireMercenary = (state: GameState, payload: { mercenaryId: st
 
 export const handleFireMercenary = (state: GameState, payload: { mercenaryId: string }): GameState => {
     const { mercenaryId } = payload;
+    const language = state.settings.language;
     const updatedMercenaries = state.knownMercenaries.map(m => {
         if (m.id === mercenaryId) return { ...m, status: 'VISITOR' as const };
         return m;
@@ -185,12 +190,13 @@ export const handleFireMercenary = (state: GameState, payload: { mercenaryId: st
     return {
         ...state,
         knownMercenaries: updatedMercenaries,
-        logs: [`Contract terminated. ${name} is no longer in your service.`, ...state.logs]
+        logs: [t(language, 'mercenary.log_fired', { name }), ...state.logs]
     };
 };
 
 export const handleGiveGift = (state: GameState, payload: { mercenaryId: string; itemId: string }): GameState => {
     const { mercenaryId, itemId } = payload;
+    const language = state.settings.language;
     const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
     if (mercIndex === -1) return state;
 
@@ -200,7 +206,7 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
     const mercenary = { ...state.knownMercenaries[mercIndex] };
     let affinityGain = 3; 
     let staminaGain = 0;
-    let qualityNote = "";
+    let qualityNoteKey = "";
 
     // Special handling for consumables
     if (itemId === 'stamina_potion') {
@@ -222,10 +228,10 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
         const q = inventoryItem.equipmentData.quality;
         if (q > 100) {
             affinityGain += 5;
-            qualityNote = " (Pristine Quality Bonus!)";
+            qualityNoteKey = 'mercenary.gift_quality_bonus';
         } else if (q < 80) {
             affinityGain = Math.max(1, Math.floor(affinityGain * 0.4));
-            qualityNote = " (Low Quality Penalty)";
+            qualityNoteKey = 'mercenary.gift_quality_penalty';
         }
     }
 
@@ -244,8 +250,17 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
     const newMercenaries = [...state.knownMercenaries];
     newMercenaries[mercIndex] = mercenary;
 
-    let logMsg = `Gifted ${inventoryItem.name} to ${mercenary.name}. Affinity +${affinityGain}${qualityNote}.`;
-    if (staminaGain > 0) logMsg += ` Stamina +${staminaGain}.`;
+    const itemName = getLocalizedItemName(language, {
+        id: inventoryItem.equipmentData?.recipeId || inventoryItem.id,
+        name: inventoryItem.name
+    });
+    const qualityNote = qualityNoteKey ? ` ${t(language, qualityNoteKey)}` : '';
+    const staminaNote = staminaGain > 0 ? ` ${t(language, 'mercenary.gift_stamina_bonus', { stamina: staminaGain })}` : '';
+    const logMsg = `${t(language, 'mercenary.log_gifted', {
+        item: itemName,
+        name: mercenary.name,
+        affinity: affinityGain
+    })}${qualityNote}${staminaNote}`;
 
     return {
         ...state,
@@ -258,6 +273,7 @@ export const handleGiveGift = (state: GameState, payload: { mercenaryId: string;
 export const handleTalkMercenary = (state: GameState, payload: { mercenaryId: string }): GameState => {
     const { mercenaryId } = payload;
     if (state.talkedToToday.includes(mercenaryId)) return state;
+    const language = state.settings.language;
 
     const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
     if (mercIndex === -1) return state;
@@ -275,7 +291,7 @@ export const handleTalkMercenary = (state: GameState, payload: { mercenaryId: st
             ...state.tavern,
             reputation: Math.min(100, state.tavern.reputation + 1),
         },
-        logs: [`Talked with ${merc.name}. Affinity +1.`, ...state.logs]
+        logs: [t(language, 'mercenary.log_talked', { name: merc.name }), ...state.logs]
     };
 };
 
@@ -388,6 +404,7 @@ export const handleBuyDrink = (state: GameState, payload: { mercenaryId: string 
     const { mercenaryId } = payload;
     const DRINK_COST = 100;
     const AFFINITY_GAIN = 3;
+    const language = state.settings.language;
 
     if (state.stats.gold < DRINK_COST) return state;
     if (state.boughtDrinkToday.includes(mercenaryId)) return state;
@@ -412,7 +429,7 @@ export const handleBuyDrink = (state: GameState, payload: { mercenaryId: string 
             ...state.tavern,
             reputation: Math.min(100, state.tavern.reputation + 2),
         },
-        logs: [`Bought a round of ale for ${merc.name}. Affinity +${AFFINITY_GAIN}.`, ...state.logs]
+        logs: [t(language, 'mercenary.log_bought_drink', { name: merc.name, affinity: AFFINITY_GAIN }), ...state.logs]
     };
 };
 
@@ -455,6 +472,7 @@ export const handleAllocateStat = (state: GameState, payload: { mercenaryId: str
 
 export const handleUpdateMercenaryStats = (state: GameState, payload: { mercenaryId: string; stats: PrimaryStats }): GameState => {
     const { mercenaryId, stats: newAllocatedStats } = payload;
+    const language = state.settings.language;
     const mercIndex = state.knownMercenaries.findIndex(m => m.id === mercenaryId);
     if (mercIndex === -1) return state;
 
@@ -488,6 +506,6 @@ export const handleUpdateMercenaryStats = (state: GameState, payload: { mercenar
     return {
         ...state,
         knownMercenaries: newKnownMercenaries,
-        logs: [`Updated attributes for ${merc.name}. Used ${spentPoints} points.`, ...state.logs]
+        logs: [t(language, 'mercenary.log_updated_stats', { name: merc.name, points: spentPoints }), ...state.logs]
     };
 };

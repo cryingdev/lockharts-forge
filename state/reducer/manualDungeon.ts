@@ -6,6 +6,8 @@ import { materials } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
 import { Monster } from '../../models/Monster';
 import { MONSTER_DROPS } from '../../data/monster-drops';
+import { t } from '../../utils/i18n';
+import { getLocalizedItemName } from '../../utils/itemText';
 import { rng } from '../../utils/random';
 
 /**
@@ -116,8 +118,9 @@ const generateEnemiesForSession = (dungeonId: string, currentFloor: number, isBo
 };
 
 export const handleStartManualDungeon = (state: GameState, payload: { dungeonId: string; partyIds: string[]; startFloor?: number }): GameState => {
+    const language = state.settings.language;
     if (state.forge.isShopOpen) {
-        return { ...state, logs: ["You cannot enter a dungeon while the shop is open!", ...state.logs] };
+        return { ...state, logs: [t(language, 'manualDungeon.shop_open_blocked'), ...state.logs] };
     }
     const dungeon = DUNGEONS.find(d => d.id === payload.dungeonId);
     if (!dungeon) return state;
@@ -126,7 +129,7 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
     const party = state.knownMercenaries.filter(m => payload.partyIds.includes(m.id));
     
     if (party.some(m => (m.expeditionEnergy || 0) < dungeon.energyCost)) {
-        return { ...state, logs: [`Your squad is too exhausted to enter ${dungeon.name}.`, ...state.logs] };
+        return { ...state, logs: [t(language, 'manualDungeon.too_exhausted', { dungeon: dungeon.name }), ...state.logs] };
     }
 
     // --- RESCUE CHECK: Only spawn NPC if they are not already in the known pool ---
@@ -163,7 +166,7 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         collectedLoot: [],
         sessionXp: payload.partyIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {}),
         encounterStatus: 'NONE',
-        lastActionMessage: `The air is thick with dampness. We've entered Sector ${startFloor}.`,
+        lastActionMessage: t(language, 'manualDungeon.enter_sector', { floor: startFloor }),
         currentFloor: startFloor,
         maxFloors: dungeon.maxFloors,
         floorBoost: 1.0 // Start with base (0% boost)
@@ -174,7 +177,7 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         knownMercenaries: updatedMercs,
         activeManualDungeon: session,
         showManualDungeonOverlay: true,
-        logs: [`The squad has descended into ${dungeon.name}. Light is fading.`, ...state.logs]
+        logs: [t(language, 'manualDungeon.descended', { dungeon: dungeon.name }), ...state.logs]
     };
 };
 
@@ -202,6 +205,7 @@ const updateObjectives = (state: GameState, type: 'HUNT', targetId: string, amou
 export const handleMoveManualDungeon = (state: GameState, payload: { x: number, y: number }): GameState => {
     const session = state.activeManualDungeon;
     if (!session || session.encounterStatus === 'ENCOUNTERED' || session.encounterStatus === 'BATTLE') return state;
+    const language = state.settings.language;
 
     const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
     if (!dungeon) return state;
@@ -212,7 +216,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     if (newX < 0 || newX >= dungeon.gridWidth || newY < 0 || newY >= dungeon.gridHeight) {
         return { 
             ...state, 
-            activeManualDungeon: { ...session, lastActionMessage: "The wall here is solid rock. No way through." }
+            activeManualDungeon: { ...session, lastActionMessage: t(language, 'manualDungeon.solid_wall') }
         };
     }
 
@@ -241,19 +245,20 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     let nextCollectedLoot = [...session.collectedLoot];
     let logMsg = '';
     // FIXED: Reset actionMsg to a neutral default so old event messages don't persist
-    let actionMsg = isAlreadyVisited ? "Backtracking through a cleared path." : "Advancing through the shadows...";
+    let actionMsg = isAlreadyVisited ? t(language, 'manualDungeon.backtracking') : t(language, 'manualDungeon.advancing');
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
     let newMaxFloorReached = { ...state.maxFloorReached };
 
     if (targetRoom === 'GOLD' && !isAlreadyVisited) {
         extraGold = (dungeon.tier || 1) * 30;
         newGrid[newY][newX] = 'EMPTY';
-        actionMsg = `Hidden amongst the debris, we found an old pouch containing ${extraGold} Gold!`;
+        actionMsg = t(language, 'manualDungeon.found_gold', { gold: extraGold });
     } else if (targetRoom === 'RESOURCE' && !isAlreadyVisited) {
         const possibleResources = ['copper_ore', 'tin_ore', 'leather_strips', 'charcoal', 'hide_patch'];
         const resId = rng.pick(possibleResources);
         const count = 1 + Math.floor(rng.standard(0, 2, 0));
         const matDef = materials[resId];
+        const materialName = getLocalizedItemName(language, { id: resId, name: matDef.name });
         
         // 필드 자원도 세션 보관함(collectedLoot)에 추가하여 연출 및 결과 합산 처리
         const existingLoot = nextCollectedLoot.find(l => l.id === resId);
@@ -264,25 +269,25 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
         }
         
         newGrid[newY][newX] = 'EMPTY';
-        actionMsg = `Spotted something useful. Salvaged ${matDef.name} x${count} for the forge.`;
-        logMsg = `Recovered valuable materials from the ruins.`;
+        actionMsg = t(language, 'manualDungeon.salvaged_resource', { item: materialName, count });
+        logMsg = t(language, 'manualDungeon.recovered_materials');
     } else if (targetRoom === 'TRAP' && !isAlreadyVisited) {
-        actionMsg = `A click from beneath! A concealed trap springs, striking the squad!`;
+        actionMsg = t(language, 'manualDungeon.trap_triggered');
     } else if (targetRoom === 'KEY' && !isAlreadyVisited) {
-        logMsg = `The heavy iron key is now in our possession.`;
-        actionMsg = `A heavy iron key... It likely unlocks the path to the sector's master.`;
+        logMsg = t(language, 'manualDungeon.key_obtained');
+        actionMsg = t(language, 'manualDungeon.key_hint');
         newGrid[newY][newX] = 'EMPTY';
     } else if (targetRoom === 'ENEMY' && !isAlreadyVisited) {
         encounterStatus = 'ENCOUNTERED';
-        actionMsg = `Shadows shift ahead... movement detected. steel yourselves!`;
+        actionMsg = t(language, 'manualDungeon.enemy_detected');
     } else if (targetRoom === 'BOSS') {
         encounterStatus = 'ENCOUNTERED';
         actionMsg = session.isBossDefeated 
-            ? `The champion of this lair lies defeated. We should secure the area.` 
-            : `The air hums with a terrifying presence. We have reached the source of the corruption.`;
+            ? t(language, 'manualDungeon.boss_already_defeated')
+            : t(language, 'manualDungeon.boss_presence');
     } else if (targetRoom === 'STAIRS') {
         encounterStatus = 'STAIRS';
-        actionMsg = `A narrow flight of stairs winds deeper into the darkness. Do we descend?`;
+        actionMsg = t(language, 'manualDungeon.stairs_found');
         const nextFloor = session.currentFloor + 1;
         newMaxFloorReached[session.dungeonId] = Math.max(newMaxFloorReached[session.dungeonId] || 1, nextFloor);
     }
@@ -310,6 +315,7 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
 export const handleProceedToNextFloorManual = (state: GameState): GameState => {
     const session = state.activeManualDungeon;
     if (!session || session.encounterStatus !== 'STAIRS') return state;
+    const language = state.settings.language;
 
     const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
     if (!dungeon) return state;
@@ -336,9 +342,12 @@ export const handleProceedToNextFloorManual = (state: GameState): GameState => {
             currentFloor: nextFloor,
             encounterStatus: 'NONE',
             floorBoost: session.floorBoost + 0.05, // 5% boost per floor
-            lastActionMessage: `The stairs were long, but we've reached Sector ${nextFloor}. Stay alert.`
+            lastActionMessage: t(language, 'manualDungeon.next_sector', { floor: nextFloor })
         },
-        logs: [`The squad has descended deeper into the abyss. Floor ${nextFloor}. Momentum Boost: +${Math.round((session.floorBoost + 0.05 - 1) * 100)}%`, ...state.logs]
+        logs: [t(language, 'manualDungeon.descended_deeper', {
+            floor: nextFloor,
+            boost: Math.round((session.floorBoost + 0.05 - 1) * 100)
+        }), ...state.logs]
     };
 };
 
@@ -364,6 +373,7 @@ export const handleStartCombatManual = (state: GameState): GameState => {
 export const handleResolveCombatManual = (state: GameState, payload: { win: boolean, flee: boolean, finalParty: any[] }): GameState => {
     const session = state.activeManualDungeon;
     if (!session) return state;
+    const language = state.settings.language;
 
     const currentRoom = session.grid[session.playerPos.y][session.playerPos.x];
     const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
@@ -405,7 +415,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
         : 1;
 
     if (payload.win) {
-        logMsg = `The last of them has fallen. The area is quiet again.`;
+        logMsg = t(language, 'manualDungeon.area_cleared');
     }
 
     const nextSessionXp = { ...session.sessionXp };
@@ -495,8 +505,12 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
     }
 
     const lootSummary = gainedLootInCombat.length > 0 
-        ? `\nSalvaged: ${gainedLootInCombat.map(i => `${i.name} x${i.count}`).join(', ')}`
-        : "\nNo materials were salvaged from the remains.";
+        ? `\n${t(language, 'manualDungeon.salvaged_summary', {
+            items: gainedLootInCombat
+                .map(i => `${getLocalizedItemName(language, { id: i.id, name: i.name })} x${i.count}`)
+                .join(', ')
+        })}`
+        : `\n${t(language, 'manualDungeon.no_salvage')}`;
 
     return {
         ...stateWithProgress,
@@ -509,8 +523,8 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             encounterStatus: payload.win ? 'VICTORY' : (payload.flee ? 'NONE' : 'DEFEAT'),
             isBossDefeated,
             lastActionMessage: payload.win 
-                ? `Area neutralized. Squad, catch your breath.${lootSummary}`
-                : (payload.flee ? `We managed to pull back. Steel yourselves.` : `Everything's gone wrong... we need to get out.`)
+                ? `${t(language, 'manualDungeon.area_neutralized')}${lootSummary}`
+                : (payload.flee ? t(language, 'manualDungeon.fled') : t(language, 'manualDungeon.everything_wrong'))
         },
         logs: logMsg ? [logMsg, ...stateWithProgress.logs] : stateWithProgress.logs
     };
@@ -519,6 +533,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
 export const handleRetreatManualDungeon = (state: GameState): GameState => {
     const session = state.activeManualDungeon;
     if (!session) return state;
+    const language = state.settings.language;
 
     const isDefeat = session.encounterStatus === 'DEFEAT' || 
                     state.knownMercenaries.filter(m => session.partyIds.includes(m.id)).every(m => m.currentHp <= 0);
@@ -566,13 +581,14 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
         } : state.dungeonResult,
         activeManualDungeon: null,
         showManualDungeonOverlay: false,
-        logs: [isDefeat ? 'CRITICAL FAILURE: The squad has been overwhelmed.' : 'Orderly withdrawal from the zone confirmed.', ...state.logs]
+        logs: [t(language, isDefeat ? 'manualDungeon.critical_failure' : 'manualDungeon.orderly_withdrawal'), ...state.logs]
     };
 };
 
 export const handleRescueNPC = (state: GameState, payload: { npcId: string }): GameState => {
     const currentSession = state.activeManualDungeon;
     if (!currentSession) return state;
+    const language = state.settings.language;
 
     let newGrid = [...currentSession.grid.map(row => [...row])];
     newGrid[currentSession.playerPos.y][currentSession.playerPos.x] = 'EMPTY';
@@ -584,9 +600,9 @@ export const handleRescueNPC = (state: GameState, payload: { npcId: string }): G
             grid: newGrid, 
             npcFound: true, 
             rescuedNpcId: payload.npcId,
-            lastActionMessage: `A survivor secured! Let's escort them back to the surface.`
+            lastActionMessage: t(language, 'manualDungeon.survivor_secured')
         },
-        logs: [`Escorting a survivor out of the depths.`, ...state.logs]
+        logs: [t(language, 'manualDungeon.escorting_survivor'), ...state.logs]
     };
 };
 

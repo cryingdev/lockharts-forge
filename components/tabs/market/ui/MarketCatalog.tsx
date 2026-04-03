@@ -1,6 +1,8 @@
 import React from 'react';
 import { Layers, Zap, BookOpen, Wrench, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { MarketItemCard } from './MarketItemCard';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface MarketCatalogProps {
     groups: any[];
@@ -23,6 +25,9 @@ const ICONS: Record<string, any> = {
 };
 
 export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed, onToggle, stock, cart, inventory, multipliers, affinity, gold, onAdd, onSetMultiplier }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
+
     return (
         <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar pb-24">
             <div className="grid gap-4 content-start grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
@@ -32,7 +37,7 @@ export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed,
                         <React.Fragment key={group.id}>
                             <button onClick={() => onToggle(group.id)} className="col-span-full mt-4 first:mt-0 mb-2 border-b border-stone-800 pb-1 flex items-center gap-3 hover:bg-stone-800/30 transition-colors w-full text-left group">
                                 <div className="p-1.5 bg-stone-950 rounded-lg border border-white/5 text-stone-500 group-hover:text-amber-500">{ICONS[group.id] || <Layers className="w-3 h-3"/>}</div>
-                                <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{group.name}</span>
+                                <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t(language, group.nameKey || group.name)}</span>
                                 <div className="flex-1 h-px bg-stone-800/60"></div>
                                 {isCollapsed ? <ChevronDown className="w-3 h-3 text-stone-600" /> : <ChevronUp className="w-3 h-3 text-stone-600" />}
                             </button>
