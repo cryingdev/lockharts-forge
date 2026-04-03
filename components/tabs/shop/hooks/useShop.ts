@@ -6,6 +6,8 @@ import { GAME_CONFIG } from '../../../../config/game-config';
 import { InventoryItem } from '../../../../types/inventory';
 import { getAssetUrl as globalGetAssetUrl } from '../../../../utils';
 import { t } from '../../../../utils/i18n';
+import { getPlayerName } from '../../../../utils/gameText';
+import { getLocalizedItemName } from '../../../../utils/itemText';
 
 interface FloatingHeart {
     id: number;
@@ -19,6 +21,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
     const language = state.settings.language;
     const { isShopOpen } = state.forge;
     const { activeCustomer, shopQueue, tutorialStep, inventory, unlockedRecipes } = state;
+    const playerName = getPlayerName(state);
 
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     const [saleCompleted, setSaleCompleted] = useState(false);
@@ -54,10 +57,10 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
 
     const getItemName = useCallback((id: string) => {
         const eq = EQUIPMENT_ITEMS.find(e => e.id === id);
-        if (eq) return eq.name;
+        if (eq) return getLocalizedItemName(language, eq);
         const res = Object.values(materials).find(i => i.id === id);
-        return res ? res.name : id;
-    }, []);
+        return res ? getLocalizedItemName(language, res) : id;
+    }, [language]);
 
     const matchingItems = useMemo(() => {
         if (!activeCustomer) return [];
@@ -146,20 +149,20 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
 
         if (lastSoldQuality >= 110) { // MASTERWORK
             if (isPip) {
-                return t(language, 'shop.thanks_masterwork_pip');
+                return t(language, 'shop.thanks_masterwork_pip', { playerName });
             }
             return [
                 t(language, 'shop.thanks_masterwork_1', { item: itemName }),
                 t(language, 'shop.thanks_masterwork_2'),
-                t(language, 'shop.thanks_masterwork_3')
+                t(language, 'shop.thanks_masterwork_3', { playerName })
             ][Math.floor(Math.random() * 3)];
         } 
         if (lastSoldQuality >= 100) { // PRISTINE
             if (isPip) {
-                return t(language, 'shop.thanks_pristine_pip');
+                return t(language, 'shop.thanks_pristine_pip', { playerName });
             }
             return [
-                t(language, 'shop.thanks_pristine_1', { item: itemName }),
+                t(language, 'shop.thanks_pristine_1', { item: itemName, playerName }),
                 t(language, 'shop.thanks_pristine_2'),
                 t(language, 'shop.thanks_pristine_3'),
                 t(language, 'shop.thanks_pristine_4')
@@ -173,12 +176,12 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             ][Math.floor(Math.random() * 3)];
         }
         return [
-            t(language, 'shop.thanks_pristine_1', { item: itemName }),
+            t(language, 'shop.thanks_pristine_1', { item: itemName, playerName }),
             t(language, 'shop.thanks_pristine_2'),
             t(language, 'shop.thanks_pristine_3'),
             t(language, 'shop.thanks_pristine_4')
         ][Math.floor(Math.random() * 4)];
-    }, [language, activeCustomer, lastSoldQuality, getItemName]);
+    }, [language, activeCustomer, lastSoldQuality, getItemName, playerName]);
 
     const getRefusalDialogue = useCallback(() => {
         if (refusalReaction === 'POLITE') {
@@ -203,19 +206,19 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         if (!merc) return '';
 
         if (merc.affinity >= 50) {
-            return t(language, isFallback ? 'shop.request_affinity_high_fallback' : 'shop.request_affinity_high', { item: itemName });
+            return t(language, isFallback ? 'shop.request_affinity_high_fallback' : 'shop.request_affinity_high', { item: itemName, playerName });
         }
         if (merc.affinity >= 20) {
             return t(language, isFallback ? 'shop.request_affinity_mid_fallback' : 'shop.request_affinity_mid', { item: itemName });
         }
         return t(language, isFallback ? 'shop.request_affinity_low_fallback' : 'shop.request_affinity_low', { item: itemName });
-    }, [language, activeCustomer]);
+    }, [language, activeCustomer, playerName]);
 
     const tutorialContent = useMemo(() => {
         if (tutorialStep === 'PIP_INITIAL_FAREWELL_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: t(language, 'shop.pip_farewell_1'),
+                text: t(language, 'shop.pip_farewell_1', { playerName }),
                 options: [{ 
                     label: t(language, 'shop.option_farewell'), 
                     action: () => {
@@ -228,8 +231,8 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         }
         if (tutorialStep === 'CRAFT_FIRST_SWORD_DIALOG_GUIDE') {
             return {
-                speaker: "Lockhart",
-                text: t(language, 'shop.pip_forge_intro'),
+                speaker: playerName,
+                text: t(language, 'shop.pip_forge_intro', { playerName }),
                 options: [{ 
                     label: t(language, 'shop.option_go_forge'), 
                     action: () => { 
@@ -244,26 +247,26 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         if (tutorialStep === 'PIP_PRAISE_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: t(language, 'shop.pip_praise_1'),
+                text: t(language, 'shop.pip_praise_1', { playerName }),
                 options: [{ label: t(language, 'shop.option_continue'), action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG_GUIDE'), variant: 'primary' as const }]
             };
         }
         if (tutorialStep === 'DRAGON_TALK_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: t(language, 'shop.pip_praise_2'),
-                options: [{ label: t(language, 'shop.option_farewell'), action: () => { handleFarewell(); actions.setTutorialStep('TUTORIAL_END_DIALOG_GUIDE'); }, variant: 'primary' as const }]
-            };
-        }
-        if (tutorialStep === 'TUTORIAL_END_DIALOG_GUIDE') {
-            return {
-                speaker: "Lockhart",
-                text: t(language, 'shop.pip_praise_3'),
-                options: [{ label: t(language, 'shop.option_complete_tutorial'), action: () => actions.completeTutorial(), variant: 'primary' as const }]
+                text: t(language, 'shop.pip_praise_2', { playerName }),
+                options: [{
+                    label: t(language, 'shop.option_farewell'),
+                    action: () => {
+                        handleFarewell();
+                        actions.completeTutorial();
+                    },
+                    variant: 'primary' as const
+                }]
             };
         }
         return null;
-    }, [language, tutorialStep, activeCustomer, actions, handleFarewell, onNavigate]);
+    }, [language, tutorialStep, activeCustomer, actions, handleFarewell, onNavigate, playerName]);
 
     const dialogueState = useMemo(() => {
         if (tutorialContent) return tutorialContent;
@@ -295,7 +298,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             if (!inventoryMatch) {
                 return {
                     speaker: mercenary.name,
-                    text: t(language, 'shop.pip_request_missing', { item: getItemName(request.requestedId) }),
+                    text: t(language, 'shop.pip_request_missing', { item: getItemName(request.requestedId), playerName }),
                     highlightTerm: "Bronze Shortsword",
                     options: [
                         { 
@@ -391,7 +394,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                 }
             ]
         };
-    }, [language, activeCustomer, saleCompleted, refusalReaction, matchingItems, tutorialContent, getThanksDialogue, getRefusalDialogue, handleFarewell, handleSellClick, handleRefuse, getItemName, getRequestDialogue, unlockedRecipes]);
+    }, [language, activeCustomer, saleCompleted, refusalReaction, matchingItems, tutorialContent, getThanksDialogue, getRefusalDialogue, handleFarewell, handleSellClick, handleRefuse, getItemName, getRequestDialogue, unlockedRecipes, playerName]);
 
     return {
         state,

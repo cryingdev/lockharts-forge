@@ -6,6 +6,8 @@ import { generateMercenary } from '../../utils/mercenaryGenerator';
 import { SHOP_CONFIG } from '../../config/shop-config';
 import { rng } from '../../utils/random';
 import { NAMED_MERCENARIES } from '../../data/mercenaries';
+import { t } from '../../utils/i18n';
+import { getPlayerName } from '../../utils/gameText';
 
 /**
  * useShopService
@@ -16,6 +18,7 @@ export const useShopService = () => {
     const { isShopOpen } = state.forge;
     const { activeCustomer, shopQueue, visitorsToday, unlockedRecipes } = state;
     const language = state.settings.language;
+    const playerName = getPlayerName(state);
 
     const arrivalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const patienceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -23,6 +26,11 @@ export const useShopService = () => {
     // --- 1. Arrival Logic ---
     useEffect(() => {
         if (!isShopOpen) {
+            if (arrivalTimerRef.current) clearTimeout(arrivalTimerRef.current);
+            return;
+        }
+
+        if (state.showTutorialCompleteModal) {
             if (arrivalTimerRef.current) clearTimeout(arrivalTimerRef.current);
             return;
         }
@@ -70,13 +78,9 @@ export const useShopService = () => {
                             customer.request.requestedId = 'sword_bronze_t1';
                             
                             if (isTutorialSignStep || isFirstVisitorEver) {
-                                customer.request.dialogue = language === 'ko'
-                                    ? '록하트! 화로를 고쳤다면서요. 전 나무 막대기로만 훈련해왔어요... 진짜 Bronze Shortsword 하나 살 수 있을까요?'
-                                    : "Lockhart! I heard you fixed the furnace. I've been training with a wooden stick... Do you have a real Bronze Shortsword for sale?";
+                                customer.request.dialogue = t(language, 'shop.priority_pip_initial', { playerName });
                             } else {
-                                customer.request.dialogue = language === 'ko'
-                                    ? '다녀왔어요! Bronze Shortsword은 준비됐나요? 빨리 휘둘러 보고 싶어요!'
-                                    : "I'm back! Is the Bronze Shortsword ready? I can't wait to try it out!";
+                                customer.request.dialogue = t(language, 'shop.priority_pip_return');
                             }
                             
                             customer.request.price = 550;
@@ -132,11 +136,11 @@ export const useShopService = () => {
         return () => {
             if (arrivalTimerRef.current) clearTimeout(arrivalTimerRef.current);
         };
-    }, [isShopOpen, visitorsToday, state.knownMercenaries, state.tutorialStep, activeCustomer, shopQueue.length, actions, unlockedRecipes, language]);
+    }, [isShopOpen, visitorsToday, state.knownMercenaries, state.tutorialStep, state.showTutorialCompleteModal, activeCustomer, shopQueue.length, actions, unlockedRecipes, language, playerName]);
 
     // --- 2. Queue Processing Logic ---
     useEffect(() => {
-        if (!isShopOpen) return;
+        if (!isShopOpen || state.showTutorialCompleteModal) return;
 
         if (!activeCustomer && shopQueue.length > 0) {
             const t = setTimeout(() => {
@@ -144,11 +148,11 @@ export const useShopService = () => {
             }, SHOP_CONFIG.QUEUE_PROCESS_DELAY_MS);
             return () => clearTimeout(t);
         }
-    }, [isShopOpen, activeCustomer, shopQueue, actions]);
+    }, [isShopOpen, state.showTutorialCompleteModal, activeCustomer, shopQueue, actions]);
 
     // --- 3. Patience Timer Logic ---
     useEffect(() => {
-        const isTutorialDialogue = !!state.tutorialStep;
+        const isTutorialDialogue = !!state.tutorialStep || state.showTutorialCompleteModal;
         
         if (!activeCustomer || isTutorialDialogue) {
             if (patienceTimerRef.current) clearTimeout(patienceTimerRef.current);
@@ -162,5 +166,5 @@ export const useShopService = () => {
         return () => {
             if (patienceTimerRef.current) clearTimeout(patienceTimerRef.current);
         };
-    }, [activeCustomer, actions, state.tutorialStep]);
+    }, [activeCustomer, actions, state.tutorialStep, state.showTutorialCompleteModal]);
 };

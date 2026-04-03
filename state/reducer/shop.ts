@@ -29,6 +29,10 @@ export const handleToggleShop = (state: GameState): GameState => {
 };
 
 export const handleEnqueueCustomer = (state: GameState, customer: ShopCustomer): GameState => {
+    if (state.showTutorialCompleteModal) {
+        return state;
+    }
+
     const language = state.settings.language;
     return {
         ...state,

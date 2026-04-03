@@ -11,6 +11,8 @@ const ConfirmationModal = React.lazy(() => import('./modals/ConfirmationModal'))
 import { SKILLS } from '../data/skills';
 import { UI_MODAL_LAYOUT } from '../config/ui-config';
 import { SfxButton } from './common/ui/SfxButton';
+import { getLocalizedItemDescription, getLocalizedItemName } from '../utils/itemText';
+import { t } from '../utils/i18n';
 
 const RomanTierOverlay = ({ id, isSmall = false }: { id: string, isSmall?: boolean }) => {
     const size = isSmall ? "text-[10px]" : "text-xs md:text-xl";
@@ -53,6 +55,7 @@ interface InventoryDisplayProps {
 
 export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
     const [sellQuantity, setSellQuantity] = useState(1);
@@ -68,7 +71,7 @@ export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) =
         if (enchantingScroll) {
             if (item.type === 'EQUIPMENT') {
                 if (item.isLocked) {
-                    actions.showToast("Cannot enchant a locked item.");
+                    actions.showToast(t(language, 'inventory.locked_enchant'));
                     return;
                 }
                 setConfirmEnchantTarget(item);
@@ -113,7 +116,7 @@ export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) =
             actions.applySkillScroll(enchantingScroll.id, confirmEnchantTarget.id);
             setEnchantingScroll(null);
             setConfirmEnchantTarget(null);
-            actions.showToast("Equipment enchanted successfully!");
+            actions.showToast(t(language, 'inventory.enchant_success'));
         }
     };
 
@@ -275,7 +278,7 @@ export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) =
                                                      <RomanTierOverlay id={item.id} isSmall />
                                                 </div>
                                                 <div className="w-full py-0.5 px-1 bg-stone-950/40 backdrop-blur-sm">
-                                                    <div className="text-[7px] md:text-[9px] text-center font-black text-stone-400 w-full truncate uppercase tracking-tighter">{item.name}</div>
+                                                    <div className="text-[7px] md:text-[9px] text-center font-black text-stone-400 w-full truncate uppercase tracking-tighter">{getLocalizedItemName(language, item)}</div>
                                                 </div>
                                             </button>
                                         );
@@ -328,7 +331,7 @@ export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) =
                                         <RomanTierOverlay id={currentSelectedItem.id} isSmall />
                                     </div>
                                     <div className="min-w-0 pr-2">
-                                        <h2 className="text-sm md:text-3xl font-black text-amber-500 font-serif leading-tight uppercase tracking-tight truncate drop-shadow-lg">{currentSelectedItem.name}</h2>
+                                        <h2 className="text-sm md:text-3xl font-black text-amber-500 font-serif leading-tight uppercase tracking-tight truncate drop-shadow-lg">{getLocalizedItemName(language, currentSelectedItem)}</h2>
                                         <div className="flex wrap gap-1.5 mt-2 md:mt-3">
                                             <span className="text-[7px] md:text-[10px] bg-stone-950 px-2 py-0.5 rounded-lg text-stone-500 font-mono font-black uppercase border border-white/5">{currentSelectedItem.type}</span>
                                             {currentSelectedItem.equipmentData && (
@@ -341,7 +344,7 @@ export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) =
                                 </div>
 
                                 <div className="bg-black/30 p-3 md:p-5 rounded-3xl border border-white/5 mb-4 shrink-0 shadow-inner">
-                                    <p className="text-stone-400 text-[10px] md:text-sm italic leading-relaxed text-center px-4">"{currentSelectedItem.description}"</p>
+                                    <p className="text-stone-400 text-[10px] md:text-sm italic leading-relaxed text-center px-4">"{getLocalizedItemDescription(language, currentSelectedItem)}"</p>
                                 </div>
                                 
                                 <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 mb-4 px-1">
@@ -385,7 +388,7 @@ export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) =
                                     <AdaptiveInventoryImage item={currentSelectedItem} className="w-10 h-10 object-contain" />
                                 </div>
                                 <div className="min-w-0">
-                                    <h4 className="text-stone-100 font-black text-sm truncate uppercase tracking-tight">{currentSelectedItem.name}</h4>
+                                    <h4 className="text-stone-100 font-black text-sm truncate uppercase tracking-tight">{getLocalizedItemName(language, currentSelectedItem)}</h4>
                                     <p className="text-amber-500 font-mono text-[10px] font-black mt-0.5">Market Bid: {Math.floor(currentSelectedItem.baseValue * 0.5)}G</p>
                                 </div>
                             </div>
@@ -424,7 +427,7 @@ export const InventoryDisplay: React.FC<InventoryDisplayProps> = ({ onClose }) =
                 <ConfirmationModal 
                     isOpen={!!confirmEnchantTarget}
                     title="Seal Power"
-                    message={`Permanently bind the essence to ${confirmEnchantTarget?.name}?`}
+                    message={`Permanently bind the essence to ${confirmEnchantTarget ? getLocalizedItemName(language, confirmEnchantTarget) : ''}?`}
                     confirmLabel="Seal Steel"
                     cancelLabel="Cancel"
                     onConfirm={handleConfirmEnchant}

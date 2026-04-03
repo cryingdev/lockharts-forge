@@ -1,7 +1,9 @@
 import React from 'react';
 import { InventoryItem } from '../../../../types/inventory';
 import { getAssetUrl } from '../../../../utils';
-import { Plus, X, Search, Lock } from 'lucide-react';
+import { Plus, Search, Lock } from 'lucide-react';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface ResearchSlotsProps {
     slots: (InventoryItem | null)[];
@@ -10,6 +12,8 @@ interface ResearchSlotsProps {
 }
 
 export const ResearchSlots: React.FC<ResearchSlotsProps> = ({ slots, onOpenInventory, disabled }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     return (
         <div className="grid grid-cols-2 gap-6 md:gap-12 relative z-10 p-4">
             {slots.map((item, idx) => (
@@ -49,7 +53,7 @@ export const ResearchSlots: React.FC<ResearchSlotsProps> = ({ slots, onOpenInven
                         ) : (
                             <div className="flex flex-col items-center gap-1">
                                 <Plus className={`w-6 h-6 md:w-8 md:h-8 ${disabled ? 'text-stone-800' : 'text-stone-700'}`} />
-                                <span className={`text-[7px] md:text-[9px] font-black uppercase tracking-widest ${disabled ? 'text-stone-800' : 'text-stone-700'}`}>Select Item</span>
+                                <span className={`text-[7px] md:text-[9px] font-black uppercase tracking-widest ${disabled ? 'text-stone-800' : 'text-stone-700'}`}>{t(language, 'research.select_item')}</span>
                             </div>
                         )}
                     </button>

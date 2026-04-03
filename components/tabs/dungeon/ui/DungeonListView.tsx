@@ -3,6 +3,8 @@ import { LayoutList, Lock, ChevronRight, Layers, Skull } from 'lucide-react';
 import { DUNGEONS } from '../../../../data/dungeons';
 import { getAssetUrl } from '../../../../utils';
 import { SfxButton } from '../../../common/ui/SfxButton';
+import { useGame } from '../../../../context/GameContext';
+import { hasTranslation, t } from '../../../../utils/i18n';
 
 interface DungeonListViewProps {
     tierLevel: number;
@@ -12,15 +14,17 @@ interface DungeonListViewProps {
 }
 
 export const DungeonListView: React.FC<DungeonListViewProps> = ({ tierLevel, maxFloorReached, dungeonClearCounts, onSelect }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     return (
         <div className="h-full w-full bg-stone-950 flex flex-col p-4 md:p-8 animate-in fade-in duration-500 overflow-hidden pt-16 md:pt-8">
             <div className="flex justify-between items-end border-b border-stone-800 pb-4 mb-6 shrink-0">
                 <div>
-                    <h2 className="text-2xl md:text-4xl font-black text-amber-50 font-serif uppercase tracking-tighter">Tactical Deployment</h2>
-                    <p className="text-stone-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">Select Engagement Zone</p>
+                    <h2 className="text-2xl md:text-4xl font-black text-amber-50 font-serif uppercase tracking-tighter">{t(language, 'dungeonList.title')}</h2>
+                    <p className="text-stone-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">{t(language, 'dungeonList.subtitle')}</p>
                 </div>
                 <div className="hidden xs:flex items-center gap-2 bg-stone-900 px-3 py-1.5 rounded-lg border border-stone-800 text-[10px] font-mono text-stone-500">
-                    <LayoutList className="w-3.5 h-3.5" /> Sector Overview
+                    <LayoutList className="w-3.5 h-3.5" /> {t(language, 'dungeonList.overview')}
                 </div>
             </div>
 
@@ -31,6 +35,8 @@ export const DungeonListView: React.FC<DungeonListViewProps> = ({ tierLevel, max
                     const hasClearedAtLeastOnce = (dungeonClearCounts[d.id] || 0) > 0;
                     const completedFloors = hasClearedAtLeastOnce ? d.maxFloors : Math.max(0, maxReached - 1);
                     const progressPercent = (completedFloors / d.maxFloors) * 100;
+                    const descriptionKey = `dungeons.${d.id}.description`;
+                    const localizedDescription = hasTranslation(language, descriptionKey) ? t(language, descriptionKey) : d.description;
                     
                     return (
                         <SfxButton key={d.id} onClick={() => onSelect(d.id)} className={`w-full group relative flex flex-col md:flex-row items-center gap-4 p-4 md:p-6 rounded-2xl border-2 transition-all overflow-hidden text-left ${isLocked ? 'bg-stone-900 border-stone-800 opacity-50 grayscale cursor-not-allowed' : 'bg-stone-900/40 border-stone-800 hover:border-amber-500 hover:bg-stone-800 shadow-xl active:scale-[0.99]'}`}>
@@ -41,12 +47,12 @@ export const DungeonListView: React.FC<DungeonListViewProps> = ({ tierLevel, max
                             <div className="flex-1 text-center md:text-left min-w-0">
                                 <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
                                     <h3 className="text-lg md:text-2xl font-black text-stone-100 uppercase font-serif tracking-tight">{d.name}</h3>
-                                    <span className={`w-fit mx-auto md:mx-0 px-2 py-0.5 rounded font-black text-[8px] md:text-[10px] uppercase border ${isLocked ? 'border-stone-700 text-stone-600' : 'border-amber-600/30 bg-amber-900/20 text-amber-500'}`}>Tier {d.tier}</span>
+                                    <span className={`w-fit mx-auto md:mx-0 px-2 py-0.5 rounded font-black text-[8px] md:text-[10px] uppercase border ${isLocked ? 'border-stone-700 text-stone-600' : 'border-amber-600/30 bg-amber-900/20 text-amber-500'}`}>{t(language, 'dungeonList.tier_badge', { tier: d.tier })}</span>
                                 </div>
-                                <p className="text-stone-500 text-[10px] md:text-sm line-clamp-2 italic mb-3">"{d.description}"</p>
+                                <p className="text-stone-500 text-[10px] md:text-sm line-clamp-2 italic mb-3">"{localizedDescription}"</p>
                                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                    <div className="flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">Progression: <span className="text-amber-500">{completedFloors}/{d.maxFloors} Cleared</span></span></div>
-                                    <div className="flex items-center gap-2"><Skull className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">Threat: <span className="text-red-500">POW {d.requiredPower}</span></span></div>
+                                    <div className="flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">{t(language, 'dungeonList.progression')}: <span className="text-amber-500">{completedFloors}/{d.maxFloors} {t(language, 'dungeonList.cleared')}</span></span></div>
+                                    <div className="flex items-center gap-2"><Skull className="w-3.5 h-3.5 text-stone-600" /><span className="text-[10px] md:text-xs font-black text-stone-400 uppercase">{t(language, 'dungeonList.threat')}: <span className="text-red-500">{t(language, 'dungeonList.power_short')} {d.requiredPower}</span></span></div>
                                 </div>
                                 <div className="mt-3 w-full h-1.5 bg-stone-950 rounded-full overflow-hidden border border-stone-800 shadow-inner"><div className="h-full bg-gradient-to-r from-amber-900 to-amber-500 transition-all duration-1000" style={{ width: `${progressPercent}%` }} /></div>
                             </div>

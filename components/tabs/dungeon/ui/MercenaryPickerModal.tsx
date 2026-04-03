@@ -4,6 +4,8 @@ import { User, X, Search, Sword, Zap, AlertTriangle, Skull } from 'lucide-react'
 import { SfxButton } from '../../../common/ui/SfxButton';
 import { MercenaryPortrait } from '../../../common/ui/MercenaryPortrait';
 import { calculateMercenaryPower } from '../../../../utils/combatLogic';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface MercenaryPickerModalProps {
     isOpen: boolean;
@@ -18,6 +20,9 @@ interface MercenaryPickerModalProps {
 export const MercenaryPickerModal: React.FC<MercenaryPickerModalProps> = ({ 
     isOpen, onClose, candidates, onToggle, activeExpeditions, activeManualDungeon, staminaCostForFloor 
 }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
+
     if (!isOpen) return null;
 
     return (
@@ -27,15 +32,15 @@ export const MercenaryPickerModal: React.FC<MercenaryPickerModalProps> = ({
                     <div className="flex items-center gap-3">
                         <div className="bg-amber-900/30 p-2 rounded-xl border border-amber-700/50"><User className="w-5 h-5 text-amber-500" /></div>
                         <div>
-                            <h3 className="text-lg font-black text-stone-100 font-serif uppercase">Select Squad Member</h3>
-                            <p className="text-[10px] text-stone-500 font-black uppercase">Assign available units to the squad</p>
+                            <h3 className="text-lg font-black text-stone-100 font-serif uppercase">{t(language, 'mercenaryPicker.title')}</h3>
+                            <p className="text-[10px] text-stone-500 font-black uppercase">{t(language, 'mercenaryPicker.subtitle')}</p>
                         </div>
                     </div>
                     <SfxButton sfx="switch" onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-6 h-6" /></SfxButton>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar bg-stone-950/40">
                     {candidates.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 opacity-20"><Search className="w-16 h-16 mb-4" /><p className="font-black uppercase text-sm tracking-widest">No candidates available</p></div>
+                        <div className="flex flex-col items-center justify-center py-20 opacity-20"><Search className="w-16 h-16 mb-4" /><p className="font-black uppercase text-sm tracking-widest">{t(language, 'mercenaryPicker.empty')}</p></div>
                     ) : (
                         candidates.map(merc => {
                             const isBusy = activeExpeditions.some(e => e.partyIds.includes(merc.id)) || (activeManualDungeon?.partyIds.includes(merc.id));
@@ -59,17 +64,17 @@ export const MercenaryPickerModal: React.FC<MercenaryPickerModalProps> = ({
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-1.5">
-                                        {isBusy ? <span className="text-[8px] font-black uppercase text-blue-400 bg-blue-900/20 px-2 py-0.5 rounded border border-blue-500/30">On Mission</span> : 
-                                         isInjured ? <div className="flex items-center gap-1 text-[8px] font-black uppercase text-red-400 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/30"><AlertTriangle className="w-2.5 h-2.5" /> Injured</div> : 
-                                         isDead ? <div className="flex items-center gap-1 text-[8px] font-black uppercase text-stone-400 bg-stone-900 px-2 py-0.5 rounded border border-white/5"><Skull className="w-2.5 h-2.5" /> K.I.A</div> : 
-                                         <div className="flex flex-col items-end gap-1"><div className="flex items-center gap-2"><div className="w-16 h-1.5 bg-stone-950 rounded-full border border-stone-700 overflow-hidden"><div className={`h-full rounded-full ${stamina >= staminaCostForFloor ? 'bg-stone-100' : 'bg-red-600 animate-pulse'}`} style={{ width: `${stamina}%` }} /></div><Zap className={`w-3 h-3 ${stamina >= staminaCostForFloor ? 'text-stone-100' : 'text-red-500 animate-pulse'}`} /></div><div className="flex items-center gap-2"><div className="w-16 h-1.5 bg-stone-950 rounded-full border border-stone-700 overflow-hidden"><div className={`h-full rounded-full ${hpPer < 30 ? 'bg-red-500 animate-pulse' : 'bg-red-600'}`} style={{ width: `${hpPer}%` }} /></div><span className="text-[8px] font-black text-stone-500 uppercase">HP</span></div></div>}
+                                        {isBusy ? <span className="text-[8px] font-black uppercase text-blue-400 bg-blue-900/20 px-2 py-0.5 rounded border border-blue-500/30">{t(language, 'mercenaryPicker.on_mission')}</span> : 
+                                         isInjured ? <div className="flex items-center gap-1 text-[8px] font-black uppercase text-red-400 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/30"><AlertTriangle className="w-2.5 h-2.5" /> {t(language, 'mercenaryPicker.injured')}</div> : 
+                                         isDead ? <div className="flex items-center gap-1 text-[8px] font-black uppercase text-stone-400 bg-stone-900 px-2 py-0.5 rounded border border-white/5"><Skull className="w-2.5 h-2.5" /> {t(language, 'mercenaryPicker.kia')}</div> : 
+                                         <div className="flex flex-col items-end gap-1"><div className="flex items-center gap-2"><div className="w-16 h-1.5 bg-stone-950 rounded-full border border-stone-700 overflow-hidden"><div className={`h-full rounded-full ${stamina >= staminaCostForFloor ? 'bg-stone-100' : 'bg-red-600 animate-pulse'}`} style={{ width: `${stamina}%` }} /></div><Zap className={`w-3 h-3 ${stamina >= staminaCostForFloor ? 'text-stone-100' : 'text-red-500 animate-pulse'}`} /></div><div className="flex items-center gap-2"><div className="w-16 h-1.5 bg-stone-950 rounded-full border border-stone-700 overflow-hidden"><div className={`h-full rounded-full ${hpPer < 30 ? 'bg-red-500 animate-pulse' : 'bg-red-600'}`} style={{ width: `${hpPer}%` }} /></div><span className="text-[8px] font-black text-stone-500 uppercase">{t(language, 'mercenaryPicker.hp')}</span></div></div>}
                                     </div>
                                 </SfxButton>
                             );
                         })
                     )}
                 </div>
-                <div className="p-4 bg-stone-900 border-t border-stone-800 text-center"><p className="text-[9px] text-stone-600 font-black uppercase tracking-widest">Squad Strength relies on matching equipment and attributes.</p></div>
+                <div className="p-4 bg-stone-900 border-t border-stone-800 text-center"><p className="text-[9px] text-stone-600 font-black uppercase tracking-widest">{t(language, 'mercenaryPicker.footer')}</p></div>
             </div>
         </div>
     );

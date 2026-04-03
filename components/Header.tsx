@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { Coins, Zap, Calendar, BedDouble, BookOpen, Settings } from 'lucide-react';
 import { SfxButton } from './common/ui/SfxButton';
+import { t } from '../utils/i18n';
 
 interface HeaderProps {
     activeTab: string;
@@ -10,9 +11,9 @@ interface HeaderProps {
     onSettingsClick: () => void;
 }
 
-const LogTicker = ({ message }: { message: string }) => {
+const LogTicker = ({ message, language }: { message: string; language: 'en' | 'ko' }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const targetMessage = message || 'The forge is quiet...';
+  const targetMessage = message || t(language, 'header.quiet');
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -42,6 +43,7 @@ const LogTicker = ({ message }: { message: string }) => {
 
 const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick }) => {
   const { state, actions } = useGame();
+  const language = state.settings.language;
   const { gold, energy, maxEnergy, day } = state.stats;
   const { uiEffects, settings } = state;
 
@@ -53,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
         {/* Left: Day info */}
         <div className="flex items-center space-x-1 md:space-x-2 bg-stone-900 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-stone-800 shrink-0 shadow-inner group">
             <Calendar className="w-3 h-3 md:w-4 md:h-4 text-stone-500 group-hover:text-amber-500 transition-colors" />
-            <span className="font-black text-[10px] md:text-sm tracking-widest uppercase font-serif">Day {day}</span>
+            <span className="font-black text-[10px] md:text-sm tracking-widest uppercase font-serif">{t(language, 'header.day', { day })}</span>
         </div>
 
         {/* Right: Stats & System */}
@@ -90,17 +92,17 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
           <SfxButton
             onClick={actions.rest}
             className="flex items-center space-x-1 md:space-x-2 bg-indigo-950/40 hover:bg-indigo-900/60 text-indigo-300 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-indigo-900/30 transition-all shadow-lg active:scale-95"
-            title="End the Day"
+            title={t(language, 'header.end_day')}
           >
             <BedDouble className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-[8px] md:text-xs font-black hidden xs:inline uppercase tracking-widest font-serif italic">Rest</span>
+            <span className="text-[8px] md:text-xs font-black hidden xs:inline uppercase tracking-widest font-serif italic">{t(language, 'header.rest')}</span>
           </SfxButton>
 
           {/* Settings Button */}
           <SfxButton
             onClick={onSettingsClick}
             className="p-1 md:p-2 text-stone-500 hover:text-stone-200 bg-stone-900 hover:bg-stone-800 border border-stone-800 rounded-lg transition-all shadow-lg active:rotate-90 duration-300"
-            title="System Settings"
+            title={t(language, 'header.system_settings')}
           >
             <Settings className="w-3 h-3 md:w-4 md:h-4" />
           </SfxButton>
@@ -113,11 +115,11 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onSettingsClick
               <SfxButton 
                   onClick={actions.toggleJournal}
                   className="w-full flex items-center gap-2 md:gap-3 px-3 py-1 bg-stone-900/40 hover:bg-stone-900 rounded-md md:rounded-lg border border-stone-800/30 hover:border-stone-700 transition-all group text-left h-6 md:h-8"
-                  title="Open Forge Ledger"
+                  title={t(language, 'header.open_journal')}
               >
                   <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-stone-600 group-hover:text-amber-400 shrink-0 transition-colors" />
                   <div className="flex-1 min-w-0 h-full">
-                      <LogTicker message={state.logs[0] || ''} />
+                      <LogTicker message={state.logs[0] || ''} language={language} />
                   </div>
               </SfxButton>
           </div>

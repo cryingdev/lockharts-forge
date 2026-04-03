@@ -3,12 +3,17 @@ import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { User, XCircle, CheckCircle, Flame, AlertCircle } from 'lucide-react';
 import { SfxButton } from '../common/ui/SfxButton';
+import { t } from '../../utils/i18n';
+import { getForgeName } from '../../utils/gameText';
 
 const EventModal = () => {
   const { state, actions } = useGame();
   const { activeEvent, inventory, stats } = state;
-
+  const language = state.settings.language;
+  const forgeName = getForgeName(state);
   if (!activeEvent) return null;
+  const eventTitle = activeEvent.titleKey ? t(language, activeEvent.titleKey) : activeEvent.title;
+  const eventDescription = activeEvent.descriptionKey ? t(language, activeEvent.descriptionKey) : activeEvent.description;
 
   const canAfford = (option: typeof activeEvent.options[0]) => {
     if (!option.cost) return true;
@@ -23,7 +28,7 @@ const EventModal = () => {
   };
 
   const getIcon = () => {
-      const title = activeEvent.title.toLowerCase();
+      const title = eventTitle.toLowerCase();
       if (title.includes('forge') || title.includes('furnace')) return <Flame className="w-6 h-6 md:w-8 md:h-8 text-amber-500" />;
       if (title.includes('warning') || title.includes('attention')) return <AlertCircle className="w-6 h-6 md:w-8 md:h-8 text-amber-500" />;
       return <User className="w-6 h-6 md:w-8 md:h-8 text-amber-500" />;
@@ -38,13 +43,13 @@ const EventModal = () => {
           <div className="bg-amber-900/30 p-2 rounded-xl border border-amber-700/30 shrink-0">
             {getIcon()}
           </div>
-          <h2 className="text-sm md:text-xl font-serif text-amber-100 font-black tracking-tight uppercase leading-none truncate pr-4">{activeEvent.title}</h2>
+          <h2 className="text-sm md:text-xl font-serif text-amber-100 font-black tracking-tight uppercase leading-none truncate pr-4">{eventTitle}</h2>
         </div>
 
         {/* Body */}
         <div className="p-5 md:p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
           <p className="text-stone-300 text-xs md:text-lg leading-relaxed italic border-l-4 border-stone-700 pl-4">
-            "{activeEvent.description}"
+            "{eventDescription}"
           </p>
 
           <div className="space-y-2 md:space-y-3 pb-2">
@@ -65,7 +70,9 @@ const EventModal = () => {
                       : 'bg-stone-900/50 border-stone-800 text-stone-600 cursor-not-allowed'
                   }`}
                 >
-                  <span className="font-black text-[10px] md:text-sm uppercase tracking-widest mr-4">{option.label}</span>
+                  <span className="font-black text-[10px] md:text-sm uppercase tracking-widest mr-4">
+                    {option.labelKey ? t(language, option.labelKey) : option.label}
+                  </span>
                   {affordable ? (
                      <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-stone-600 group-hover:text-amber-500 shrink-0" />
                   ) : (
@@ -79,7 +86,7 @@ const EventModal = () => {
 
         {/* Footer */}
         <div className="bg-stone-950 px-4 py-2 border-t border-stone-800 text-[8px] md:text-[10px] text-stone-600 uppercase font-black tracking-[0.3em] text-right shrink-0">
-            Lockhart's Chronicles
+            {t(language, 'eventModal.footer', { forgeName })}
         </div>
       </div>
     </div>

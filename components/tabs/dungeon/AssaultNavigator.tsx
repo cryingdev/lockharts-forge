@@ -21,12 +21,16 @@ import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { EquipmentSlotType } from '../../../types/inventory';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { materials } from '../../../data/materials';
+import { t } from '../../../utils/i18n';
+import { getLocalizedItemName } from '../../../utils/itemText';
 
 // DungeonScene.ts의 이동 애니메이션 시간과 일치시킵니다.
 const MOVE_DURATION = 300;
 
 // Memoized to prevent re-renders during D-pad dragging
 const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onSelectMercenary: (id: string) => void }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const [isExpanded, setIsExpanded] = useState(true);
 
     return (
@@ -39,7 +43,7 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                 <div className="relative">
                    <Users className={`w-4 h-4 ${isExpanded ? 'text-amber-500' : 'text-stone-500'}`} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest hidden xs:block">Squad Status</span>
+                <span className="text-[10px] font-black uppercase tracking-widest hidden xs:block">{t(language, 'assault.squad_status')}</span>
                 {isExpanded ? <ChevronUp className="w-3 h-3 opacity-50" /> : <ChevronDown className="w-3 h-3 opacity-50" />}
             </SfxButton>
 
@@ -84,7 +88,7 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                             {/* Vitals: HP */}
                             <div className="space-y-0.5">
                                 <div className="flex justify-between items-center text-[7px] font-mono text-stone-500 px-0.5 leading-none">
-                                    <span>HP</span>
+                                    <span>{t(language, 'tavern.hp')}</span>
                                     <span className="font-black text-stone-300">{Math.floor(merc.currentHp)}</span>
                                 </div>
                                 <div className="h-1 w-full bg-stone-950 rounded-full overflow-hidden border border-white/5">
@@ -98,7 +102,7 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
                             {/* Vitals: MP */}
                             <div className="space-y-0.5 relative">
                                 <div className="flex justify-between items-center text-[7px] font-mono text-stone-500 px-0.5 leading-none">
-                                    <span>MP</span>
+                                    <span>{t(language, 'assault.mp')}</span>
                                     <span className="font-black text-stone-300">{Math.floor(merc.currentMp)}</span>
                                 </div>
                                 <div className="h-1 w-full bg-stone-950 rounded-full overflow-hidden border border-white/5">
@@ -116,6 +120,8 @@ const SquadPanel = React.memo(({ party, onSelectMercenary }: { party: any[], onS
 
 // New Component: Loot View Overlay
 const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClose: () => void }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const getItemImageUrl = (itemId: string) => {
         const item = materials[itemId];
         if (!item) return getAssetUrl(`${itemId}.png`, 'materials');
@@ -131,7 +137,7 @@ const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClo
                 <div className="p-4 bg-stone-850 border-b border-stone-800 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3">
                         <Package className="w-5 h-5 text-amber-500" />
-                        <h3 className="font-black uppercase tracking-widest text-sm text-stone-200">Current Loot</h3>
+                        <h3 className="font-black uppercase tracking-widest text-sm text-stone-200">{t(language, 'assault.current_loot')}</h3>
                     </div>
                     <SfxButton sfx="switch" onClick={onClose} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-5 h-5" /></SfxButton>
                 </div>
@@ -139,15 +145,15 @@ const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClo
                     <div className="flex items-center justify-between bg-stone-950/60 p-3 rounded-xl border border-amber-900/30">
                         <div className="flex items-center gap-3">
                             <Coins className="w-5 h-5 text-amber-500" />
-                            <span className="text-xs font-black text-stone-400 uppercase">Recovered Gold</span>
+                            <span className="text-xs font-black text-stone-400 uppercase">{t(language, 'assault.recovered_gold')}</span>
                         </div>
                         <span className="text-lg font-mono font-black text-amber-400">{gold.toLocaleString()} G</span>
                     </div>
                     
                     <div className="space-y-1.5">
-                        <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">Materials Found</span>
+                        <span className="text-[9px] font-black text-stone-500 uppercase tracking-widest px-1">{t(language, 'assault.materials_found')}</span>
                         {loot.length === 0 ? (
-                            <div className="text-center py-10 text-stone-600 italic text-xs border border-dashed border-stone-800 rounded-xl">No items recovered yet.</div>
+                            <div className="text-center py-10 text-stone-600 italic text-xs border border-dashed border-stone-800 rounded-xl">{t(language, 'assault.no_items_recovered')}</div>
                         ) : (
                             <div className="grid grid-cols-1 gap-2">
                                 {loot.map((item, i) => (
@@ -156,7 +162,9 @@ const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClo
                                             <div className="w-8 h-8 bg-stone-950 rounded-lg flex items-center justify-center border border-stone-800 shrink-0">
                                                 <img src={getItemImageUrl(item.id)} className="w-5 h-5 object-contain" onError={e=>e.currentTarget.style.display='none'} />
                                             </div>
-                                            <span className="text-xs font-black text-stone-200 truncate max-w-[140px]">{item.name}</span>
+                                            <span className="text-xs font-black text-stone-200 truncate max-w-[140px]">
+                                                {getLocalizedItemName(language, { id: item.id, name: item.name })}
+                                            </span>
                                         </div>
                                         <span className="text-xs font-mono font-black text-amber-500">x{item.count}</span>
                                     </div>
@@ -166,7 +174,7 @@ const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClo
                     </div>
                 </div>
                 <div className="p-4 bg-stone-950 text-center border-t border-stone-800">
-                    <SfxButton onClick={onClose} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all">Close</SfxButton>
+                    <SfxButton onClick={onClose} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all">{t(language, 'common.close')}</SfxButton>
                 </div>
             </div>
         </div>
@@ -180,6 +188,7 @@ interface AssaultNavigatorProps {
 
 const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, setInspectedMercId }) => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
     const session = state.activeManualDungeon;
     const gameRef = useRef<Phaser.Game | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -200,7 +209,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
         
         // 위치가 변경되었을 때만 트랩 체크
         if (x !== oldPos.x || y !== oldPos.y) {
-            if (session.lastActionMessage?.includes('springs')) {
+            if (session.lastActionMessage === t(language, 'manualDungeon.trap_triggered')) {
                 // 이동이 끝난 후(300ms) 효과 재생
                 setTimeout(() => {
                     const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
@@ -210,7 +219,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
             }
             lastPosRef.current = { x, y };
         }
-    }, [session?.playerPos, session?.lastActionMessage]);
+    }, [session?.playerPos, session?.lastActionMessage, language]);
 
     // 골드 및 아이템 획득 상태 추적
     const prevGoldRef = useRef(session?.goldCollected || 0);
@@ -335,9 +344,9 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
     useEffect(() => {
         if (!session || !rescueTarget) return;
         if (currentRoom === 'NPC' && !session.npcFound) {
-            setLastMsg(`"Help! Please... is someone there? I don't think I can hold out much longer..."`);
+            setLastMsg(t(language, 'assault.npc_help'));
         }
-    }, [currentRoom, session?.npcFound, rescueTarget]);
+    }, [currentRoom, session?.npcFound, rescueTarget, language]);
 
     const handleDpadMove = (dx: number, dy: number) => {
         if (isEncountered || isBattle || isStairs) return;
@@ -471,17 +480,17 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
     const inspectedMercenary = state.knownMercenaries.find(m => m.id === inspectedMercId) || null;
 
     const getDialogue = () => {
-        if (isOnNPCTile) return { speaker: (rescueTarget?.name || "Survivor"), text: lastMsg };
+        if (isOnNPCTile) return { speaker: (rescueTarget?.name || t(language, 'assault.survivor')), text: lastMsg };
         // Priority check for boss defeat on boss tile
         if (currentRoom === 'BOSS' && session.isBossDefeated) {
-            return { speaker: "The Fallen's Echo", text: "The terror has been silenced. A pile of artifacts and ancient steel remains... Will you claim the legacy of this lair and return to the forge?" };
+            return { speaker: t(language, 'assault.fallen_echo'), text: t(language, 'assault.boss_aftermath') };
         }
         if (isEncountered) {
-            return { speaker: "Inner Voice", text: session.lastActionMessage || lastMsg };
+            return { speaker: t(language, 'assault.inner_voice'), text: session.lastActionMessage || lastMsg };
         }
-        if (isVictory) return { speaker: "Frontline Shout", text: session.lastActionMessage || "The area is clear. Steel yourselves for what lies ahead." };
-        if (isStairs) return { speaker: "The Path Ahead", text: lastMsg };
-        return { speaker: "Exploration Log", text: lastMsg };
+        if (isVictory) return { speaker: t(language, 'assault.frontline_shout'), text: session.lastActionMessage || t(language, 'assault.area_clear') };
+        if (isStairs) return { speaker: t(language, 'assault.path_ahead'), text: lastMsg };
+        return { speaker: t(language, 'assault.exploration_log'), text: lastMsg };
     };
 
     const { speaker, text: dialogueText } = getDialogue();
@@ -500,13 +509,13 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
                     <div className="flex items-center gap-3">
                         <Layers className="w-4 h-4 text-amber-50" />
                         <span className="text-xs md:text-sm font-black text-amber-50 uppercase tracking-widest font-mono">
-                            Floor {session.currentFloor} / {session.maxFloors}
+                            {t(language, 'assault.floor_display', { current: session.currentFloor, max: session.maxFloors })}
                         </span>
                     </div>
                     {session.floorBoost > 1 && (
                         <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
                             <TrendingUp className="w-2.5 h-2.5" />
-                            Momentum: +{Math.round((session.floorBoost - 1) * 100)}%
+                            {t(language, 'assault.momentum', { boost: Math.round((session.floorBoost - 1) * 100) })}
                         </div>
                     )}
                 </div>
@@ -516,13 +525,13 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
             <div className={`absolute top-4 right-4 z-[110] flex flex-col items-end gap-2 pointer-events-auto transition-opacity duration-500 ${isEncounterAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
                 <div className={`flex items-center gap-2 px-3 py-1.5 bg-stone-900/80 backdrop-blur-md border rounded-xl shadow-xl shadow-black/80 transition-all ${session.hasKey ? 'border-amber-500 text-amber-400' : 'border-white/5 text-stone-600 opacity-40'}`}>
                     <Key className={`w-4 h-4 ${session.hasKey ? 'animate-pulse' : ''}`} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? 'Key Found' : 'No Key'}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{session.hasKey ? t(language, 'assault.key_found') : t(language, 'assault.no_key')}</span>
                 </div>
                 
                 <div className="flex bg-stone-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-black/80">
                     <SfxButton sfx="switch" onClick={() => handleZoom(0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-r border-white/5"><Plus className="w-4 h-4" /></SfxButton>
                     <div className="flex flex-col items-center justify-center px-2 min-w-[45px] select-none">
-                        <span className="text-[8px] font-black text-stone-50 font-bold leading-none">ZOOM</span>
+                        <span className="text-[8px] font-black text-stone-50 font-bold leading-none">{t(language, 'assault.zoom')}</span>
                         <span className="text-[10px] font-mono font-bold text-amber-500">{mapZoom.toFixed(1)}x</span>
                     </div>
                     <SfxButton sfx="switch" onClick={() => handleZoom(-0.1)} className="p-2.5 hover:bg-stone-800 text-stone-300 transition-colors border-l border-white/5"><Minus className="w-4 h-4" /></SfxButton>
@@ -532,7 +541,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
                     onClick={() => setShowRetreatConfirm(true)}
                     className="flex items-center gap-2 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 rounded-xl text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-black/80"
                 >
-                    <LogOut className="w-4 h-4" /> Retreat
+                    <LogOut className="w-4 h-4" /> {t(language, 'assault.retreat')}
                 </SfxButton>
 
                 <SfxButton 
@@ -541,7 +550,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
                     className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 backdrop-blur-md border border-amber-500/30 rounded-xl shadow-xl shadow-black/80 text-amber-400 hover:bg-stone-800 transition-all"
                 >
                     <Package className="w-4 h-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Loot Bag</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{t(language, 'assault.loot_bag')}</span>
                 </SfxButton>
             </div>
 
@@ -651,27 +660,27 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
                                 speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.portraitImage || 'default.png', 'mercenaries') : undefined}
                                 text={dialogueText}
                                 options={isOnNPCTile ? [
-                                    { label: "GET THEM TO SAFETY", action: () => { 
+                                    { label: t(language, 'assault.get_them_to_safety'), action: () => { 
                                         if (dungeon?.rescueMercenaryId) {
                                             actions.rescueMercenary(dungeon.rescueMercenaryId); 
-                                            actions.showToast(`${rescueTarget?.name} has been secured!`); 
+                                            actions.showToast(t(language, 'assault.survivor_secured_toast', { name: rescueTarget?.name || t(language, 'assault.survivor') })); 
                                         }
                                     }, variant: 'primary' as const },
-                                    { label: "WE'LL BE BACK FOR YOU", action: () => {
-                                        setLastMsg("We've marked the spot. Resuming exploration for now.");
+                                    { label: t(language, 'assault.return_for_you'), action: () => {
+                                        setLastMsg(t(language, 'assault.marked_spot'));
                                         setHasInteractedWithNpc(true);
                                     }, variant: 'neutral' as const }
                                 ] : currentRoom === 'BOSS' && session.isBossDefeated ? [
-                                    { label: "CLAIM THE LOOT AND LEAVE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
-                                    { label: "CONTINUE EXPLORING", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+                                    { label: t(language, 'assault.claim_loot_leave'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
+                                    { label: t(language, 'assault.continue_exploring'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
                                 ] : isStairs ? [
-                                    { label: `INTO THE ABYSS (Sector ${session.currentFloor + 1})`, action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
-                                    { label: "REACH THE SURFACE", action: () => actions.finishManualAssault(), variant: 'primary' as const },
-                                    { label: "STAY IN THIS SECTOR", action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+                                    { label: t(language, 'assault.into_the_abyss', { floor: session.currentFloor + 1 }), action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
+                                    { label: t(language, 'assault.reach_surface'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
+                                    { label: t(language, 'assault.stay_in_sector'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
                                 ] : isVictory ? [
-                                    { label: "RESUME SEARCH", action: () => actions.resolveCombatManual(false, true, party), variant: 'primary' as const }
+                                    { label: t(language, 'assault.resume_search'), action: () => actions.resolveCombatManual(false, true, party), variant: 'primary' as const }
                                 ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
-                                    { label: "END MISSION", action: () => actions.finishManualAssault(), variant: 'primary' as const }
+                                    { label: t(language, 'assault.end_mission'), action: () => actions.finishManualAssault(), variant: 'primary' as const }
                                 ] : []}
                                 className="w-full pointer-events-auto"
                             />
@@ -701,7 +710,14 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
             )}
 
             <React.Suspense fallback={null}>
-                <ConfirmationModal isOpen={showRetreatConfirm} title="Abort Mission?" message="Extraction will return the squad to safety. No rewards will be collected." onConfirm={() => actions.retreatFromManualDungeon()} onCancel={() => setShowRetreatConfirm(false)} isDanger={true} />
+                <ConfirmationModal
+                    isOpen={showRetreatConfirm}
+                    title={t(language, 'assault.abort_title')}
+                    message={t(language, 'assault.abort_message')}
+                    onConfirm={() => actions.retreatFromManualDungeon()}
+                    onCancel={() => setShowRetreatConfirm(false)}
+                    isDanger={true}
+                />
             </React.Suspense>
         </div>
     );

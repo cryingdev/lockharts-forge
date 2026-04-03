@@ -4,6 +4,7 @@ import { InventoryItem } from '../types/inventory';
 import { getAssetUrl } from '../utils';
 import { useGame } from '../context/GameContext';
 import { useAudio } from '../hooks/useAudio';
+import { getLocalizedItemName } from '../utils/itemText';
 
 const RomanTierOverlay = ({ id, isList = false }: { id: string, isList?: boolean }) => {
     const sizeClasses = isList ? "text-[10px] md:text-lg" : "text-xs md:text-2xl";
@@ -57,6 +58,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
     emptyMessage = "No items available."
 }) => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
     const { playClick } = useAudio();
     
     const viewMode = state.settings?.inventoryViewMode || 'LIST';
@@ -150,7 +152,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
                                         {/* Item Name Overlay */}
                                         <div className="absolute top-0 inset-x-0 bg-black/40 py-0.5 px-1 z-20 backdrop-blur-[1px] border-b border-white/5">
                                             <div className="text-[7px] md:text-[9px] font-black text-white/90 truncate uppercase text-center leading-none tracking-tighter">
-                                                {item.name}
+                                                {getLocalizedItemName(language, item)}
                                             </div>
                                         </div>
 
@@ -250,7 +252,7 @@ export const ItemSelectorList: React.FC<ItemSelectorListProps> = ({
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-[11px] md:text-sm font-black truncate ${isSelected ? 'text-indigo-200' : isLocked ? 'text-stone-500' : 'text-stone-100'}`}>{item.name}</span>
+                                            <span className={`text-[11px] md:text-sm font-black truncate ${isSelected ? 'text-indigo-200' : isLocked ? 'text-stone-500' : 'text-stone-100'}`}>{getLocalizedItemName(language, item)}</span>
                                             {isEquip && (
                                                 <div className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase border shadow-sm leading-none ${getRarityColor(item.equipmentData?.rarity)}`}>
                                                     {item.equipmentData!.rarity}

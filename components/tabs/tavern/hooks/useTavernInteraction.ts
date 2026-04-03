@@ -8,6 +8,7 @@ import { resolveTavernTalkOutcome } from '../../../../state/helpers/tavernTalkHe
 import { getNextNamedConversationPrompt } from '../../../../state/helpers/namedConversationHelpers';
 import { t } from '../../../../utils/i18n';
 import { NamedConversationPrompt } from '../../../../types/game-state';
+import { getPlayerName } from '../../../../utils/gameText';
 
 export interface FloatingHeart {
     id: number;
@@ -21,6 +22,7 @@ export type InteractionStep = 'IDLE' | 'CONFIRM_HIRE' | 'CONFIRM_FIRE';
 export const useTavernInteraction = (mercenary: Mercenary) => {
     const { state, actions } = useGame();
     const language = state.settings.language;
+    const playerName = getPlayerName(state);
     const [dialogue, setDialogue] = useState(t(language, 'tavern.interaction_intro', { name: mercenary.name }));
     const [showGiftMenu, setShowGiftMenu] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
@@ -122,8 +124,8 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
 
         actions.buyDrink(mercenary.id);
         spawnHearts();
-        setDialogue(t(language, 'tavern.drink_thanks'));
-    }, [language, mercenary.id, state.stats.gold, state.boughtDrinkToday, pendingGiftItem, step, actions, spawnHearts]);
+        setDialogue(t(language, 'tavern.drink_thanks', { playerName }));
+    }, [language, mercenary.id, state.stats.gold, state.boughtDrinkToday, pendingGiftItem, step, actions, spawnHearts, playerName]);
 
     const handleRecruitInit = useCallback(() => {
         if (!hasAffinity) {
@@ -141,8 +143,8 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
     const handleConfirmHire = useCallback(() => {
         actions.hireMercenary(mercenary.id, hiringCost);
         setStep('IDLE');
-        setDialogue(t(language, 'tavern.hire_success'));
-    }, [language, mercenary.id, hiringCost, actions]);
+        setDialogue(t(language, 'tavern.hire_success', { playerName }));
+    }, [language, mercenary.id, hiringCost, actions, playerName]);
 
     const handleTerminateInit = useCallback(() => {
         setStep('CONFIRM_FIRE');
@@ -168,9 +170,9 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
     const handleConfirmGift = useCallback(() => {
         if (!pendingGiftItem) return;
         actions.giveGift(mercenary.id, pendingGiftItem.id);
-        setDialogue(t(language, 'tavern.gift_success'));
+        setDialogue(t(language, 'tavern.gift_success', { playerName }));
         setPendingGiftItem(null);
-    }, [language, pendingGiftItem, mercenary.id, actions]);
+    }, [language, pendingGiftItem, mercenary.id, actions, playerName]);
 
     return {
         state,

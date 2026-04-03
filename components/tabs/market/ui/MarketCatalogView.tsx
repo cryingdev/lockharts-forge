@@ -4,6 +4,8 @@ import { ArrowLeft, Coins, ShoppingCart, ChevronLeft, ChevronRight } from 'lucid
 import { MarketCatalog } from './MarketCatalog';
 import { ShoppingCartDrawer } from './ShoppingCartDrawer';
 import { SfxButton } from '../../../common/ui/SfxButton';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface MarketCatalogViewProps {
     categorizedMarketItems: any[];
@@ -31,6 +33,8 @@ export const MarketCatalogView: React.FC<MarketCatalogViewProps> = ({
     garrickAffinity, gold, totalCost, isCartOpen,
     onBack, onToggleSection, onAddToCart, onSetMultiplier, onToggleCart, onRemoveFromCart, onDeleteFromCart, onBuy
 }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     // Added explicit type casting to totalCost and gold to prevent 'unknown' comparison errors
     const isOverBudget = (totalCost as number) > (gold as number);
     // Use generic reduce type to ensure cartItemCount is strictly a number even if Object.values is loosely typed
@@ -43,7 +47,7 @@ export const MarketCatalogView: React.FC<MarketCatalogViewProps> = ({
                     <div className="flex items-center gap-3">
                         <SfxButton onClick={onBack} className="bg-stone-800 p-2 rounded-xl border border-stone-700 active:scale-90"><ArrowLeft className="w-5 h-5 text-stone-300" /></SfxButton>
                         <div>
-                            <h2 className="text-xl font-black text-stone-100 font-serif uppercase tracking-tight">Garrick's Wares</h2>
+                            <h2 className="text-xl font-black text-stone-100 font-serif uppercase tracking-tight">{t(language, 'market.garricks_wares')}</h2>
                             <div className="flex items-center gap-2 bg-stone-950 px-2 py-0.5 rounded border border-white/5 mt-1"><Coins className="w-3 h-3 text-amber-50" /><span className="text-[10px] font-mono font-black text-stone-300">{gold.toLocaleString()} G</span></div>
                         </div>
                     </div>
@@ -63,7 +67,7 @@ export const MarketCatalogView: React.FC<MarketCatalogViewProps> = ({
                             <ShoppingCart className="w-4 h-4"/>
                             <div className="flex flex-col items-start leading-none min-w-0">
                                 <span className="text-[8px] font-black uppercase truncate w-full">
-                                    {isOverBudget ? 'Shortage' : 'Checkout'}
+                                    {isOverBudget ? t(language, 'market.checkout_shortage') : t(language, 'market.checkout')}
                                 </span>
                                 <span className="text-xs font-mono font-black whitespace-nowrap">{totalCost.toLocaleString()}G</span>
                             </div>

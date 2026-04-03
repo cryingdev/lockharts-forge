@@ -80,29 +80,29 @@ Mercenaries are the player's primary agents in the world.
 -   **Leveling**: Mercenaries gain XP from dungeons. Upon leveling, players can manually allocate bonus stat points.
 -   **Vitals**: Managing HP and MP is critical. Injured mercenaries require days of rest to recover.
 
-#### 3.3.3 Tavern Reputation
--   `Tavern Reputation` is a location-level relationship value that measures how trusted and well-known the forge is among adventurers.
+#### 3.3.3 Adventurer Standing
+-   `Adventurer Standing` is a tavern-facing relationship value that measures how trusted and well-known the forge is among adventurers who gather there.
 -   It is distinct from per-mercenary `Affinity`.
--   Tavern Reputation should influence who appears when the player uses Tavern recruitment interactions such as `Invite`.
--   Tavern Reputation should affect:
+-   Adventurer Standing should influence who appears when the player uses Tavern recruitment interactions such as `Invite`.
+-   Adventurer Standing should affect:
     -   The level range of random Tavern recruits.
     -   The class pool weighting for uncommon roles such as Mage and Cleric.
     -   Access to stronger or rarer Tavern recruitment candidates.
     -   Eligibility gates for some Tavern-based named encounters.
--   Tavern Reputation should not affect:
+-   Adventurer Standing should not affect:
     -   Starting affinity with a recruit.
     -   Automatic discounts on hiring.
     -   Immediate loyalty, guaranteed acceptance, or reduced relationship difficulty.
 -   Design intent: the Tavern offers better opportunities as reputation rises, but building trust with an individual mercenary must still require effort.
 -   Current implementation notes:
-    -   Tavern Reputation now appears directly in the Tavern UI.
+    -   Adventurer Standing now appears directly in the Tavern UI.
     -   It currently increases through Tavern-centered social actions such as `Invite`, `Talk`, `Buy Drink`, and receiving Tavern personal requests.
     -   It currently biases `Talk` outcomes away from pure flavor and toward `RUMOR`, `MINOR_CONTRACT`, and rare `OPPORTUNITY` results as reputation rises.
     -   If too many Tavern-origin contracts are already active, the system shifts back toward `FLAVOR` and `RUMOR` to avoid overloading the player with personal requests.
     -   Tavern `Talk` dialogue now also varies by mercenary temperament, speaking voice, and broad campaign progress stage so repeated conversations feel less interchangeable.
 
-##### 3.3.3.1 Suggested Tavern Reputation Bands
-| Tavern Reputation | Recruit Level Band | Recruit Pool Bias | Encounter Support |
+##### 3.3.3.1 Suggested Adventurer Standing Bands
+| Adventurer Standing | Recruit Level Band | Recruit Pool Bias | Encounter Support |
 | :--- | :--- | :--- | :--- |
 | `0-19` | Low-level local recruits | Mostly common martial classes | Early Tavern encounters only |
 | `20-39` | Slightly stronger recruits | Rogue and support classes appear more often | Mid-early Tavern encounters may unlock |
@@ -115,7 +115,7 @@ Mercenaries are the player's primary agents in the world.
     -   Mercenary job
     -   Affinity band
     -   Visitor / hired state
-    -   Tavern Reputation and current Tavern contract load
+    -   Adventurer Standing and current Tavern contract load
     -   Mercenary temperament
     -   Mercenary speaking voice
     -   Broad game progress stage (`EARLY`, `MID`, `LATE`)

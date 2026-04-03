@@ -1,8 +1,10 @@
 import React from 'react';
-import { X, Trash2, Plus, Minus, Package, Beaker, Sparkles, Check } from 'lucide-react';
+import { X, Trash2, Plus, Minus, Package, Beaker } from 'lucide-react';
 import { InventoryItem } from '../../../../types/inventory';
 import { ItemSelectorList } from '../../../ItemSelectorList';
 import { getAssetUrl } from '../../../../utils';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface ResearchInventoryModalProps {
     items: InventoryItem[];
@@ -18,6 +20,8 @@ interface ResearchInventoryModalProps {
 export const ResearchInventoryModal: React.FC<ResearchInventoryModalProps> = ({
     items, selectedSlots, onClose, onSelect, onIncrement, onDecrement, onRemove, onResearch
 }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const isAnySelected = selectedSlots.some(s => s !== null);
 
     return (
@@ -29,8 +33,8 @@ export const ResearchInventoryModal: React.FC<ResearchInventoryModalProps> = ({
                     <div className="flex items-center gap-3">
                         <Package className="w-5 h-5 text-indigo-400" />
                         <div>
-                            <h3 className="text-lg font-black text-stone-100 font-serif uppercase tracking-tighter">Alchemy Storage</h3>
-                            <p className="text-[10px] text-stone-500 font-black uppercase tracking-widest leading-none">Select items for extraction</p>
+                            <h3 className="text-lg font-black text-stone-100 font-serif uppercase tracking-tighter">{t(language, 'research.inventory_title')}</h3>
+                            <p className="text-[10px] text-stone-500 font-black uppercase tracking-widest leading-none">{t(language, 'research.inventory_subtitle')}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-6 h-6" /></button>
@@ -62,7 +66,7 @@ export const ResearchInventoryModal: React.FC<ResearchInventoryModalProps> = ({
                                         </button>
                                     </>
                                 ) : (
-                                    <span className="text-[10px] font-black text-stone-800 uppercase tracking-tighter">Empty</span>
+                                    <span className="text-[10px] font-black text-stone-800 uppercase tracking-tighter">{t(language, 'common.empty')}</span>
                                 )}
                             </div>
                         ))}
@@ -79,7 +83,7 @@ export const ResearchInventoryModal: React.FC<ResearchInventoryModalProps> = ({
                         }))}
                         onSelect={onSelect}
                         onToggleLock={(id) => {}} // Research items logic simplified
-                        emptyMessage="No materials available."
+                        emptyMessage={t(language, 'research.inventory_empty')}
                     />
                 </div>
 
@@ -89,7 +93,7 @@ export const ResearchInventoryModal: React.FC<ResearchInventoryModalProps> = ({
                         onClick={onClose}
                         className="px-6 py-3 rounded-xl font-black text-stone-500 hover:text-stone-300 uppercase text-xs"
                     >
-                        Back to Table
+                        {t(language, 'research.back_to_table')}
                     </button>
                     <button 
                         onClick={onResearch}
@@ -100,7 +104,7 @@ export const ResearchInventoryModal: React.FC<ResearchInventoryModalProps> = ({
                             : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-900 shadow-xl active:scale-95'
                         }`}
                     >
-                        <Beaker className="w-4 h-4" /> Start Research
+                        <Beaker className="w-4 h-4" /> {t(language, 'research.start_research')}
                     </button>
                 </div>
             </div>

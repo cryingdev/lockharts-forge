@@ -8,6 +8,9 @@ import { Mercenary } from '../../models/Mercenary';
 import { PrimaryStats, mergePrimaryStats } from '../../models/Stats';
 import { getAssetUrl } from '../../utils';
 import { SfxButton } from '../common/ui/SfxButton';
+import { useGame } from '../../context/GameContext';
+import { getLocalizedItemDescription, getLocalizedItemName } from '../../utils/itemText';
+import { t } from '../../utils/i18n';
 
 type CategoryFilter = 'ALL' | 'WEAPON' | 'ARMOR' | 'ACCESSORY' | 'CONSUMABLE' | 'SKILL';
 
@@ -59,6 +62,8 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
   isReadOnly,
   onToggleInventory,
 }) => {
+  const { state } = useGame();
+  const language = state.settings.language;
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>('ALL');
 
   const displayInventory = useMemo(() => {
@@ -90,12 +95,12 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
   }, [inventory, selectedSlotFilter, activeFilter]);
 
   const filterChips: { id: CategoryFilter; label: string; icon: React.ReactNode }[] = [
-    { id: 'ALL', label: 'All', icon: <Box className="w-3 h-3" /> },
-    { id: 'WEAPON', label: 'Weapons', icon: <Sword className="w-3 h-3" /> },
-    { id: 'ARMOR', label: 'Armor', icon: <Shield className="w-3 h-3" /> },
-    { id: 'ACCESSORY', label: 'Accessory', icon: <Sparkles className="w-3 h-3" /> },
-    { id: 'CONSUMABLE', label: 'Items', icon: <FlaskConical className="w-3 h-3" /> },
-    { id: 'SKILL', label: 'Manuals', icon: <BookOpen className="w-3 h-3" /> },
+    { id: 'ALL', label: t(language, 'equipmentInventory.filter_all'), icon: <Box className="w-3 h-3" /> },
+    { id: 'WEAPON', label: t(language, 'equipmentInventory.filter_weapon'), icon: <Sword className="w-3 h-3" /> },
+    { id: 'ARMOR', label: t(language, 'equipmentInventory.filter_armor'), icon: <Shield className="w-3 h-3" /> },
+    { id: 'ACCESSORY', label: t(language, 'equipmentInventory.filter_accessory'), icon: <Sparkles className="w-3 h-3" /> },
+    { id: 'CONSUMABLE', label: t(language, 'equipmentInventory.filter_consumable'), icon: <FlaskConical className="w-3 h-3" /> },
+    { id: 'SKILL', label: t(language, 'equipmentInventory.filter_skill'), icon: <BookOpen className="w-3 h-3" /> },
   ];
 
   return (
@@ -107,12 +112,12 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
         <div className="flex flex-col">
             <h3 className="text-[10px] md:text-sm font-black text-stone-100 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-500 transition-colors">
             <Package className="w-4 h-4 text-amber-600" />
-            <span>{selectedSlotFilter ? `Filtering: ${selectedSlotFilter}` : 'Squad Inventory'}</span>
+            <span>{selectedSlotFilter ? t(language, 'equipmentInventory.filtering', { slot: selectedSlotFilter }) : t(language, 'equipmentInventory.title')}</span>
             </h3>
-            <span className="text-[7px] md:text-[10px] text-stone-500 font-mono mt-0.5 uppercase">Click Header to Close</span>
+            <span className="text-[7px] md:text-[10px] text-stone-500 font-mono mt-0.5 uppercase">{t(language, 'equipmentInventory.close_hint')}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[8px] md:text-xs text-stone-600 font-mono bg-stone-900 px-2 py-0.5 rounded border border-stone-800">{displayInventory.length} ITEMS</span>
+          <span className="text-[8px] md:text-xs text-stone-600 font-mono bg-stone-900 px-2 py-0.5 rounded border border-stone-800">{t(language, 'equipmentInventory.item_count', { count: displayInventory.length })}</span>
           <ChevronRight className="w-4 h-4 text-stone-700 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
         </div>
       </div>
@@ -141,14 +146,14 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
         {displayInventory.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-stone-800 italic p-12 text-center bg-stone-950/20 m-4 rounded-xl border-2 border-dashed border-stone-800">
             <Box className="w-12 h-12 opacity-10 mb-2" />
-            <p className="text-xs">No suitable items found.</p>
+            <p className="text-xs">{t(language, 'equipmentInventory.no_items')}</p>
             {selectedSlotFilter && (
               <SfxButton 
                 sfx="switch"
                 onClick={onToggleInventory}
                 className="mt-4 px-4 py-2 bg-stone-800 text-stone-400 rounded-lg text-[10px] uppercase font-bold hover:text-stone-200"
               >
-                Back to View All
+                {t(language, 'equipmentInventory.back_to_all')}
               </SfxButton>
             )}
           </div>
@@ -163,6 +168,14 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
             const canEquip = isConsumable || (mercenary.level >= minLevel);
 
             const rarityClasses = (isConsumable || isSkillScroll) ? 'text-stone-400 border-stone-700 bg-stone-900/40' : getRarityClasses(item.equipmentData?.rarity);
+            const localizedItemName = getLocalizedItemName(language, {
+              id: item.equipmentData?.recipeId || item.id,
+              name: item.name,
+            });
+            const localizedItemDescription = getLocalizedItemDescription(language, {
+              id: item.equipmentData?.recipeId || item.id,
+              description: item.description,
+            });
             
             // Fix: Refined image resolution logic for equipments
             const isSkillAny = isSkillBook || isSkillScroll;
@@ -185,18 +198,18 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
               >
                 <div className="flex items-center gap-3 md:gap-4">
                   <div className={`w-10 h-10 md:w-16 md:h-16 bg-stone-950 rounded-lg border-2 flex items-center justify-center shrink-0 ${rarityClasses}`}>
-                    <img src={imageUrl} className="w-8 h-8 md:w-12 md:h-12 object-contain" alt={item.name} />
+                    <img src={imageUrl} className="w-8 h-8 md:w-12 md:h-12 object-contain" alt={localizedItemName} />
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="text-[11px] md:text-lg font-black truncate text-stone-200">{item.name}</div>
+                    <div className="text-[11px] md:text-lg font-black truncate text-stone-200">{localizedItemName}</div>
                     <div className="flex wrap items-center gap-2 mt-1">
                       <span className={`text-[7px] md:text-[9px] px-1.5 py-0.5 rounded font-black uppercase border leading-none ${rarityClasses}`}>
-                        {isSkillBook ? 'MANUAL' : isSkillScroll ? 'SCROLL' : isConsumable ? 'CONSUMABLE' : item.equipmentData?.rarity}
+                        {isSkillBook ? t(language, 'equipmentInventory.type_manual') : isSkillScroll ? t(language, 'equipmentInventory.type_scroll') : isConsumable ? t(language, 'equipmentInventory.type_consumable') : item.equipmentData?.rarity}
                       </span>
                       {item.quantity > 1 && (
                         <span className="text-[7px] md:text-[9px] text-stone-500 font-mono font-bold">
-                          QTY: {item.quantity}
+                          {t(language, 'equipmentInventory.quantity', { count: item.quantity })}
                         </span>
                       )}
                     </div>
@@ -210,7 +223,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                       }}
                       className="shrink-0 px-3 md:px-8 py-1.5 md:py-3 bg-amber-700 hover:bg-amber-600 text-white text-[9px] md:text-xs font-black uppercase rounded shadow-lg transition-all"
                     >
-                      Equip
+                      {t(language, 'equipmentInventory.equip')}
                     </SfxButton>
                   )}
 
@@ -221,7 +234,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                             className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-emerald-900/40 text-emerald-400 transition-colors"
                         >
                             <Check className="w-4 h-4" />
-                            <span className="text-[8px] md:text-[10px] font-black uppercase">{isSkillBook ? 'Study Manual' : 'Consume'}</span>
+                            <span className="text-[8px] md:text-[10px] font-black uppercase">{isSkillBook ? t(language, 'equipmentInventory.study_manual') : t(language, 'equipmentInventory.consume')}</span>
                         </SfxButton>
                         <div className="h-px w-full bg-amber-600/10" />
                         <SfxButton 
@@ -230,7 +243,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                             className="flex-1 flex flex-col items-center justify-center gap-1 hover:bg-red-900/40 text-stone-500 hover:text-red-400 transition-colors"
                         >
                             <X className="w-4 h-4" />
-                            <span className="text-[8px] md:text-[10px] font-black uppercase">Cancel</span>
+                            <span className="text-[8px] md:text-[10px] font-black uppercase">{t(language, 'common.cancel')}</span>
                         </SfxButton>
                     </div>
                   )}
@@ -239,7 +252,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                 {!isConsumable && !canEquip && isSelected && (
                   <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-2 flex items-center gap-2 text-[8px] md:text-[10px] text-red-400 font-bold uppercase tracking-tight">
                     <AlertCircle className="w-3 h-3 shrink-0" />
-                    Requires Level {minLevel} (Current: {mercenary.level})
+                    {t(language, 'equipmentInventory.requires_level', { level: minLevel, current: mercenary.level })}
                   </div>
                 )}
 
@@ -247,7 +260,7 @@ export const EquipmentInventoryList: React.FC<EquipmentInventoryListProps> = ({
                    <div className="flex items-center gap-2">
                         {isConsumable ? (
                              <span className="text-[7px] md:text-[9px] text-stone-500 italic truncate max-w-[150px]">
-                                {item.description}
+                                {localizedItemDescription}
                              </span>
                         ) : (
                             <div className="flex items-center gap-2">

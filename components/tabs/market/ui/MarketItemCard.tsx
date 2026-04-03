@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Package, Coins, Lock } from 'lucide-react';
 import { getAssetUrl } from '../../../../utils';
 import { SfxButton } from '../../../common/ui/SfxButton';
+import { useGame } from '../../../../context/GameContext';
+import { getLocalizedItemDescription, getLocalizedItemName } from '../../../../utils/itemText';
+import { t } from '../../../../utils/i18n';
 
 const RomanTierOverlay = ({ id }: { id: string }) => {
     if (id === 'scroll_t2') return <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-amber-500 font-serif font-black text-xs md:text-3xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] translate-y-2">II</span></div>;
@@ -22,8 +25,12 @@ interface MarketItemCardProps {
 }
 
 export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inventoryCount, multiplier, isLocked, gold, onAdd, onSetMultiplier }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const isSoldOut = stock <= 0;
     const meta = item.meta;
+    const localizedName = getLocalizedItemName(language, meta);
+    const localizedDescription = getLocalizedItemDescription(language, meta);
     const currentPrice = meta.baseValue * multiplier;
     const canAfford = gold >= currentPrice;
     const isSkillItem = meta.type === 'SKILL_BOOK' || meta.type === 'SKILL_SCROLL';
@@ -77,7 +84,12 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
                 </div>
             )}
 
-            <div className="w-full text-center px-1"><h4 className={`text-[7px] md:text-[11px] font-black leading-none truncate ${meta.type === 'TECHNIQUE' ? 'text-amber-400' : 'text-stone-400'}`}>{meta.name}</h4></div>
+            <div className="w-full text-center px-1">
+                <h4 className={`text-[7px] md:text-[11px] font-black leading-none truncate ${meta.type === 'TECHNIQUE' ? 'text-amber-400' : 'text-stone-400'}`}>{localizedName}</h4>
+                <p className="mt-1 text-[6px] md:text-[9px] text-stone-500 italic line-clamp-2 leading-tight min-h-[1.6em] md:min-h-[2.2em]">
+                    {localizedDescription}
+                </p>
+            </div>
             
             {/* 하단 가격 버튼 */}
             <SfxButton 
@@ -97,7 +109,7 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
                 </div>
             </SfxButton>
 
-            {isSoldOut && <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 pointer-events-none"><span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded rotate-12 uppercase">Sold Out</span></div>}
+            {isSoldOut && <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 pointer-events-none"><span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded rotate-12 uppercase">{t(language, 'market.sold_out')}</span></div>}
         </div>
     );
 };

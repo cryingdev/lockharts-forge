@@ -4,7 +4,7 @@ import DialogueBox from '../../../DialogueBox';
 import { useGame } from '../../../../context/GameContext';
 import { GameState } from '../../../../types/game-state';
 import { t } from '../../../../utils/i18n';
-import { getForgeName } from '../../../../utils/gameText';
+import { getForgeName, getPlayerName } from '../../../../utils/gameText';
 
 /**
  * 마켓 튜토리얼 전용 단계 타입
@@ -42,13 +42,14 @@ const SCRIPTS: Record<SequenceStep, { speaker: string; textKey: string }> = {
     OPEN_SHOPPING_CART_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.open_cart" },
     CLOSE_SHOPPING_CART_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.close_cart" },
     PAY_NOW_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.finalize_purchase" },
-    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { speaker: "Lockhart", textKey: "marketTutorial.dialogue.talk_to_garrick" },
+    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { speaker: "PLAYER", textKey: "marketTutorial.dialogue.talk_to_garrick" },
     LEAVE_MARKET_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.exit_square" },
 };
 
 export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
     const { actions, state } = useGame();
     const language = state.settings.language;
+    const playerName = getPlayerName(state);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [animatedRadius, setAnimatedRadius] = useState(2000);
     const requestRef = useRef<number | null>(null);
@@ -182,8 +183,8 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
             {script && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
                     <DialogueBox 
-                        speaker={script.speaker} 
-                        text={t(language, script.textKey, { forgeName: getForgeName(state) })} 
+                        speaker={script.speaker === 'PLAYER' ? playerName : script.speaker}
+                        text={t(language, script.textKey, { forgeName: getForgeName(state), playerName })} 
                         options={
                             step === 'BROWSE_GOODS_GUIDE' 
                                 ? [{ label: t(language, 'marketTutorial.option_browse'), action: () => actions.setTutorialStep('FURNACE_GUIDE'), variant: 'primary' }] 

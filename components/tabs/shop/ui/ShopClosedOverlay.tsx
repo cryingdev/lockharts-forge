@@ -1,6 +1,7 @@
-
 import React from 'react';
-import { Store, ArrowLeft } from 'lucide-react';
+import { Store } from 'lucide-react';
+import { useGame } from '../../../../context/GameContext';
+import { t } from '../../../../utils/i18n';
 
 interface ShopClosedOverlayProps {
     isOpen: boolean;
@@ -8,6 +9,9 @@ interface ShopClosedOverlayProps {
 }
 
 export const ShopClosedOverlay: React.FC<ShopClosedOverlayProps> = ({ isOpen, onNavigate }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
+
     if (isOpen) return null;
 
     return (
@@ -18,8 +22,12 @@ export const ShopClosedOverlay: React.FC<ShopClosedOverlayProps> = ({ isOpen, on
                     <div className="w-20 h-20 md:w-24 md:h-24 bg-stone-900/80 rounded-full flex items-center justify-center mx-auto mb-4 border border-stone-700/50 backdrop-blur-xl shadow-2xl transition-transform group-hover:scale-110 duration-700 ring-1 ring-white/5">
                         <Store className="w-8 h-8 md:w-10 md:h-10 text-stone-500" />
                     </div>
-                    <h3 className="text-2xl md:text-4xl font-black text-stone-300 font-serif tracking-tighter drop-shadow-2xl uppercase">Shop is Closed</h3>
-                    <p className="text-stone-500 text-sm md:text-lg mt-2 font-black uppercase tracking-widest opacity-60">Flip the sign to welcome travelers</p>
+                    <h3 className="text-2xl md:text-4xl font-black text-stone-300 font-serif tracking-tighter drop-shadow-2xl uppercase">
+                        {t(language, 'shop.closed_title')}
+                    </h3>
+                    <p className="text-stone-500 text-sm md:text-lg mt-2 font-black uppercase tracking-widest opacity-60">
+                        {t(language, 'shop.closed_subtitle')}
+                    </p>
                 </div>
             </div>
         </div>

@@ -3,9 +3,13 @@ import React, { useRef, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 import { X, BookOpen, Scroll, History, Sparkles } from 'lucide-react';
 import { SfxButton } from '../common/ui/SfxButton';
+import { t } from '../../utils/i18n';
+import { getForgeName } from '../../utils/gameText';
 
 const JournalModal = () => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
+    const forgeName = getForgeName(state);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -31,8 +35,8 @@ const JournalModal = () => {
                             <BookOpen className="w-6 h-6 text-amber-500" />
                         </div>
                         <div>
-                            <h2 className="text-xl md:text-3xl font-black text-stone-100 font-serif tracking-tighter uppercase leading-none">Forge Ledger</h2>
-                            <p className="text-[10px] md:text-xs text-stone-500 font-black uppercase tracking-[0.2em] mt-1">Chronicles of the Lockhart Lineage</p>
+                            <h2 className="text-xl md:text-3xl font-black text-stone-100 font-serif tracking-tighter uppercase leading-none">{t(language, 'journal.title')}</h2>
+                            <p className="text-[10px] md:text-xs text-stone-500 font-black uppercase tracking-[0.2em] mt-1">{t(language, 'journal.subtitle', { forgeName })}</p>
                         </div>
                     </div>
                     <SfxButton 
@@ -48,7 +52,7 @@ const JournalModal = () => {
                     {state.logs.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-stone-700 italic space-y-4 opacity-40">
                             <Scroll className="w-16 h-16 mb-2" />
-                            <p className="text-lg tracking-[0.3em] uppercase font-black font-serif italic">The ledger remains empty...</p>
+                            <p className="text-lg tracking-[0.3em] uppercase font-black font-serif italic">{t(language, 'journal.empty')}</p>
                         </div>
                     ) : (
                         <div className="space-y-8 relative">
@@ -68,7 +72,7 @@ const JournalModal = () => {
                                         {i === 0 && (
                                             <div className="flex items-center gap-1.5 mb-2">
                                                 <Sparkles className="w-3 h-3 text-amber-500" />
-                                                <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest">Latest Record</span>
+                                                <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest">{t(language, 'journal.latest_record')}</span>
                                             </div>
                                         )}
                                         <p className={`text-xs md:text-lg leading-relaxed font-medium transition-colors ${
@@ -92,7 +96,7 @@ const JournalModal = () => {
                     <div className="flex justify-center items-center gap-3">
                         <div className="h-px w-8 md:w-12 bg-stone-800"></div>
                         <span className="text-[10px] md:text-xs text-stone-600 font-mono font-bold uppercase tracking-[0.5em]">
-                            Day {state.stats.day} • Entries: {state.logs.length}
+                            {t(language, 'journal.footer', { day: state.stats.day, count: state.logs.length })}
                         </span>
                         <div className="h-px w-8 md:w-12 bg-stone-800"></div>
                     </div>

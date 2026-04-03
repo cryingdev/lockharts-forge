@@ -173,8 +173,8 @@ This document provides a comprehensive structural map of the project, detailing 
     *   Tavern, shop, and commission UI flows now support English/Korean switching while keeping item names and proper nouns in English.
     *   Korean UI now uses `NanumMyeongjoEco` as the Hangul-capable fallback while preserving the existing fantasy-styled English font stack.
 *   **Conversation & Relationship Expansion**:
-    *   Tavern talk is now data-driven and varies by job, temperament, voice, tavern reputation, and overall game progress.
-    *   Named mercenaries can trigger non-repeating personal question prompts whose answers affect Affinity, Tavern Reputation, and relationship alignment.
+    *   Tavern talk is now data-driven and varies by job, temperament, voice, adventurer standing, and overall game progress.
+    *   Named mercenaries can trigger non-repeating personal question prompts whose answers affect Affinity, Adventurer Standing, and relationship alignment.
     *   Strong alignment with certain named mercenaries can unlock personal requests and extended completion follow-up dialogue.
 *   **Skill Knowledge**:
     *   Skill Manuals and Scrolls fully integrated into the economic and crafting cycles.

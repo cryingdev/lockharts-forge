@@ -61,7 +61,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
             const data = loadFromSlot(slotIndex, createInitialGameState());
             if (data) {
                 if (data.version !== APP_VERSION) {
-                    actions.showToast(`Load Failed: Version mismatch.`);
+                    actions.showToast(t(language, 'settings.load_failed_version_mismatch'));
                     return;
                 }
                 setLoadConfirm({ isOpen: true, data, index: slotIndex });

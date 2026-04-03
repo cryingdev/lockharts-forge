@@ -1,7 +1,10 @@
 
 import React from 'react';
+import { useGame } from '../../../../context/GameContext';
 import { EquipmentItem } from '../../../../types';
 import { materials } from '../../../../data/materials';
+import { getLocalizedItemName } from '../../../../utils/itemText';
+import { t } from '../../../../utils/i18n';
 
 interface RecipeTooltipProps {
     item: EquipmentItem;
@@ -10,6 +13,8 @@ interface RecipeTooltipProps {
 }
 
 const RecipeTooltip: React.FC<RecipeTooltipProps> = ({ item, pos, getInventoryCount }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     return (
         <div 
             className="fixed z-[3000] pointer-events-none p-3 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl w-40 md:w-64 animate-in fade-in zoom-in-95 duration-200"
@@ -19,9 +24,9 @@ const RecipeTooltip: React.FC<RecipeTooltipProps> = ({ item, pos, getInventoryCo
                 transform: 'none' // Explicitly disable any default centering or translation
             }}
         >
-            <h4 className="text-[10px] md:text-sm font-black text-amber-50 uppercase font-serif mb-2">{item.name}</h4>
+            <h4 className="text-[10px] md:text-sm font-black text-amber-50 uppercase font-serif mb-2">{getLocalizedItemName(language, { id: item.id, name: item.name })}</h4>
             <div className="space-y-2">
-                <h5 className="text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest border-b border-white/5 pb-1">Required Materials</h5>
+                <h5 className="text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest border-b border-white/5 pb-1">{t(language, 'recipeTooltip.required_materials')}</h5>
                 <div className="grid gap-1">
                     {item.requirements.map(req => {
                         const hasCount = getInventoryCount(req.id);
@@ -29,7 +34,7 @@ const RecipeTooltip: React.FC<RecipeTooltipProps> = ({ item, pos, getInventoryCo
                         const mat = Object.values(materials).find(m => m.id === req.id);
                         return (
                             <div key={req.id} className="flex justify-between items-center text-[7px] md:text-[10px]">
-                                <span className={`truncate mr-2 ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>{mat?.name || req.id}</span>
+                                <span className={`truncate mr-2 ${isEnough ? 'text-stone-300' : 'text-red-400'}`}>{mat ? getLocalizedItemName(language, { id: mat.id, name: mat.name }) : req.id}</span>
                                 <span className={`font-mono font-bold ${isEnough ? 'text-stone-400' : 'text-red-500'}`}>{hasCount}/{req.count}</span>
                             </div>
                         );
