@@ -15,6 +15,8 @@ import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDu
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 import { handleResearchCombination } from './reducer/research';
 import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleRefreshCommissions, handleUpdateContractObjectiveProgress, handleClaimObjectiveContract, handleGenerateTavernMinorContract, handleUnlockNamedEncounter } from './reducer/commission';
+import { t } from '../utils/i18n';
+import { getForgeName } from '../utils/gameText';
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -137,7 +139,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             },
             forge: { ...state.forge, hasFurnace: true }, 
             showTutorialCompleteModal: true,
-            logs: ["Tutorial completed. Lockhart's Forge is fully operational.", ...state.logs]
+            logs: [t(state.settings.language, 'tutorial.completed_log', { forgeName: getForgeName(state) }), ...state.logs]
         };
     case 'DISMISS_TUTORIAL_COMPLETE':
         return { ...state, showTutorialCompleteModal: false };

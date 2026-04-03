@@ -21,11 +21,11 @@ const getCommissionText = (
     params?: Record<string, string | number>
 ) => t(state.settings.language, key, params);
 
-const getNamedEncounterText = (state: GameState, contractId: string, fallback: string) => {
+const getNamedEncounterText = (state: GameState, contractId: string, fallback?: string) => {
     const registryEntry = NAMED_CONTRACT_REGISTRY.find(entry => entry.contractId === contractId);
     return registryEntry?.encounterDialogue.textKey
         ? getCommissionText(state, registryEntry.encounterDialogue.textKey)
-        : fallback;
+        : (fallback || getCommissionText(state, 'named.generic_offer'));
 };
 
 const getNamedRequestCompletionDialogue = (state: GameState, mercenaryId?: string, clientName?: string) => {

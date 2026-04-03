@@ -181,7 +181,7 @@ export interface NamedContractRegistryEntry {
   rewards: ContractReward[];
   daysRemaining?: number;
   encounterDialogue: {
-    text: string;
+    text?: string;
     speaker: string;
     textKey?: string;
   };
@@ -328,6 +328,8 @@ export interface GameSettings {
     showLogTicker: boolean;
     inventoryViewMode: 'GRID' | 'LIST';
     language: Language;
+    playerName: string;
+    forgeName?: string;
     audio: AudioSettings;
 }
 

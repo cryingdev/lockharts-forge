@@ -6,20 +6,22 @@ import {
 } from 'lucide-react';
 import { UI_MODAL_LAYOUT } from '../../config/ui-config';
 import { SfxButton } from '../common/ui/SfxButton';
+import { t } from '../../utils/i18n';
 
 const TutorialCompleteModal = () => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
 
     if (!state.showTutorialCompleteModal) return null;
 
     const features = [
-        { id: 'FORGE', icon: Anvil, name: 'The Forge', color: 'text-amber-500' },
-        { id: 'MARKET', icon: ShoppingBag, name: 'Market', color: 'text-blue-400' },
-        { id: 'INVENTORY', icon: Package, name: 'Inventory', color: 'text-stone-400' },
-        { id: 'SHOP', icon: Coins, name: 'Shop', color: 'text-emerald-400' },
-        { id: 'TAVERN', icon: Beer, name: 'Tavern', color: 'text-orange-400' },
-        { id: 'DUNGEON', icon: Map, name: 'Dungeon', color: 'text-red-400' },
-        { id: 'SIMULATION', icon: Activity, name: 'Simulation', color: 'text-indigo-400' },
+        { id: 'FORGE', icon: Anvil, name: t(language, 'tutorial.complete_forge'), color: 'text-amber-500' },
+        { id: 'MARKET', icon: ShoppingBag, name: t(language, 'tutorial.complete_market'), color: 'text-blue-400' },
+        { id: 'INVENTORY', icon: Package, name: t(language, 'tutorial.complete_inventory'), color: 'text-stone-400' },
+        { id: 'SHOP', icon: Coins, name: t(language, 'tutorial.complete_shop'), color: 'text-emerald-400' },
+        { id: 'TAVERN', icon: Beer, name: t(language, 'tutorial.complete_tavern'), color: 'text-orange-400' },
+        { id: 'DUNGEON', icon: Map, name: t(language, 'tutorial.complete_dungeon'), color: 'text-red-400' },
+        { id: 'SIMULATION', icon: Activity, name: t(language, 'tutorial.complete_simulation'), color: 'text-indigo-400' },
     ];
 
     return (
@@ -45,16 +47,16 @@ const TutorialCompleteModal = () => {
                     <div className="w-8 h-8 md:w-14 md:h-14 bg-amber-900/30 rounded-full border border-amber-500/50 flex items-center justify-center mb-1 md:mb-2 shadow-lg">
                         <Award className="w-4 h-4 md:w-7 md:h-7 text-amber-400" />
                     </div>
-                    <h2 className="text-base md:text-xl font-bold text-stone-100 font-serif uppercase tracking-tight leading-none mb-1">Tutorial Completed</h2>
+                    <h2 className="text-base md:text-xl font-bold text-stone-100 font-serif uppercase tracking-tight leading-none mb-1">{t(language, 'tutorial.complete_title')}</h2>
                     <p className="text-stone-500 text-[8px] md:text-xs italic px-2 leading-tight">
-                        "The hammer rings. The lineage is restored."
+                        "{t(language, 'tutorial.complete_quote')}"
                     </p>
                 </div>
 
                 {/* Unlocked Features Grid - Compact version for short screens */}
                 <div className="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
                     <h3 className="text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-[0.4em] mb-2 md:mb-3 text-center opacity-60">
-                        Facilities Unlocked
+                        {t(language, 'tutorial.complete_facilities')}
                     </h3>
                     
                     <div className="grid grid-cols-2 gap-1.5 md:gap-2">
@@ -76,8 +78,8 @@ const TutorialCompleteModal = () => {
                         <div className="bg-amber-600 border-y-2 border-amber-400 p-2 md:p-3 flex items-center justify-center gap-2 md:gap-3 shadow-[0_0_30px_rgba(245,158,11,0.3)] animate-tv-on">
                             <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-white shrink-0" />
                             <div className="flex flex-col items-center">
-                                <span className="text-[8px] md:text-xs font-black text-amber-200 uppercase tracking-[0.2em] leading-none mb-1">Status Update</span>
-                                <span className="text-[10px] md:text-base font-black text-white uppercase tracking-wider text-center drop-shadow-md">Forging Tier: Level 1 Unlocked</span>
+                                <span className="text-[8px] md:text-xs font-black text-amber-200 uppercase tracking-[0.2em] leading-none mb-1">{t(language, 'tutorial.complete_status')}</span>
+                                <span className="text-[10px] md:text-base font-black text-white uppercase tracking-wider text-center drop-shadow-md">{t(language, 'tutorial.complete_tier_unlock')}</span>
                             </div>
                             <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-white shrink-0" />
                         </div>
@@ -91,7 +93,7 @@ const TutorialCompleteModal = () => {
                         className="w-full py-2 md:py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 border-b-4 border-emerald-800 text-[9px] md:text-sm uppercase tracking-[0.2em]"
                     >
                         <Check className="w-3 h-3 md:w-4 md:h-4" />
-                        Enter the Forge
+                        {t(language, 'tutorial.complete_enter')}
                     </SfxButton>
                 </div>
             </div>

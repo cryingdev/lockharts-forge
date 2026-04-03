@@ -71,7 +71,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                     </div>
                     <div className="space-y-1.5 md:space-y-2.5">
                         <div className="flex flex-col gap-0.5">
-                            <div className="flex justify-between items-center text-[7px] md:text-[9px] font-mono text-stone-500 px-0.5"><span>HP</span><span>{Math.floor(mercenary.currentHp)}/{mercenary.maxHp}</span></div>
+                            <div className="flex justify-between items-center text-[7px] md:text-[9px] font-mono text-stone-500 px-0.5"><span>{t(language, 'tavern.hp')}</span><span>{Math.floor(mercenary.currentHp)}/{mercenary.maxHp}</span></div>
                             <div className="w-full bg-stone-950 h-1 md:h-1.5 rounded-full overflow-hidden border border-stone-800"><div className="bg-red-600 h-full transition-all duration-700" style={{ width: `${(mercenary.currentHp / mercenary.maxHp) * 100}%` }} /></div>
                         </div>
                     </div>
@@ -112,41 +112,41 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                     <div className="grid grid-cols-5 gap-1.5 md:gap-3 w-full max-w-3xl mx-auto">
                         <SfxButton onClick={handlers.handleTalk} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${state.talkedToToday.includes(mercenary.id) ? 'opacity-50' : ''}`}>
                             <MessageSquare className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-500" />
-                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">Talk</span>
+                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">{t(language, 'tavern.action_talk')}</span>
                         </SfxButton>
 
                         <SfxButton onClick={handlers.handleBuyDrink} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 hover:border-amber-600 ${state.boughtDrinkToday.includes(mercenary.id) ? 'opacity-50' : ''}`}>
                             <Beer className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-600" />
                             <div className="flex flex-col items-center leading-none">
-                                <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">Drink</span>
+                                <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">{t(language, 'tavern.action_drink')}</span>
                                 <span className="text-[6px] md:text-[8px] font-mono text-amber-600/80 mt-0.5">100G</span>
                             </div>
                         </SfxButton>
 
                         <SfxButton onClick={() => setShowGiftMenu(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 hover:border-pink-500`}>
                             <Gift className="w-3.5 h-3.5 md:w-5 md:h-5 text-pink-500" />
-                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">Gift</span>
+                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">{t(language, 'tavern.action_gift')}</span>
                         </SfxButton>
 
                         {isHired ? (
                             <SfxButton onClick={handlers.handleTerminateInit} disabled={isOnExpedition} className={`${btnBaseClass} text-white ${isOnExpedition ? 'bg-stone-900 border-stone-800 text-stone-600 cursor-not-allowed opacity-50' : 'bg-red-950/60 hover:bg-red-900/80 border-red-800'}`}>
                                 <UserMinus className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                                <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">Fire</span>
+                                <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">{t(language, 'tavern.action_fire')}</span>
                             </SfxButton>
                         ) : (
                             <SfxButton onClick={handlers.handleRecruitInit} disabled={!canAfford || !hasAffinity || !canHireNamed} className={`${btnBaseClass} ${(!canAfford || !hasAffinity || !canHireNamed) ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'}`}>
                                 <UserPlus className="w-3.5 h-3.5 md:w-5 md:h-5" />
                                 <div className="flex flex-col items-center leading-none">
-                                    <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">Hire</span>
+                                    <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">{t(language, 'tavern.action_hire')}</span>
                                     {hasAffinity && canHireNamed && <span className="text-[6px] md:text-[8px] font-mono opacity-80 mt-0.5">{hiringCost}G</span>}
-                                    {isNamed && !canHireNamed && <span className="text-[6px] md:text-[8px] font-mono text-red-500 mt-0.5">Locked</span>}
+                                    {isNamed && !canHireNamed && <span className="text-[6px] md:text-[8px] font-mono text-red-500 mt-0.5">{t(language, 'tavern.locked')}</span>}
                                 </div>
                             </SfxButton>
                         )}
 
                         <SfxButton onClick={() => setIsDetailOpen(true)} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${isHired ? 'hover:border-emerald-500' : 'hover:border-blue-500'}`}>
                             {isHired ? <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Search className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-500" />}
-                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">{isHired ? 'Manage' : 'Info'}</span>
+                            <span className="font-black text-[8px] md:text-xs text-stone-200 uppercase tracking-widest">{isHired ? t(language, 'tavern.action_manage') : t(language, 'tavern.action_info')}</span>
                             {hasUnallocated && <div className="absolute -top-1 -left-1 bg-amber-500 text-stone-900 p-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-bounce border border-stone-950 z-10"><ChevronUp className="w-2.5 h-2.5 font-black" /></div>}
                         </SfxButton>
                     </div>
@@ -161,10 +161,10 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                             action: () => handlers.handleNamedPromptOption(option.id),
                             variant: 'primary' as const
                         })) :
-                        followupText ? [{ label: "Continue", action: handlers.handleContinue, variant: 'primary' }] :
-                        pendingGiftItem ? [{ label: `Give ${pendingGiftItem.name}`, action: handlers.handleConfirmGift, variant: 'primary' }, { label: "Cancel", action: handlers.handleCancelGift, variant: 'neutral' }] : 
-                        step === 'CONFIRM_HIRE' ? [{ label: `Sign Contract (-${hiringCost}G)`, action: handlers.handleConfirmHire, variant: 'primary' }, { label: "Think again", action: handlers.handleCancelStep, variant: 'neutral' }] : 
-                        step === 'CONFIRM_FIRE' ? [{ label: "Terminate Contract", action: handlers.handleConfirmTerminate, variant: 'danger' }, { label: "Stay with me", action: handlers.handleCancelStep, variant: 'neutral' }] : []
+                        followupText ? [{ label: t(language, 'common.continue'), action: handlers.handleContinue, variant: 'primary' }] :
+                        pendingGiftItem ? [{ label: t(language, 'tavern.give_item', { item: pendingGiftItem.name }), action: handlers.handleConfirmGift, variant: 'primary' }, { label: t(language, 'common.cancel'), action: handlers.handleCancelGift, variant: 'neutral' }] : 
+                        step === 'CONFIRM_HIRE' ? [{ label: t(language, 'tavern.sign_contract', { cost: hiringCost }), action: handlers.handleConfirmHire, variant: 'primary' }, { label: t(language, 'tavern.think_again'), action: handlers.handleCancelStep, variant: 'neutral' }] : 
+                        step === 'CONFIRM_FIRE' ? [{ label: t(language, 'tavern.terminate_contract'), action: handlers.handleConfirmTerminate, variant: 'danger' }, { label: t(language, 'tavern.stay_with_me'), action: handlers.handleCancelStep, variant: 'neutral' }] : []
                     }
                     className="w-full relative pointer-events-auto"
                 />
@@ -175,11 +175,11 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="bg-stone-900 border-2 border-stone-700 rounded-2xl w-full max-w-2xl h-[60vh] min-h-[400px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95">
                         <div className="p-3 border-b border-stone-800 bg-stone-850 flex justify-between items-center shrink-0">
-                            <div className="flex items-center gap-2"><div className="bg-pink-900/30 p-1.5 rounded-lg border border-pink-700/50"><Gift className="w-4 h-4 text-pink-500" /></div><h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">Select Gift</h3></div>
+                            <div className="flex items-center gap-2"><div className="bg-pink-900/30 p-1.5 rounded-lg border border-pink-700/50"><Gift className="w-4 h-4 text-pink-500" /></div><h3 className="font-bold text-stone-200 font-serif uppercase tracking-widest text-sm">{t(language, 'tavern.select_gift')}</h3></div>
                             <SfxButton onClick={() => setShowGiftMenu(false)} className="p-1.5 hover:bg-stone-800 rounded-full text-stone-500"><X className="w-4 h-4" /></SfxButton>
                         </div>
                         <div className="flex-1 overflow-hidden flex flex-col">
-                            <ItemSelectorList items={state.inventory.filter(i => ['EQUIPMENT', 'PRODUCT', 'CONSUMABLE', 'GIFT'].includes(i.type))} onSelect={handlers.handleSelectItemForGift} onToggleLock={(id) => actions.toggleLockItem(id)} customerMarkup={1.0} emptyMessage="No suitable gear found." />
+                            <ItemSelectorList items={state.inventory.filter(i => ['EQUIPMENT', 'PRODUCT', 'CONSUMABLE', 'GIFT'].includes(i.type))} onSelect={handlers.handleSelectItemForGift} onToggleLock={(id) => actions.toggleLockItem(id)} customerMarkup={1.0} emptyMessage={t(language, 'tavern.no_suitable_gift')} />
                         </div>
                     </div>
                 </div>

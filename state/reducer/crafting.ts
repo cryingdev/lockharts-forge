@@ -74,6 +74,7 @@ export const handleCancelCrafting = (state: GameState, payload: { item: Equipmen
 };
 
 export const handleFinishCrafting = (state: GameState, payload: { item: EquipmentItem; quality: number; bonus?: number; masteryGain?: number }): GameState => {
+    const language = state.settings.language;
     const { item, quality, bonus = 0, masteryGain = 1 } = payload;
     const masteryCount = state.craftingMastery[item.id] || 0;
     const isFirstCraft = masteryCount === 0;
@@ -121,7 +122,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     let newTutorialStep = state.tutorialStep;
     if (state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE' && item.id === 'sword_bronze_t1') {
         newTutorialStep = 'PIP_RETURN_GUIDE';
-        logMsg = "Pip's Bronze Shortsword is complete! He'll be back at the shop soon. " + logMsg;
+        logMsg = t(language, 'tutorial.pip_sword_complete') + ' ' + logMsg;
     }
 
     const newMastery = { ...state.craftingMastery };
@@ -130,7 +131,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     let newUnlockedTabs = [...state.unlockedTabs];
     if (!newUnlockedTabs.includes('INVENTORY')) {
         newUnlockedTabs.push('INVENTORY');
-        logMsg = "Facility restored: Inventory tracking is now active. " + logMsg;
+        logMsg = t(language, 'tutorial.inventory_restored') + ' ' + logMsg;
     }
 
     return {

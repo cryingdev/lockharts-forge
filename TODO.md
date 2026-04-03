@@ -82,3 +82,87 @@
 - No regression in font loading or layout overflow.
 - `npm run lint` passes.
 - `npm run build` passes.
+
+## Localized Proper Nouns Review
+
+### Context
+- We already split `Lockhart Forge`-style repeated naming into locale-backed helpers and keys.
+- The same pattern could later be extended to other repeated proper nouns or semi-fixed world terms if they start appearing in many tutorial, event, or system strings.
+
+### Why This Was Considered
+- Repeated names and world terms become hard to rename consistently once they are copied across many dialogue and UI strings.
+- Moving them into `names.*` or `terms.*` keys can make future renaming, live-service content changes, or branding updates much safer.
+- This was intentionally deferred for now because the current scope would add extra migration work without enough immediate payoff.
+
+### Deferred Review Task
+- Re-evaluate whether more repeated proper nouns should move into `names.*` or `terms.*`.
+- Only do this if:
+  - the same name starts appearing in many unrelated locale strings, or
+  - we expect live renaming / server-driven profile naming / broader localization changes.
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/locales/en.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/locales/ko.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/utils/gameText.ts`
+- tutorial, tavern, market, and commission text sections that reuse the same world terms repeatedly
+
+## Live Version Refresh Follow-Up
+
+### Context
+- `/Users/cryingdev/GitHub/lockharts-forge/utils/cacheManager.ts` now performs a startup-only version check against `/metadata.json` using `cache: 'no-store'`.
+- If the running bundle version differs from the freshly fetched metadata version, the app clears browser caches, preserves save/settings keys, and reloads once automatically.
+- This intentionally solves the "stale old build on one browser tab" problem only at app startup.
+
+### Why This Follow-Up Exists
+- During development and current deployment flow, startup-only refresh is enough and keeps the UX quiet.
+- Once longer play sessions or live-service features matter, redeploys that happen while the user is already in-game can still leave that active tab on an old runtime.
+- Future online features such as arena battles, server identity, and player-vs-player state will make runtime version drift more important to detect and handle gracefully.
+
+### Deferred Review Task
+- Revisit in-game version drift handling after server-backed systems are introduced.
+- Evaluate whether the running client should:
+  - periodically poll for a newer deployed version,
+  - defer refresh until the player reaches a safe point,
+  - warn before reloading if the player is in combat / dungeon / unsaved flow,
+  - or require a stricter reconnect/update policy for online features.
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/utils/cacheManager.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/index.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/context/GameContext.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/state/gameReducer.ts`
+- any future online session / matchmaking / server-sync modules
+
+## gameText.ts Review
+
+### Context
+- `/Users/cryingdev/GitHub/lockharts-forge/utils/gameText.ts` currently centralizes player-name and forge-name display rules.
+- It also still contains legacy name extraction logic that was kept to avoid breaking older name formats while the naming model changed from `forgeName` input to `playerName` input.
+
+### Why This Follow-Up Exists
+- Even if legacy save compatibility stops mattering, the file may still be useful as the single place that defines:
+  - default player naming,
+  - localized forge-name composition,
+  - title splitting behavior.
+- At the same time, some functions may become unnecessary if legacy fallback and duplicate naming paths are removed later.
+- We want a deliberate review rather than letting this helper file grow without re-checking whether all functions still earn their keep.
+
+### Deferred Review Task
+- Re-evaluate whether `gameText.ts` is still needed as a dedicated module once the naming model settles.
+- Keep it if it remains the cleanest home for:
+  - `playerName -> forge display name` rules,
+  - locale-aware naming helpers,
+  - title formatting helpers.
+- Consider trimming it if legacy-only helpers are the main remaining reason it exists.
+
+### Questions To Answer Later
+- Do we still need `extractLegacyPlayerName()` once older naming formats are no longer supported?
+- Should `playerName` and forge display naming stay coupled, or should they split further when server-backed identity arrives?
+- Is `splitTitleName()` still best placed here, or should title-only formatting move closer to the title UI?
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/utils/gameText.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/utils/saveSystem.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/components/TitleScreen.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/locales/en.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/locales/ko.ts`

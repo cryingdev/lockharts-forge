@@ -1,6 +1,6 @@
-# Lockhart's Forge - Tutorial System Documentation (v0.1.46a)
+# Lockhart's Forge - Tutorial System Documentation (v0.1.46b)
 
-본 문서는 `Lockhart's Forge`의 튜토리얼 시스템 흐름과 각 단계별 동작 사양을 정의합니다. v0.1.46a 기준으로 탭 방식이 아닌 월드 맵 POI(Point of Interest) 기반 안내 구조를 반영합니다.
+본 문서는 `Lockhart's Forge`의 튜토리얼 시스템 흐름과 각 단계별 동작 사양을 정의합니다. v0.1.46b 기준으로 탭 방식이 아닌 월드 맵 POI(Point of Interest) 기반 안내 구조를 반영합니다.
 
 ---
 

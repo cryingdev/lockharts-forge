@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.46a)
+# Project Map – Lockhart’s Forge (v0.1.46b)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -11,14 +11,14 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.46a`).
+- `metadata.json`: App metadata and versioning (`0.1.46b`).
 - `GAME_DESIGN.md`: Comprehensive game design document covering mechanics and world-building.
 - `TECH_DESIGN.md`: Technical architecture and implementation details.
 - `COMBAT_FORMULA.md`: Official combat calculation sequence and formulas.
 - `PROBABILITY_SYSTEM.md`: RNG standardization rules.
 - `ARCHITECTURE_POLICIES.md`: Economic balance, state transitions, and save migration policies.
 - `PROJECT_MAP.md`: This document.
-- `TODO.md`: Follow-up backlog for Korean typography and UI readability polish.
+- `TODO.md`: Follow-up backlog for Korean typography, version-refresh handling, and helper/file review notes.
 - `locales/en.ts`: English localization dictionary.
 - `locales/ko.ts`: Korean localization dictionary.
 
@@ -154,7 +154,7 @@ This document provides a comprehensive structural map of the project, detailing 
 
 ---
 
-## 🔄 Recent Updates (v0.1.46a)
+## 🔄 Recent Updates (v0.1.46b)
 *   **Architecture & Governance**:
     *   `ARCHITECTURE_POLICIES.md` established for economic balance, state transitions, and save migration.
     *   RNG standardization (seeded LCG) fully integrated across all game systems.
@@ -165,6 +165,8 @@ This document provides a comprehensive structural map of the project, detailing 
 *   **Persistence Overhaul**:
     *   Global settings (Audio, UI) now persist independently of save slots.
     *   Language preference is stored in `settings.language` and shared across all saves.
+    *   Save/load paths now normalize loaded state against the current initial-state shape for safer current-version restores.
+    *   Startup cache initialization now fetches `metadata.json` with `no-store` semantics and silently reloads once when a newer deployed build is detected.
 *   **Localization Foundation**:
     *   Key-value locale dictionaries introduced in `locales/en.ts` and `locales/ko.ts`.
     *   `utils/i18n.ts` added to resolve translated UI strings and formatted dialogue/log templates.

@@ -3,6 +3,7 @@ import { getAssetUrl } from '../../../utils';
 import { ChevronRight, ShieldAlert, ShoppingBag, Store, Beer, Coins, Zap, Calendar, BedDouble, BookOpen, Settings, Users } from 'lucide-react';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { useGame } from '../../../context/GameContext';
+import { t } from '../../../utils/i18n';
 
 interface MainSceneProps {
     onNavigate: (tab: any) => void;
@@ -44,7 +45,8 @@ const LogTicker = ({ message }: { message: string }) => {
  * Displays the forge's exterior ground background.
  */
 const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) => {
-    const { state, actions } = useGame();
+  const { state, actions } = useGame();
+  const language = state.settings.language;
     const { gold, energy, maxEnergy, day } = state.stats;
     const { uiEffects, settings } = state;
     const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
@@ -208,8 +210,8 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                             <ShoppingBag className="w-3 h-3 text-blue-400/80" />
                         </div>
                         <div className="flex flex-col items-end leading-none pl-1">
-                            <span className="text-[6px] font-black text-stone-500 uppercase tracking-widest text-right">Market District</span>
-                            <span className="text-[9px] font-black text-stone-100 font-serif uppercase tracking-wider mt-0.5 text-right">Garrick's Wares</span>
+                            <span className="text-[6px] font-black text-stone-500 uppercase tracking-widest text-right">{t(language, 'market.market_district')}</span>
+                            <span className="text-[9px] font-black text-stone-100 font-serif uppercase tracking-wider mt-0.5 text-right">{t(language, 'market.garricks_wares')}</span>
                         </div>
                     </SfxButton>
                 </div>

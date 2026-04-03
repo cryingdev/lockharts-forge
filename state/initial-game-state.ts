@@ -7,6 +7,7 @@ import { DUNGEONS } from '../data/dungeons';
 import { loadGlobalSettings } from '../utils/saveSystem';
 import { createRandomMercenary } from '../utils/mercenaryGenerator';
 import { NAMED_CONTRACT_REGISTRY } from '../data/contracts/namedContracts';
+import { extractLegacyPlayerName } from '../utils/gameText';
 
 const createInitialInventory = (): InventoryItem[] => [
     { ...materials.anvil, type: 'TOOL', quantity: 1 },
@@ -38,6 +39,7 @@ export const createInitialGameState = (): GameState => {
         showLogTicker: true,
         inventoryViewMode: 'LIST',
         language: 'en',
+        playerName: 'Lockhart',
         audio: {
             masterVolume: 0.5,
             musicVolume: 0.8,
@@ -57,6 +59,12 @@ export const createInitialGameState = (): GameState => {
             ...(globalSettings.audio || {})
         }
     } : defaultSettings;
+
+    if (!finalSettings.playerName) {
+        finalSettings.playerName =
+            extractLegacyPlayerName(globalSettings?.forgeName, finalSettings.language) ||
+            defaultSettings.playerName;
+    }
 
     return {
         stats: {

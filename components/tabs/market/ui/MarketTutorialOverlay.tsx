@@ -3,6 +3,8 @@ import { Pointer } from 'lucide-react';
 import DialogueBox from '../../../DialogueBox';
 import { useGame } from '../../../../context/GameContext';
 import { GameState } from '../../../../types/game-state';
+import { t } from '../../../../utils/i18n';
+import { getForgeName } from '../../../../utils/gameText';
 
 /**
  * 마켓 튜토리얼 전용 단계 타입
@@ -20,32 +22,33 @@ export type SequenceStep = Extract<GameState['tutorialStep'],
 
 interface StepConfig {
     targetId: string;
-    label: string;
+    labelKey: string;
     direction: 'top' | 'bottom' | 'left' | 'right';
 }
 
 const SCENE_STEPS_CONFIG: Record<SequenceStep, StepConfig> = {
-    BROWSE_GOODS_GUIDE: { targetId: 'BROWSE_GOODS_BUTTON', label: 'Browse Goods', direction: 'top' },
-    FURNACE_GUIDE: { targetId: 'FURNACE_ITEM', label: 'Select the Furnace', direction: 'bottom' },
-    OPEN_SHOPPING_CART_GUIDE: { targetId: 'CART_TOGGLE', label: 'Open the Cart', direction: 'left' },
-    CLOSE_SHOPPING_CART_GUIDE: { targetId: 'CART_TOGGLE', label: 'Close the Cart', direction: 'right' },
-    PAY_NOW_GUIDE: { targetId: 'PAY_NOW_BUTTON', label: 'Finalize Purchase', direction: 'bottom' },
-    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { targetId: 'GARRICK_TALK_BUTTON', label: 'Talk to Garrick', direction: 'top' },
-    LEAVE_MARKET_GUIDE: { targetId: 'MARKET_BACK_BUTTON', label: 'Exit to Square', direction: 'bottom' },
+    BROWSE_GOODS_GUIDE: { targetId: 'BROWSE_GOODS_BUTTON', labelKey: 'marketTutorial.browse_goods', direction: 'top' },
+    FURNACE_GUIDE: { targetId: 'FURNACE_ITEM', labelKey: 'marketTutorial.select_furnace', direction: 'bottom' },
+    OPEN_SHOPPING_CART_GUIDE: { targetId: 'CART_TOGGLE', labelKey: 'marketTutorial.open_cart', direction: 'left' },
+    CLOSE_SHOPPING_CART_GUIDE: { targetId: 'CART_TOGGLE', labelKey: 'marketTutorial.close_cart', direction: 'right' },
+    PAY_NOW_GUIDE: { targetId: 'PAY_NOW_BUTTON', labelKey: 'marketTutorial.finalize_purchase', direction: 'bottom' },
+    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { targetId: 'GARRICK_TALK_BUTTON', labelKey: 'marketTutorial.talk_to_garrick', direction: 'top' },
+    LEAVE_MARKET_GUIDE: { targetId: 'MARKET_BACK_BUTTON', labelKey: 'marketTutorial.exit_square', direction: 'bottom' },
 };
 
-const SCRIPTS: Record<SequenceStep, { speaker: string; text: string }> = {
-    BROWSE_GOODS_GUIDE: { speaker: "Garrick", text: "Welcome back, smith! Open up my catalog and see what catches your eye." },
-    FURNACE_GUIDE: { speaker: "Garrick", text: "There it is! Not as grand as your old one, but it'll bring the fire back." },
-    OPEN_SHOPPING_CART_GUIDE: { speaker: "Garrick", text: "Going to settle the bill? Open your cart on the right." },
-    CLOSE_SHOPPING_CART_GUIDE: { speaker: "Garrick", text: "Now close the list so we can talk business." },
-    PAY_NOW_GUIDE: { speaker: "Garrick", text: "Hand over the coin, and the future is yours." },
-    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { speaker: "Lockhart", text: "I should say goodbye to Garrick before I leave." },
-    LEAVE_MARKET_GUIDE: { speaker: "Garrick", text: "Safe travels, Lockhart. Don't let those embers go cold again." },
+const SCRIPTS: Record<SequenceStep, { speaker: string; textKey: string }> = {
+    BROWSE_GOODS_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.browse_goods" },
+    FURNACE_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.select_furnace" },
+    OPEN_SHOPPING_CART_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.open_cart" },
+    CLOSE_SHOPPING_CART_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.close_cart" },
+    PAY_NOW_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.finalize_purchase" },
+    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { speaker: "Lockhart", textKey: "marketTutorial.dialogue.talk_to_garrick" },
+    LEAVE_MARKET_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.exit_square" },
 };
 
 export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
-    const { actions } = useGame();
+    const { actions, state } = useGame();
+    const language = state.settings.language;
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [animatedRadius, setAnimatedRadius] = useState(2000);
     const requestRef = useRef<number | null>(null);
@@ -170,7 +173,7 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
                     <div className={`flex items-center ${containerLayout} ${animationClass}`}>
                         <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ transform: iconRotation }} />
                         <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-2xl border-2 border-amber-400 whitespace-nowrap`}>
-                            {config.label}
+                            {t(language, config.labelKey)}
                         </div>
                     </div>
                 </div>
@@ -180,12 +183,12 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
                     <DialogueBox 
                         speaker={script.speaker} 
-                        text={script.text} 
+                        text={t(language, script.textKey, { forgeName: getForgeName(state) })} 
                         options={
                             step === 'BROWSE_GOODS_GUIDE' 
-                                ? [{ label: "Browse", action: () => actions.setTutorialStep('FURNACE_GUIDE'), variant: 'primary' }] 
+                                ? [{ label: t(language, 'marketTutorial.option_browse'), action: () => actions.setTutorialStep('FURNACE_GUIDE'), variant: 'primary' }] 
                                 : step === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' 
-                                    ? [{ label: "Talk", action: () => actions.setTutorialStep('LEAVE_MARKET_GUIDE'), variant: 'primary' }] 
+                                    ? [{ label: t(language, 'marketTutorial.option_talk'), action: () => actions.setTutorialStep('LEAVE_MARKET_GUIDE'), variant: 'primary' }] 
                                     : []
                         } 
                         className="w-full relative pointer-events-auto"

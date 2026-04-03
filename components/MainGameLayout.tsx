@@ -3,6 +3,7 @@ import { Pointer, FastForward } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import { SfxButton } from './common/ui/SfxButton';
 import { t } from '../utils/i18n';
+import { getForgeName } from '../utils/gameText';
 
 // Import Background Services
 import { useShopService } from '../services/shop/shop-service';
@@ -65,31 +66,33 @@ interface MainGameLayoutProps {
 type TutorialDirection = 'top' | 'bottom' | 'left' | 'right' | 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
 interface StepConfig {
     targetId: string;
-    label: string;
+    labelKey: string;
     direction: TutorialDirection;
 }
 
 const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
-    MARKET_POI_GUIDE: { targetId: 'MARKET_POI', label: 'Visit Market District', direction: 'right' },
-    FORGE_POI_GUIDE: { targetId: 'FORGE_POI', label: 'Visit Lockhart Forge', direction: 'right' },
-    OPEN_RECIPE_GUIDE: { targetId: 'RECIPE_TOGGLE', label: 'Open Recipes', direction: 'left' },
-    SELECT_SWORD_GUIDE: { targetId: 'SWORD_RECIPE', label: 'Select Sword', direction: 'bottom' },
-    START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', label: 'Start Forging', direction: 'right' },
-    FINALIZE_FORGE_GUIDE: { targetId: 'FINALIZE_BUTTON', label: 'Complete Forge', direction: 'bottom' },
-    OPEN_SHOP_TAB_GUIDE: { targetId: 'NAV_TO_SHOP', label: 'Open the Shop', direction: 'right' },
-    OPEN_SHOP_SIGN_GUIDE: { targetId: 'SHOP_SIGN', label: 'Open the Shop', direction: 'bottom' },
+    MARKET_POI_GUIDE: { targetId: 'MARKET_POI', labelKey: 'tutorial.visit_market_district', direction: 'right' },
+    FORGE_POI_GUIDE: { targetId: 'FORGE_POI', labelKey: 'tutorial.visit_lockhart_forge', direction: 'right' },
+    OPEN_RECIPE_GUIDE: { targetId: 'RECIPE_TOGGLE', labelKey: 'tutorial.open_recipes', direction: 'left' },
+    SELECT_SWORD_GUIDE: { targetId: 'SWORD_RECIPE', labelKey: 'tutorial.select_sword', direction: 'bottom' },
+    START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', labelKey: 'tutorial.start_forging', direction: 'right' },
+    FINALIZE_FORGE_GUIDE: { targetId: 'FINALIZE_BUTTON', labelKey: 'tutorial.complete_forge', direction: 'bottom' },
+    OPEN_SHOP_TAB_GUIDE: { targetId: 'NAV_TO_SHOP', labelKey: 'tutorial.open_the_shop', direction: 'right' },
+    OPEN_SHOP_SIGN_GUIDE: { targetId: 'SHOP_SIGN', labelKey: 'tutorial.open_the_shop', direction: 'bottom' },
 };
 
-const TUTORIAL_CONTEXT_SCRIPTS: Record<string, { speaker: string, text: string }> = {
-    MARKET_POI_GUIDE: { speaker: "Lockhart", text: "A forge without a roar is just a cold pile of stone. There should be a replacement furnace at the Market District... let's head to Garrick's store." },
-    FORGE_POI_GUIDE: { speaker: "Lockhart", text: "The furnace is installed. Now, let's see if I can still craft a blade worthy of the Lockhart name." },
-    OPEN_RECIPE_GUIDE: { speaker: "Lockhart", text: "I've memorized the family patterns. Let's see which ones I can still recall with these materials." },
-    SELECT_SWORD_GUIDE: { speaker: "Lockhart", text: "A Bronze Shortsword. A simple pattern, but a reliable test for this new unit." },
-    OPEN_SHOP_TAB_GUIDE: { speaker: "Lockhart", text: "A blade without a wielder is just cold metal. Let's head to the front desk and see if any travelers seek Lockhart steel." },
-    OPEN_SHOP_SIGN_GUIDE: { speaker: "Lockhart", text: "The forge is alive. The shop must follow. Flip the sign and let them come." },
+const TUTORIAL_CONTEXT_SCRIPTS: Record<string, { speaker: string, textKey: string }> = {
+    MARKET_POI_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.market_poi_guide' },
+    FORGE_POI_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.forge_poi_guide' },
+    OPEN_RECIPE_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.open_recipe_guide' },
+    SELECT_SWORD_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.select_sword_guide' },
+    OPEN_SHOP_TAB_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.open_shop_tab_guide' },
+    OPEN_SHOP_SIGN_GUIDE: { speaker: "Lockhart", textKey: 'tutorial.context.open_shop_sign_guide' },
 };
 
 const TutorialOverlay = ({ step }: { step: string }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const { targetId } = TUTORIAL_STEPS_CONFIG[step] || {};
     const script = TUTORIAL_CONTEXT_SCRIPTS[step];
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -219,14 +222,14 @@ const TutorialOverlay = ({ step }: { step: string }) => {
                 <div key={config.targetId} className="absolute animate-in fade-in zoom-in-95 duration-300" style={pointerStyles}>
                     <div className={`flex items-center ${containerLayout} ${animationClass}`}>
                         <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ transform: iconRotation }} />
-                        <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase rounded-full shadow-2xl border-2 border-amber-400`}>{config.label}</div>
+                        <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase rounded-full shadow-2xl border-2 border-amber-400`}>{t(language, config.labelKey, { forgeName: getForgeName(state) })}</div>
                     </div>
                 </div>
             )}
 
             {script && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-none z-[5000]">
-                    <DialogueBox speaker={script.speaker} text={script.text} options={[]} className="w-full relative pointer-events-auto" />
+                    <DialogueBox speaker={script.speaker} text={t(language, script.textKey, { forgeName: getForgeName(state) })} options={[]} className="w-full relative pointer-events-auto" />
                 </div>
             )}
         </div>
@@ -235,6 +238,8 @@ const TutorialOverlay = ({ step }: { step: string }) => {
 
 const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSettings }) => {
   const { state, actions } = useGame();
+  const language = state.settings.language;
+  const forgeName = getForgeName(state);
   const [activeTab, setActiveTab] = useState<'MAIN' | 'FORGE' | 'MARKET' | 'SHOP' | 'TAVERN' | 'DUNGEON' | 'SIMULATION'>('MAIN');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
@@ -277,20 +282,20 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         case 'CRAFT_START_DIALOG_GUIDE': 
             return { 
                 speaker: "Lockhart", 
-                text: "The heat is steady... I'll craft a Bronze Shortsword to test the unit.", 
+                text: t(language, 'tutorial.dialogue.craft_start', { forgeName }), 
                 action: () => {
                     setActiveTab('FORGE');
                     actions.setTutorialStep('OPEN_RECIPE_GUIDE');
                 }
             };
-        case 'CRAFT_RESULT_DIALOG_GUIDE': return { speaker: "Lockhart", text: "Higher mastery grants permanent bonuses. Let's finish this piece.", nextStep: 'FINALIZE_FORGE_GUIDE' as const };
-        case 'SHOP_INTRO_DIALOG_GUIDE': return { speaker: "Lockhart", text: "The forge is alive. The shop must follow. Let's head to the Shop counter.", nextStep: 'OPEN_SHOP_TAB_GUIDE' as const };
-        case 'PIP_PRAISE_DIALOG_GUIDE': return { speaker: "Pip", text: "Wow! This is amazing! I've never seen such a fine blade. I'll tell everyone about Lockhart Forge!", nextStep: 'DRAGON_TALK_DIALOG_GUIDE' as const };
-        case 'DRAGON_TALK_DIALOG_GUIDE': return { speaker: "Ignis", text: "Not bad, mortal. You might just restore the glory of this place after all.", nextStep: 'TUTORIAL_END_DIALOG_GUIDE' as const };
-        case 'TUTORIAL_END_DIALOG_GUIDE': return { speaker: "Lockhart", text: "The first step is taken. Now, the real work begins. The world awaits Lockhart steel.", action: () => actions.completeTutorial() };
+        case 'CRAFT_RESULT_DIALOG_GUIDE': return { speaker: "Lockhart", text: t(language, 'tutorial.dialogue.craft_result', { forgeName }), nextStep: 'FINALIZE_FORGE_GUIDE' as const };
+        case 'SHOP_INTRO_DIALOG_GUIDE': return { speaker: "Lockhart", text: t(language, 'tutorial.dialogue.shop_intro', { forgeName }), nextStep: 'OPEN_SHOP_TAB_GUIDE' as const };
+        case 'PIP_PRAISE_DIALOG_GUIDE': return { speaker: "Pip", text: t(language, 'tutorial.dialogue.pip_praise', { forgeName }), nextStep: 'DRAGON_TALK_DIALOG_GUIDE' as const };
+        case 'DRAGON_TALK_DIALOG_GUIDE': return { speaker: "Ignis", text: t(language, 'tutorial.dialogue.dragon_talk'), nextStep: 'TUTORIAL_END_DIALOG_GUIDE' as const };
+        case 'TUTORIAL_END_DIALOG_GUIDE': return { speaker: "Lockhart", text: t(language, 'tutorial.dialogue.end', { forgeName }), action: () => actions.completeTutorial() };
         default: return null;
     }
-  }, [state.tutorialStep, actions]);
+  }, [state.tutorialStep, actions, language, forgeName]);
 
   // MainScene 등의 자식 컴포넌트에서 건물 클릭 시 호출할 지능형 내비게이션 핸들러
   const handleSceneNavigation = useCallback((target: string) => {
@@ -320,7 +325,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       )}
 
       {/* Sleeping Overlay */}
-      {isSleeping && <div className={`fixed inset-0 z-[10000] bg-black transition-opacity ${isFadingOut ? 'opacity-0 duration-[1000ms]' : 'opacity-100'}`}>{!isFadingOut && <div className="absolute inset-0 flex flex-col items-center justify-center gap-4"><span className="text-amber-50 font-serif italic text-5xl md:text-7xl">{zzzText}</span><span className="text-stone-700 font-black uppercase text-[10px]">Resting...</span></div>}</div>}
+      {isSleeping && <div className={`fixed inset-0 z-[10000] bg-black transition-opacity ${isFadingOut ? 'opacity-0 duration-[1000ms]' : 'opacity-100'}`}>{!isFadingOut && <div className="absolute inset-0 flex flex-col items-center justify-center gap-4"><span className="text-amber-50 font-serif italic text-5xl md:text-7xl">{zzzText}</span><span className="text-stone-700 font-black uppercase text-[10px]">{t(language, 'tutorial.resting')}</span></div>}</div>}
       
       {/* Tutorial Skip UI */}
       {isAnyTutorialActive && (
@@ -330,7 +335,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                 onClick={() => setShowSkipConfirm(true)} 
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 border border-stone-700 text-stone-300 rounded-full text-[10px] uppercase font-black shadow-2xl backdrop-blur-md active:scale-95 hover:bg-stone-800"
             >
-                <FastForward className="w-3 h-3" /> Skip Tutorial
+                <FastForward className="w-3 h-3" /> {t(language, 'tutorial.skip_button')}
             </SfxButton>
         </div>
       )}
@@ -346,7 +351,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
                     speaker={dialogueContent.speaker} 
                     text={dialogueContent.text} 
                     options={[{ 
-                        label: "Continue", 
+                        label: t(language, 'common.continue'), 
                         action: dialogueContent.action || (() => actions.setTutorialStep(dialogueContent.nextStep!)), 
                         variant: 'primary' 
                     }]} 

@@ -1,5 +1,6 @@
 import { GameState } from '../../types/index';
 import { GAME_CONFIG } from '../../config/game-config';
+import { t } from '../../utils/i18n';
 
 export const handleRepairWork = (state: GameState): GameState => {
   if (state.stats.energy < GAME_CONFIG.ENERGY_COST.REPAIR) return state;
@@ -7,10 +8,11 @@ export const handleRepairWork = (state: GameState): GameState => {
   const earn = 15;
   let newUnlockedTabs = [...state.unlockedTabs];
   let logPrefix = "";
+  const language = state.settings.language;
 
   if (!newUnlockedTabs.includes('INVENTORY')) {
     newUnlockedTabs.push('INVENTORY');
-    logPrefix = "Facility restored: Inventory tracking is now active. ";
+    logPrefix = `${t(language, 'tutorial.inventory_restored')} `;
   }
 
   return {

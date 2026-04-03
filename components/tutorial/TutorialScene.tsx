@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useGame } from '../../context/GameContext';
 import DialogueBox from '../DialogueBox';
 import { getAssetUrl } from '../../utils';
-import { TutorialSceneMode } from '../../types/game-state';
 import { Flame, Zap, FastForward, Pointer } from 'lucide-react';
+import { t } from '../../utils/i18n';
+import { getForgeName } from '../../utils/gameText';
 const ConfirmationModal = React.lazy(() => import('../modals/ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
 
@@ -23,30 +24,18 @@ type TutorialDirection = 'top' | 'bottom' | 'left' | 'right' | 'topleft' | 'topr
 
 interface SceneStepConfig {
     targetId: string;
-    label: string;
+    labelKey: string;
     direction: TutorialDirection;
 }
 
 const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, SceneStepConfig>> = {
-    IGNITE_FURNACE_GUIDE: { targetId: "tutorial-heat", label: "Ignite Furnace", direction: "left" },
-    PUMP_FURNACE_GUIDE: { targetId: "tutorial-bellows", label: "Pump Bellows", direction: "left" }
-};
-
-const SCRIPTS: Record<string, { text: string; options?: any[] }> = {
-    PROLOGUE_0: { text: "The Lockhart forge lies in ashes, and my family is gone. But the fury in my blood burns hotter than any dragon's fire. I will rebuild." },
-    PROLOGUE_1: { text: "The furnace is cold as death and beyond repair. I must head to the Market immediately to find a replacement and light the hearth once more." },
-    
-    FURNACE_0: { text: "The furnace is finally in place. The air in the forge doesn't feel so heavy and cold anymore." },
-    FURNACE_1: { text: "It's a sturdy unit. I've managed to seal the connections, but I should check if the flue is drawing correctly. Striking the flint now..." },
-    
-    FURNACE_HEATED: { text: "The temperature is rising. The heat is building... the chimney is drawing well." },
-    FURNACE_COOLING: { text: "The fire is settling down. I should use the bellows to keep the oxygen flowing." },
-    FURNACE_BELLOWS_MONO: { text: "If the temperature drops below 400°C, the bellows won't be enough to bring it back to a roar. Pump it to the limit!" },
-    
-    FURNACE_MAXED: { text: "Magnificent. The forge is finally alive and roaring. I'm ready to begin the work of retribution." }
+    IGNITE_FURNACE_GUIDE: { targetId: "tutorial-heat", labelKey: "tutorial.scene_ignite_furnace", direction: "left" },
+    PUMP_FURNACE_GUIDE: { targetId: "tutorial-bellows", labelKey: "tutorial.scene_pump_bellows", direction: "left" }
 };
 
 const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumpedOnce: boolean }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [animatedRadius, setAnimatedRadius] = useState(2000);
     const requestRef = useRef<number | null>(null);
@@ -133,7 +122,9 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
             break;
     }
 
-    const currentLabel = (step === 'PUMP_FURNACE_GUIDE' && hasPumpedOnce) ? "Keep Pump!" : config.label;
+    const currentLabel = (step === 'PUMP_FURNACE_GUIDE' && hasPumpedOnce)
+        ? t(language, 'tutorial.scene_keep_pumping')
+        : t(language, config.labelKey);
 
     return (
         <div className="fixed inset-0 z-[3050] pointer-events-none overflow-hidden">
@@ -177,6 +168,7 @@ const LocalSpotlight = ({ step, hasPumpedOnce }: { step: SequenceStep, hasPumped
 
 const TutorialScene: React.FC = () => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
     const [seq, setSeq] = useState<SequenceStep>('IDLE');
     const [currentStep, setCurrentStep] = useState(0);
     const [temp, setTemp] = useState(0); 
@@ -253,15 +245,17 @@ const TutorialScene: React.FC = () => {
 
     const dialogue = useMemo(() => {
         if (!isStarted) return { text: "" };
-        if (mode === 'PROLOGUE') return SCRIPTS[`PROLOGUE_${currentStep}`];
-        if (seq === 'REPLACE_FURNACE_GUIDE') return SCRIPTS[`FURNACE_${currentStep}`];
-        if (seq === 'HEAT_CONFIRM_DIALOG') return SCRIPTS.FURNACE_HEATED;
+        if (mode === 'PROLOGUE') return { text: t(language, `tutorial.prologue_${currentStep}`, { forgeName: getForgeName(state) }) };
+        if (seq === 'REPLACE_FURNACE_GUIDE') return { text: t(language, `tutorial.furnace_${currentStep}`) };
+        if (seq === 'HEAT_CONFIRM_DIALOG') return { text: t(language, 'tutorial.furnace_heated') };
         if (seq === 'WAIT_CONTINUE_BELLOWS') {
-            return currentStep === 0 ? SCRIPTS.FURNACE_COOLING : SCRIPTS.FURNACE_BELLOWS_MONO;
+            return currentStep === 0
+                ? { text: t(language, 'tutorial.furnace_cooling') }
+                : { text: t(language, 'tutorial.furnace_bellows_mono') };
         }
-        if (seq === 'FURNACE_FINAL_DIALOG') return SCRIPTS.FURNACE_MAXED;
-        return { text: "..." };
-    }, [isStarted, mode, currentStep, seq]);
+        if (seq === 'FURNACE_FINAL_DIALOG') return { text: t(language, 'tutorial.furnace_maxed') };
+        return { text: t(language, 'tutorial.placeholder') };
+    }, [isStarted, mode, currentStep, seq, language]);
 
     const handleNext = () => {
         if (mode === 'PROLOGUE') {
@@ -289,7 +283,9 @@ const TutorialScene: React.FC = () => {
         setShowSkipConfirm(false);
     };
 
-    const promptText = mode === 'FURNACE_RESTORED' ? "REPLACE FURNACE" : "TAP TO BEGIN";
+    const promptText = mode === 'FURNACE_RESTORED'
+        ? t(language, 'tutorial.replace_furnace_prompt')
+        : t(language, 'tutorial.tap_to_begin');
     const isIndicateStep = seq === 'IGNITE_FURNACE_GUIDE' || seq === 'PUMP_FURNACE_GUIDE';
 
     return (
@@ -312,7 +308,7 @@ const TutorialScene: React.FC = () => {
 
             <div className="absolute top-4 right-4 z-[6000]">
                 <SfxButton sfx="switch" onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[10px] font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group">
-                    <FastForward className="w-3 h-3 group-hover:animate-pulse" /> Skip Tutorial
+                    <FastForward className="w-3 h-3 group-hover:animate-pulse" /> {t(language, 'tutorial.skip_button')}
                 </SfxButton>
             </div>
 
@@ -331,9 +327,9 @@ const TutorialScene: React.FC = () => {
             {isStarted && !isIndicateStep && (
                 <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto z-[5000]">
                     <DialogueBox 
-                        speaker={mode === 'PROLOGUE' || seq !== 'FURNACE_FINAL_DIALOG' ? "Lockhart" : "Master Smith"} 
+                        speaker={mode === 'PROLOGUE' || seq !== 'FURNACE_FINAL_DIALOG' ? "Lockhart" : t(language, 'tutorial.master_smith')} 
                         text={dialogue.text} 
-                        options={[{ label: "Continue", action: handleNext, variant: 'primary' }]} 
+                        options={[{ label: t(language, 'common.continue'), action: handleNext, variant: 'primary' }]} 
                         className="w-full relative" 
                     />
                 </div>
@@ -354,18 +350,18 @@ const TutorialScene: React.FC = () => {
 
                     <SfxButton id="tutorial-bellows" sfx="bellows.wav" onClick={(e) => { e.stopPropagation(); handlePump(); }} disabled={seq !== 'PUMP_FURNACE_GUIDE'} className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group ${seq === 'PUMP_FURNACE_GUIDE' ? 'bg-stone-800 border-amber-500 animate-pulse' : 'bg-stone-900 border-stone-800 grayscale opacity-40'} ${isPumping ? 'scale-90 brightness-150' : 'hover:scale-105'}`}>
                         <Zap className={`w-6 h-6 md:w-10 md:h-10 ${seq === 'PUMP_FURNACE_GUIDE' ? 'text-amber-400' : 'text-stone-600'}`} />
-                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-1">Pump</span>
+                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-1">{t(language, 'tutorial.pump')}</span>
                     </SfxButton>
 
                     <SfxButton id="tutorial-heat" sfx="fire_up.mp3" onClick={(e) => { e.stopPropagation(); handleHeatUp(); }} disabled={seq !== 'IGNITE_FURNACE_GUIDE'} className={`w-14 h-14 md:w-20 md:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all shadow-2xl ${seq === 'IGNITE_FURNACE_GUIDE' ? 'bg-orange-900/60 border-orange-500 shadow-orange-500/20' : 'bg-stone-900 border-stone-800 grayscale opacity-40'}`}>
                         <Flame className={`w-5 h-5 md:w-8 md:h-8 ${seq === 'IGNITE_FURNACE_GUIDE' ? 'text-orange-400' : 'text-stone-600'}`} />
-                        <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest mt-1">Ignite</span>
+                        <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest mt-1">{t(language, 'tutorial.ignite')}</span>
                     </SfxButton>
                 </div>
             )}
 
             <React.Suspense fallback={null}>
-                <ConfirmationModal isOpen={showSkipConfirm} title="Skip Tutorial?" message="Are you sure you want to skip the introduction and go straight to the forge? All basic systems will be unlocked." confirmLabel="Skip Everything" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
+                <ConfirmationModal isOpen={showSkipConfirm} title={t(language, 'tutorial.skip_confirm_title')} message={t(language, 'tutorial.skip_confirm_message')} confirmLabel={t(language, 'tutorial.skip_confirm_label')} onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isDanger={true} />
             </React.Suspense>
         </div>
     );
