@@ -273,8 +273,8 @@ const TutorialScene: React.FC = () => {
                 if (currentStep < 1) setCurrentStep(prev => prev + 1);
                 else setSeq('PUMP_FURNACE_GUIDE');
             } else if (seq === 'FURNACE_FINAL_DIALOG') {
-                actions.setTutorialScene('SMITHING');
-                actions.setTutorialStep('CRAFT_START_DIALOG_GUIDE');
+                actions.setTutorialScene(null);
+                actions.setTutorialStep('SHOP_INTRO_DIALOG_GUIDE');
             }
         }
     };

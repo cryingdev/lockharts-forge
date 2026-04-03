@@ -128,7 +128,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     // Tutorial progression: If we were waiting for the first sword to be crafted
     let newTutorialStep = state.tutorialStep;
     if (state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE' && item.id === 'sword_bronze_t1') {
-        newTutorialStep = 'PIP_RETURN_GUIDE';
+        newTutorialStep = 'PIP_RETURN_DIALOG_GUIDE';
         logMsg = t(language, 'tutorial.pip_sword_complete') + ' ' + logMsg;
     }
 

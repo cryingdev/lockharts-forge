@@ -103,7 +103,7 @@ const CraftingResultModal = () => {
     const handleFinalize = () => {
         if (isLockedByTutorial) return;
         if (state.tutorialStep === 'FINALIZE_FORGE_GUIDE') {
-            actions.setTutorialStep('SHOP_INTRO_DIALOG_GUIDE');
+            actions.setTutorialStep('PIP_RETURN_DIALOG_GUIDE');
         }
         actions.dismissCraftingResult();
     };

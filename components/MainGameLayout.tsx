@@ -286,15 +286,6 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
 
   const dialogueContent = useMemo(() => {
     switch (state.tutorialStep) {
-        case 'CRAFT_START_DIALOG_GUIDE': 
-            return { 
-                speaker: playerName,
-                text: t(language, 'tutorial.dialogue.craft_start', { forgeName, playerName }),
-                action: () => {
-                    setActiveTab('FORGE');
-                    actions.setTutorialStep('OPEN_RECIPE_GUIDE');
-                }
-            };
         case 'CRAFT_RESULT_DIALOG_GUIDE':
             return { speaker: playerName, text: t(language, 'tutorial.dialogue.craft_result', { forgeName, playerName }), nextStep: 'FINALIZE_FORGE_GUIDE' as const };
         case 'SHOP_INTRO_DIALOG_GUIDE':
@@ -353,15 +344,21 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       {dialogueContent && (
         <div className="fixed inset-0 z-[2500] flex flex-col justify-end items-center pb-6 md:pb-12 px-4 pointer-events-none">
             <div className="w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto">
+                {(() => {
+                    const continueAction = () => actions.setTutorialStep(dialogueContent.nextStep);
+
+                    return (
                 <DialogueBox 
                     speaker={dialogueContent.speaker} 
                     text={dialogueContent.text} 
                     options={[{ 
                         label: t(language, 'common.continue'), 
-                        action: dialogueContent.action || (() => actions.setTutorialStep(dialogueContent.nextStep!)), 
+                        action: continueAction, 
                         variant: 'primary' 
                     }]} 
                 />
+                    );
+                })()}
             </div>
         </div>
       )}

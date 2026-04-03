@@ -96,7 +96,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `game/SmithingScene.ts`: Timing-based forging minigame.
 - `game/WorkbenchScene.ts`: Rhythm/Path-tracking workbench minigame.
 - `game/DungeonScene.ts`: Grid-based exploration engine with dynamic fog and Red Focus FX.
-- `game/SmithingTutorialHandler.ts`: Minigame-specific tutorial logic.
+- `game/SmithingTutorialHandler.ts`: Minigame-specific tutorial logic, including the guided first-hit highlight window for smithing onboarding.
 
 ### UI Animation & Core Components (`components/common/ui/`)
 - `components/common/ui/SfxButton.tsx`: **Global standardized button** with integrated audio triggers.
@@ -176,5 +176,9 @@ This document provides a comprehensive structural map of the project, detailing 
     *   Tavern talk is now data-driven and varies by job, temperament, voice, adventurer standing, and overall game progress.
     *   Named mercenaries can trigger non-repeating personal question prompts whose answers affect Affinity, Adventurer Standing, and relationship alignment.
     *   Strong alignment with certain named mercenaries can unlock personal requests and extended completion follow-up dialogue.
+*   **Tutorial Flow Refinement**:
+    *   The smithing onboarding now jumps directly into a guarded first-hit lesson instead of replaying separate `HEAT` and `PUMP` instruction dialogue inside the minigame.
+    *   The first Pip order now happens before smithing through the shop loop, and the crafted-delivery step later uses a separate return-dialog stage before the actual sale interaction.
+    *   The tutorial-complete modal still pauses further shop queue progression until dismissed.
 *   **Skill Knowledge**:
     *   Skill Manuals and Scrolls fully integrated into the economic and crafting cycles.

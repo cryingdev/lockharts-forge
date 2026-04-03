@@ -81,7 +81,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             isOpen={shop.isShopOpen} 
             onToggle={shop.handlers.handleToggleShop} 
             disabled={shop.isTutorialActive && !isOpeningStep}
-            isPulsing={state.tutorialStep === 'PIP_RETURN_GUIDE'}
+            isPulsing={state.tutorialStep === 'PIP_RETURN_GUIDE' || state.tutorialStep === 'PIP_RETURN_DIALOG_GUIDE'}
         />
 
         {/* UI Elements: Queue & HUD */}
@@ -135,7 +135,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         {/* Shop Counter */}
         <div className="absolute bottom-0 w-full h-[35dvh] md:h-64 z-30 flex items-end justify-center pointer-events-none">
             {/* Pip's Order Sticky Note */}
-            {(state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE' || state.tutorialStep === 'PIP_RETURN_GUIDE') && (
+            {(state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE' || state.tutorialStep === 'PIP_RETURN_GUIDE' || state.tutorialStep === 'PIP_RETURN_DIALOG_GUIDE') && (
                 <div className="absolute top-0 left-10 md:left-24 -translate-y-1/2 z-40 animate-in slide-in-from-bottom-10 duration-700 pointer-events-auto">
                     <div className="relative w-24 h-24 md:w-32 md:h-32 bg-amber-50 border-2 border-amber-200/50 shadow-xl rotate-[-6deg] p-2 md:p-3 flex flex-col items-center justify-center group hover:rotate-0 transition-transform cursor-help">
                         {/* Tape effect */}

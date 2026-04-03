@@ -37,7 +37,7 @@ export const useShopService = () => {
 
         const scheduleNextArrival = () => {
             const isTutorialSignStep = state.tutorialStep === 'SELL_ITEM_GUIDE';
-            const isPipReturnStep = state.tutorialStep === 'PIP_RETURN_GUIDE';
+            const isPipReturnStep = state.tutorialStep === 'PIP_RETURN_GUIDE' || state.tutorialStep === 'PIP_RETURN_DIALOG_GUIDE';
             const isMidTutorial = !!state.tutorialStep && !isTutorialSignStep && !isPipReturnStep;
             
             // Check if this is the very first visitor of the game (even if tutorial is skipped)

@@ -10,6 +10,7 @@ interface SmithingMinigameProps {
   onComplete: (score: number, bonus?: number) => void;
   onClose: () => void;
   difficulty?: number;
+  masteryCount?: number;
   isTutorial?: boolean;
 }
 
@@ -19,7 +20,7 @@ function getViewport() {
   return { vw: Math.floor(vw), vh: Math.floor(vh) };
 }
 
-const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose, difficulty = 1, isTutorial = false }) => {
+const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose, difficulty = 1, masteryCount = 0, isTutorial = false }) => {
   const { state, actions } = useGame();
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -27,6 +28,8 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   const [tutorialTarget, setTutorialTarget] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
   const [heatBtnRect, setHeatBtnRect] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
   const [currentTemp, setCurrentTemp] = useState(0);
+  const [tutorialStrikeReady, setTutorialStrikeReady] = useState(false);
+  const [firstHitTutorialConsumed, setFirstHitTutorialConsumed] = useState(false);
 
   const charcoalCount = state.inventory.find((i) => i.id === materials.charcoal.id || i.id === 'charcoal')?.quantity || 0;
 
@@ -38,10 +41,13 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   useEffect(() => { actionsRef.current = actions; }, [actions]);
   useEffect(() => { stateRef.current = state; }, [state]);
 
-  // Set initial step of the forge tutorial when entering from START_FORGING_GUIDE to PRE_IGNITE_DIALOG_1
+  // Enter the smithing minigame tutorial directly at the first hit explanation.
   useEffect(() => {
       if (isTutorial && state.tutorialStep === 'START_FORGING_GUIDE') {
-          actionsRef.current.setTutorialStep('PRE_IGNITE_DIALOG_1_GUIDE');
+          setFirstHitTutorialConsumed(false);
+          setTutorialTarget(null);
+          setTutorialStrikeReady(false);
+          actionsRef.current.setTutorialStep('FIRST_HIT_DIALOG_GUIDE');
       }
   }, [isTutorial, state.tutorialStep]);
 
@@ -65,7 +71,13 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   const handleResumeTutorialFromReact = useCallback(() => {
       if (gameRef.current) {
           const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
-          if (scene) scene.resumeTutorialCrafting();
+          if (scene) {
+            if (stateRef.current.tutorialStep === 'FIRST_HIT_DIALOG_GUIDE') {
+              scene.startTutorialHitGuide();
+            } else {
+              scene.resumeTutorialCrafting();
+            }
+          }
       }
   }, []);
 
@@ -99,7 +111,12 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
-      render: { pixelArt: true, antialias: false },
+      render: {
+        pixelArt: false,
+        antialias: true,
+        antialiasGL: true,
+        roundPixels: false,
+      },
     };
 
     const game = new Phaser.Game(config);
@@ -129,6 +146,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
           onCompleteRef.current(score, bonus);
       },
       difficulty,
+      masteryCount,
       initialTemp,
       charcoalCount: isTutorial ? '∞' : charcoalCount,
       isTutorial,
@@ -144,6 +162,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       onHeatUpRequest: handleHeatUp,
       onHeatBtnUpdate: (rect: any) => setHeatBtnRect(rect),
       onTutorialTargetUpdate: (rect: any) => setTutorialTarget(rect),
+      onTutorialStrikeReadyChange: (ready: boolean) => setTutorialStrikeReady(ready),
       onTutorialAction: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => {
           if (action === 'FIRST_HIT_DONE') {
               actionsRef.current.setTutorialStep('FIRST_HIT_DIALOG_GUIDE');
@@ -183,8 +202,9 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
     if (scene) scene.updateCharcoalCount(isTutorial ? '∞' : charcoalCount);
   }, [charcoalCount, isTutorial]);
 
+  const isFirstHitMinigameGuide = state.tutorialStep === 'SMITHING_MINIGAME_HIT_GUIDE' && !firstHitTutorialConsumed;
   const showOverlay = isTutorial && (
-    state.tutorialStep?.startsWith('SMITHING_MINIGAME') || 
+    isFirstHitMinigameGuide ||
     state.tutorialStep?.includes('_DIALOG') || 
     state.tutorialStep?.includes('_INDICATE') || 
     state.tutorialStep === 'START_FORGING_GUIDE' || 
@@ -207,7 +227,13 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
           <SmithingTutorialOverlay 
             step={state.tutorialStep || ''} 
             targetCoord={tutorialTarget} 
+            strikePromptVisible={tutorialStrikeReady}
             onResume={handleResumeTutorialFromReact}
+            onFirstHitTutorialComplete={() => {
+              setFirstHitTutorialConsumed(true);
+              setTutorialTarget(null);
+              setTutorialStrikeReady(false);
+            }}
           />
       ) : null}
 
