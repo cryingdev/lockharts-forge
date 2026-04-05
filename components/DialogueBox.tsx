@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, ChevronRight, Coins, Package, Lock } from 'lucide-react';
+import { ChevronRight, Coins, Package, Lock } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import { materials } from '../data/materials';
 import { getAssetUrl } from '../utils';
+import { t } from '../utils/i18n';
 import { useAudio } from '../hooks/useAudio';
 import { SfxButton } from './common/ui/SfxButton';
 
@@ -38,16 +39,22 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   speakerAvatar
 }) => {
   const { state } = useGame();
+  const language = state.settings.language;
   const { playClick } = useAudio();
   const [displayedIndex, setDisplayedIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [showItemTooltip, setShowItemTooltip] = useState(false);
   const [tooltipCoords, setTooltipCoords] = useState({ x: 0, y: 0 });
   const [imgError, setImgError] = useState(false);
+  const [textPage, setTextPage] = useState(0);
   
   const isMounted = useRef(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textContainerRef = useRef<HTMLDivElement>(null);
+  const textPages = text.split('\n').filter(segment => segment.trim().length > 0);
+  const hasTextPaging = textPages.length > 1;
+  const currentText = textPages[textPage] ?? text;
+  const hasMoreTextPages = textPage < textPages.length - 1;
 
   useEffect(() => {
     isMounted.current = true;
@@ -77,9 +84,9 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       });
       return () => cancelAnimationFrame(scrollHandle);
     }
-  }, [displayedIndex, text, isTyping]);
+  }, [displayedIndex, currentText, isTyping]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     
     setDisplayedIndex(0);
@@ -93,10 +100,10 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       if (!isMounted.current) return;
       
       index++;
-      if (index > text.length) {
+      if (index > currentText.length) {
         if (timerRef.current) clearInterval(timerRef.current);
         setIsTyping(false);
-        setDisplayedIndex(text.length);
+        setDisplayedIndex(currentText.length);
       } else {
         setDisplayedIndex(index);
       }
@@ -105,15 +112,29 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
+  }, [currentText]);
+
+  useEffect(() => {
+    setTextPage(0);
   }, [text]);
 
   const handleSkipTyping = () => {
     if (isTyping) {
       if (timerRef.current) clearInterval(timerRef.current);
-      setDisplayedIndex(text.length);
+      setDisplayedIndex(currentText.length);
       setIsTyping(false);
       playClick();
     }
+  };
+
+  const handleAdvanceTextPage = () => {
+    if (isTyping) {
+      handleSkipTyping();
+      return;
+    }
+    if (!hasMoreTextPages) return;
+    playClick();
+    setTextPage(prev => prev + 1);
   };
 
   const getInventoryCount = (id: string) => {
@@ -130,10 +151,10 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
 
   const renderFormattedText = () => {
     if (!highlightTerm) {
-      return <span>{text.slice(0, displayedIndex)}</span>;
+      return <span>{currentText.slice(0, displayedIndex)}</span>;
     }
 
-    const parts = text.split(new RegExp(`(${highlightTerm})`, 'g'));
+    const parts = currentText.split(new RegExp(`(${highlightTerm})`, 'g'));
     let charCount = 0;
 
     return parts.map((part, i) => {
@@ -277,48 +298,37 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     document.body
   );
 
+  const renderedOptions = hasMoreTextPages
+    ? [{ label: t(language, 'common.continue'), action: handleAdvanceTextPage, variant: 'primary' as const }]
+    : options;
+
   return (
     <div className={className} onClick={(e) => { if (showItemTooltip) { e.stopPropagation(); setShowItemTooltip(false); playClick(); } }}>
       {tooltipElement}
 
       <div 
-        className="w-full h-[22dvh] min-h-[120px] md:h-[28vh] md:min-h-[160px] bg-stone-900/90 backdrop-blur-3xl border border-white/10 md:border-2 rounded-2xl md:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.7)] flex flex-row overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/5"
+        className="w-full h-[24dvh] min-h-[150px] md:h-[29vh] md:min-h-[180px] bg-stone-900/92 backdrop-blur-3xl border-[2px] md:border-[3px] border-stone-500/45 rounded-2xl md:rounded-3xl shadow-[0_28px_80px_rgba(0,0,0,0.82),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.45)] overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/8"
       >
-        <div className="bg-stone-900/20 p-2 md:p-6 border-r border-white/5 flex flex-col items-center gap-1 md:gap-4 w-20 md:w-48 shrink-0 justify-center">
-          <div className="w-9 h-9 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-amber-900/30 to-stone-800/40 border border-amber-600/30 flex items-center justify-center shadow-inner ring-1 ring-white/5 overflow-hidden">
-             {speakerAvatar ? (
-               <img src={speakerAvatar} className="w-full h-full object-cover" alt={speaker} />
-             ) : (
-               <User className="w-5 h-5 md:w-10 md:h-10 text-amber-500/90 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
-             )}
-          </div>
-          <div className="flex flex-col items-center overflow-hidden w-full">
-              <span className="font-black text-amber-50 text-[10px] md:text-xl text-center font-serif leading-tight tracking-tight drop-shadow-md truncate w-full px-1">
-                {speaker}
-              </span>
-          </div>
-        </div>
-
         <div 
-          className="flex-1 p-2.5 md:p-8 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent cursor-pointer"
+          className="h-full px-5 py-4 md:px-9 md:py-7 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent cursor-pointer after:absolute after:inset-0 after:rounded-2xl md:after:rounded-3xl after:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.35)] after:pointer-events-none"
           onClick={handleSkipTyping}
         >
           <div 
             ref={textContainerRef}
-            className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 md:pr-2 mb-1 md:mb-2 min-h-0 ${isTyping ? 'typing-active' : ''}`}
+            className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 md:pr-2 mb-2 md:mb-3 min-h-0 ${isTyping ? 'typing-active' : ''}`}
             style={{ scrollBehavior: isTyping ? 'auto' : 'smooth' }}
           >
             <div 
-              className="text-stone-50 leading-snug md:leading-relaxed font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 break-words whitespace-pre-wrap"
-              style={{ fontSize: 'clamp(0.9rem, 2.4dvh, 1.6rem)' }}
+              className="text-stone-50 leading-[1.55] md:leading-[1.68] font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 break-words whitespace-pre-wrap"
+              style={{ fontSize: 'clamp(1.04rem, 2.7dvh, 1.6rem)' }}
             >
               {renderFormattedText()}
             </div>
           </div>
 
-          {!isTyping && options.length > 0 && (
-            <div className="mt-auto pt-2 flex flex-wrap gap-1.5 md:gap-4 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
-              {options.map((option, idx) => (
+          {!isTyping && renderedOptions.length > 0 && (
+            <div className="mt-auto pt-2 flex flex-wrap gap-2 md:gap-3 justify-end animate-in fade-in slide-in-from-right-4 pb-1 shrink-0">
+              {renderedOptions.map((option, idx) => (
                 <SfxButton
                   key={idx}
                   onClick={(e) => { 
@@ -330,7 +340,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
                     }
                   }}
                   disabled={option.disabled}
-                  className={`px-4 md:px-10 py-1.5 md:py-4 rounded-lg md:rounded-xl font-black text-[9px] md:text-sm flex items-center gap-1.5 md:gap-3 transition-all transform active:scale-95 border shadow-2xl ${
+                  className={`px-5 md:px-9 py-2.5 md:py-3.5 rounded-xl md:rounded-xl font-black text-[12px] md:text-sm flex items-center gap-1.5 md:gap-3 transition-all transform active:scale-95 border shadow-2xl min-h-[46px] md:min-h-[54px] ${
                     option.disabled 
                       ? 'bg-stone-800/40 text-stone-600 border-stone-700/30 cursor-not-allowed'
                       : option.variant === 'danger'

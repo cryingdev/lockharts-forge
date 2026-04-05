@@ -70,7 +70,13 @@ export const getEnergyCost = (item: EquipmentItem, masteryCount: number): number
     return Math.max(5, cost);
 };
 
-export const generateEquipment = (recipe: EquipmentItem, quality: number, masteryCount: number, enhancementCount: number = 0): Equipment => {
+export const generateEquipment = (
+    recipe: EquipmentItem,
+    quality: number,
+    masteryCount: number,
+    enhancementCount: number = 0,
+    crafterName: string = 'Lockhart'
+): Equipment => {
     let statMultiplier = 1.0;
     let priceMultiplier = 1.0;
     let namePrefix = '';
@@ -141,7 +147,7 @@ export const generateEquipment = (recipe: EquipmentItem, quality: number, master
         isRepairable: recipe.isRepairable,
         minLevel: recipe.minLevel,
         craftedDate: Date.now(),
-        crafterName: 'Lockhart',
+        crafterName,
         previousOwners: [], 
         slotType: recipe.slotType,
         isTwoHanded: recipe.isTwoHanded

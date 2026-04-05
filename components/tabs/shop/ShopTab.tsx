@@ -30,8 +30,6 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
   }, []);
 
   const [counterImgError, setCounterImgError] = useState(false);
-
-  // 튜토리얼 중 상점 열기 단계인지 확인
   const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
   
   // MainGameLayout에서 글로벌로 처리하는 튜토리얼 대화 단계인지 확인 (Shop 인트로만 해당)
@@ -66,10 +64,16 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         )}
 
         {/* Paging Button - To Forge (오른쪽 중앙 배치) */}
-        {!shop.isTutorialActive && (
+        {(!shop.isTutorialActive || state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE') && (
             <SfxButton 
                 sfx="switch" 
-                onClick={() => onNavigate('FORGE')} 
+                onClick={() => {
+                    if (state.tutorialStep === 'CRAFT_FIRST_SWORD_GUIDE') {
+                        actions.setTutorialStep('OPEN_RECIPE_GUIDE');
+                    }
+                    onNavigate('FORGE');
+                }} 
+                data-tutorial-id="NAV_TO_FORGE"
                 className="absolute right-0 top-1/2 -translate-y-1/2 z-[1050] w-8 h-24 bg-stone-900/60 hover:bg-amber-600/40 text-amber-500 rounded-l-2xl border-y border-l border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-95 group flex items-center justify-center"
             >
                 <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
@@ -81,7 +85,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
             isOpen={shop.isShopOpen} 
             onToggle={shop.handlers.handleToggleShop} 
             disabled={shop.isTutorialActive && !isOpeningStep}
-            isPulsing={state.tutorialStep === 'PIP_RETURN_GUIDE' || state.tutorialStep === 'PIP_RETURN_DIALOG_GUIDE'}
+            isPulsing={state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE'}
         />
 
         {/* UI Elements: Queue & HUD */}
@@ -101,7 +105,7 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
         <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none">
         {shop.isShopOpen && shop.activeCustomer && shop.dialogueState && (
             <div className="relative flex justify-center items-end w-full h-full animate-in fade-in zoom-in-95 duration-700 ease-out">
-                <div className="relative h-[75dvh] max-h-[100dvh] flex items-end justify-center">
+                <div className="relative h-[70dvh] max-h-[100dvh] flex items-end justify-center">
                     {/* 하트가 캐릭터 앞쪽에서 떠오르도록 z-20 설정, y축 시작점 bottom 상향 조정 */}
                     {shop.floatingHearts.map((heart) => (
                     <Heart

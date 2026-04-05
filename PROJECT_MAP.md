@@ -177,7 +177,7 @@ This document provides a comprehensive structural map of the project, detailing 
     *   Named mercenaries can trigger non-repeating personal question prompts whose answers affect Affinity, Adventurer Standing, and relationship alignment.
     *   Strong alignment with certain named mercenaries can unlock personal requests and extended completion follow-up dialogue.
 *   **Tutorial Flow Refinement**:
-    *   The smithing onboarding now jumps directly into a guarded first-hit lesson instead of replaying separate `HEAT` and `PUMP` instruction dialogue inside the minigame.
+    *   The smithing onboarding now flows through `START_FORGING_GUIDE -> SMITHING_INTRO_DIALOG_GUIDE -> SMITHING_TOUCH_TO_START_GUIDE -> FIRST_HIT_DIALOG_GUIDE -> SMITHING_MINIGAME_HIT_GUIDE` instead of replaying separate `HEAT` and `PUMP` instruction dialogue inside the minigame.
     *   The first Pip order now happens before smithing through the shop loop, and the crafted-delivery step later uses a separate return-dialog stage before the actual sale interaction.
     *   The tutorial-complete modal still pauses further shop queue progression until dismissed.
 *   **Skill Knowledge**:

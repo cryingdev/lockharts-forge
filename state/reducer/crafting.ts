@@ -4,6 +4,7 @@ import { getEnergyCost, generateEquipment, calcCraftExp, getSmithingLevel, getUn
 import { materials } from '../../data/materials';
 import { t } from '../../utils/i18n';
 import { getLocalizedItemName } from '../../utils/itemText';
+import { getPlayerName } from '../../utils/gameText';
 
 const getQualityLabel = (q: number): string => {
     if (q >= 110) return "MASTERWORK";
@@ -100,7 +101,7 @@ export const handleFinishCrafting = (state: GameState, payload: { item: Equipmen
     const oldTier = getUnlockedTier(oldLevel);
     const newTier = getUnlockedTier(newLevel);
 
-    const equipment = generateEquipment(item, quality, masteryCount, bonus);
+    const equipment = generateEquipment(item, quality, masteryCount, bonus, getPlayerName(state));
     
     const newItem: InventoryItem = {
         id: equipment.id, 

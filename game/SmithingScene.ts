@@ -12,12 +12,14 @@ export interface SmithingSceneData {
   onHeatBtnUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   onTutorialTargetUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   onTutorialStrikeReadyChange?: (ready: boolean) => void;
-  onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => void;
+  onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED' | 'START_FIRST_HIT_DIALOG' | 'START_PRE_FIRST_HIT_DIALOG') => void;
   difficulty: number;
   masteryCount?: number;
   initialTemp: number;
   charcoalCount: number | string;
   isTutorial?: boolean;
+  touchToStartLabel?: string;
+  forgeColdLabel?: string;
 }
 
 interface Point {
@@ -29,6 +31,16 @@ type SmithingTool = 'HAMMER' | 'TONGS';
 
 const MAX_TEMP = 1500;
 const IDLE_TEMP = 10;
+const FORGE_START_TEMP = 400;
+const HOT_TEMP = 700;
+const AURA_TEMP = 1125;
+
+const getBellowsHeatGain = (temperature: number) => {
+  if (temperature < HOT_TEMP) return 220;
+  if (temperature < 1050) return 180;
+  if (temperature < 1325) return 140;
+  return 100;
+};
 
 export default class SmithingScene extends Phaser.Scene {
   declare public add: Phaser.GameObjects.GameObjectFactory;
@@ -112,8 +124,11 @@ export default class SmithingScene extends Phaser.Scene {
 
   private temperature = 0;
   private coolingRate = 2;
+  private peakHeatHoldUntil = 0;
   private currentTempStage: 'COLD' | 'AURA' | 'HOT' | 'WARM' | 'NORMAL' = 'COLD';
   private charcoalCount: number | string = 0;
+  private touchToStartLabel = 'TOUCH TO START';
+  private forgeColdLabel = 'FORGE IS COLD\nADD FUEL';
 
   private startRadius = 180;
   private targetRadius = 45;
@@ -149,7 +164,7 @@ export default class SmithingScene extends Phaser.Scene {
   private onHeatBtnUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   private onTutorialTargetUpdate?: (rect: { x: number, y: number, w: number, h: number } | null) => void;
   private onTutorialStrikeReadyChange?: (ready: boolean) => void;
-  private onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => void;
+  private onTutorialAction?: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED' | 'START_FIRST_HIT_DIALOG' | 'START_PRE_FIRST_HIT_DIALOG') => void;
   private isTutorial = false;
 
   private root!: Phaser.GameObjects.Container;
@@ -159,6 +174,7 @@ export default class SmithingScene extends Phaser.Scene {
   private isRelayouting = false;
   private lastTutorialUiStep: string | null = null;
   private tutorialFirstHitReady = false;
+  private tutorialStartTransitioning = false;
 
   private readonly BILLET_W_ON_ANVIL = 0.80; 
   private readonly BILLET_ANGLE_DEG = -12;
@@ -205,6 +221,8 @@ export default class SmithingScene extends Phaser.Scene {
     this.onTutorialAction = data.onTutorialAction;
     this.isTutorial = !!data.isTutorial;
     this.charcoalCount = data.charcoalCount;
+    this.touchToStartLabel = data.touchToStartLabel || 'TOUCH TO START';
+    this.forgeColdLabel = data.forgeColdLabel || 'FORGE IS COLD\nADD FUEL';
     
     const tier = data.difficulty || 1;
     this.masteryCount = data.masteryCount || 0;
@@ -212,7 +230,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.scoreIncrement = 100 / requiredHits;
 
     this.shrinkDuration = Math.max(800, 2000 - data.difficulty * 200);
-    this.coolingRate = 2 + data.difficulty * 0.8;
+    this.coolingRate = 30 + data.difficulty * 12;
     this.score = 0;
     this.combo = 0;
     this.enhancementCount = 0;
@@ -220,7 +238,7 @@ export default class SmithingScene extends Phaser.Scene {
     this.temperature = data.initialTemp || 0;
     this.isFinished = false;
     this.isPlaying = false;
-    this.isReadyToStart = this.temperature > 0;
+    this.isReadyToStart = this.temperature >= FORGE_START_TEMP;
     this.currentQuality = this.getInitialQuality();
     this.qualityCap = this.getQualityCap();
     this.perfectCount = 0;
@@ -228,8 +246,16 @@ export default class SmithingScene extends Phaser.Scene {
     this.currentTool = 'HAMMER';
     this.isSnapped = true;
     this.tutorialFirstHitReady = false;
+    this.tutorialStartTransitioning = false;
+    this.peakHeatHoldUntil = 0;
     if (this.onTutorialStrikeReadyChange) {
       this.onTutorialStrikeReadyChange(false);
+    }
+  }
+
+  private refreshPeakHeatHold() {
+    if (this.temperature >= MAX_TEMP - 10) {
+      this.peakHeatHoldUntil = this.time.now + 2000;
     }
   }
 
@@ -273,7 +299,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   private isTutorialDialogueBlockingInput(step?: string | null) {
     if (!this.isTutorial || !step) return false;
-    return step === 'START_FORGING_GUIDE' || step.includes('_DIALOG');
+    return step === 'SMITHING_INTRO_DIALOG_GUIDE' || step.includes('_DIALOG');
   }
 
   private shouldDisableUtilityActions(step?: string | null) {
@@ -606,24 +632,24 @@ export default class SmithingScene extends Phaser.Scene {
     this.uiContainer.add([this.progBg, this.progressBar, this.qualityText]);
     this.qualityText.setDepth(25);
     this.tempBgGraphics = this.add.graphics(); this.tempBarGraphics = this.add.graphics();
-    this.tempValueText = this.add.text(0, 0, '10°C', { fontFamily: 'Grenze', fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    this.tempValueText = this.add.text(0, 0, '10°C', { fontFamily: 'Grenze', fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     this.uiContainer.add([this.tempBgGraphics, this.tempBarGraphics, this.tempValueText]);
-    const r = 48; 
+    const r = 60; 
     this.bellowsContainer = this.add.container(0, 0);
     this.bellowsBg = this.add.circle(0, 0, r, 0x1c1917, 1).setStrokeStyle(3, 0x10b981).setName('btnBg');
-    this.bellowsSprite = this.add.sprite(0, 0, 'bellows').setScale(0.28); 
-    const pumpTxt = this.add.text(0, 30, 'PUMP', { fontSize: '12px', color: '#fde68a', fontFamily: 'Grenze', fontStyle: 'bold' }).setOrigin(0.5);
+    this.bellowsSprite = this.add.sprite(0, -2, 'bellows').setScale(0.34); 
+    const pumpTxt = this.add.text(0, 38, 'PUMP', { fontSize: '15px', color: '#fde68a', fontFamily: 'Grenze', fontStyle: 'bold' }).setOrigin(0.5);
     this.bellowsContainer.add([this.bellowsBg, this.bellowsSprite, pumpTxt]).setInteractive(new Phaser.Geom.Circle(0, 0, r), Phaser.Geom.Circle.Contains);
     this.bellowsSprite.on('animationcomplete-bellows_pump', () => { this.isPumping = false; });
     this.heatUpBtnContainer = this.add.container(0, 0);
     const btnBg = this.add.circle(0, 0, r, 0x1c1917, 1).setStrokeStyle(3, 0x57534e).setName('btnBg');
-    const btnIcon = this.add.text(0, -10, '🔥', { fontSize: '24px' }).setOrigin(0.5).setName('btnIcon');
-    const btnLabel = this.add.text(0, 10, 'HEAT', { fontSize: '12px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'Grenze' }).setOrigin(0.5);
-    const countTxt = this.add.text(0, 30, `x${this.charcoalCount}`, { fontSize: '12px', color: '#78716c', fontFamily: 'Grenze' }).setOrigin(0.5).setName('countTxt');
+    const btnIcon = this.add.text(0, -14, '🔥', { fontSize: '32px' }).setOrigin(0.5).setName('btnIcon');
+    const btnLabel = this.add.text(0, 14, 'HEAT', { fontSize: '15px', color: '#fbbf24', fontStyle: 'bold', fontFamily: 'Grenze' }).setOrigin(0.5);
+    const countTxt = this.add.text(0, 38, `x${this.charcoalCount}`, { fontSize: '14px', color: '#78716c', fontFamily: 'Grenze' }).setOrigin(0.5).setName('countTxt');
     this.heatUpBtnContainer.add([btnBg, btnIcon, btnLabel, countTxt]).setInteractive(new Phaser.Geom.Circle(0, 0, r), Phaser.Geom.Circle.Contains);
     this.uiContainer.add([this.bellowsContainer, this.heatUpBtnContainer]);
     this.comboText = this.add.text(0, 0, '', { fontFamily: 'Grenze Gotisch', fontSize: '36px', color: '#fcd34d', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setAlpha(0).setDepth(26);
-    this.infoText = this.add.text(0, 0, this.isReadyToStart ? 'TOUCH TO START' : 'FORGE IS COLD\nADD FUEL', { fontFamily: 'Grenze Gotisch', fontSize: '24px', color: this.isReadyToStart ? '#fbbf24' : '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
+    this.infoText = this.add.text(0, 0, this.isReadyToStart ? this.touchToStartLabel : this.forgeColdLabel, { fontFamily: 'Grenze Gotisch', fontSize: '34px', color: this.isReadyToStart ? '#fbbf24' : '#3b82f6', align: 'center', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5);
     this.uiContainer.add([this.comboText, this.infoText]);
     this.tweens.add({ targets: this.infoText, alpha: 0.5, yoyo: true, repeat: -1, duration: 800 });
   }
@@ -722,7 +748,7 @@ export default class SmithingScene extends Phaser.Scene {
       const basis = Math.min(sw, sh); 
       this.startRadius = Phaser.Math.Clamp(basis * (portrait ? 0.28 : 0.35), 105, 240);
       const isCompact = sh < 500; this.repositionUI(sw, sh, portrait, isCompact);
-      if (this.isPlaying && this.currentTool === 'HAMMER') this.resetRing();
+      if (this.isPlaying && this.currentTool === 'HAMMER' && !this.shouldPreserveTutorialRing()) this.resetRing();
       if (this.manualControlsContainer) {
           const invScale = 1 / (this.billetContainer.scaleX || 1);
           this.manualControlsContainer.setScale(invScale * (this.uiScale || 1.0));
@@ -744,43 +770,59 @@ export default class SmithingScene extends Phaser.Scene {
     apply(w, h, nextPortrait);
   }
 
+  private shouldPreserveTutorialRing() {
+    const tutorialStep = (this.game as any).tutorialStep as string | null;
+    return this.isTutorial && (
+      tutorialStep === 'SMITHING_MINIGAME_HIT_GUIDE' ||
+      tutorialStep === 'FIRST_HIT_DIALOG_GUIDE'
+    );
+  }
+
   private get uiScale(): number { return Math.min(this.viewW, this.viewH) / 720; }
+
+  private getRightPanelMetrics(sw: number, sh: number) {
+    const sideAreaWidth = Math.min(sw, sh) * 0.22;
+    const rightX = sw - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
+    const panelStartY = sh * 0.45;
+    const btnScale = sideAreaWidth / 120;
+    const btnH = 120 * btnScale;
+    const heatUpY = (sh - this.UI_PAD_BOTTOM) - (btnH / 2);
+    const bellowsY = heatUpY - (btnH / 2) - this.UI_GAP - (btnH / 2);
+    const gaugeTopLimit = panelStartY + 35;
+    const gaugeBottomLimit = bellowsY - (btnH / 2) - this.UI_GAP;
+    const gaugeH = Math.max(this.TEMP_GAUGE_H_MIN, gaugeBottomLimit - gaugeTopLimit);
+    const gaugeCenterY = gaugeTopLimit + (gaugeH / 2);
+    return { sideAreaWidth, rightX, btnScale, btnH, heatUpY, bellowsY, gaugeTopLimit, gaugeH, gaugeCenterY };
+  }
 
   private repositionUI(sw: number, sh: number, portrait: boolean, isCompact: boolean) {
     if (!this.uiContainer) return;
-    const currentStep = ((this.game as any).tutorialStep as string | null) ?? null;
     this.updateProgressBar(); this.qualityText.setPosition(this.centerX, this.UI_PAD_TOP + 45 + 10).setFontSize(isCompact ? '16px' : '18px');
-    const sideAreaWidth = Math.min(sw, sh) * 0.18; const rightX = sw - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
-    const panelStartY = sh * 0.45;
-    const btnScale = sideAreaWidth / 100; const btnH = 100 * btnScale;
-    const isTutorialControlFocus = this.isTutorial && !!currentStep && (currentStep.includes('IGNITE') || currentStep.includes('PUMP') || currentStep === 'POST_PUMP_DIALOG_GUIDE');
-    const bottomReservedSpace = isTutorialControlFocus ? Math.max(150, sh * 0.2) : this.UI_PAD_BOTTOM;
-    const panelEndY = sh - bottomReservedSpace;
-    const controlGap = isTutorialControlFocus ? Math.max(10, this.UI_GAP - 6) : this.UI_GAP;
-    const heatUpY = panelEndY - (btnH / 2); const bellowsY = heatUpY - (btnH / 2) - controlGap - (btnH / 2);
+    const { rightX, btnScale, btnH, heatUpY, bellowsY, gaugeTopLimit, gaugeH, gaugeCenterY } = this.getRightPanelMetrics(sw, sh);
     this.heatUpBtnContainer.setPosition(rightX, heatUpY).setScale(btnScale); this.bellowsContainer.setPosition(rightX, bellowsY).setScale(btnScale);
     
     // Always notify Heat button position
     if (this.onHeatBtnUpdate) {
-        this.onHeatBtnUpdate({ x: rightX, y: heatUpY, w: 100 * btnScale, h: 100 * btnScale });
+        this.onHeatBtnUpdate({ x: rightX, y: heatUpY, w: 120 * btnScale, h: 120 * btnScale });
     }
 
-    const gaugeTopLimit = panelStartY + 35; const gaugeBottomLimit = bellowsY - (btnH / 2) - controlGap;
-    const gaugeH = Math.max(this.TEMP_GAUGE_H_MIN, gaugeBottomLimit - gaugeTopLimit); const gaugeCenterY = gaugeTopLimit + (gaugeH / 2);
-    this.tempValueText.setPosition(rightX, gaugeCenterY - gaugeH / 2 - 25).setFontSize(isCompact ? '12px' : '14px');
+    this.tempValueText
+      .setPosition(rightX, gaugeTopLimit - 10)
+      .setOrigin(0.5, 1)
+      .setFontSize(isCompact ? '16px' : '20px');
     this.refreshTempGaugeVisuals(rightX, gaugeCenterY, gaugeH);
     const infoY = portrait ? sh * 0.3 : this.centerY - (isCompact ? 80 : 140);
     this.infoText.setPosition(this.centerX, infoY).setFontSize(portrait ? (isCompact ? '20px' : '24px') : (isCompact ? '20px' : '26px'));
   }
 
   private refreshTempGaugeVisuals(x: number, y: number, h: number) {
-      const ratio = this.temperature / 100;
-      this.tempBgGraphics.clear().fillStyle(0x1c1917, 1).fillRoundedRect(x - 15, y - (h + 10) / 2, 30, h + 10, 15).lineStyle(3, 0x57534e, 1).strokeRoundedRect(x - 15, y - (h + 10) / 2, 30, h + 10, 15).fillStyle(0x0c0a09, 1).fillRoundedRect(x - 11, y - h / 2, 22, h, 11);
+      const ratio = Phaser.Math.Clamp((this.temperature - IDLE_TEMP) / (MAX_TEMP - IDLE_TEMP), 0, 1);
+      this.tempBgGraphics.clear().fillStyle(0x1c1917, 1).fillRoundedRect(x - 19, y - (h + 12) / 2, 38, h + 12, 18).lineStyle(3, 0x57534e, 1).strokeRoundedRect(x - 19, y - (h + 12) / 2, 38, h + 12, 18).fillStyle(0x0c0a09, 1).fillRoundedRect(x - 14, y - h / 2, 28, h, 14);
       this.tempBarGraphics.clear();
       if (ratio > 0) {
           const barH = h * ratio; let barColor = 0xeab308; 
           if (ratio < 0.4) barColor = 0x3b82f6; else if (ratio > 0.7) barColor = 0xef4444;
-          this.tempBarGraphics.fillStyle(barColor, 1).fillRoundedRect(x - 8, y + h / 2 - barH, 16, barH, 8); 
+          this.tempBarGraphics.fillStyle(barColor, 1).fillRoundedRect(x - 10, y + h / 2 - barH, 20, barH, 10); 
       }
   }
 
@@ -817,6 +859,26 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   private handleStartTap(x: number, y: number) {
+    const currentStep = (this.game as any).tutorialStep as string | null;
+    if (this.isTutorial && currentStep === 'SMITHING_TOUCH_TO_START_GUIDE') {
+      if (this.tutorialStartTransitioning) return;
+      if (!this.isReadyToStart) {
+        this.cameras.main.shake(50, 0.005);
+        this.showFeedback('TOO COLD!', 0x3b82f6, 1.0, x, y);
+        return;
+      }
+      this.tutorialStartTransitioning = true;
+      this.infoText.setVisible(false);
+      this.flashOverlay.setFillStyle(0xffffff, 1).setAlpha(0.2);
+      this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 300 });
+      this.time.delayedCall(220, () => {
+        this.tutorialStartTransitioning = false;
+        if (this.onTutorialAction) {
+          this.onTutorialAction('START_PRE_FIRST_HIT_DIALOG');
+        }
+      });
+      return;
+    }
     if (this.isReadyToStart) {
       this.isPlaying = true; this.infoText.setVisible(false);
       this.flashOverlay.setFillStyle(0xffffff, 1).setAlpha(0.2); this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 300 });
@@ -857,6 +919,7 @@ export default class SmithingScene extends Phaser.Scene {
           this.targetRing.clear(); 
           this.approachRing.clear(); 
           this.updateProgressBar();
+          this.resetRing();
           return;
       }
     } else if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.GOOD_THRESHOLD) {
@@ -881,7 +944,7 @@ export default class SmithingScene extends Phaser.Scene {
 
   public startTutorialHitGuide() {
       if (!this.isTutorial) return;
-      this.temperature = 100;
+      this.temperature = MAX_TEMP;
       this.isReadyToStart = true;
       this.isPlaying = true;
       this.infoText.setVisible(false);
@@ -892,6 +955,22 @@ export default class SmithingScene extends Phaser.Scene {
         this.onTutorialStrikeReadyChange(false);
       }
       this.resetRing();
+      if (this.onTutorialTargetUpdate) {
+        this.onTutorialTargetUpdate(null);
+      }
+  }
+
+  public resumeTutorialStrike() {
+      if (!this.isTutorial) return;
+      this.temperature = MAX_TEMP;
+      this.isReadyToStart = true;
+      this.isPlaying = true;
+      this.infoText.setVisible(false);
+      this.targetRing.setVisible(true);
+      this.approachRing.setVisible(true);
+      if (this.onTutorialStrikeReadyChange) {
+        this.onTutorialStrikeReadyChange(true);
+      }
   }
 
   private handleEnhancement(x: number, y: number) {
@@ -916,24 +995,25 @@ export default class SmithingScene extends Phaser.Scene {
         this.lastTutorialUiStep = currentStep ?? null;
         this.handleResize();
     }
-    const isTutorialDialogueActive = this.isTutorial && (currentStep === 'FIRST_HIT_DIALOG_GUIDE' || currentStep?.includes('_DIALOG'));
+    const isTutorialDialogueActive = this.isTutorial && currentStep?.includes('_DIALOG');
     if (this.isPlaying && this.currentTool === 'HAMMER' && !isTutorialDialogueActive) {
         this.handleRingLogic(delta);
     }
     if (this.isTutorialHitLockPhase(currentStep)) {
-        this.temperature = 100;
+        this.temperature = MAX_TEMP;
         this.isReadyToStart = true;
         this.infoText.setVisible(false);
     }
     const floorVal = SmithingTutorialHandler.getTemperatureFloor(this.isTutorial);
-    const isPeakInTutorialWait = this.isTutorial && !this.isPlaying && this.temperature >= 98;
-    if (!isPeakInTutorialWait && !this.isTutorialHitLockPhase(currentStep)) {
+    const isPeakHeatHoldActive = this.time.now < this.peakHeatHoldUntil;
+    const isPeakInTutorialWait = this.isTutorial && !this.isPlaying && this.temperature >= MAX_TEMP - 10;
+    if (!isPeakHeatHoldActive && !isPeakInTutorialWait && !this.isTutorialHitLockPhase(currentStep)) {
         this.temperature = Math.max(floorVal, this.temperature - this.coolingRate * (delta / 1000));
     }
     this.refreshVisuals();
     if (this.onStatusUpdate) this.onStatusUpdate(this.temperature);
-    if (!this.isPlaying && this.isReadyToStart && this.temperature <= floorVal + 0.1 && !this.isTutorial) {
-      this.isReadyToStart = false; this.infoText.setVisible(true).setText('TOUCH TO START').setColor('#fbbf24');
+    if (!this.isPlaying && this.isReadyToStart && this.temperature <= floorVal + 1 && !this.isTutorial) {
+      this.isReadyToStart = false; this.infoText.setVisible(true).setText(this.touchToStartLabel).setColor('#fbbf24');
     }
     if (this.isTutorial && this.onTutorialTargetUpdate) {
         const activeRect = SmithingTutorialHandler.getHighlightRect(this.isTutorial, currentStep, this.isPlaying, {
@@ -952,23 +1032,20 @@ export default class SmithingScene extends Phaser.Scene {
 
   private refreshVisuals() {
     this.qualityText.setText(this.getQualityLabel(this.currentQuality)).setColor(this.getLabelColor(this.currentQuality));
-    const ratio = this.temperature / 100; 
-    this.tempValueText.setText(`${Math.round(IDLE_TEMP + ratio * (MAX_TEMP - IDLE_TEMP))}°C`);
+    this.tempValueText.setText(`${Math.round(this.temperature)}°C`);
     if (this.tempBarGraphics) {
-        const sideAreaWidth = Math.min(this.viewW, this.viewH) * 0.18; const rightX = this.viewW - (sideAreaWidth / 2) - this.UI_PAD_SIDE;
-        const panelStartY = this.viewH * 0.45; const btnScale = sideAreaWidth / 100; const btnH = 100 * btnScale;
-        const heatUpY = (this.viewH - this.UI_PAD_BOTTOM) - (btnH / 2); const bellowsY = heatUpY - (btnH / 2) - this.UI_GAP - (btnH / 2);
-        const gaugeTopLimit = panelStartY + 35; const gaugeBottomLimit = bellowsY - (btnH / 2) - this.UI_GAP;
-        const gaugeH = Math.max(this.TEMP_GAUGE_H_MIN, gaugeBottomLimit - gaugeTopLimit); const gaugeCenterY = gaugeTopLimit + (gaugeH / 2);
+        const { rightX, gaugeTopLimit, gaugeH, gaugeCenterY } = this.getRightPanelMetrics(this.viewW, this.viewH);
+        this.tempValueText.setPosition(rightX, gaugeTopLimit - 10).setOrigin(0.5, 1);
         this.refreshTempGaugeVisuals(rightX, gaugeCenterY, gaugeH);
     }
+    const ratio = Phaser.Math.Clamp((this.temperature - IDLE_TEMP) / (MAX_TEMP - IDLE_TEMP), 0, 1);
     const progress = Phaser.Math.Clamp(this.score / this.targetScore, 0, 1);
     this.setBilletStage(Math.min(5, Math.floor(progress * 6)));
     if (this.ambientGlow) this.ambientGlow.setAlpha(ratio * 0.4);
-    if (this.temperature <= 0) this.currentTempStage = 'COLD';
-    else if (this.temperature > 75) this.currentTempStage = 'AURA';
-    else if (this.temperature > 40) this.currentTempStage = 'HOT';
-    else if (this.temperature > 15) this.currentTempStage = 'WARM';
+    if (this.temperature <= IDLE_TEMP) this.currentTempStage = 'COLD';
+    else if (this.temperature >= AURA_TEMP) this.currentTempStage = 'AURA';
+    else if (this.temperature >= HOT_TEMP) this.currentTempStage = 'HOT';
+    else if (this.temperature >= FORGE_START_TEMP) this.currentTempStage = 'WARM';
     else this.currentTempStage = 'NORMAL';
   }
 
@@ -992,17 +1069,20 @@ export default class SmithingScene extends Phaser.Scene {
     const ringColor = Phaser.Display.Color.GetColor(Math.floor(255 + (targetRGB.red - 255) * colorT), Math.floor(255 + (targetRGB.green - 255) * colorT), Math.floor(255 + (targetRGB.blue - 255) * colorT));
     const ringAlpha = 0.6 + (colorT * 0.3);
     const overlapDistance = Math.abs(this.currentRadius - this.targetRadius);
-    const overlapWindow = Math.max(18, this.targetRadius * 0.65);
+    const overlapWindow = Math.max(22, this.targetRadius * 0.78);
     const overlapProximity = Phaser.Math.Clamp(1 - overlapDistance / overlapWindow, 0, 1);
 
     if (this.isTutorial && tutorialStep === 'SMITHING_MINIGAME_HIT_GUIDE' && this.perfectCount === 0) {
-      const readyThreshold = Math.max(6, this.targetRadius * 0.12);
+      const readyThreshold = Math.max(5, this.targetRadius * 0.08);
       if (!this.tutorialFirstHitReady && overlapDistance <= readyThreshold) {
         this.tutorialFirstHitReady = true;
         this.currentRadius = this.targetRadius;
         this.ringTimer = this.shrinkDuration;
         if (this.onTutorialStrikeReadyChange) {
           this.onTutorialStrikeReadyChange(true);
+        }
+        if (this.onTutorialAction) {
+          this.onTutorialAction('START_FIRST_HIT_DIALOG');
         }
       }
 
@@ -1027,13 +1107,12 @@ export default class SmithingScene extends Phaser.Scene {
   }
 
   private resetRing() {
-    // 400°C threshold: ratio 26.17 (approx 390/1490)
-    if (this.temperature < 26.2 && !this.isTutorial) {
+    if (this.temperature < FORGE_START_TEMP && !this.isTutorial) {
         if (this.isPlaying) {
             this.isPlaying = false;
             this.targetRing.clear();
             this.approachRing.clear();
-            this.infoText.setVisible(true).setText('FORGE IS COLD\nADD FUEL').setColor('#3b82f6');
+            this.infoText.setVisible(true).setText(this.forgeColdLabel).setColor('#3b82f6');
             this.isReadyToStart = false;
         }
         return;
@@ -1109,8 +1188,9 @@ export default class SmithingScene extends Phaser.Scene {
     window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'bellows.wav' } }));
     this.tweens.add({ targets: this.bellowsBg, alpha: { from: 1, to: 0.7 }, scale: { from: 1, to: 1.1 }, duration: 150, yoyo: true, ease: 'Cubic.out' });
     if (this.temperature > 0) { 
-        this.temperature = Math.min(100, this.temperature + 5.5); 
-        if (!this.isPlaying && !this.isReadyToStart) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } 
+        this.temperature = Math.min(MAX_TEMP, this.temperature + getBellowsHeatGain(this.temperature)); 
+        this.refreshPeakHeatHold();
+        if (!this.isPlaying && !this.isReadyToStart) { this.isReadyToStart = true; this.infoText.setText(this.touchToStartLabel).setColor('#fbbf24'); } 
     }
   }
 
@@ -1126,8 +1206,9 @@ export default class SmithingScene extends Phaser.Scene {
 
   public heatUp() {
     window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'fire_up.mp3' } }));
-    this.temperature = Math.min(100, Math.max(this.temperature + 20, 40)); 
-    if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText('TOUCH TO START').setColor('#fbbf24'); } 
+    this.temperature = Math.min(MAX_TEMP, Math.max(this.temperature + 320, 600)); 
+    this.refreshPeakHeatHold();
+    if (!this.isPlaying) { this.isReadyToStart = true; this.infoText.setText(this.touchToStartLabel).setColor('#fbbf24'); } 
     this.flashOverlay.setFillStyle(0xff8800, 1).setAlpha(0.4); 
     this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 400, ease: 'Cubic.easeOut' });
   }

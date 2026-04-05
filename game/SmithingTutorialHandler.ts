@@ -7,8 +7,8 @@ import { SMITHING_CONFIG } from '../config/smithing-config';
  * SmithingScene의 미니게임 내 튜토리얼 분기 로직을 담당합니다.
  */
 export class SmithingTutorialHandler {
-  // 400°C에 해당하는 비율 (10~1500 범위 기준)
-  private static readonly TUTORIAL_TEMP_FLOOR = 26.17;
+  // First-hit lesson should never cool below a workable forge temperature.
+  private static readonly TUTORIAL_TEMP_FLOOR = 400;
 
   /**
    * 튜토리얼 여부에 따른 온도 하한선을 반환합니다.
@@ -58,33 +58,18 @@ export class SmithingTutorialHandler {
     if (!isTutorial || !tutorialStep) return null;
 
     switch (tutorialStep) {
-      case 'PRE_IGNITE_INDICATE_GUIDE':
-      case 'SMITHING_MINIGAME_IGNITE_GUIDE':
-        return { 
-          x: components.heatUpBtn.x, 
-          y: components.heatUpBtn.y, 
-          w: 100 * components.heatUpBtn.scaleX, 
-          h: 100 * components.heatUpBtn.scaleY 
-        };
-      case 'PRE_PUMP_INDICATE_GUIDE':
-      case 'SMITHING_MINIGAME_PUMP_GUIDE':
-        return { 
-          x: components.bellowsBtn.x, 
-          y: components.bellowsBtn.y, 
-          w: 100 * components.bellowsBtn.scaleX, 
-          h: 100 * components.bellowsBtn.scaleY 
-        };
       case 'SMITHING_MINIGAME_HIT_GUIDE':
         if (isPlaying && components.perfectCount === 0) {
-          const shouldFocus = components.tutorialFirstHitReady || Math.abs(components.currentRadius - components.targetRadius) <= Math.max(28, components.targetRadius * 0.8);
-          if (!shouldFocus) {
+          const focusWindow = Math.max(30, components.targetRadius * 0.92);
+          const isNearEnough = Math.abs(components.currentRadius - components.targetRadius) <= focusWindow;
+          if (!components.tutorialFirstHitReady && !isNearEnough) {
             return null;
           }
           return { 
             x: components.hitX, 
             y: components.hitY, 
-            w: components.targetRadius * 2.2, 
-            h: components.targetRadius * 2.2 
+            w: components.targetRadius * 2.9, 
+            h: components.targetRadius * 2.9 
           };
         }
         return null;

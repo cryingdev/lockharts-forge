@@ -76,7 +76,7 @@ export const ShoppingCartDrawer: React.FC<ShoppingCartDrawerProps> = ({ isOpen, 
             </div>
             <div className="bg-stone-850 p-4 border-t border-stone-800 space-y-2 shrink-0">
                 <div className="flex justify-between items-center text-[10px] text-stone-500 font-bold uppercase"><span>{t(language, 'market.total')}</span><span className={`text-lg font-mono font-black ${total > gold ? 'text-red-500' : 'text-emerald-400'}`}>{total}G</span></div>
-                <button onClick={onBuy} disabled={total === 0 || total > gold} className={`w-full py-3 rounded-xl font-black text-[10px] transition-all flex items-center justify-center gap-2 shadow-xl ${total > gold ? 'bg-red-900/60 text-red-100 border border-red-500/50' : total === 0 ? 'bg-stone-800 text-stone-600 opacity-60' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}><ShoppingBag className="w-4 h-4" /><span>{total > gold ? t(language, 'market.checkout_shortage') : t(language, 'market.buy_now')}</span></button>
+                <button data-tutorial-id="PAY_NOW_BUTTON" onClick={onBuy} disabled={total === 0 || total > gold} className={`w-full py-3 rounded-xl font-black text-[10px] transition-all flex items-center justify-center gap-2 shadow-xl ${total > gold ? 'bg-red-900/60 text-red-100 border border-red-500/50' : total === 0 ? 'bg-stone-800 text-stone-600 opacity-60' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}><ShoppingBag className="w-4 h-4" /><span>{total > gold ? t(language, 'market.checkout_shortage') : t(language, 'market.buy_now')}</span></button>
             </div>
         </div>
     );

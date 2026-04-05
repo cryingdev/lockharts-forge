@@ -41,7 +41,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
   }, [inventory]);
 
   const currentResidualTemp = useMemo(() => {
-    const GLOBAL_COOLING_RATE_PER_SEC = 5;
+    const GLOBAL_COOLING_RATE_PER_SEC = 30;
     const timeDiffSec = (Date.now() - (lastForgeTime || 0)) / 1000;
     return Math.max(0, (forgeTemperature || 0) - (timeDiffSec * GLOBAL_COOLING_RATE_PER_SEC));
   }, [forgeTemperature, lastForgeTime]);
@@ -234,14 +234,20 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       return;
     }
 
+    if (tutorialStep === 'START_FORGING_GUIDE' && selectedItem.id === 'sword_bronze_t1') {
+      actions.setTutorialStep('SMITHING_TOUCH_TO_START_GUIDE');
+    }
     actions.startCrafting(selectedItem);
     setIsPanelOpen(false);
-  }, [selectedItem, hasFurnace, hasWorkbench, getInventoryCount, stats.energy, craftingMastery, actions, onNavigate, isFuelShortage, isEnergyShortage, updateTooltipPosition, clearTooltipRef]);
+  }, [selectedItem, hasFurnace, hasWorkbench, getInventoryCount, stats.energy, craftingMastery, actions, onNavigate, isFuelShortage, isEnergyShortage, updateTooltipPosition, clearTooltipRef, tutorialStep]);
 
   const handleMinigameComplete = useCallback((score: number, bonus?: number) => {
     if (selectedItem) {
       actions.finishCrafting(selectedItem, score, bonus);
-      if (tutorialStep === 'START_FORGING_GUIDE' && selectedItem.id === 'sword_bronze_t1') {
+      if (
+        ['SMITHING_INTRO_DIALOG_GUIDE', 'SMITHING_TOUCH_TO_START_GUIDE', 'FIRST_HIT_DIALOG_GUIDE', 'SMITHING_MINIGAME_HIT_GUIDE'].includes(tutorialStep || '') &&
+        selectedItem.id === 'sword_bronze_t1'
+      ) {
         actions.setTutorialStep('CRAFT_RESULT_DIALOG_GUIDE');
       }
     }

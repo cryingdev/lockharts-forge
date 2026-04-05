@@ -5,6 +5,7 @@ import { useGame } from '../../../../context/GameContext';
 import { materials } from '../../../../data/materials';
 import SmithingScene from '../../../../game/SmithingScene';
 import { SmithingTutorialOverlay } from './SmithingTutorialOverlay';
+import { t } from '../../../../utils/i18n';
 
 interface SmithingMinigameProps {
   onComplete: (score: number, bonus?: number) => void;
@@ -32,6 +33,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   const [firstHitTutorialConsumed, setFirstHitTutorialConsumed] = useState(false);
 
   const charcoalCount = state.inventory.find((i) => i.id === materials.charcoal.id || i.id === 'charcoal')?.quantity || 0;
+  const language = state.settings.language;
 
   const onCompleteRef = useRef(onComplete);
   const actionsRef = useRef(actions);
@@ -41,13 +43,11 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   useEffect(() => { actionsRef.current = actions; }, [actions]);
   useEffect(() => { stateRef.current = state; }, [state]);
 
-  // Enter the smithing minigame tutorial directly at the first hit explanation.
   useEffect(() => {
-      if (isTutorial && state.tutorialStep === 'START_FORGING_GUIDE') {
+      if (isTutorial && state.tutorialStep === 'SMITHING_TOUCH_TO_START_GUIDE') {
           setFirstHitTutorialConsumed(false);
           setTutorialTarget(null);
           setTutorialStrikeReady(false);
-          actionsRef.current.setTutorialStep('FIRST_HIT_DIALOG_GUIDE');
       }
   }, [isTutorial, state.tutorialStep]);
 
@@ -72,8 +72,10 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       if (gameRef.current) {
           const scene = gameRef.current.scene.getScene('SmithingScene') as SmithingScene;
           if (scene) {
-            if (stateRef.current.tutorialStep === 'FIRST_HIT_DIALOG_GUIDE') {
+            if (stateRef.current.tutorialStep === 'SMITHING_INTRO_DIALOG_GUIDE') {
               scene.startTutorialHitGuide();
+            } else if (stateRef.current.tutorialStep === 'FIRST_HIT_DIALOG_GUIDE') {
+              scene.resumeTutorialStrike();
             } else {
               scene.resumeTutorialCrafting();
             }
@@ -93,10 +95,21 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       el.style.touchAction = 'none';
     };
 
-    const initialTemp = Math.max(
-      0,
-      (state.forgeTemperature || 0) - ((Date.now() - (state.lastForgeTime || 0)) / 1000) * 5
-    );
+    const isTutorialHotStart =
+      isTutorial &&
+      [
+        'SMITHING_TOUCH_TO_START_GUIDE',
+        'SMITHING_INTRO_DIALOG_GUIDE',
+        'FIRST_HIT_DIALOG_GUIDE',
+        'SMITHING_MINIGAME_HIT_GUIDE',
+      ].includes(state.tutorialStep || '');
+
+    const initialTemp = isTutorialHotStart
+      ? 1500
+      : Math.max(
+          0,
+          (state.forgeTemperature || 0) - ((Date.now() - (state.lastForgeTime || 0)) / 1000) * 30
+        );
 
     ensureWrapperSize();
 
@@ -125,14 +138,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
 
     const handleHeatUp = () => {
       if (!isTutorial) {
-          actionsRef.current.consumeItem(materials.charcoal.id, 1);
-      } else {
-          // 지시 단계(INDICATE) 혹은 실제 미니게임 단계에서 클릭 시 다음 설명으로 전환
-          const step = stateRef.current.tutorialStep;
-          if (step === 'SMITHING_MINIGAME_IGNITE_GUIDE' || step === 'PRE_IGNITE_INDICATE_GUIDE') {
-              actionsRef.current.setTutorialStep('PRE_PUMP_DIALOG_GUIDE');
-              (game as any).tutorialStep = 'PRE_PUMP_DIALOG_GUIDE';
-          }
+        actionsRef.current.consumeItem(materials.charcoal.id, 1);
       }
       
       const scene = game.scene.getScene('SmithingScene') as SmithingScene;
@@ -150,22 +156,24 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       initialTemp,
       charcoalCount: isTutorial ? '∞' : charcoalCount,
       isTutorial,
+      touchToStartLabel: t(language, 'smithingTutorial.ui.touch_to_start'),
+      forgeColdLabel: t(language, 'smithingTutorial.ui.forge_cold'),
       onStatusUpdate: (t: number) => {
           setCurrentTemp(t);
-          // 풀무질 지시 단계에서 99% 달성 시 중간 다이얼로그로 전환
-          const step = stateRef.current.tutorialStep;
-          if (isTutorial && (step === 'SMITHING_MINIGAME_PUMP_GUIDE' || step === 'PRE_PUMP_INDICATE_GUIDE') && t >= 99) {
-              actionsRef.current.setTutorialStep('POST_PUMP_DIALOG_GUIDE');
-              (game as any).tutorialStep = 'POST_PUMP_DIALOG_GUIDE';
-          }
       },
       onHeatUpRequest: handleHeatUp,
       onHeatBtnUpdate: (rect: any) => setHeatBtnRect(rect),
       onTutorialTargetUpdate: (rect: any) => setTutorialTarget(rect),
       onTutorialStrikeReadyChange: (ready: boolean) => setTutorialStrikeReady(ready),
-      onTutorialAction: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED') => {
-          if (action === 'FIRST_HIT_DONE') {
+      onTutorialAction: (action: 'FIRST_HIT_DONE' | 'CRAFT_FINISHED' | 'START_FIRST_HIT_DIALOG' | 'START_PRE_FIRST_HIT_DIALOG') => {
+          if (action === 'START_PRE_FIRST_HIT_DIALOG') {
+              actionsRef.current.setTutorialStep('SMITHING_INTRO_DIALOG_GUIDE');
+          } else if (action === 'START_FIRST_HIT_DIALOG') {
               actionsRef.current.setTutorialStep('FIRST_HIT_DIALOG_GUIDE');
+          } else if (action === 'FIRST_HIT_DONE') {
+              setFirstHitTutorialConsumed(true);
+              setTutorialTarget(null);
+              setTutorialStrikeReady(false);
           } else if (action === 'CRAFT_FINISHED') {
               actionsRef.current.setTutorialStep('CRAFT_RESULT_DIALOG_GUIDE');
           }
@@ -188,7 +196,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
           gameRef.current = null;
       }
     };
-  }, [isReady]);
+  }, [isReady, language]);
 
   useEffect(() => {
       if (gameRef.current) {
@@ -205,9 +213,7 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
   const isFirstHitMinigameGuide = state.tutorialStep === 'SMITHING_MINIGAME_HIT_GUIDE' && !firstHitTutorialConsumed;
   const showOverlay = isTutorial && (
     isFirstHitMinigameGuide ||
-    state.tutorialStep?.includes('_DIALOG') || 
-    state.tutorialStep?.includes('_INDICATE') || 
-    state.tutorialStep === 'START_FORGING_GUIDE' || 
+    state.tutorialStep === 'SMITHING_INTRO_DIALOG_GUIDE' ||
     state.tutorialStep === 'FIRST_HIT_DIALOG_GUIDE'
   );
 
@@ -229,11 +235,6 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
             targetCoord={tutorialTarget} 
             strikePromptVisible={tutorialStrikeReady}
             onResume={handleResumeTutorialFromReact}
-            onFirstHitTutorialComplete={() => {
-              setFirstHitTutorialConsumed(true);
-              setTutorialTarget(null);
-              setTutorialStrikeReady(false);
-            }}
           />
       ) : null}
 

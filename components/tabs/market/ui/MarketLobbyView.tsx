@@ -33,11 +33,11 @@ export const MarketLobbyView: React.FC<MarketLobbyViewProps> = ({
             <div className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-end pointer-events-none pb-0">
                 <div className="relative flex justify-center items-end w-full animate-in fade-in zoom-in-95 duration-1000">
                     <div className="absolute top-[12dvh] md:top-32 left-[calc(50%+85px)] md:left-[calc(50%+180px)] z-[1050] pointer-events-auto">
-                        <div className="bg-stone-900/85 border-2 border-stone-700 px-3 py-1.5 rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2">
-                            <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+                        <div className="bg-stone-900/85 border-2 border-stone-700 px-4 py-2 md:px-5 md:py-2.5 rounded-2xl backdrop-blur-md shadow-2xl flex items-center gap-2.5 md:gap-3">
+                            <Heart className="w-5 h-5 md:w-6 md:h-6 text-pink-500 fill-pink-500" />
                             <div className="flex flex-col leading-none">
-                                <span className="text-[7px] text-stone-500 font-black uppercase">{t(language, 'market.garricks_trust')}</span>
-                                <span className="text-sm font-black font-mono text-pink-400">{garrickAffinity}</span>
+                                <span className="text-[9px] md:text-[10px] text-stone-400 font-black uppercase tracking-[0.14em]">{t(language, 'market.garricks_trust')}</span>
+                                <span className="text-[18px] md:text-[22px] font-black font-mono text-pink-400 mt-1">{garrickAffinity}</span>
                             </div>
                         </div>
                     </div>
