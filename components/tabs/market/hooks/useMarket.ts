@@ -46,7 +46,10 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
     // Tutorial Sync
     useEffect(() => {
         if (state.tutorialStep === 'FURNACE_GUIDE') setViewMode('CATALOG');
-        else if (state.tutorialStep === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE') setViewMode('INTERACTION');
+        else if (
+            state.tutorialStep === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' ||
+            state.tutorialStep === 'GARRICK_EXIT_DIALOG_GUIDE'
+        ) setViewMode('INTERACTION');
     }, [state.tutorialStep]);
 
     const spawnHearts = useCallback((count: number) => {
@@ -128,7 +131,10 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         if (available <= 0) return false;
         const addCount = Math.min(amount, available);
         
-        if (itemId === 'furnace' && state.tutorialStep === 'FURNACE_GUIDE') actions.setTutorialStep('OPEN_SHOPPING_CART_GUIDE');
+        if (itemId === 'furnace' && state.tutorialStep === 'FURNACE_GUIDE') {
+            setIsCartOpen(false);
+            actions.setTutorialStep('PAY_NOW_GUIDE');
+        }
 
         setCart(prev => ({ ...prev, [itemId]: (prev[itemId] || 0) + addCount }));
         return true;

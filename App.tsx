@@ -27,8 +27,9 @@ const App = () => {
 
   const handleNewGame = (skipTutorial: boolean) => {
       const nextSlot = getNextAvailableSlot();
+      const initialState = createInitialGameState();
       setActiveSlotIndex(nextSlot);
-      setPendingLoadState(null);
+      setPendingLoadState(initialState);
       setPendingSkipTutorial(skipTutorial);
       setView('GAME');
   };
@@ -97,18 +98,14 @@ const GameLoader: React.FC<{ initialData: GameState | null, skipTutorial: boolea
             if (initialData) {
                 actions.loadGame(initialData);
                 rng.setSeed(initialData.seed);
-            } else {
-                rng.setSeed(state.seed);
                 if (skipTutorial) {
-                    // Fresh start + Tutorial Skip
                     actions.completeTutorial();
-                    // We suppress the celebration modal when skipping from the title for a cleaner start
                     actions.dismissTutorialComplete();
                 }
             }
         }
         isFirstRun.current = false;
-    }, [initialData, skipTutorial, actions, state.seed]);
+    }, [initialData, skipTutorial, actions]);
 
     return <>{children}</>;
 };

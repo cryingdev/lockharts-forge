@@ -135,13 +135,11 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
 
     const handleToggleShop = useCallback(() => {
         const isOpeningStep = state.tutorialStep === 'OPEN_SHOP_SIGN_GUIDE';
-        
         if (isOpeningStep && !isShopOpen) {
             actions.setTutorialStep('SELL_ITEM_GUIDE');
         }
-        
         actions.toggleShop();
-    }, [isShopOpen, state.tutorialStep, actions]);
+    }, [actions, state.tutorialStep, isShopOpen]);
 
     const getThanksDialogue = useCallback(() => {
         const itemName = getItemName(activeCustomer?.request.requestedId || "");
@@ -152,7 +150,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                 return t(language, 'shop.thanks_masterwork_pip', { playerName });
             }
             return [
-                t(language, 'shop.thanks_masterwork_1', { item: itemName }),
+                t(language, 'shop.thanks_masterwork_1', { item: itemName, playerName }),
                 t(language, 'shop.thanks_masterwork_2'),
                 t(language, 'shop.thanks_masterwork_3', { playerName })
             ][Math.floor(Math.random() * 3)];
@@ -165,13 +163,13 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                 t(language, 'shop.thanks_pristine_1', { item: itemName, playerName }),
                 t(language, 'shop.thanks_pristine_2'),
                 t(language, 'shop.thanks_pristine_3'),
-                t(language, 'shop.thanks_pristine_4')
+                t(language, 'shop.thanks_pristine_4', { playerName })
             ][Math.floor(Math.random() * 4)];
         }
         if (lastSoldQuality < 80) {
             return [
                 t(language, 'shop.thanks_rough_1', { item: itemName }),
-                t(language, 'shop.thanks_rough_2'),
+                t(language, 'shop.thanks_rough_2', { playerName }),
                 t(language, 'shop.thanks_rough_3')
             ][Math.floor(Math.random() * 3)];
         }
@@ -179,7 +177,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             t(language, 'shop.thanks_pristine_1', { item: itemName, playerName }),
             t(language, 'shop.thanks_pristine_2'),
             t(language, 'shop.thanks_pristine_3'),
-            t(language, 'shop.thanks_pristine_4')
+            t(language, 'shop.thanks_pristine_4', { playerName })
         ][Math.floor(Math.random() * 4)];
     }, [language, activeCustomer, lastSoldQuality, getItemName, playerName]);
 
@@ -188,7 +186,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
             return [
                 t(language, 'shop.refuse_polite_1'),
                 t(language, 'shop.refuse_polite_2'),
-                t(language, 'shop.refuse_polite_3'),
+                t(language, 'shop.refuse_polite_3', { playerName }),
                 t(language, 'shop.refuse_polite_4')
             ][(activeCustomer?.id.length || 0) % 4];
         } else {
@@ -196,7 +194,7 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                 t(language, 'shop.refuse_angry_1'),
                 t(language, 'shop.refuse_angry_2'),
                 t(language, 'shop.refuse_angry_3'),
-                t(language, 'shop.refuse_angry_4')
+                t(language, 'shop.refuse_angry_4', { playerName })
             ][(activeCustomer?.id.length || 0) % 4];
         }
     }, [language, refusalReaction, activeCustomer]);
@@ -231,20 +229,6 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
     }, [activeCustomer, composeShopLine, playerName]);
 
     const tutorialContent = useMemo(() => {
-        if (tutorialStep === 'PIP_INITIAL_FAREWELL_DIALOG_GUIDE') {
-            return {
-                speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: t(language, 'shop.pip_farewell_1', { playerName }),
-                options: [{ 
-                    label: t(language, 'shop.option_farewell'), 
-                    action: () => {
-                        handleFarewell();
-                        actions.setTutorialStep('CRAFT_FIRST_SWORD_DIALOG_GUIDE');
-                    }, 
-                    variant: 'primary' as const 
-                }]
-            };
-        }
         if (tutorialStep === 'CRAFT_FIRST_SWORD_DIALOG_GUIDE') {
             return {
                 speaker: playerName,
@@ -254,26 +238,31 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                     action: () => { 
                         actions.setTutorialScene('SMITHING');
                         actions.setTutorialStep('CRAFT_FIRST_SWORD_GUIDE');
-                        if (onNavigate) onNavigate('FORGE');
                     }, 
                     variant: 'primary' as const,
-                    targetTab: 'FORGE'
                 }]
             };
         }
         if (tutorialStep === 'PIP_PRAISE_DIALOG_GUIDE') {
             return {
                 speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: t(language, 'shop.pip_praise_1', { playerName }),
-                options: [{ label: t(language, 'shop.option_continue'), action: () => actions.setTutorialStep('DRAGON_TALK_DIALOG_GUIDE'), variant: 'primary' as const }]
+                text: t(language, 'shop.pip_gratitude', { playerName, item: getItemName(activeCustomer?.request.requestedId || 'bronze_shortsword') }),
+                options: [{
+                    label: t(language, 'shop.option_continue'),
+                    action: () => {
+                        handleFarewell();
+                        actions.setTutorialStep('TUTORIAL_FINISH_DIALOG_GUIDE');
+                    },
+                    variant: 'primary' as const
+                }]
             };
         }
-        if (tutorialStep === 'DRAGON_TALK_DIALOG_GUIDE') {
+        if (tutorialStep === 'TUTORIAL_FINISH_DIALOG_GUIDE') {
             return {
-                speaker: activeCustomer?.mercenary.name || "Pip the Green",
-                text: t(language, 'shop.pip_praise_2', { playerName }),
+                speaker: playerName,
+                text: t(language, 'shop.tutorial_finish'),
                 options: [{
-                    label: t(language, 'shop.option_farewell'),
+                    label: t(language, 'shop.option_complete_tutorial'),
                     action: () => {
                         handleFarewell();
                         actions.completeTutorial();
@@ -319,17 +308,12 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                     highlightTerm: "Bronze Shortsword",
                     options: [
                         { 
-                            label: t(language, 'shop.option_ready_later'), 
+                            label: t(language, 'shop.option_continue'), 
                             action: () => {
-                                // Instead of immediate navigation, we set a step that shows Pip's farewell
-                                actions.setTutorialStep('PIP_INITIAL_FAREWELL_DIALOG_GUIDE');
+                                handleFarewell();
+                                actions.setTutorialStep('CRAFT_FIRST_SWORD_DIALOG_GUIDE');
                             }, 
                             variant: 'primary' as const
-                        },
-                        { 
-                            label: t(language, 'shop.option_busy_now'), 
-                            action: handleRefuse, 
-                            variant: 'danger' as const 
                         }
                     ]
                 };
@@ -343,11 +327,6 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                             label: t(language, 'shop.option_sell_now'), 
                             action: handleSellClick, 
                             variant: 'primary' as const 
-                        },
-                        { 
-                            label: t(language, 'shop.option_need_elsewhere'), 
-                            action: handleRefuse, 
-                            variant: 'danger' as const 
                         }
                     ]
                 };

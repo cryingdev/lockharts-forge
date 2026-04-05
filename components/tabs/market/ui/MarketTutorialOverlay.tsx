@@ -13,10 +13,9 @@ import { getForgeName, getPlayerName } from '../../../../utils/gameText';
 export type SequenceStep = Extract<GameState['tutorialStep'], 
     'BROWSE_GOODS_GUIDE' | 
     'FURNACE_GUIDE' | 
-    'OPEN_SHOPPING_CART_GUIDE' | 
-    'CLOSE_SHOPPING_CART_GUIDE' | 
     'PAY_NOW_GUIDE' | 
     'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' | 
+    'GARRICK_EXIT_DIALOG_GUIDE' |
     'LEAVE_MARKET_GUIDE'
 >;
 
@@ -26,24 +25,19 @@ interface StepConfig {
     direction: 'top' | 'bottom' | 'left' | 'right';
 }
 
-const SCENE_STEPS_CONFIG: Record<SequenceStep, StepConfig> = {
+const SCENE_STEPS_CONFIG: Partial<Record<SequenceStep, StepConfig>> = {
     BROWSE_GOODS_GUIDE: { targetId: 'BROWSE_GOODS_BUTTON', labelKey: 'marketTutorial.browse_goods', direction: 'top' },
     FURNACE_GUIDE: { targetId: 'FURNACE_ITEM', labelKey: 'marketTutorial.select_furnace', direction: 'bottom' },
-    OPEN_SHOPPING_CART_GUIDE: { targetId: 'CART_TOGGLE', labelKey: 'marketTutorial.open_cart', direction: 'left' },
-    CLOSE_SHOPPING_CART_GUIDE: { targetId: 'CART_TOGGLE', labelKey: 'marketTutorial.close_cart', direction: 'right' },
     PAY_NOW_GUIDE: { targetId: 'PAY_NOW_BUTTON', labelKey: 'marketTutorial.finalize_purchase', direction: 'bottom' },
-    GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { targetId: 'GARRICK_TALK_BUTTON', labelKey: 'marketTutorial.talk_to_garrick', direction: 'top' },
     LEAVE_MARKET_GUIDE: { targetId: 'MARKET_BACK_BUTTON', labelKey: 'marketTutorial.exit_square', direction: 'bottom' },
 };
 
-const SCRIPTS: Record<SequenceStep, { speaker: string; textKey: string }> = {
+const SCRIPTS: Partial<Record<SequenceStep, { speaker: string; textKey: string }>> = {
     BROWSE_GOODS_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.browse_goods" },
     FURNACE_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.select_furnace" },
-    OPEN_SHOPPING_CART_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.open_cart" },
-    CLOSE_SHOPPING_CART_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.close_cart" },
     PAY_NOW_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.finalize_purchase" },
     GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { speaker: "PLAYER", textKey: "marketTutorial.dialogue.talk_to_garrick" },
-    LEAVE_MARKET_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.exit_square" },
+    GARRICK_EXIT_DIALOG_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.exit_square" },
 };
 
 export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
@@ -89,8 +83,6 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
         requestAnimationFrame(animate);
     }, [!!targetRect]);
 
-    if (!config) return null;
-
     const { top = 0, left = 0, width = 0, height = 0 } = targetRect || {};
     const centerX = left + width / 2;
     const centerY = top + height / 2;
@@ -102,7 +94,7 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
     let labelMargin = '';
     const cardinalBuffer = 12;
 
-    switch (config.direction) {
+    switch (config?.direction) {
         case 'top':
             pointerStyles = { left: centerX, top: top - cardinalBuffer, transform: 'translate(-50%, -100%)' };
             iconRotation = 'rotate(180deg)';
@@ -134,7 +126,10 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
     }
 
     // 대화 위주의 안내 단계에서는 배경 암전 효과를 숨깁니다.
-    const isDialogueStep = step === 'BROWSE_GOODS_GUIDE' || step === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' || step === 'LEAVE_MARKET_GUIDE';
+    const isDialogueStep =
+        step === 'BROWSE_GOODS_GUIDE' ||
+        step === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' ||
+        step === 'GARRICK_EXIT_DIALOG_GUIDE';
 
     return (
         <div className="fixed inset-0 z-[4000] pointer-events-none overflow-hidden">
@@ -156,7 +151,7 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
             </svg>
 
             {/* Logical Interaction Walls (Blocking 4 sides around the target) */}
-            {targetRect && (
+            {targetRect && config && (
                 <div className="absolute inset-0 pointer-events-none">
                     {/* Top wall */}
                     <div className="absolute top-0 left-0 w-full pointer-events-auto" style={{ height: top }} />
@@ -169,7 +164,7 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
                 </div>
             )}
             
-            {targetRect && (
+            {targetRect && config && (
                 <div className="absolute animate-in fade-in zoom-in-95 duration-300" style={pointerStyles}>
                     <div className={`flex items-center ${containerLayout} ${animationClass}`}>
                         <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ transform: iconRotation }} />
@@ -189,7 +184,9 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
                             step === 'BROWSE_GOODS_GUIDE' 
                                 ? [{ label: t(language, 'marketTutorial.option_browse'), action: () => actions.setTutorialStep('FURNACE_GUIDE'), variant: 'primary' }] 
                                 : step === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' 
-                                    ? [{ label: t(language, 'marketTutorial.option_talk'), action: () => actions.setTutorialStep('LEAVE_MARKET_GUIDE'), variant: 'primary' }] 
+                                    ? [{ label: t(language, 'common.continue'), action: () => actions.setTutorialStep('GARRICK_EXIT_DIALOG_GUIDE'), variant: 'primary' }]
+                                    : step === 'GARRICK_EXIT_DIALOG_GUIDE'
+                                        ? [{ label: t(language, 'common.continue'), action: () => actions.setTutorialStep('LEAVE_MARKET_GUIDE'), variant: 'primary' }]
                                     : []
                         } 
                         className="w-full relative pointer-events-auto"

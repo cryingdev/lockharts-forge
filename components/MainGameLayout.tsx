@@ -74,20 +74,19 @@ const TUTORIAL_STEPS_CONFIG: Record<string, StepConfig> = {
     MARKET_POI_GUIDE: { targetId: 'MARKET_POI', labelKey: 'tutorial.visit_market_district', direction: 'right' },
     FORGE_POI_GUIDE: { targetId: 'FORGE_POI', labelKey: 'tutorial.visit_lockhart_forge', direction: 'right' },
     OPEN_RECIPE_GUIDE: { targetId: 'RECIPE_TOGGLE', labelKey: 'tutorial.open_recipes', direction: 'left' },
+    CRAFT_FIRST_SWORD_GUIDE: { targetId: 'NAV_TO_FORGE', labelKey: 'tutorial.visit_lockhart_forge', direction: 'left' },
     SELECT_SWORD_GUIDE: { targetId: 'SWORD_RECIPE', labelKey: 'tutorial.select_sword', direction: 'bottom' },
     START_FORGING_GUIDE: { targetId: 'START_FORGING_BUTTON', labelKey: 'tutorial.start_forging', direction: 'right' },
     FINALIZE_FORGE_GUIDE: { targetId: 'FINALIZE_BUTTON', labelKey: 'tutorial.complete_forge', direction: 'bottom' },
-    OPEN_SHOP_TAB_GUIDE: { targetId: 'NAV_TO_SHOP', labelKey: 'tutorial.open_the_shop', direction: 'right' },
     OPEN_SHOP_SIGN_GUIDE: { targetId: 'SHOP_SIGN', labelKey: 'tutorial.open_the_shop', direction: 'bottom' },
 };
 
 const TUTORIAL_CONTEXT_SCRIPTS: Record<string, { speaker: string, textKey: string }> = {
-    MARKET_POI_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.market_poi_guide' },
-    FORGE_POI_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.forge_poi_guide' },
-    OPEN_RECIPE_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.open_recipe_guide' },
-    SELECT_SWORD_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.select_sword_guide' },
-    OPEN_SHOP_TAB_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.open_shop_tab_guide' },
-    OPEN_SHOP_SIGN_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.context.open_shop_sign_guide' },
+    MARKET_POI_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.guide.market_poi_guide' },
+    FORGE_POI_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.guide.forge_poi_guide' },
+    OPEN_RECIPE_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.guide.open_recipe_guide' },
+    SELECT_SWORD_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.guide.select_sword_guide' },
+    OPEN_SHOP_SIGN_GUIDE: { speaker: 'PLAYER', textKey: 'tutorial.guide.open_shop_sign_guide' },
 };
 
 const TutorialOverlay = ({ step }: { step: string }) => {
@@ -287,9 +286,9 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const dialogueContent = useMemo(() => {
     switch (state.tutorialStep) {
         case 'CRAFT_RESULT_DIALOG_GUIDE':
-            return { speaker: playerName, text: t(language, 'tutorial.dialogue.craft_result', { forgeName, playerName }), nextStep: 'FINALIZE_FORGE_GUIDE' as const };
+            return { speaker: playerName, text: t(language, 'tutorial.monologue.craft_result', { forgeName, playerName }), nextStep: 'FINALIZE_FORGE_GUIDE' as const };
         case 'SHOP_INTRO_DIALOG_GUIDE':
-            return { speaker: playerName, text: t(language, 'tutorial.dialogue.shop_intro', { forgeName, playerName }), nextStep: 'OPEN_SHOP_TAB_GUIDE' as const };
+            return { speaker: playerName, text: t(language, 'tutorial.monologue.shop_intro', { forgeName, playerName }), nextStep: 'OPEN_SHOP_SIGN_GUIDE' as const };
         default: return null;
     }
   }, [state.tutorialStep, actions, language, forgeName, playerName]);
@@ -297,9 +296,9 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   // MainScene 등의 자식 컴포넌트에서 건물 클릭 시 호출할 지능형 내비게이션 핸들러
   const handleSceneNavigation = useCallback((target: string) => {
       if (target === 'FORGE_BUILDING') {
-          // 튜토리얼 단계에 따라 강제로 탭 결정
-          if (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE') {
-              setActiveTab('SHOP');
+          if (state.tutorialStep === 'FORGE_POI_GUIDE') {
+              setActiveTab('FORGE');
+              actions.setTutorialStep('OPEN_RECIPE_GUIDE');
           } else {
               setActiveTab(lastForgeTab);
           }
@@ -330,9 +329,9 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
             <SfxButton 
                 sfx="switch"
                 onClick={() => setShowSkipConfirm(true)} 
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 border border-stone-700 text-stone-300 rounded-full text-[10px] uppercase font-black shadow-2xl backdrop-blur-md active:scale-95 hover:bg-stone-800"
+                className="flex items-center gap-2.5 px-5 py-2.5 md:px-6 md:py-3 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[13px] md:text-base font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group"
             >
-                <FastForward className="w-3 h-3" /> {t(language, 'tutorial.skip_button')}
+                <FastForward className="w-4.5 h-4.5 md:w-5 md:h-5 group-hover:animate-pulse" /> {t(language, 'tutorial.skip_button')}
             </SfxButton>
         </div>
       )}
@@ -345,7 +344,12 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         <div className="fixed inset-0 z-[2500] flex flex-col justify-end items-center pb-6 md:pb-12 px-4 pointer-events-none">
             <div className="w-[92vw] md:w-[85vw] max-w-5xl pointer-events-auto">
                 {(() => {
-                    const continueAction = () => actions.setTutorialStep(dialogueContent.nextStep);
+                    const continueAction = () => {
+                        if (state.tutorialStep === 'SHOP_INTRO_DIALOG_GUIDE') {
+                            setActiveTab('SHOP');
+                        }
+                        actions.setTutorialStep(dialogueContent.nextStep);
+                    };
 
                     return (
                 <DialogueBox 

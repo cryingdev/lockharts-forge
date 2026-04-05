@@ -10,6 +10,17 @@ import { SfxButton } from '../common/ui/SfxButton';
 
 const MAX_TEMP = 1500;
 const IDLE_TEMP = 10;
+const TUTORIAL_FORGE_MIN_TEMP = 400;
+
+const getTempRatio = (temp: number) =>
+    Math.min(1, Math.max(0, (temp - IDLE_TEMP) / (MAX_TEMP - IDLE_TEMP)));
+
+const getTutorialBellowsGain = (temp: number) => {
+    if (temp < 700) return 220;
+    if (temp < 1050) return 180;
+    if (temp < 1325) return 140;
+    return 100;
+};
 
 type SequenceStep = 
     | 'IDLE' 
@@ -193,8 +204,8 @@ const TutorialScene: React.FC = () => {
         if (seq === 'HEAT_CONFIRM_DIALOG' || seq === 'WAIT_CONTINUE_BELLOWS' || seq === 'PUMP_FURNACE_GUIDE') {
             const timer = setInterval(() => {
                 setTemp(prev => {
-                    const floorVal = 26.17;
-                    if (prev > floorVal) return prev - 0.12;
+                    const floorVal = TUTORIAL_FORGE_MIN_TEMP;
+                    if (prev > floorVal) return prev - 1.8;
                     return floorVal;
                 });
             }, 50);
@@ -205,7 +216,7 @@ const TutorialScene: React.FC = () => {
     const bgImage = useMemo(() => {
         if (mode === 'PROLOGUE' || (seq === 'IDLE' && !isStarted)) return 'tutorial/forge_ruined_bg.jpeg';
         if (seq === 'REPLACE_FURNACE_GUIDE' || seq === 'IGNITE_FURNACE_GUIDE') return 'tutorial/forge_fixed_bg.jpeg';
-        const currentDegrees = Math.round(IDLE_TEMP + (temp / 100) * (MAX_TEMP - IDLE_TEMP));
+        const currentDegrees = Math.round(temp);
         if (currentDegrees >= 1490) return 'tutorial/forge_hot_bg.jpeg';
         if (['HEAT_CONFIRM_DIALOG', 'WAIT_CONTINUE_BELLOWS', 'PUMP_FURNACE_GUIDE', 'FURNACE_FINAL_DIALOG'].includes(seq)) return 'tutorial/forge_start_bg.jpeg';
         return 'tutorial/forge_fixed_bg.jpeg';
@@ -228,33 +239,33 @@ const TutorialScene: React.FC = () => {
 
     const handleHeatUp = () => {
         if (seq !== 'IGNITE_FURNACE_GUIDE') return;
-        setTemp(39.6);
+        setTemp(600);
         setSeq('HEAT_CONFIRM_DIALOG');
     };
 
     const handlePump = () => {
         setIsPumping(true);
         setHasPumpedOnce(true);
-        const nextTempRatio = Math.min(100, temp + 5.5);
-        setTemp(nextTempRatio);
+        const nextTemp = Math.min(MAX_TEMP, temp + getTutorialBellowsGain(temp));
+        setTemp(nextTemp);
         setTimeout(() => setIsPumping(false), 300);
         
-        if (seq === 'PUMP_FURNACE_GUIDE' && nextTempRatio >= 99) {
+        if (seq === 'PUMP_FURNACE_GUIDE' && nextTemp >= 1490) {
             setSeq('FURNACE_FINAL_DIALOG');
         }
     };
 
     const dialogue = useMemo(() => {
         if (!isStarted) return { text: "" };
-        if (mode === 'PROLOGUE') return { text: t(language, `tutorial.prologue_${currentStep}`, { forgeName: getForgeName(state) }) };
-        if (seq === 'REPLACE_FURNACE_GUIDE') return { text: t(language, `tutorial.furnace_${currentStep}`) };
-        if (seq === 'HEAT_CONFIRM_DIALOG') return { text: t(language, 'tutorial.furnace_heated') };
+        if (mode === 'PROLOGUE') return { text: t(language, `tutorial.narration.prologue_${currentStep}`, { forgeName: getForgeName(state) }) };
+        if (seq === 'REPLACE_FURNACE_GUIDE') return { text: t(language, `tutorial.monologue.furnace_${currentStep}`) };
+        if (seq === 'HEAT_CONFIRM_DIALOG') return { text: t(language, 'tutorial.monologue.furnace_heated') };
         if (seq === 'WAIT_CONTINUE_BELLOWS') {
             return currentStep === 0
-                ? { text: t(language, 'tutorial.furnace_cooling') }
-                : { text: t(language, 'tutorial.furnace_bellows_mono') };
+                ? { text: t(language, 'tutorial.monologue.furnace_cooling') }
+                : { text: t(language, 'tutorial.monologue.furnace_bellows') };
         }
-        if (seq === 'FURNACE_FINAL_DIALOG') return { text: t(language, 'tutorial.furnace_maxed') };
+        if (seq === 'FURNACE_FINAL_DIALOG') return { text: t(language, 'tutorial.monologue.furnace_maxed') };
         return { text: t(language, 'tutorial.placeholder') };
     }, [isStarted, mode, currentStep, seq, language]);
 
@@ -308,16 +319,18 @@ const TutorialScene: React.FC = () => {
             </div>
 
             <div className="absolute top-4 right-4 z-[6000]">
-                <SfxButton sfx="switch" onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[10px] font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group">
-                    <FastForward className="w-3 h-3 group-hover:animate-pulse" /> {t(language, 'tutorial.skip_button')}
+                <SfxButton sfx="switch" onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }} className="flex items-center gap-2.5 px-5 py-2.5 md:px-6 md:py-3 bg-stone-900/90 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-full text-[13px] md:text-base font-black uppercase shadow-2xl backdrop-blur-md transition-all active:scale-95 group">
+                    <FastForward className="w-4.5 h-4.5 md:w-5 md:h-5 group-hover:animate-pulse" /> {t(language, 'tutorial.skip_button')}
                 </SfxButton>
             </div>
 
             {showFlash && <div className="absolute inset-0 z-[4000] bg-white animate-flash-out pointer-events-none"></div>}
 
             {!isStarted && !showFlash && (
-                <div className="relative z-20 flex flex-col items-center animate-pulse pointer-events-none">
-                    <span className="text-amber-500 font-black uppercase tracking-[0.4em] text-[10px] md:text-sm drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]">{promptText}</span>
+                <div className="relative z-20 flex flex-col items-center animate-pulse pointer-events-none px-6 text-center">
+                    <span className="text-amber-500 font-black uppercase tracking-[0.18em] text-[28px] md:text-[42px] drop-shadow-[0_0_22px_rgba(245,158,11,0.8)]">
+                        {promptText}
+                    </span>
                 </div>
             )}
 
@@ -340,11 +353,14 @@ const TutorialScene: React.FC = () => {
                 <div className="absolute top-[15dvh] right-[5vw] z-[3040] flex flex-col items-center gap-6 animate-in slide-in-from-right-8 duration-700 pointer-events-auto">
                     <div className="flex flex-col items-center">
                         <span className="text-[10px] font-black text-stone-300 uppercase tracking-tighter mb-2 font-mono drop-shadow-md">
-                            {Math.round(IDLE_TEMP + (temp / 100) * (MAX_TEMP - IDLE_TEMP))}°C
+                            {Math.round(temp)}°C
                         </span>
                         <div className="w-7 h-48 md:h-64 bg-stone-950 rounded-full border-2 border-stone-800 relative shadow-2xl overflow-hidden">
                             <div className="absolute inset-1 rounded-full overflow-hidden">
-                                <div className={`absolute bottom-0 left-0 right-0 rounded-full transition-all duration-300 ${temp < 30 ? 'bg-blue-600' : temp > 80 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'}`} style={{ height: `${temp}%` }} />
+                                <div
+                                    className={`absolute bottom-0 left-0 right-0 rounded-full transition-all duration-300 ${temp < TUTORIAL_FORGE_MIN_TEMP ? 'bg-blue-600' : temp >= 1325 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'}`}
+                                    style={{ height: `${getTempRatio(temp) * 100}%` }}
+                                />
                             </div>
                         </div>
                     </div>

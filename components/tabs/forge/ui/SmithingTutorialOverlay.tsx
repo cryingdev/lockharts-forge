@@ -11,15 +11,13 @@ interface SmithingTutorialOverlayProps {
     targetCoord: { x: number, y: number, w: number, h: number } | null;
     strikePromptVisible?: boolean;
     onResume?: () => void;
-    onFirstHitTutorialComplete?: () => void;
 }
 
 export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = ({ 
     step, 
     targetCoord, 
     strikePromptVisible = false,
-    onResume,
-    onFirstHitTutorialComplete
+    onResume
 }) => {
     const { actions, state } = useGame();
     const language = state.settings.language;
@@ -33,41 +31,24 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
     }, [step]);
 
     const script = useMemo(() => {
-        if (step === 'PRE_IGNITE_DIALOG_1_GUIDE' || step === 'START_FORGING_GUIDE') 
-            return t(language, 'smithingTutorial.dialogue.pre_ignite_1');
-        if (step === 'PRE_IGNITE_DIALOG_2_GUIDE' || step === 'PRE_IGNITE_INDICATE_GUIDE') 
-            return t(language, 'smithingTutorial.dialogue.pre_ignite_2');
-        if (step === 'PRE_PUMP_DIALOG_GUIDE') 
-            return t(language, 'smithingTutorial.dialogue.pre_pump');
-        if (step === 'PRE_PUMP_INDICATE_GUIDE' || step === 'SMITHING_MINIGAME_PUMP') 
-            return t(language, 'smithingTutorial.dialogue.pump');
-        if (step === 'POST_PUMP_DIALOG_GUIDE')
-            return t(language, 'smithingTutorial.dialogue.post_pump');
-        
-        if (step === 'SMITHING_MINIGAME_HIT_GUIDE') 
-            return t(language, 'smithingTutorial.dialogue.hit');
-        
+        if (step === 'SMITHING_INTRO_DIALOG_GUIDE') 
+            return t(language, 'smithingTutorial.dialogue.pre_first_hit');
         if (step === 'FIRST_HIT_DIALOG_GUIDE') 
             return t(language, 'smithingTutorial.dialogue.first_hit');
-        
         return "";
     }, [step, language]);
 
-    // 하이라이트 원 애니메이션 로직
-    // DIALOG 단계에서는 다이얼로그만 보여주고, INDICATE 단계부터 버튼을 강조합니다.
-    const showDialogue = step.includes('_DIALOG') || step === 'START_FORGING_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE' || step.includes('_INDICATE');
-    const isIndicateStep = step.includes('_INDICATE') || step.startsWith('SMITHING_MINIGAME');
-    const shouldShowMask = !isDismissed && !!targetCoord && isIndicateStep && step !== 'POST_PUMP_DIALOG_GUIDE';
-    const isMaskHidden = !shouldShowMask || step === 'TUTORIAL_END_DIALOG_GUIDE' || step === 'CRAFT_RESULT_DIALOG_GUIDE';
+    const showDialogue = step === 'SMITHING_INTRO_DIALOG_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE';
+    const isIndicateStep = step === 'SMITHING_MINIGAME_HIT_GUIDE';
+    const shouldShowMask = !isDismissed && !!targetCoord && isIndicateStep;
+    const isMaskHidden = !shouldShowMask;
     
     useEffect(() => {
-        // 지시 단계(INDICATE)가 아니고 타겟 좌표가 없으면 원을 크게 유지
-        if (!targetCoord || !isIndicateStep || step === 'POST_PUMP_DIALOG_GUIDE') {
+        if (!targetCoord || !isIndicateStep) {
             setAnimatedRadius(2000);
             return;
         }
         
-        // 지시 단계일 때만 스포트라이트 애니메이션 실행
         const targetR = Math.max(targetCoord.w, targetCoord.h) / 1.1;
         const startTime = performance.now();
         const duration = 1300;
@@ -118,12 +99,12 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
                         <div className="absolute top-0 left-0 pointer-events-auto" style={{ top: centerY - h/2, height: h, width: centerX - w/2 }} />
                         <div className="absolute top-0 pointer-events-auto" style={{ top: centerY - h/2, height: h, left: centerX + w/2, right: 0 }} />
                     </div>
-                    {(!step.startsWith('SMITHING_MINIGAME_HIT') || strikePromptVisible) && (
+                    {strikePromptVisible && (
                         <div className="absolute animate-in fade-in zoom-in-95 duration-300" style={{ left: centerX - w/2 - 12, top: centerY, transform: 'translate(-100%, -50%)' }}>
                             <div className="flex items-center flex-row-reverse animate-bounce-x-reverse">
                                 <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ transform: 'rotate(90deg)' }} />
                                 <div className="mr-3 px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase rounded-full shadow-2xl border-2 border-amber-400 whitespace-nowrap">
-                                    {step.includes('IGNITE') ? t(language, 'smithingTutorial.indicator.ignite') : step.includes('PUMP') ? t(language, 'smithingTutorial.indicator.pump') : t(language, 'smithingTutorial.indicator.strike')}
+                                    {t(language, 'smithingTutorial.indicator.strike')}
                                 </div>
                             </div>
                         </div>
@@ -139,23 +120,13 @@ export const SmithingTutorialOverlay: React.FC<SmithingTutorialOverlayProps> = (
                         text={script} 
                         options={[
                             { 
-                                label: (step === 'SMITHING_MINIGAME_HIT_GUIDE' || step === 'FIRST_HIT_DIALOG_GUIDE') ? t(language, 'smithingTutorial.option_ready') : t(language, 'common.continue'), 
+                                label: step === 'FIRST_HIT_DIALOG_GUIDE' ? t(language, 'smithingTutorial.option_ready') : t(language, 'common.continue'), 
                                 action: () => {
-                                    if (step === 'PRE_IGNITE_DIALOG_1_GUIDE' || step === 'START_FORGING_GUIDE') {
-                                        actions.setTutorialStep('PRE_IGNITE_DIALOG_2_GUIDE');
-                                    } else if (step === 'PRE_IGNITE_DIALOG_2_GUIDE') {
-                                        actions.setTutorialStep('PRE_IGNITE_INDICATE_GUIDE');
-                                    } else if (step === 'PRE_IGNITE_INDICATE_GUIDE') {
-                                        actions.setTutorialStep('SMITHING_MINIGAME_IGNITE_GUIDE');
-                                    } else if (step === 'PRE_PUMP_DIALOG_GUIDE') {
-                                        actions.setTutorialStep('PRE_PUMP_INDICATE_GUIDE');
-                                    } else if (step === 'PRE_PUMP_INDICATE_GUIDE') {
-                                        actions.setTutorialStep('SMITHING_MINIGAME_PUMP_GUIDE');
-                                    } else if (step === 'POST_PUMP_DIALOG_GUIDE') {
+                                    if (step === 'SMITHING_INTRO_DIALOG_GUIDE') {
                                         actions.setTutorialStep('SMITHING_MINIGAME_HIT_GUIDE');
+                                        setIsDismissed(true);
+                                        if (onResume) onResume();
                                     } else if (step === 'FIRST_HIT_DIALOG_GUIDE') {
-                                        // 첫 타격 성공 다이얼로그 종료 시 타격 단계로 원복하여 게임 로직 재개
-                                        if (onFirstHitTutorialComplete) onFirstHitTutorialComplete();
                                         actions.setTutorialStep('SMITHING_MINIGAME_HIT_GUIDE');
                                         setIsDismissed(true);
                                         if (onResume) onResume();

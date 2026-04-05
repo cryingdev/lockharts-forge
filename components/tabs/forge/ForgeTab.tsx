@@ -123,13 +123,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         )}
 
         {/* Paging Button - To Shop (좌측 중앙 배치) */}
-        {!isCrafting && (!state.tutorialStep || ['OPEN_SHOP_TAB_GUIDE', 'CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE', 'PIP_RETURN_DIALOG_GUIDE'].includes(state.tutorialStep)) && (
+        {!isCrafting && (!state.tutorialStep || ['CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE', 'PIP_RETURN_DIALOG_GUIDE'].includes(state.tutorialStep)) && (
             <SfxButton 
                 sfx="switch" 
                 onClick={() => {
-                    if (state.tutorialStep === 'OPEN_SHOP_TAB_GUIDE') {
-                        actions.setTutorialStep('OPEN_SHOP_SIGN_GUIDE');
-                    }
                     onNavigate('SHOP');
                 }} 
                 data-tutorial-id="NAV_TO_SHOP"
@@ -262,7 +259,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                             </div>
                             <div>
                                 <h3 className="text-xl md:text-2xl font-black text-stone-100 font-serif uppercase tracking-tight leading-none">Ancient Patterns</h3>
-                                <p className="text-stone-500 text-[9px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">Deciphering the Lockhart Lineage</p>
+                                <p className="text-stone-500 text-[9px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">Deciphering Ancestral Patterns</p>
                             </div>
                         </div>
                         <SfxButton 
