@@ -69,3 +69,22 @@ const migratedState = {
     // Deep merge critical objects to ensure new nested fields exist
 };
 ```
+
+---
+
+## 4. UI Navigation Button Standard
+
+Primary floating back buttons should follow one shared spec across major tabs (`Market`, `Forge`, `Shop`, `Dungeon`, `Tavern`).
+
+### Back Button Spec
+- Minimum height: `52px` on mobile, `58px` on desktop
+- Horizontal padding: `px-5`
+- Vertical padding: `py-3`
+- Icon size: `18px` mobile, `18-24px` desktop depending on visual balance
+- Radius: `rounded-2xl`
+- Style: dark translucent surface, stone border, strong shadow, red-tinted hover
+- Text: uppercase and bold (`font-black`)
+- Tracking: approximately `0.18em`
+
+### Exception
+- Icon-only close/back buttons (for dense modal headers such as `Research`) should still preserve the same touch target size (`52px` / `58px`) even when the text label is omitted.

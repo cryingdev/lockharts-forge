@@ -63,30 +63,30 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                             <SfxButton 
                                 sfx="switch" 
                                 onClick={handleBack}
-                                className="flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
+                                className="flex min-h-[52px] items-center gap-2.5 px-5 py-3 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-2xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
                             >
-                                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                                <span className="text-xs font-black uppercase tracking-widest">{t(language, 'common.back')}</span>
+                                <ArrowLeft className="w-4.5 h-4.5 group-hover:-translate-x-1 transition-transform" />
+                                <span className="text-[13px] font-black uppercase tracking-[0.18em]">{t(language, 'common.back')}</span>
                             </SfxButton>
                         )}
                     </div>
 
                     {!selectedMercenary && (
                         <div className="flex items-center gap-2 pointer-events-auto">
-                            <div className="flex items-center gap-2 px-3 py-2 bg-stone-900/80 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md shadow-2xl">
+                            <div className="flex min-h-[44px] items-center gap-2 px-3.5 py-2 bg-stone-900/80 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md shadow-2xl">
                                 <Star className="w-4 h-4 text-amber-400" />
                                 <div className="flex flex-col leading-none">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">{t(language, 'tavern.standing')}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.14em] text-stone-500">{t(language, 'tavern.standing')}</span>
                                     <span className="text-sm font-black text-amber-300">{state.tavern.reputation}</span>
                                 </div>
                             </div>
                             <SfxButton 
                                 sfx="switch"
                                 onClick={handlers.handleInvite}
-                                className="flex items-center gap-2 px-4 py-2 bg-stone-900/80 hover:bg-amber-900/60 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
+                                className="flex min-h-[52px] items-center gap-2.5 px-5 py-3 bg-stone-900/80 hover:bg-amber-900/60 text-stone-300 rounded-2xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
                             >
-                                <PlusCircle className="w-4 h-4 text-amber-500" />
-                                <span className="text-xs font-black uppercase tracking-widest">{t(language, 'tavern.invite', { cost: inviteCost })}</span>
+                                <PlusCircle className="w-4.5 h-4.5 text-amber-500" />
+                                <span className="text-[13px] font-black uppercase tracking-[0.16em]">{t(language, 'tavern.invite', { cost: inviteCost })}</span>
                             </SfxButton>
                         </div>
                     )}
