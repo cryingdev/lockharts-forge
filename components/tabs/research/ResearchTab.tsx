@@ -125,9 +125,9 @@ const ResearchTab: React.FC<ResearchTabProps> = ({ onClose }) => {
                         <button 
                             onClick={onClose}
                             disabled={isResearching}
-                            className="bg-stone-800 p-2 md:p-3 rounded-xl border border-stone-700 hover:bg-red-950/30 hover:border-red-500/50 transition-all active:scale-90 disabled:opacity-30 disabled:grayscale"
+                            className="flex h-[52px] w-[52px] md:h-[58px] md:w-[58px] items-center justify-center bg-stone-800 rounded-2xl border border-stone-700 hover:bg-red-950/30 hover:border-red-500/50 transition-all active:scale-90 disabled:opacity-30 disabled:grayscale"
                         >
-                            <ArrowLeft className="w-5 h-5 text-stone-300" />
+                            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-stone-300" />
                         </button>
                     )}
                     <div>
