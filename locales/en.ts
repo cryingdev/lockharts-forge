@@ -455,10 +455,10 @@ const en = {
     pip_forge_intro: 'Right. A Bronze Shortsword.',
     pip_gratitude: "Even I can tell at a glance that this {item} is something special.\nIf I'd been stronger...\nI know I could have protected her...\nThank you, {playerName}.",
     tutorial_finish: "This is only the beginning.\nOne blade at a time, I'll restore the forge and reclaim my family's legacy.\nWait for me, Dragon.",
-    pip_request_missing: '{playerName}! I\'m glad you made it.\nI saw smoke rising from the chimney and came to look.\nWould it be possible to buy a Bronze Shortsword?\nIf you can have it ready, I\'ll come back this evening.',
+    pip_request_missing: '{playerName}! You\'re alive!\nI saw smoke rising and came to check, just in case. I\'m relieved to find you safe.\nCould I buy a Bronze Shortsword?\nIf you can have it ready, I\'ll come back this evening.',
     pip_request_have_one: 'Oh! You already have one? That\'s incredible. Can I buy it from you?',
     pip_return_intro: '{playerName}, how have you been?\nIs the {item} I asked for ready yet?',
-    pip_return_ready: "So this is the {item} remade in your style... It's a fine blade.\nHere, take your coin.",
+    pip_return_ready: "So this is the finished {item}...\nIt's a fine blade. This is the payment I promised.",
     thanks_masterwork_pip: 'W-wait... is this for real? I\'ve never seen a blade so beautiful! The edge... it\'s like it\'s made of starlight. I\'ll cherish this forever, {playerName}! I\'ll make sure everyone knows who the greatest smith in the world is!',
     thanks_masterwork_1: 'Unbelievable! This {item} is a true masterpiece. The edge is unlike anything I\'ve seen. You really have the {playerName} touch!',
     thanks_masterwork_2: 'Absolute perfection. I can feel the strength in this steel. I\'ll tell everyone in the tavern about your forge!',
@@ -480,20 +480,78 @@ const en = {
     refuse_angry_3: 'Unbelievable. My old blade has more edge than your business sense!',
     refuse_angry_4: 'I thought {playerName}\'s forge was more reliable. Guess I was wrong.',
     greeting: {
-      high: 'Always a pleasure, {playerName}!',
-      mid: 'Good to see you again.',
-      low_need: 'Greetings.',
-      low_buy: 'Greetings.',
+      formal: {
+        high: 'Always a pleasure, {playerName}.',
+        mid: 'Good to see you again.',
+        low: 'Greetings.',
+      },
+      blunt: {
+        high: 'There you are, {playerName}.',
+        mid: 'Back again.',
+        low: 'Greetings.',
+      },
+      cheerful: {
+        high: '{playerName}! Just the smith I hoped to see!',
+        mid: 'Hey, good to see you again!',
+        low: 'Hello there!',
+      },
+      dry: {
+        high: 'Still standing, {playerName}? Good.',
+        mid: 'You again.',
+        low: 'Excuse me.',
+      },
     },
     request_body: {
-      need_high: 'I require a {item}.',
-      need_mid: 'I require a {item}.',
-      need_low: 'I require a {item}.',
-      buy_high: 'I\'ll take a {item}.',
-      buy_mid: 'I\'ll take a {item}.',
-      buy_low: 'I\'ll take a {item}.',
+      formal: {
+        need: {
+          high: 'I was hoping to commission a {item}.',
+          mid: 'I require a {item}.',
+          low: 'I require a {item}.',
+        },
+        buy: {
+          high: 'I would like to purchase a {item}.',
+          mid: 'I would like to purchase a {item}.',
+          low: 'I would like to purchase a {item}.',
+        },
+      },
+      blunt: {
+        need: {
+          high: 'I need a {item}.',
+          mid: 'I need a {item}.',
+          low: 'I need a {item}.',
+        },
+        buy: {
+          high: 'I\'ll take a {item}.',
+          mid: 'I\'ll take a {item}.',
+          low: 'I\'ll take a {item}.',
+        },
+      },
+      cheerful: {
+        need: {
+          high: 'Think you could make me a {item}?',
+          mid: 'I could really use a {item}.',
+          low: 'I could really use a {item}.',
+        },
+        buy: {
+          high: 'Could I buy a {item} from you?',
+          mid: 'I\'d love to buy a {item}.',
+          low: 'I\'d love to buy a {item}.',
+        },
+      },
+      dry: {
+        need: {
+          high: 'A {item} would do.',
+          mid: 'I need a {item}.',
+          low: 'I need a {item}.',
+        },
+        buy: {
+          high: 'I\'ll buy a {item}.',
+          mid: 'I\'ll buy a {item}.',
+          low: 'I\'ll buy a {item}.',
+        },
+      },
     },
-    priority_pip_initial: '{playerName}! I\'m glad you made it.\nI saw smoke rising from the chimney and came to look.\nWould it be possible to buy a Bronze Shortsword?\nIf you can have it ready, I\'ll come back this evening.',
+    priority_pip_initial: '{playerName}! You\'re alive!\nI saw smoke rising and came to check, just in case. I\'m relieved to find you safe.\nCould I buy a Bronze Shortsword?\nIf you can have it ready, I\'ll come back this evening.',
     priority_pip_return: 'I\'m back! Is the Bronze Shortsword ready? I can\'t wait to try it out!',
   },
   named: {
@@ -660,8 +718,8 @@ const en = {
       open_shop_sign_guide: '(Open the shop.)',
     },
     narration: {
-      prologue_0: '{forgeName} lies buried in ash and dust, and the voices of the family who once called for him are heard no more.\nThe dragon took everything, but the ember of vengeance still burns in his heart.',
-      prologue_1: 'The furnace flue has collapsed from within. Clearing this out and repairing it will take time.\nGarrick may know another way.',
+      prologue_0: '{forgeName} lies buried in ash and dust.\nThe dragon took everything, but it could not stamp out the ember still burning inside me.',
+      prologue_1: 'The furnace flue has collapsed from the inside.\nTearing this apart and setting it right will take time. Garrick may know a way forward.',
     },
     monologue: {
       furnace_0: "The furnace is finally in place. The air in the forge doesn't feel so heavy and cold anymore.",
