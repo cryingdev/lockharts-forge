@@ -455,11 +455,11 @@ const ko = {
     pip_forge_intro: '좋아. 브론즈 쇼트소드를 하나 만들어 보자.',
     pip_gratitude: '병기를 잘 모르는 저도 한눈에 좋은 {item}이라는게 느껴져요.\n제가 강했더라면...\n분명히 그녀를 지킬수 있었을텐데...\n감사합니다. {playerName}.',
     tutorial_finish: '다시 시작이다.\n한자루씩 대장간을 부활시키고 가문의 유산을 되찾겠어.\n기다려라 드래곤.',
-    pip_request_missing: '{playerName}! 무사하셨군요.\n굴뚝으로 연기가 피워오르는걸 보고 찾아왔습니다.\n혹시 Bronze Shortsword 한 자루를 구매 할수 있을까요?\n준비된다면 저는 저녁에 다시 찾으러 오겠습니다.',
+    pip_request_missing: '{playerName}! 살아계셨군요!\n연기가 피어오르는걸 보고 혹시나 해서 찾아왔는데 무사하셔서 다행입니다.\nBronze Shortsword 한 자루를 구매 할수 있을까요?\n준비된다면 저는 저녁에 다시 찾으러 오겠습니다.',
     pip_request_have_one: '어? 벌써 하나 있다고요? 대단한데요. 제가 사도 될까요?',
     pip_return_intro: '{playerName} 잘 지내셨나요.\n혹시 제가 부탁한 {item}가 완성되었나요?',
-    pip_return_ready: '이게 당신의 스타일로 새로 만들어진 {item}... 좋은 검이군요.\n여기 돈을 받으세요.',
-    priority_pip_initial: '{playerName}! 무사하셨군요.\n굴뚝으로 연기가 피워오르는걸 보고 찾아왔습니다.\n혹시 Bronze Shortsword 한 자루를 구매 할수 있을까요?\n준비된다면 저는 저녁에 다시 찾으러 오겠습니다.',
+    pip_return_ready: '이게 완성된 {item}이군요...\n정말 좋은 검이에요. 이건 약속했던 대금입니다.',
+    priority_pip_initial: '{playerName}! 살아계셨군요!\n연기가 피어오르는걸 보고 혹시나 해서 찾아왔는데 무사하셔서 다행입니다.\nBronze Shortsword 한 자루를 구매 할수 있을까요?\n준비된다면 저는 저녁에 다시 찾으러 오겠습니다.',
     priority_pip_return: '다녀왔어요! Bronze Shortsword은 준비됐나요? 빨리 휘둘러 보고 싶어요!',
     thanks_masterwork_pip: '자, 잠깐만요... 이게 진짜라고요? 이렇게 아름다운 검은 처음 봐요! 칼날이... 마치 별빛으로 만든 것 같아요. 평생 소중히 간직할게요, {playerName}! 세상 최고의 대장장이가 누구인지 다들 알게 될 거예요!',
     thanks_masterwork_1: '믿을 수 없군! 이 {item}은 진정한 걸작이야. 이런 날은 처음 봐. 역시 {playerName}의 손맛이군!',
@@ -482,18 +482,76 @@ const ko = {
     refuse_angry_3: '기가 막히는군. 내 낡은 칼이 자네 장사수완보다 더 날카롭겠어!',
     refuse_angry_4: '{playerName} 쪽이 더 믿을 만하다고 생각했는데. 내가 틀렸군.',
     greeting: {
-      high: '항상 반갑군, {playerName}!',
-      mid: '또 보게 되어 반갑군.',
-      low_need: '안녕하신가.',
-      low_buy: '반갑군.',
+      formal: {
+        high: '늘 믿음직하군요, {playerName}.',
+        mid: '다시 뵙게 되어 반갑습니다.',
+        low: '안녕하세요.',
+      },
+      blunt: {
+        high: '좋군, {playerName}. 또 들렀어.',
+        mid: '또 왔네.',
+        low: '안녕하신가.',
+      },
+      cheerful: {
+        high: '{playerName}! 역시 여기였군요!',
+        mid: '다시 만나서 반가워요!',
+        low: '안녕하세요!',
+      },
+      dry: {
+        high: '여전히 바쁘군, {playerName}.',
+        mid: '또 보네.',
+        low: '실례하지.',
+      },
     },
     request_body: {
-      need_high: '{item} 하나가 필요하네.',
-      need_mid: '{item} 하나가 필요해.',
-      need_low: '{item} 하나가 필요하네.',
-      buy_high: '{item} 하나를 사가겠네.',
-      buy_mid: '{item} 하나를 사가고 싶군.',
-      buy_low: '{item} 하나를 사가겠네.',
+      formal: {
+        need: {
+          high: '{item} 하나를 부탁드리고 싶습니다.',
+          mid: '{item} 하나가 필요합니다.',
+          low: '{item} 하나가 필요합니다.',
+        },
+        buy: {
+          high: '{item} 하나를 사가고 싶습니다.',
+          mid: '{item} 하나를 사가고 싶습니다.',
+          low: '{item} 하나를 사가고 싶습니다.',
+        },
+      },
+      blunt: {
+        need: {
+          high: '{item} 하나가 필요하네.',
+          mid: '{item} 하나가 필요해.',
+          low: '{item} 하나가 필요하네.',
+        },
+        buy: {
+          high: '{item} 하나를 사가겠네.',
+          mid: '{item} 하나를 사가고 싶군.',
+          low: '{item} 하나를 사가겠네.',
+        },
+      },
+      cheerful: {
+        need: {
+          high: '{item} 하나만 부탁해도 될까요?',
+          mid: '{item} 하나가 필요해요.',
+          low: '{item} 하나가 필요해요.',
+        },
+        buy: {
+          high: '{item} 하나 사가도 될까요?',
+          mid: '{item} 하나 사가고 싶어요.',
+          low: '{item} 하나 사가고 싶어요.',
+        },
+      },
+      dry: {
+        need: {
+          high: '{item} 하나만 있으면 되겠어.',
+          mid: '{item} 하나가 필요해.',
+          low: '{item} 하나가 필요해.',
+        },
+        buy: {
+          high: '{item} 하나를 사가면 되겠군.',
+          mid: '{item} 하나를 사가고 싶어.',
+          low: '{item} 하나를 사가고 싶어.',
+        },
+      },
     },
   },
   named: {
@@ -660,8 +718,8 @@ const ko = {
       open_shop_sign_guide: '(문을 연다)',
     },
     narration: {
-      prologue_0: '{forgeName}은 재와 먼지에 잠겼고, 그를 부르는 가족의 목소리도 더는 들리지 않는다.\n드래곤이 모든것을 앗아갔지만, 그의 마음속에 복수의 불씨는 남아있다.',
-      prologue_1: '화로의 연통이 내부에서부터 무너져 버려서 이걸 다 치우고 수리하려면 시간이 걸릴것 같다.\nGarrick에게 가면 방법이 있을지도 모른다.',
+      prologue_0: '{forgeName}은 재와 먼지에 잠겼다.\n드래곤은 모든 것을 앗아갔지만, 내 안의 불씨까지 꺼뜨리진 못했다.',
+      prologue_1: '화로의 연통이 안쪽부터 무너져 내렸다.\n이걸 전부 뜯어내고 손보려면 시간이 걸린다. Garrick에게 가면 길이 있을지도 모른다.',
     },
     monologue: {
       furnace_0: '드디어 화로를 제자리에 놓았다. 대장간의 공기가 이제는 전처럼 무겁고 차갑게만 느껴지진 않는다.',

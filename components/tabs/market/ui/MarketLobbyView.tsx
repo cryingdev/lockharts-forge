@@ -18,13 +18,15 @@ interface MarketLobbyViewProps {
     onOpenCatalog: () => void;
     onConfirmGift: () => void;
     onCancelGift: () => void;
-    isTutorialActive?: boolean; // 추가됨
+    isTutorialActive?: boolean;
+    hideLobbyDialogue?: boolean;
 }
 
 export const MarketLobbyView: React.FC<MarketLobbyViewProps> = ({
     dialogue, garrickAffinity, talkedToday, floatingHearts, pendingGiftItem,
     onTalk, onOpenGiftModal, onOpenCatalog, onConfirmGift, onCancelGift,
-    isTutorialActive = false // 추가됨
+    isTutorialActive = false,
+    hideLobbyDialogue = false
 }) => {
     const { state } = useGame();
     const language = state.settings.language;
@@ -64,7 +66,7 @@ export const MarketLobbyView: React.FC<MarketLobbyViewProps> = ({
                 </div>
                 
                 {/* 튜토리얼이 대화 단계를 처리 중일 때는 로컬 대화창을 숨김 */}
-                {!isTutorialActive && (
+                {!isTutorialActive && !hideLobbyDialogue && (
                     <DialogueBox 
                         speaker="Garrick" 
                         text={dialogue} 

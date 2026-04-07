@@ -206,25 +206,14 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
     const getRequestDialogue = useCallback((itemName: string, isFallback = false) => {
         const merc = activeCustomer?.mercenary;
         if (!merc) return '';
+        const affinityTier = merc.affinity >= 50 ? 'high' : merc.affinity >= 20 ? 'mid' : 'low';
+        const voice = merc.voice || 'blunt';
+        const bodyMode = isFallback ? 'buy' : 'need';
 
-        if (merc.affinity >= 50) {
-            return composeShopLine(
-                'shop.greeting.high',
-                isFallback ? 'shop.request_body.buy_high' : 'shop.request_body.need_high',
-                { item: itemName, playerName }
-            );
-        }
-        if (merc.affinity >= 20) {
-            return composeShopLine(
-                'shop.greeting.mid',
-                isFallback ? 'shop.request_body.buy_mid' : 'shop.request_body.need_mid',
-                { item: itemName }
-            );
-        }
         return composeShopLine(
-            isFallback ? 'shop.greeting.low_buy' : 'shop.greeting.low_need',
-            isFallback ? 'shop.request_body.buy_low' : 'shop.request_body.need_low',
-            { item: itemName }
+            `shop.greeting.${voice}.${affinityTier}`,
+            `shop.request_body.${voice}.${bodyMode}.${affinityTier}`,
+            { item: itemName, playerName }
         );
     }, [activeCustomer, composeShopLine, playerName]);
 
@@ -297,8 +286,9 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         const { request, mercenary } = activeCustomer;
         const inventoryMatch = matchingItems.length > 0;
         
-        // Pip's initial request dialogue (Tutorial or first visit after skip on Day 1)
-        const isInitialPipVisit = (tutorialStep === 'SELL_ITEM_GUIDE' || (!tutorialStep && state.stats.day === 1 && state.visitorsToday.length <= 1)) && mercenary.id === 'pip_green';
+        // Pip's scripted first request should only run during the tutorial flow.
+        // If the tutorial was skipped, Pip must behave like a normal customer.
+        const isInitialPipVisit = tutorialStep === 'SELL_ITEM_GUIDE' && mercenary.id === 'pip_green';
         
         if (isInitialPipVisit) {
             if (!inventoryMatch) {
