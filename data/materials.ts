@@ -507,8 +507,8 @@ export const materials: Record<string, MaterialDefinition> = {
 
     // Facilities & Key Items
     furnace: { id: 'furnace', name: 'Furnace', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for smelting metal ores.', baseValue: 0 },
-    workbench: { id: 'workbench', name: 'Workbench', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for leatherworking and woodworking.', baseValue: 300 },
-    research_table: { id: 'research_table', name: 'Research Table', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Experiment with materials to rediscover lost techniques.', baseValue: 800, image: 'research_table.png' },
+    workbench: { id: 'workbench', name: 'Workbench', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Required for leatherworking and woodworking.', baseValue: 2000 },
+    research_table: { id: 'research_table', name: 'Research Table', type: 'KEY_ITEM', category: 'KEY_ITEM', description: 'Experiment with materials to rediscover lost techniques.', baseValue: 2500, image: 'research_table.png' },
     scroll_t2: { id: 'scroll_t2', name: 'Upgrade Scroll (Tier 2)', type: 'SCROLL', category: 'SCROLL', tier: 1, description: 'Enhances equipment quality techniques.', baseValue: 1200, image: 'scroll_contract.png' },
     scroll_t3: { id: 'scroll_t3', name: 'Upgrade Scroll (Tier 3)', type: 'SCROLL', category: 'SCROLL', tier: 2, description: 'Unlock expert craftsmanship techniques.', baseValue: 3000, image: 'scroll_contract.png' },
     
