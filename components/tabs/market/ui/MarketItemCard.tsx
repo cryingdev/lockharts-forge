@@ -22,9 +22,11 @@ interface MarketItemCardProps {
     gold: number;
     onAdd: (id: string, count: number) => void;
     onSetMultiplier: (id: string, val: number) => void;
+    isTooltipOpen: boolean;
+    onToggleTooltip: (itemId: string, anchorRect: DOMRect, description: string) => void;
 }
 
-export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inventoryCount, multiplier, isLocked, gold, onAdd, onSetMultiplier }) => {
+export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inventoryCount, multiplier, isLocked, gold, onAdd, onSetMultiplier, isTooltipOpen, onToggleTooltip }) => {
     const { state } = useGame();
     const language = state.settings.language;
     const isSoldOut = stock <= 0;
@@ -34,6 +36,7 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
     const currentPrice = meta.baseValue * multiplier;
     const canAfford = gold >= currentPrice;
     const isSkillItem = meta.type === 'SKILL_BOOK' || meta.type === 'SKILL_SCROLL';
+    const showsMultiplier = !isSoldOut && meta.type !== 'KEY_ITEM' && meta.type !== 'SCROLL';
     const folder = isSkillItem ? 'skills' : 'materials';
     
     // 1순위: ID 기반 파일명 우선 시도
@@ -52,50 +55,63 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
         onAdd(item.id, multiplier);
     };
 
+    const handleTooltipToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        onToggleTooltip(item.id, rect, localizedDescription);
+    };
+
     return (
-        <div data-tutorial-id={item.id === 'furnace' ? 'FURNACE_ITEM' : undefined} className={`relative flex flex-col items-center p-2 rounded-2xl border transition-all h-[150px] md:h-[220px] justify-between overflow-hidden shadow-md ${isSoldOut ? 'bg-stone-900 border-stone-800 opacity-40 grayscale' : 'bg-stone-850 border-stone-800 hover:border-stone-600'}`}>
-            {isLocked && <div className="absolute top-1 left-1 p-1 bg-red-900/80 rounded border border-red-500 z-20"><Lock className="w-2 h-2 text-white" /></div>}
-            {inventoryCount > 0 && <div className="absolute top-1 left-1 px-1 py-0.5 rounded text-[6px] font-black uppercase border z-10 bg-slate-900/80 border-slate-600 text-slate-300 flex items-center gap-1"><Package className="w-2.5 h-2.5" />{inventoryCount}</div>}
-            <div className={`absolute top-1 right-1 px-1 py-0.5 rounded text-[6px] font-black tracking-tighter border z-10 ${stock > 0 ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40' : 'bg-red-950/60 text-red-500 border-red-500/40'}`}>{isSoldOut ? 'X' : stock}</div>
-            
-            {/* 아이템 클릭 영역 (퀵 구매) */}
-            <SfxButton 
-                onClick={handleQuickBuy}
-                disabled={isSoldOut || isLocked || !canAfford}
-                className={`flex-1 w-full flex items-center justify-center transition-all mt-1 rounded-lg relative ${isSoldOut || isLocked || !canAfford ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-stone-800/50 active:scale-95'}`}
+        <div data-tutorial-id={item.id === 'furnace' ? 'FURNACE_ITEM' : undefined} className={`relative flex flex-col items-center gap-0 px-0 py-0 rounded-2xl border transition-all overflow-visible shadow-md ${isSoldOut ? 'bg-stone-900 border-stone-800 opacity-40 grayscale' : 'bg-stone-850 border-stone-800 hover:border-stone-600'}`}>
+            {isLocked && <div className="absolute left-1.5 top-1.5 z-30 rounded-md border border-red-500 bg-red-900/85 p-1 shadow-[0_4px_10px_rgba(0,0,0,0.35)]"><Lock className="h-2.5 w-2.5 text-white md:h-3 md:w-3" /></div>}
+            <SfxButton
+                sfx="switch"
+                onClick={handleTooltipToggle}
+                className="absolute bottom-[3.05rem] right-1.5 z-30 flex h-5 w-5 items-center justify-center rounded-full border border-stone-600 bg-stone-900/90 text-[9px] font-black leading-none text-stone-300 transition-all hover:border-amber-500 hover:text-amber-300 md:bottom-[3.7rem] md:h-6 md:w-6 md:text-[11px]"
+                aria-label={t(language, 'market.item_description')}
+                aria-expanded={isTooltipOpen}
             >
-                <img src={imgSrc} onError={handleImgError} className="w-10 h-10 md:w-24 md:h-24 object-contain drop-shadow-md" />
-                <RomanTierOverlay id={item.id} />
+                !
             </SfxButton>
+            
+            <div className="relative w-full flex-none">
+                {/* 아이템 클릭 영역 (퀵 구매) */}
+                <SfxButton 
+                    onClick={handleQuickBuy}
+                    disabled={isSoldOut || isLocked || !canAfford}
+                    className={`relative mt-0 flex w-full flex-none items-start justify-center overflow-hidden transition-all ${isSoldOut || isLocked || !canAfford ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-stone-800/50 active:scale-95'}`}
+                >
+                    {inventoryCount > 0 && <div className="absolute left-1 top-1 z-20 flex items-center gap-1 rounded-md border border-slate-600 bg-slate-950/88 px-1.5 py-0.5 text-[14px] font-black uppercase leading-none text-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.35)] md:text-[12px]"><Package className="h-3.5 w-3.5 md:h-3.5 md:w-3.5" />{inventoryCount}</div>}
+                    <div className={`absolute right-1 top-1 z-20 rounded-md border px-1.5 py-0.5 text-[14px] font-black leading-none tracking-tight shadow-[0_4px_10px_rgba(0,0,0,0.35)] md:text-[12px] ${stock > 0 ? 'border-emerald-500/40 bg-emerald-950/60 text-emerald-400' : 'border-red-500/40 bg-red-950/60 text-red-500'}`}>{isSoldOut ? 'X' : stock}</div>
+                    <img src={imgSrc} onError={handleImgError} className="mt-0.5 h-full max-h-[5.3rem] w-full max-w-[5.3rem] object-contain drop-shadow-md md:max-h-[7rem] md:max-w-[7rem]" />
+                    <RomanTierOverlay id={item.id} />
+                </SfxButton>
 
-            {!isSoldOut && meta.type !== 'KEY_ITEM' && meta.type !== 'SCROLL' && (
-                <div className="flex gap-1 mb-1 scale-75 md:scale-100">
-                    {[1, 5, 10].map(v => (
-                        <SfxButton 
-                            key={v} 
-                            sfx="switch"
-                            disabled={stock < v} 
-                            onClick={() => onSetMultiplier(item.id, v)} 
-                            className={`w-5 h-5 md:w-7 md:h-7 rounded-full border text-[7px] font-black transition-all ${multiplier === v ? 'bg-amber-600 border-amber-400 text-white' : 'bg-stone-900 border-stone-700 text-stone-500 hover:text-stone-300'}`}
-                        >
-                            {v}
-                        </SfxButton>
-                    ))}
-                </div>
-            )}
+                {showsMultiplier && (
+                    <div className="absolute bottom-[-0.9rem] left-1/2 z-20 flex -translate-x-1/2 gap-1 md:bottom-[-1rem] md:gap-1.5">
+                        {[1, 5, 10].map(v => (
+                            <SfxButton 
+                                key={v} 
+                                sfx="switch"
+                                disabled={stock < v} 
+                                onClick={() => onSetMultiplier(item.id, v)} 
+                                className={`h-8 w-8 rounded-full border text-[14px] font-black leading-none transition-all md:h-8 md:w-8 md:text-[12px] ${multiplier === v ? 'border-amber-400 bg-amber-600 text-white' : 'border-stone-700 bg-stone-900 text-stone-500 hover:text-stone-300'}`}
+                            >
+                                {v}
+                            </SfxButton>
+                        ))}
+                    </div>
+                )}
+            </div>
 
-            <div className="w-full text-center px-1">
-                <h4 className={`text-[7px] md:text-[11px] font-black leading-none truncate ${meta.type === 'TECHNIQUE' ? 'text-amber-400' : 'text-stone-400'}`}>{localizedName}</h4>
-                <p className="mt-1 text-[6px] md:text-[9px] text-stone-500 italic line-clamp-2 leading-tight min-h-[1.6em] md:min-h-[2.2em]">
-                    {localizedDescription}
-                </p>
+            <div className={`relative w-full px-1.5 pb-1 text-center ${showsMultiplier ? 'mt-7 md:mt-8' : 'mt-1'}`}>
+                <h4 className={`truncate text-[14px] font-black leading-none md:text-[18px] ${meta.type === 'TECHNIQUE' ? 'text-amber-400' : 'text-stone-300'}`}>{localizedName}</h4>
             </div>
             
             {/* 하단 가격 버튼 */}
             <SfxButton 
                 onClick={handleQuickBuy}
                 disabled={isSoldOut || isLocked || !canAfford}
-                className={`w-full py-0.5 md:py-2 rounded-b-xl border-t flex flex-col items-center justify-center font-mono font-black transition-all overflow-hidden ${
+                className={`w-full border-t py-2 md:py-3 flex flex-col items-center justify-center font-mono font-black transition-all overflow-hidden ${
                     isSoldOut 
                         ? 'bg-stone-900 border-stone-800 text-stone-700 cursor-not-allowed' 
                         : !canAfford 
@@ -103,13 +119,13 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
                             : 'bg-stone-950 border-stone-800 text-amber-500 cursor-pointer hover:bg-amber-900/20 active:scale-95'
                 }`}
             >
-                <div className="flex items-center justify-center gap-1 text-[7px] md:text-sm whitespace-nowrap px-1 w-full">
+                <div className="flex w-full items-center justify-center gap-1.5 whitespace-nowrap px-1 text-[14px] md:text-[19px]">
                     <span className="truncate">{currentPrice.toLocaleString()}</span>
-                    <Coins className={`w-2 h-2 md:w-4 md:h-4 shrink-0 ${!canAfford ? 'text-red-400' : 'text-amber-600'}`} />
+                    <Coins className={`h-4 w-4 shrink-0 md:h-5 md:w-5 ${!canAfford ? 'text-red-400' : 'text-amber-600'}`} />
                 </div>
             </SfxButton>
 
-            {isSoldOut && <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 pointer-events-none"><span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded rotate-12 uppercase">{t(language, 'market.sold_out')}</span></div>}
+            {isSoldOut && <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-black/60 pointer-events-none"><span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded rotate-12 uppercase">{t(language, 'market.sold_out')}</span></div>}
         </div>
     );
 };

@@ -195,6 +195,7 @@ export const createInitialGameState = (): GameState => {
             },
         },
         activeDialogue: null,
+        commissionRewardPreview: null,
 
         // UI Effects State
         uiEffects: {

@@ -5,6 +5,7 @@ import { TavernListView } from './ui/TavernListView';
 import { TavernInteractionView } from './ui/TavernInteractionView';
 import { CommissionBoard } from './ui/CommissionBoard';
 import { CommissionDetailModal } from './ui/CommissionDetailModal';
+import { CommissionRewardModal } from './ui/CommissionRewardModal';
 import { MercenaryInviteModal } from '../../modals/MercenaryInviteModal';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { ArrowLeft, PlusCircle, Star } from 'lucide-react';
@@ -36,7 +37,19 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
     const readyContracts = selectReadyContracts(state);
     const availableContracts = selectAvailableContracts(state);
     const acceptedContracts = selectAcceptedContracts(state);
-    const selectedContract = [...availableContracts, ...acceptedContracts].find(c => c.id === selectedContractId);
+    const detailContracts = [...availableContracts, ...acceptedContracts].sort((a, b) => {
+        const getPriority = (contract: typeof a) => {
+            if (contract.status === 'ACTIVE' && readyContracts.some(ready => ready.id === contract.id)) return 0;
+            if (contract.status === 'ACTIVE') return 1;
+            return 2;
+        };
+
+        const priorityDelta = getPriority(a) - getPriority(b);
+        if (priorityDelta !== 0) return priorityDelta;
+        return (a.daysRemaining || 99) - (b.daysRemaining || 99);
+    });
+    const selectedContractIndex = detailContracts.findIndex(c => c.id === selectedContractId);
+    const selectedContract = selectedContractIndex >= 0 ? detailContracts[selectedContractIndex] : null;
 
     useEffect(() => {
         actions.refreshCommissions();
@@ -136,9 +149,14 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
             {selectedContract && (
                 <CommissionDetailModal 
                     contract={selectedContract}
+                    contracts={detailContracts}
+                    selectedIndex={selectedContractIndex}
+                    onSelectIndex={(index) => setSelectedContractId(detailContracts[index]?.id || null)}
                     onClose={() => setSelectedContractId(null)}
                 />
             )}
+
+            <CommissionRewardModal />
         </div>
     );
 };

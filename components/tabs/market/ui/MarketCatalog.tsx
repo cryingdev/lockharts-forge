@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Layers, Zap, BookOpen, Wrench, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { MarketItemCard } from './MarketItemCard';
 import { useGame } from '../../../../context/GameContext';
@@ -27,6 +27,45 @@ const ICONS: Record<string, any> = {
 export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed, onToggle, stock, cart, inventory, multipliers, affinity, gold, onAdd, onSetMultiplier }) => {
     const { state } = useGame();
     const language = state.settings.language;
+    const [activeTooltip, setActiveTooltip] = useState<null | { itemId: string; description: string; left: number; top: number }>(null);
+    const tooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+        };
+    }, []);
+
+    const closeTooltip = () => {
+        if (tooltipTimerRef.current) {
+            clearTimeout(tooltipTimerRef.current);
+            tooltipTimerRef.current = null;
+        }
+        setActiveTooltip(null);
+    };
+
+    const handleToggleTooltip = (itemId: string, anchorRect: DOMRect, description: string) => {
+        if (tooltipTimerRef.current) {
+            clearTimeout(tooltipTimerRef.current);
+            tooltipTimerRef.current = null;
+        }
+
+        if (activeTooltip?.itemId === itemId) {
+            setActiveTooltip(null);
+            return;
+        }
+
+        const tooltipWidth = window.innerWidth < 768 ? 208 : 224;
+        const maxLeft = window.innerWidth - tooltipWidth - 12;
+        const left = Math.min(Math.max(anchorRect.right - tooltipWidth, 12), maxLeft);
+        const top = Math.max(anchorRect.top - 12, 12);
+
+        setActiveTooltip({ itemId, description, left, top });
+        tooltipTimerRef.current = setTimeout(() => {
+            setActiveTooltip(current => (current?.itemId === itemId ? null : current));
+            tooltipTimerRef.current = null;
+        }, 2000);
+    };
 
     return (
         <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar pb-24">
@@ -52,12 +91,28 @@ export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed,
                                     gold={gold}
                                     onAdd={onAdd} 
                                     onSetMultiplier={onSetMultiplier} 
+                                    isTooltipOpen={activeTooltip?.itemId === item.id}
+                                    onToggleTooltip={handleToggleTooltip}
                                 />
                             ))}
                         </React.Fragment>
                     );
                 })}
             </div>
+            {activeTooltip && (
+                <button
+                    type="button"
+                    onClick={closeTooltip}
+                    className="fixed z-[2500] w-[13rem] rounded-xl border border-stone-600/55 bg-stone-900/72 px-2.5 py-2 text-left text-[14px] italic leading-snug text-stone-200 shadow-[0_14px_30px_rgba(0,0,0,0.28)] backdrop-blur-[2px] md:w-[14rem] md:text-[12px]"
+                    style={{
+                        left: `${activeTooltip.left}px`,
+                        top: `${activeTooltip.top}px`,
+                        transform: 'translateY(-100%)',
+                    }}
+                >
+                    {activeTooltip.description}
+                </button>
+            )}
         </div>
     );
 };

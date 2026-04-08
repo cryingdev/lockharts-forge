@@ -22,14 +22,16 @@ import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
 import { materials } from '../../../../data/materials';
 import { isContractReady } from '../../../../state/selectors/commissionSelectors';
 import { t } from '../../../../utils/i18n';
+import { getLocalizedItemName } from '../../../../utils/itemText';
 
 interface CommissionCardProps {
     contract: ContractDefinition;
     activeTab: 'available' | 'accepted' | 'ready' | 'expired';
     onActionComplete?: () => void;
+    className?: string;
 }
 
-export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, activeTab, onActionComplete }) => {
+export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, activeTab, onActionComplete, className }) => {
     const { state, actions } = useGame();
     const language = state.settings.language;
     
@@ -101,7 +103,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
     const isNamedPersonalRequest = contract.source === 'TAVERN' && contract.unique && !!contract.mercenaryId;
 
     return (
-        <div className={`border rounded-xl p-4 flex flex-col gap-4 hover:border-stone-700 transition-colors relative overflow-hidden ${
+        <div className={`border rounded-xl p-6 flex flex-col gap-5.5 hover:border-stone-700 transition-colors relative overflow-hidden ${className ?? ''} ${
             isNamedPersonalRequest
             ? 'border-fuchsia-500/35 shadow-[inset_0_0_28px_rgba(217,70,239,0.08)] bg-gradient-to-br from-fuchsia-950/20 via-stone-900/85 to-stone-950/90'
             : contract.source === 'TAVERN' 
@@ -129,14 +131,14 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
             {/* Card Header */}
             <div className={`flex justify-between items-start ${(highlightBadge && contract.source !== 'TAVERN') || isNamedPersonalRequest ? 'pt-5' : ''}`}>
                 <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black border ${getUrgencyColor(contract.urgency)}`}>
+                    <div className="mb-2.5 flex flex-wrap items-center gap-2.5">
+                        <span className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black border tracking-[0.12em] ${getUrgencyColor(contract.urgency)}`}>
                             {contract.urgency === 'URGENT' && <AlertTriangle className="w-2.5 h-2.5 animate-pulse" />}
                             {getKindIcon(contract.kind)}
                             {contract.kind || 'GENERAL'}
                         </span>
                         {(contract.issuerName || contract.issuerId || contract.source === 'TAVERN') && (
-                            <span className={`flex items-center gap-1 text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded border ${
+                            <span className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-[0.16em] px-2 py-1 rounded-md border ${
                                 isNamedPersonalRequest
                                 ? 'text-fuchsia-200 bg-fuchsia-950/50 border-fuchsia-500/30'
                                 : contract.source === 'TAVERN' 
@@ -152,15 +154,15 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             </span>
                         )}
                     </div>
-                    <h3 className="text-amber-200 font-bold text-sm uppercase tracking-tight">{contract.title}</h3>
-                    <p className="text-xs text-stone-400 mt-1 leading-relaxed italic opacity-80">"{contract.description}"</p>
+                    <h3 className="text-[1.1rem] font-black uppercase tracking-[0.03em] text-amber-100">{contract.title}</h3>
+                    <p className="mt-2 text-[15px] italic leading-7 text-stone-300/85">"{contract.description}"</p>
                     {issuerAffinity !== null && (
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-sky-300 bg-sky-950/30 border border-sky-500/20 rounded-md px-2 py-1">
+                            <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] font-bold text-sky-300 bg-sky-950/30 border border-sky-500/20 rounded-md px-2 py-1">
                                 <Heart className="w-3 h-3 text-sky-300" />
                                 <span>{t(language, 'commission.issuer_affinity', { value: issuerAffinity })}</span>
                             </div>
-                            <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-amber-200 bg-amber-950/20 border border-amber-500/20 rounded-md px-2 py-1">
+                            <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] font-bold text-amber-200 bg-amber-950/20 border border-amber-500/20 rounded-md px-2 py-1">
                                 <Shield className="w-3 h-3 text-amber-300" />
                                 <span>{t(language, `commission.affinity_tier_${getIssuerAffinityTier(issuerAffinity)}`)}</span>
                             </div>
@@ -168,22 +170,22 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                     )}
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-stone-950 rounded-lg border border-stone-800">
+                    <div className="flex items-center gap-1.5 rounded-lg border border-stone-800 bg-stone-950 px-2.5 py-1.5">
                         <Clock className="w-3 h-3 text-amber-500" />
-                        <span className="text-[10px] font-mono text-amber-500">{contract.daysRemaining}d</span>
+                        <span className="text-[11px] font-mono text-amber-400">{contract.daysRemaining}d</span>
                     </div>
                 </div>
             </div>
 
             {/* Objectives / Requirements */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-5.5 md:grid-cols-2">
                 <div>
-                    <h4 className="text-[10px] text-stone-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1">
+                    <h4 className="mb-3 text-[12px] font-black uppercase tracking-[0.18em] text-stone-500 flex items-center gap-1">
                         {contract.kind === 'HUNT' || contract.kind === 'BOSS'
                             ? t(language, 'commission.objectives')
                             : t(language, 'commission.requirements')}
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                         {/* Requirements (CRAFT/TURN_IN) */}
                         {contract.requirements.map((req, idx) => {
                             const invItems = state.inventory.filter(inv => {
@@ -199,14 +201,17 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             const isMet = currentQty >= req.quantity;
                             
                             const itemData = EQUIPMENT_ITEMS.find(i => i.id === req.itemId) || (materials as any)[req.itemId];
-                            const displayName = itemData ? itemData.name : req.itemId.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                            const fallbackName = req.itemId.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                            const displayName = itemData
+                                ? getLocalizedItemName(language, { id: req.itemId, name: itemData.name } as any)
+                                : fallbackName;
 
                             return (
-                                <div key={idx} className="flex items-center justify-between text-[11px] bg-stone-950/50 p-1.5 rounded-lg border border-stone-800/50">
+                                <div key={idx} className="flex items-center justify-between text-[13px] bg-stone-950/55 px-3.5 py-3 rounded-xl border border-stone-800/60">
                                     <div className="flex min-w-0 items-center gap-2 mr-2">
                                         <span className="text-stone-300 truncate">{displayName}</span>
                                         {req.minQuality !== undefined && (
-                                            <span className="shrink-0 px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-950/20 text-[9px] font-black uppercase tracking-widest text-amber-300">
+                                            <span className="shrink-0 px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-950/20 text-[10.5px] font-black uppercase tracking-[0.16em] text-amber-300">
                                                 {t(language, 'commission.quality_requirement', { value: req.minQuality })}
                                             </span>
                                         )}
@@ -244,10 +249,10 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                     </div>
                 </div>
                 <div>
-                    <h4 className="text-[10px] text-stone-500 uppercase font-black tracking-widest mb-2">{t(language, 'commission.rewards')}</h4>
-                    <div className="space-y-1.5">
+                    <h4 className="mb-3 text-[12px] font-black uppercase tracking-[0.18em] text-stone-500">{t(language, 'commission.rewards')}</h4>
+                    <div className="space-y-2">
                         {contract.rewards.map((reward, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-[11px] bg-stone-950/50 p-1.5 rounded-lg border border-stone-800/50">
+                            <div key={idx} className="flex items-center gap-2 text-[13px] bg-stone-950/55 px-3.5 py-3 rounded-xl border border-stone-800/60">
                                 {reward.type === 'GOLD' && (
                                     <><Coins className="w-3 h-3 text-amber-500" /><span className="text-amber-500 font-bold">{reward.gold}G</span></>
                                 )}
@@ -267,7 +272,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2 mt-2">
+            <div className="mt-3.5 flex gap-3">
                 {activeTab === 'available' && (
                     <>
                         <SfxButton 
@@ -276,7 +281,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                 actions.acceptContract(contract.id);
                                 onActionComplete?.();
                             }}
-                            className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg"
+                            className="flex-1 rounded-2xl bg-amber-500 py-[1.15rem] text-[15px] font-black uppercase tracking-[0.18em] text-stone-950 shadow-[0_18px_30px_rgba(245,158,11,0.28)] transition-all hover:bg-amber-400"
                         >
                             {t(language, 'commission.accept_contract')}
                         </SfxButton>
@@ -286,7 +291,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                 actions.declineContract({ contractId: contract.id });
                                 onActionComplete?.();
                             }}
-                            className="p-2 bg-stone-800 hover:bg-red-900/30 text-stone-500 hover:text-red-500 rounded-xl border border-stone-700 transition-all"
+                            className="rounded-2xl border border-stone-700 bg-stone-800 px-4 py-[1.05rem] text-stone-500 transition-all hover:bg-red-900/30 hover:text-red-500"
                         >
                             <Trash2 className="w-4 h-4" />
                         </SfxButton>
@@ -303,7 +308,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                     onActionComplete?.();
                                 }}
                                 disabled={!isReady}
-                                className={`flex-1 py-2 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${
+                                className={`flex-1 rounded-2xl py-4 text-[15px] font-black uppercase tracking-[0.16em] transition-all ${
                                     isReady 
                                     ? 'bg-emerald-600 hover:bg-emerald-500 text-stone-950 shadow-lg' 
                                     : 'bg-stone-800 text-stone-600 cursor-not-allowed'
@@ -319,7 +324,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                     onActionComplete?.();
                                 }}
                                 disabled={!isReady}
-                                className={`flex-1 py-2 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${
+                                className={`flex-1 rounded-2xl py-4 text-[15px] font-black uppercase tracking-[0.16em] transition-all ${
                                     isReady 
                                     ? 'bg-emerald-600 hover:bg-emerald-500 text-stone-950 shadow-lg' 
                                     : 'bg-stone-800 text-stone-600 cursor-not-allowed'
@@ -334,7 +339,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                                 actions.failContract(contract.id);
                                 onActionComplete?.();
                             }}
-                            className="p-2 bg-stone-800 hover:bg-red-900/30 text-stone-500 hover:text-red-500 rounded-xl border border-stone-700 transition-all"
+                            className="rounded-2xl border border-stone-700 bg-stone-800 px-4 py-[1.05rem] text-stone-500 transition-all hover:bg-red-900/30 hover:text-red-500"
                             title={t(language, 'commission.abandon_contract')}
                         >
                             <Trash2 className="w-4 h-4" />
@@ -353,7 +358,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             }
                             onActionComplete?.();
                         }}
-                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-stone-950 rounded-xl font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2"
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-[1.2rem] text-[16px] font-black leading-none tracking-[0.14em] text-stone-950 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:bg-emerald-500"
                     >
                         <Trophy className="w-4 h-4" />
                         {t(language, 'commission.complete_and_claim')}
@@ -367,7 +372,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({ contract, active
                             actions.failContract(contract.id);
                             onActionComplete?.();
                         }}
-                        className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-400 rounded-xl font-black uppercase tracking-widest text-[10px]"
+                        className="w-full rounded-2xl bg-stone-800 py-4 text-[15px] font-black uppercase tracking-[0.16em] text-stone-300 hover:bg-stone-700"
                     >
                         {t(language, 'commission.dismiss_notice')}
                     </SfxButton>

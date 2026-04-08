@@ -177,6 +177,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     generateTavernMinorContract: (mercenaryId: string, templateId: string) => dispatch({ type: 'GENERATE_TAVERN_MINOR_CONTRACT', payload: { mercenaryId, templateId } }),
     unlockNamedEncounter: (mercenaryId: string) => dispatch({ type: 'UNLOCK_NAMED_ENCOUNTER', payload: { mercenaryId } }),
     setDialogue: (dialogue: any | null) => dispatch({ type: 'SET_DIALOGUE', payload: dialogue }),
+    dismissCommissionRewardPreview: () => dispatch({ type: 'DISMISS_COMMISSION_REWARD_PREVIEW' }),
     triggerEnergyHighlight,
     showToast,
     hideToast: () => dispatch({ type: 'HIDE_TOAST' }),

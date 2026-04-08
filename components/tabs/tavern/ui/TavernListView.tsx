@@ -33,7 +33,17 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
     readyContractsCount = 0
 }) => {
     const { state, actions } = useGame();
-    const allContracts = [...availableContracts, ...acceptedContracts];
+    const allContracts = [...availableContracts, ...acceptedContracts].sort((a, b) => {
+        const getPriority = (contract: ContractDefinition) => {
+            if (contract.status === 'ACTIVE' && isContractReady(state, contract)) return 0;
+            if (contract.status === 'ACTIVE') return 1;
+            return 2;
+        };
+
+        const priorityDelta = getPriority(a) - getPriority(b);
+        if (priorityDelta !== 0) return priorityDelta;
+        return (a.daysRemaining || 99) - (b.daysRemaining || 99);
+    });
 
     const getKindIcon = (kind?: string) => {
         switch (kind) {
