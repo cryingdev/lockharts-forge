@@ -124,11 +124,15 @@ export const handleConfirmSleep = (state: GameState): GameState => {
     if (returnedCount > 0) recoveryLogs.push(`${returnedCount} traveler(s) have returned to the Tavern.`);
 
     // --- Commission System Updates ---
-    const updatedActiveContracts = state.commission.activeContracts
-        .map(c => ({ ...c, daysRemaining: (c.daysRemaining || 0) - 1 }))
+    const decrementedContracts = state.commission.activeContracts
+        .map(c => ({ ...c, daysRemaining: (c.daysRemaining || 0) - 1 }));
+    const expiredContracts = decrementedContracts
+        .filter(c => (c.daysRemaining || 0) <= 0)
+        .map(c => ({ ...c, status: 'EXPIRED' as const }));
+    const updatedActiveContracts = decrementedContracts
         .filter(c => (c.daysRemaining || 0) > 0);
     
-    const expiredCount = state.commission.activeContracts.length - updatedActiveContracts.length;
+    const expiredCount = expiredContracts.length;
     if (expiredCount > 0) {
         recoveryLogs.push(`${expiredCount} commission(s) have expired.`);
     }
@@ -168,6 +172,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         commission: {
             ...state.commission,
             activeContracts: updatedActiveContracts,
+            expiredContracts: [...expiredContracts, ...state.commission.expiredContracts],
             namedEncounters: updatedNamedEncounters
         },
         knownMercenaries: updatedMercenaries,

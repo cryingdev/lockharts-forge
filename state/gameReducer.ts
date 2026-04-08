@@ -193,6 +193,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
     case 'SET_DIALOGUE':
         return { ...state, activeDialogue: action.payload };
+    case 'DISMISS_COMMISSION_REWARD_PREVIEW':
+        return { ...state, commissionRewardPreview: null };
 
     default:
       return state;

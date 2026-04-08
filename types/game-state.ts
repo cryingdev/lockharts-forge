@@ -307,6 +307,19 @@ export interface DialogueState {
   options: DialogueOption[];
 }
 
+export interface CommissionRewardPreviewLine {
+  type: 'GOLD' | 'ISSUER_AFFINITY' | 'AFFINITY' | 'UNLOCK_RECRUIT';
+  label: string;
+  beforeText?: string;
+  afterText?: string;
+  deltaText?: string;
+}
+
+export interface CommissionRewardPreviewState {
+  contractTitle: string;
+  lines: CommissionRewardPreviewLine[];
+}
+
 export interface TavernState {
   reputation: number;
   lastInviteDay: number;
@@ -421,6 +434,7 @@ export interface GameState {
   commission: CommissionState;
 
   activeDialogue: DialogueState | null;
+  commissionRewardPreview: CommissionRewardPreviewState | null;
 
   uiEffects: {
     energyHighlight: boolean;

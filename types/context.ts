@@ -104,6 +104,7 @@ export interface GameContextType {
     generateTavernMinorContract: (mercenaryId: string, templateId: string) => void;
     unlockNamedEncounter: (mercenaryId: string) => void;
     setDialogue: (dialogue: any | null) => void;
+    dismissCommissionRewardPreview: () => void;
     dispatch: (action: any) => void;
   };
 }

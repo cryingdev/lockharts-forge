@@ -223,6 +223,22 @@ type RewardApplicationResult = {
     namedEncounters: GameState['commission']['namedEncounters'];
     issuerAffinity: GameState['commission']['issuerAffinity'];
     dialogue: GameState['activeDialogue'];
+    rewardPreview: GameState['commissionRewardPreview'];
+};
+
+const mergeGoldReward = (rewards: ContractDefinition['rewards'], bonusGold: number): ContractDefinition['rewards'] => {
+    if (bonusGold <= 0) return rewards;
+
+    const existingGoldIndex = rewards.findIndex(reward => reward.type === 'GOLD');
+    if (existingGoldIndex === -1) {
+        return [...rewards, { type: 'GOLD', gold: bonusGold }];
+    }
+
+    return rewards.map((reward, index) => (
+        index === existingGoldIndex
+            ? { ...reward, gold: (reward.gold || 0) + bonusGold }
+            : reward
+    ));
 };
 
 const applyContractRewards = (state: GameState, contract: ContractDefinition): RewardApplicationResult => {
@@ -231,9 +247,18 @@ const applyContractRewards = (state: GameState, contract: ContractDefinition): R
     let namedEncounters = { ...state.commission.namedEncounters };
     let issuerAffinity = { ...state.commission.issuerAffinity };
     let dialogue = null as GameState['activeDialogue'];
+    const rewardPreviewLines: NonNullable<GameState['commissionRewardPreview']>['lines'] = [];
 
     contract.rewards.forEach(reward => {
         if (reward.type === 'GOLD' && reward.gold) {
+            const nextGold = gold + reward.gold;
+            rewardPreviewLines.push({
+                type: 'GOLD',
+                label: 'Gold',
+                beforeText: `${gold}G`,
+                afterText: `${nextGold}G`,
+                deltaText: `(+${reward.gold})`,
+            });
             gold += reward.gold;
         }
 
@@ -266,13 +291,33 @@ const applyContractRewards = (state: GameState, contract: ContractDefinition): R
         }
 
         if (reward.type === 'AFFINITY' && reward.mercenaryId && reward.affinity) {
+            const targetMercenary = knownMercenaries.find(m => m.id === reward.mercenaryId);
+            const beforeAffinity = targetMercenary?.affinity || 0;
+            const afterAffinity = beforeAffinity + reward.affinity;
             knownMercenaries = knownMercenaries.map(m =>
                 m.id === reward.mercenaryId ? { ...m, affinity: (m.affinity || 0) + (reward.affinity ?? 0) } : m
             );
+            rewardPreviewLines.push({
+                type: 'AFFINITY',
+                label: targetMercenary?.name || reward.mercenaryId,
+                beforeText: `${beforeAffinity}`,
+                afterText: `${afterAffinity}`,
+                deltaText: `(+${reward.affinity})`,
+            });
         }
 
         if (reward.type === 'ISSUER_AFFINITY' && reward.issuerAffinity && contract.issuerId) {
-            issuerAffinity[contract.issuerId] = (issuerAffinity[contract.issuerId] || 0) + reward.issuerAffinity;
+            const issuerName = contract.issuerName || contract.issuerId;
+            const beforeIssuerAffinity = issuerAffinity[contract.issuerId] || 0;
+            const afterIssuerAffinity = beforeIssuerAffinity + reward.issuerAffinity;
+            issuerAffinity[contract.issuerId] = afterIssuerAffinity;
+            rewardPreviewLines.push({
+                type: 'ISSUER_AFFINITY',
+                label: issuerName,
+                beforeText: `${beforeIssuerAffinity}`,
+                afterText: `${afterIssuerAffinity}`,
+                deltaText: `(+${reward.issuerAffinity})`,
+            });
         }
     });
 
@@ -284,7 +329,19 @@ const applyContractRewards = (state: GameState, contract: ContractDefinition): R
         };
     }
 
-    return { gold, knownMercenaries, namedEncounters, issuerAffinity, dialogue };
+    return {
+        gold,
+        knownMercenaries,
+        namedEncounters,
+        issuerAffinity,
+        dialogue,
+        rewardPreview: rewardPreviewLines.length > 0
+            ? {
+                contractTitle: contract.title,
+                lines: rewardPreviewLines
+            }
+            : null
+    };
 };
 
 // --- Named Contract Flow --------------------------------------------------
@@ -674,6 +731,7 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
             issuerAffinity: rewardResult.issuerAffinity
         },
         activeDialogue: namedRequestDialogue || rewardResult.dialogue,
+        commissionRewardPreview: rewardResult.rewardPreview,
         logs: [...state.logs, getCommissionText(state, 'logs.completed_contract', { title: contract.title })]
     };
 };
@@ -793,6 +851,7 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
             issuerAffinity: rewardResult.issuerAffinity
         },
         activeDialogue: namedRequestDialogue || rewardResult.dialogue,
+        commissionRewardPreview: rewardResult.rewardPreview,
         logs: [...state.logs, getCommissionText(state, 'logs.claimed_contract', { title: contract.title })]
     };
 };
@@ -1137,16 +1196,23 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
     const activeSpecialContracts = state.commission.activeContracts.filter(c => c.type === 'SPECIAL');
     const activeGeneralContracts = state.commission.activeContracts.filter(c => c.type === 'GENERAL');
 
-    // Keep non-board general contracts (from Pip, etc.)
     const activeNonBoardGeneral = activeGeneralContracts.filter(c => c.source !== 'BOARD');
+    const persistedBoardContracts = activeGeneralContracts.filter(c => c.source === 'BOARD');
 
     const newBoardContracts: ContractDefinition[] = [];
     const usedRecipeIds = new Set<string>();
     const usedIssuerIds = new Set<string>();
     const usedKinds = new Set<string>();
 
+    persistedBoardContracts.forEach(contract => {
+        usedKinds.add(contract.kind || 'CRAFT');
+        if (contract.issuerId) usedIssuerIds.add(contract.issuerId);
+        contract.requirements.forEach(req => usedRecipeIds.add(req.itemId));
+    });
+
     const boardCount = 4;
-    for (let i = 0; i < boardCount; i++) {
+    const neededBoardContracts = Math.max(0, boardCount - persistedBoardContracts.length);
+    for (let i = 0; i < neededBoardContracts; i++) {
         // Try to pick a unique issuer if possible
         let issuer = pickBoardIssuer();
         let attempts = 0;
@@ -1197,9 +1263,9 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
             if (issuer.rewardBias === 'REPUTATION') {
                 contract.rewards.push({ type: 'ISSUER_AFFINITY', issuerAffinity: 5 + modifiers.issuerFavorRewardBonus });
             } else if (issuer.rewardBias === 'DUNGEON') {
-                contract.rewards.push({ type: 'GOLD', gold: Math.floor(50 * modifiers.rewardMultiplier) });
+                contract.rewards = mergeGoldReward(contract.rewards, Math.floor(50 * modifiers.rewardMultiplier));
             } else if (issuer.rewardBias === 'UTILITY') {
-                contract.rewards.push({ type: 'GOLD', gold: Math.floor(30 * modifiers.rewardMultiplier) });
+                contract.rewards = mergeGoldReward(contract.rewards, Math.floor(30 * modifiers.rewardMultiplier));
             }
 
             newBoardContracts.push(contract);
@@ -1210,7 +1276,7 @@ export const handleRefreshCommissions = (state: GameState): GameState => {
         ...state,
         commission: {
             ...state.commission,
-            activeContracts: [...activeSpecialContracts, ...activeNonBoardGeneral, ...newBoardContracts],
+            activeContracts: [...activeSpecialContracts, ...activeNonBoardGeneral, ...persistedBoardContracts, ...newBoardContracts],
             lastDailyCommissionRefreshDay: state.stats.day
         },
         logs: [getCommissionText(state, 'logs.refreshed_commissions', { count: newBoardContracts.length }), ...state.logs]
