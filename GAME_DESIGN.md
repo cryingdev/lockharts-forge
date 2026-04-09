@@ -31,6 +31,9 @@ When forging, players engage in a precision-based mini-game:
     -   **NORMAL**: Standard speed, balanced probability.
     -   **HARD**: High speed (160%), low probability, high risk.
 -   **Judgment**: Hits are judged as **PERFECT** (within 35% of target) or **GOOD** (within 95%).
+-   **Miss Handling**:
+    -   If the player lets a ring pass without striking, the result is a simple **MISS** and the next ring begins.
+    -   If the player strikes incorrectly, the billet is treated as misaligned and ring play pauses until the player realigns it with the tongs and switches back to the hammer.
 -   **Combo System**: Consecutive hits increase the difficulty bias towards HARD rings, challenging the player to maintain precision under pressure.
 
 #### 3.1.2 Quality & Mastery

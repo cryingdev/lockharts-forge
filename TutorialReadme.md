@@ -71,6 +71,8 @@
             *   이 순간에만 입력이 열리며, 첫 타격은 사실상 `PERFECT`로 유도됩니다.
             *   `HEAT` / `PUMP` / 온도 게이지 주변 탭은 미스 판정으로 처리되지 않도록 보호됩니다.
         *   첫 타격 성공 후에는 일반 링 흐름으로 복귀하며, 이후부터는 일반 smithing 입력 규칙을 따릅니다.
+        *   일반 smithing에서는 링을 그냥 놓치면 `MISS`로 처리되고 다음 링이 바로 시작됩니다.
+        *   반대로 잘못 친 타격은 쇠가 틀어진 것으로 간주되어 `TONGS`로 정렬을 맞춘 뒤 `HAMMER`로 돌아와야 다음 링이 다시 시작됩니다.
     6.  `CRAFT_RESULT_DIALOG`: 제작 완료 후 결과창(품질/숙련도) 확인 다이얼로그.
     7.  `FINALIZE_FORGE_GUIDE`: 'Finalize Forge' 버튼 스포트라이트.
     8.  `PIP_RETURN_DIALOG_GUIDE`: 상점으로 돌아가면 Pip이 재방문하여 주문한 검을 먼저 점검합니다.
@@ -91,5 +93,6 @@
     *   첫 타격 학습 직전 다이얼로그가 보이는 동안에는 링 터치, `HEAT`, `PUMP` 같은 smithing 입력이 잠깁니다.
     *   첫 타격은 안내용 강제 성공 흐름을 사용해 초반 사용자 실수를 줄입니다.
     *   첫 타격 이후에만 일반 shrinking ring 판정으로 자연스럽게 복귀합니다.
+    *   일반 smithing 흐름에서는 `미입력 MISS`와 `잘못된 타격`을 분리하여, 후자만 재정렬 루프로 이어집니다.
 *   **Intelligent Navigation**: `MainGameLayout`의 `handleSceneNavigation`은 같은 건물 클릭을 마지막 대장간 하위 탭으로 연결합니다. Shop 튜토리얼 진입은 `SHOP_INTRO_DIALOG_GUIDE`의 `계속` 액션에서 직접 처리됩니다.
 *   **Automatic Progression**: 다이얼로그의 'Continue' 버튼이나 특정 UI 액션 성공 시 `actions.setTutorialStep`을 호출하여 다음 단계로 이동합니다.
