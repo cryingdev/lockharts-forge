@@ -65,6 +65,9 @@ Core entities are defined as TypeScript interfaces in `/models/`:
     -   shows a short rhythm explanation first, then waits on `Touch to Start`,
     -   blocks gameplay input while tutorial dialogue is visible,
     -   forces the first strike into a guided perfect-timing state before returning to normal ring play.
+-   The base smithing loop now distinguishes between two failure paths:
+    -   a timed miss (`MISS`) occurs when the player does not strike before the ring passes the target window, and the next ring is generated immediately,
+    -   a strike fault occurs when the player swings incorrectly, which knocks the billet out of alignment, pauses ring generation, and requires `TONGS -> HAMMER` recovery before ring play resumes.
 -   The first shop tutorial now routes through `SHOP_INTRO_DIALOG_GUIDE` before smithing, so Pip places the Bronze Shortsword order first, leaves, and only later returns through `PIP_RETURN_DIALOG_GUIDE` for delivery.
 
 ### 4.4 Commission System
