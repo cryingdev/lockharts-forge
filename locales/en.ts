@@ -810,6 +810,8 @@ const en = {
     ui: {
       touch_to_start: 'Touch to Start',
       forge_cold: 'Forge Is Cold\nAdd Fuel',
+      use_tongs: 'Use Tongs to Align',
+      switch_to_hammer: 'Switch to Hammer',
     },
     indicator: {
       strike: 'Tap as it closes',

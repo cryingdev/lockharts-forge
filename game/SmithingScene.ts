@@ -20,6 +20,8 @@ export interface SmithingSceneData {
   isTutorial?: boolean;
   touchToStartLabel?: string;
   forgeColdLabel?: string;
+  useTongsLabel?: string;
+  switchToHammerLabel?: string;
 }
 
 interface Point {
@@ -129,6 +131,8 @@ export default class SmithingScene extends Phaser.Scene {
   private charcoalCount: number | string = 0;
   private touchToStartLabel = 'TOUCH TO START';
   private forgeColdLabel = 'FORGE IS COLD\nADD FUEL';
+  private useTongsLabel = 'USE TONGS TO ALIGN';
+  private switchToHammerLabel = 'SWITCH TO HAMMER';
 
   private startRadius = 180;
   private targetRadius = 45;
@@ -175,6 +179,8 @@ export default class SmithingScene extends Phaser.Scene {
   private lastTutorialUiStep: string | null = null;
   private tutorialFirstHitReady = false;
   private tutorialStartTransitioning = false;
+  private recommendedTool: SmithingTool | null = null;
+  private ringResolutionLocked = false;
 
   private readonly BILLET_W_ON_ANVIL = 0.80; 
   private readonly BILLET_ANGLE_DEG = -12;
@@ -223,6 +229,8 @@ export default class SmithingScene extends Phaser.Scene {
     this.charcoalCount = data.charcoalCount;
     this.touchToStartLabel = data.touchToStartLabel || 'TOUCH TO START';
     this.forgeColdLabel = data.forgeColdLabel || 'FORGE IS COLD\nADD FUEL';
+    this.useTongsLabel = data.useTongsLabel || 'USE TONGS TO ALIGN';
+    this.switchToHammerLabel = data.switchToHammerLabel || 'SWITCH TO HAMMER';
     
     const tier = data.difficulty || 1;
     this.masteryCount = data.masteryCount || 0;
@@ -248,6 +256,8 @@ export default class SmithingScene extends Phaser.Scene {
     this.tutorialFirstHitReady = false;
     this.tutorialStartTransitioning = false;
     this.peakHeatHoldUntil = 0;
+    this.recommendedTool = null;
+    this.ringResolutionLocked = false;
     if (this.onTutorialStrikeReadyChange) {
       this.onTutorialStrikeReadyChange(false);
     }
@@ -304,6 +314,75 @@ export default class SmithingScene extends Phaser.Scene {
 
   private shouldDisableUtilityActions(step?: string | null) {
     return this.isTutorial && (step === 'FIRST_HIT_DIALOG_GUIDE' || step === 'SMITHING_MINIGAME_HIT_GUIDE');
+  }
+
+  private shouldRunHammerRing() {
+    return this.isPlaying && this.currentTool === 'HAMMER' && this.isSnapped;
+  }
+
+  private updateInfoPrompt(text: string | null, color: string) {
+    if (!text) {
+      this.infoText.setVisible(false);
+      return;
+    }
+    this.infoText.setVisible(true).setText(text).setColor(color);
+  }
+
+  private clearRings() {
+    this.targetRing.clear();
+    this.approachRing.clear();
+  }
+
+  private refreshToolButtonVisuals() {
+    const hamBg = this.hammerBtn.list[0] as Phaser.GameObjects.Arc;
+    const tonBg = this.tongsBtn.list[0] as Phaser.GameObjects.Arc;
+
+    hamBg.setStrokeStyle(4, 0x57534e).setFillStyle(0x1c1917, 0.9);
+    tonBg.setStrokeStyle(4, 0x57534e).setFillStyle(0x1c1917, 0.9);
+
+    if (this.currentTool === 'HAMMER') {
+      hamBg.setStrokeStyle(6, 0xfbbf24).setFillStyle(0x451a03, 1);
+    } else {
+      tonBg.setStrokeStyle(6, 0xfbbf24).setFillStyle(0x451a03, 1);
+    }
+
+    if (this.recommendedTool === 'HAMMER' && this.currentTool !== 'HAMMER') {
+      hamBg.setStrokeStyle(5, 0x22c55e).setFillStyle(0x052e16, 0.95);
+    }
+    if (this.recommendedTool === 'TONGS' && this.currentTool !== 'TONGS') {
+      tonBg.setStrokeStyle(5, 0x22c55e).setFillStyle(0x052e16, 0.95);
+    }
+  }
+
+  private updateToolGuidance(currentStep?: string | null) {
+    const isBlockedByTutorial = this.isTutorialDialogueBlockingInput(currentStep) || this.isTutorialHitLockPhase(currentStep);
+    if (!this.isPlaying || isBlockedByTutorial) {
+      this.recommendedTool = null;
+      this.refreshToolButtonVisuals();
+      return;
+    }
+
+    if (!this.isSnapped) {
+      this.recommendedTool = 'TONGS';
+      this.ringResolutionLocked = false;
+      this.clearRings();
+      this.updateInfoPrompt(this.currentTool === 'HAMMER' ? this.useTongsLabel : null, '#60a5fa');
+      this.refreshToolButtonVisuals();
+      return;
+    }
+
+    if (this.currentTool === 'TONGS') {
+      this.recommendedTool = 'HAMMER';
+      this.ringResolutionLocked = false;
+      this.clearRings();
+      this.updateInfoPrompt(this.switchToHammerLabel, '#fbbf24');
+      this.refreshToolButtonVisuals();
+      return;
+    }
+
+    this.recommendedTool = null;
+    this.refreshToolButtonVisuals();
+    this.infoText.setVisible(false);
   }
 
   private redrawTargetRing(overlapProximity = 0) {
@@ -421,6 +500,9 @@ export default class SmithingScene extends Phaser.Scene {
         if (!this.isPlaying) { this.handleStartTap(x, y); return; }
 
         if (this.currentTool === 'HAMMER') {
+          if (!this.isSnapped) {
+            return;
+          }
           if (this.isTutorial && currentStep === 'SMITHING_MINIGAME_HIT_GUIDE' && this.perfectCount === 0) {
             if (!this.tutorialFirstHitReady) return;
             if (!this.isPointerInHitArea(x, y)) return;
@@ -432,7 +514,7 @@ export default class SmithingScene extends Phaser.Scene {
               return;
             }
             const isOnAnvil = this.anvilImage.getBounds().contains(x, y);
-            this.handleMiss(x, y, isOnAnvil ? 'STRUCK ANVIL' : 'MISS'); 
+            this.handleStrikeFault(x, y, isOnAnvil ? 'STRUCK ANVIL' : 'MISS'); 
           }
         }
       }, this
@@ -521,25 +603,20 @@ export default class SmithingScene extends Phaser.Scene {
 
   private switchTool(tool: SmithingTool) {
     this.currentTool = tool;
-    const hamBg = this.hammerBtn.list[0] as Phaser.GameObjects.Arc;
-    const tonBg = this.tongsBtn.list[0] as Phaser.GameObjects.Arc;
     if (tool === 'HAMMER') {
-        hamBg.setStrokeStyle(6, 0xfbbf24).setFillStyle(0x451a03, 1);
-        tonBg.setStrokeStyle(4, 0x57534e).setFillStyle(0x1c1917, 0.9);
         if (this.manualControlsContainer) this.manualControlsContainer.setVisible(false);
-        this.targetRing.setVisible(this.isPlaying);
-        this.approachRing.setVisible(this.isPlaying);
+        this.targetRing.setVisible(this.shouldRunHammerRing());
+        this.approachRing.setVisible(this.shouldRunHammerRing());
         if (this.isPlaying) this.resetRing();
         this.targetOutlineGraphics.setVisible(false);
     } else {
-        tonBg.setStrokeStyle(6, 0xfbbf24).setFillStyle(0x451a03, 1);
-        hamBg.setStrokeStyle(4, 0x57534e).setFillStyle(0x1c1917, 0.9);
         if (this.manualControlsContainer) this.manualControlsContainer.setVisible(true);
         this.targetRing.setVisible(false);
         this.approachRing.setVisible(false);
         this.targetOutlineGraphics.setVisible(true);
         this.drawTargetGuidelineFixed();
     }
+    this.refreshToolButtonVisuals();
   }
 
   private setupManualControls() {
@@ -595,7 +672,12 @@ export default class SmithingScene extends Phaser.Scene {
         this.isSnapped = true; this.isRotatingManual = false; this.isMovingManualX = false; this.isMovingManualY = false;
         this.snapTween = this.tweens.add({
             targets: this.billetContainer, x: targetX, y: targetY, rotation: targetRot, duration: 150, ease: 'Back.easeOut',
-            onComplete: () => { this.rebuildHitPoly(); this.drawTargetGuidelineFixed(); this.createSparks(25, 0x10b981, 1.4, 'spark_perfect', targetX, targetY); }
+            onComplete: () => {
+              this.rebuildHitPoly();
+              this.drawTargetGuidelineFixed();
+              this.createSparks(25, 0x10b981, 1.4, 'spark_perfect', targetX, targetY);
+              this.updateToolGuidance((this.game as any).tutorialStep as string | null);
+            }
         });
     }
   }
@@ -707,6 +789,16 @@ export default class SmithingScene extends Phaser.Scene {
             currentDist = nextDist; draw = !draw;
         }
     }
+  }
+
+  private getFallbackHitPoint() {
+    const anvilScale = this.anvilImage.scaleX;
+    const offsetX = (this.ANVIL_HIT_X - this.ANVIL_ORIGINAL_W / 2) * anvilScale;
+    const offsetY = (this.ANVIL_HIT_Y - this.ANVIL_ORIGINAL_H / 2) * anvilScale;
+    return {
+      x: this.anvilImage.x + offsetX,
+      y: this.anvilImage.y + offsetY,
+    };
   }
 
   private placeBilletOnAnvil() {
@@ -882,12 +974,18 @@ export default class SmithingScene extends Phaser.Scene {
     if (this.isReadyToStart) {
       this.isPlaying = true; this.infoText.setVisible(false);
       this.flashOverlay.setFillStyle(0xffffff, 1).setAlpha(0.2); this.tweens.add({ targets: this.flashOverlay, alpha: 0, duration: 300 });
-      if (this.currentTool === 'HAMMER') { this.resetRing(); this.targetRing.setVisible(true); this.approachRing.setVisible(true); }
+      if (this.currentTool === 'HAMMER') {
+        this.resetRing();
+        this.targetRing.setVisible(this.shouldRunHammerRing());
+        this.approachRing.setVisible(this.shouldRunHammerRing());
+      }
     } else { this.cameras.main.shake(50, 0.005); this.showFeedback('TOO COLD!', 0x3b82f6, 1.0, x, y); }
   }
 
   private handleHammerSwing(x: number, y: number) {
     if (this.isFinished) return; if (this.time.now - this.lastHitTime < this.hitCooldown) return;
+    if (!this.isSnapped) return;
+    if (this.ringResolutionLocked) return;
     this.lastHitTime = this.time.now;
     if (this.currentTempStage === 'COLD' || this.currentTempStage === 'NORMAL') { this.showFeedback('TOO COLD!', 0x3b82f6, 1.0, x, y); return; }
     
@@ -901,6 +999,7 @@ export default class SmithingScene extends Phaser.Scene {
     if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.PERFECT_THRESHOLD) {
       window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'billet_hit_normal.mp3' } }));
       this.score += this.scoreIncrement * eff; this.combo++; this.perfectCount++;
+      this.ringResolutionLocked = true;
       
       // Quality gain based on temperature stage
       const qGain = this.getQualityGainForPerfect();
@@ -908,7 +1007,6 @@ export default class SmithingScene extends Phaser.Scene {
       
       if (this.combo > 0 && this.combo % 5 === 0) this.handleEnhancement(x, y);
       this.createSparks(30, this.currentTargetColor, 1.5, 'spark_perfect', x, y); this.showFeedback('PERFECT!', 0xffb300, 1.4, x, y); this.cameras.main.shake(150, 0.02);
-      this.applyKickback(0.05); 
       
       if (this.isTutorial && this.perfectCount === 1 && this.onTutorialAction) {
           this.tutorialFirstHitReady = false;
@@ -925,11 +1023,15 @@ export default class SmithingScene extends Phaser.Scene {
     } else if (diff < this.targetRadius * SMITHING_CONFIG.JUDGMENT.GOOD_THRESHOLD) {
       window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'billet_hit_normal.mp3' } }));
       this.score += (this.scoreIncrement * 0.64) * eff; this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 2);
+      this.ringResolutionLocked = true;
       this.createSparks(15, 0xffffff, 1.1, 'spark_normal', x, y); this.showFeedback('GOOD', 0xe5e5e5, 1.1, x, y);
-      this.applyKickback(0.4); 
-    } else { this.handleMiss(x, y); }
+    } else {
+      this.handleStrikeFault(x, y, 'MISS');
+      return;
+    }
     this.updateProgressBar();
-    if (this.score >= this.targetScore) this.winGame(); else this.resetRing();
+    if (this.score >= this.targetScore) this.winGame();
+    else this.resetRing();
   }
 
   public resumeTutorialCrafting() {
@@ -948,8 +1050,8 @@ export default class SmithingScene extends Phaser.Scene {
       this.isReadyToStart = true;
       this.isPlaying = true;
       this.infoText.setVisible(false);
-      this.targetRing.setVisible(true);
-      this.approachRing.setVisible(true);
+      this.targetRing.setVisible(this.shouldRunHammerRing());
+      this.approachRing.setVisible(this.shouldRunHammerRing());
       this.tutorialFirstHitReady = false;
       if (this.onTutorialStrikeReadyChange) {
         this.onTutorialStrikeReadyChange(false);
@@ -966,8 +1068,8 @@ export default class SmithingScene extends Phaser.Scene {
       this.isReadyToStart = true;
       this.isPlaying = true;
       this.infoText.setVisible(false);
-      this.targetRing.setVisible(true);
-      this.approachRing.setVisible(true);
+      this.targetRing.setVisible(this.shouldRunHammerRing());
+      this.approachRing.setVisible(this.shouldRunHammerRing());
       if (this.onTutorialStrikeReadyChange) {
         this.onTutorialStrikeReadyChange(true);
       }
@@ -980,12 +1082,31 @@ export default class SmithingScene extends Phaser.Scene {
     this.tweens.add({ targets: pinnedText, alpha: 1, scale: 1, y: y - 20, duration: 400, ease: 'Back.out' });
   }
 
-  private handleMiss(x?: number, y?: number, customText?: string) {
+  private handleTimedMiss(customText = 'MISS') {
+    if (this.ringResolutionLocked) return;
+    this.ringResolutionLocked = true;
+    this.score = Math.max(0, this.score - 5);
+    this.combo = 0;
+    this.currentQuality = Math.max(0, this.currentQuality - 5);
+    window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'swing_miss.mp3' } }));
+    this.cameras.main.shake(100, 0.01);
+    this.showFeedback(customText, 0xef4444, 1.0, this.hitX, this.hitY);
+    this.updateProgressBar();
+    if (this.score >= this.targetScore) this.winGame();
+    else this.resetRing();
+  }
+
+  private handleStrikeFault(x?: number, y?: number, customText?: string) {
+    if (this.ringResolutionLocked) return;
+    this.ringResolutionLocked = true;
     this.score = Math.max(0, this.score - 5); this.combo = 0; this.currentQuality = Math.max(0, this.currentQuality - 5);
     window.dispatchEvent(new CustomEvent('play-sfx', { detail: { file: 'swing_miss.mp3' } }));
     this.cameras.main.shake(100, 0.01); this.showFeedback(customText ?? 'MISS', 0xef4444, 1.0, x ?? this.hitX, y ?? this.hitY);
     if (x !== undefined && y !== undefined) this.triggerHammerAnimation(x, y);
-    this.applyKickback(1.5); this.updateProgressBar(); this.resetRing();
+    this.applyKickback(1.5);
+    this.updateProgressBar();
+    this.clearRings();
+    this.switchTool('TONGS');
   }
 
   update(time: number, delta: number) {
@@ -996,7 +1117,8 @@ export default class SmithingScene extends Phaser.Scene {
         this.handleResize();
     }
     const isTutorialDialogueActive = this.isTutorial && currentStep?.includes('_DIALOG');
-    if (this.isPlaying && this.currentTool === 'HAMMER' && !isTutorialDialogueActive) {
+    this.updateToolGuidance(currentStep);
+    if (this.shouldRunHammerRing() && !isTutorialDialogueActive) {
         this.handleRingLogic(delta);
     }
     if (this.isTutorialHitLockPhase(currentStep)) {
@@ -1100,9 +1222,9 @@ export default class SmithingScene extends Phaser.Scene {
 
     this.approachRing.clear().lineStyle(6, ringColor, ringAlpha).fillStyle(ringColor, ringAlpha * 0.15).fillCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius)).strokeCircle(this.hitX, this.hitY, Math.max(0, this.currentRadius));
     this.redrawTargetRing(overlapProximity);
-    if (this.currentRadius < this.targetRadius - 30) { 
+    if (!this.ringResolutionLocked && this.currentRadius < this.targetRadius - 30) { 
         // Remove swing animation when too late
-        this.handleMiss(undefined, undefined, 'TOO LATE'); 
+        this.handleTimedMiss('MISS'); 
     }
   }
 
@@ -1117,8 +1239,16 @@ export default class SmithingScene extends Phaser.Scene {
         }
         return;
     }
-    if (this.temperature <= 0 || !this.spawnPoly) return; 
-    this.targetRing.clear(); this.approachRing.clear(); this.currentRadius = this.startRadius; this.ringTimer = 0;
+    if (this.temperature <= 0) return;
+    if (!this.isSnapped || this.currentTool !== 'HAMMER') {
+        this.ringResolutionLocked = false;
+        this.clearRings();
+        return;
+    }
+    if (!this.spawnPoly || this.spawnPoly.points.length === 0) {
+        this.placeBilletOnAnvil();
+    }
+    this.targetRing.clear(); this.approachRing.clear(); this.currentRadius = this.startRadius; this.ringTimer = 0; this.ringResolutionLocked = false;
     const tutorialStep = (this.game as any).tutorialStep;
     const forced = SmithingTutorialHandler.getForcedDifficulty(this.isTutorial, tutorialStep, this.perfectCount);
     if (forced) {
@@ -1136,17 +1266,29 @@ export default class SmithingScene extends Phaser.Scene {
         else { this.currentTargetColor = diffCfg.HARD.color; this.currentSpeedMult = diffCfg.HARD.speedMult; }
     }
     this.targetRadius = this.startRadius * rng.standard(0.18, 0.32, 4);
-    const rect = Phaser.Geom.Polygon.GetAABB(this.spawnPoly);
-    let found = false; let attempts = 0;
-    while (!found && attempts < 200) {
-        const tx = rng.standard(rect.left, rect.right, 2); 
-        const ty = rng.standard(rect.top, rect.bottom, 2);
-        if (Phaser.Geom.Polygon.Contains(this.spawnPoly, tx, ty)) { this.hitX = tx; this.hitY = ty; found = true; }
-        attempts++;
+    let found = false;
+    if (this.spawnPoly && this.spawnPoly.points.length > 0) {
+        const rect = Phaser.Geom.Polygon.GetAABB(this.spawnPoly);
+        let attempts = 0;
+        while (!found && attempts < 200) {
+            const tx = rng.standard(rect.left, rect.right, 2); 
+            const ty = rng.standard(rect.top, rect.bottom, 2);
+            if (Phaser.Geom.Polygon.Contains(this.spawnPoly, tx, ty)) { this.hitX = tx; this.hitY = ty; found = true; }
+            attempts++;
+        }
+        if (!found) {
+            const p = rng.pick(this.spawnPoly.points);
+            if (p) {
+                this.hitX = p.x;
+                this.hitY = p.y;
+                found = true;
+            }
+        }
     }
-    if (!found && this.spawnPoly.points.length > 0) {
-        const p = rng.pick(this.spawnPoly.points);
-        this.hitX = p.x; this.hitY = p.y;
+    if (!found) {
+        const fallback = this.getFallbackHitPoint();
+        this.hitX = fallback.x;
+        this.hitY = fallback.y;
     }
     if (this.isPlaying && this.currentTool === 'HAMMER') { 
         this.redrawTargetRing(0);
