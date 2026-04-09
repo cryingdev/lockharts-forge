@@ -158,6 +158,8 @@ const SmithingMinigame: React.FC<SmithingMinigameProps> = ({ onComplete, onClose
       isTutorial,
       touchToStartLabel: t(language, 'smithingTutorial.ui.touch_to_start'),
       forgeColdLabel: t(language, 'smithingTutorial.ui.forge_cold'),
+      useTongsLabel: t(language, 'smithingTutorial.ui.use_tongs'),
+      switchToHammerLabel: t(language, 'smithingTutorial.ui.switch_to_hammer'),
       onStatusUpdate: (t: number) => {
           setCurrentTemp(t);
       },

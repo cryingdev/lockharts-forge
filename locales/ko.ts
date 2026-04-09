@@ -810,6 +810,8 @@ const ko = {
     ui: {
       touch_to_start: '터치하여 시작',
       forge_cold: '화로가 식었다\n연료를 넣어라',
+      use_tongs: '집게로 쇠를 바로잡아라',
+      switch_to_hammer: '망치로 바꿔 다시 두드려라',
     },
     indicator: {
       strike: '원이 가까워지면 타격',

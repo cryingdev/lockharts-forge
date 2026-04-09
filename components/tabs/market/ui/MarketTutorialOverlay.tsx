@@ -187,6 +187,8 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
                                 ? [{ label: t(language, 'marketTutorial.option_browse'), action: () => actions.setTutorialStep('FURNACE_GUIDE'), variant: 'primary' }] 
                                 : step === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' 
                                     ? [{ label: t(language, 'common.continue'), action: () => actions.setTutorialStep('GARRICK_EXIT_DIALOG_GUIDE'), variant: 'primary' }]
+                                    : step === 'GARRICK_EXIT_DIALOG_GUIDE'
+                                        ? [{ label: t(language, 'common.continue'), action: () => actions.setTutorialStep('LEAVE_MARKET_GUIDE'), variant: 'primary' }]
                                     : []
                         } 
                         className="w-full relative pointer-events-auto"

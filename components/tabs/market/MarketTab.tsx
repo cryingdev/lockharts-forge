@@ -37,7 +37,8 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
     // 튜토리얼 오버레이가 대화를 담당하는 단계인지 판단
     const isTutorialDialogueActive = isLocalTutorial && currentMarketStep && 
-        ['BROWSE_GOODS_GUIDE', 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE', 'GARRICK_EXIT_DIALOG_GUIDE', 'LEAVE_MARKET_GUIDE'].includes(currentMarketStep);
+        ['BROWSE_GOODS_GUIDE', 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE', 'GARRICK_EXIT_DIALOG_GUIDE'].includes(currentMarketStep);
+    const shouldHideLobbyDialogue = isLocalTutorial && currentMarketStep === 'LEAVE_MARKET_GUIDE';
 
     return (
         <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center px-safe">
@@ -72,6 +73,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     onConfirmGift={handlers.handleConfirmGift}
                     onCancelGift={() => market.setPendingGiftItem(null)}
                     isTutorialActive={!!isTutorialDialogueActive}
+                    hideLobbyDialogue={shouldHideLobbyDialogue}
                 />
             ) : (
                 <MarketCatalogView 
