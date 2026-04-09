@@ -68,6 +68,11 @@ Mercenaries are the player's primary agents in the world.
 -   **Named Heroes**: Unique characters like *Pip the Green* or *Adeline Ashford* with fixed backgrounds and potential.
 -   **Random Recruits**: Procedurally generated mercenaries to fill the ranks.
 -   **Tavern Presence**: Unhired `VISITOR` mercenaries are transient. At the end of each day, they have a 70% chance to leave the Tavern if not hired.
+-   **Tavern Lodgings**: The Tavern limits how many mercenaries can remain in long-term residence at once.
+    -   Base resident capacity: `6`
+    -   Lodging expansion targets: `8`, `16`, `24`, `32`
+    -   Reaching the current lodging cap blocks additional hires until the player expands the lodgings.
+    -   Design intent: squad growth should require a Tavern infrastructure investment instead of letting the roster expand without friction.
 -   **Job Classes**:
     -   **Novice**: Versatile but weak.
     -   **Fighter**: High VIT and STR, the frontline.
@@ -79,6 +84,10 @@ Mercenaries are the player's primary agents in the world.
 -   **Stats**: STR (Attack), VIT (HP/Defense), DEX (Accuracy/Speed), INT (Magic), LUK (Criticals/Loot).
 -   **Leveling**: Mercenaries gain XP from dungeons. Upon leveling, players can manually allocate bonus stat points.
 -   **Vitals**: Managing HP and MP is critical. Injured mercenaries require days of rest to recover.
+-   **Residency Rules**:
+    -   `VISITOR` mercenaries do not consume long-term lodging.
+    -   `HIRED`, `ON_EXPEDITION`, and `INJURED` mercenaries count against the Tavern lodging cap.
+    -   This separates short-term encounter flow from permanent roster pressure.
 
 #### 3.3.3 Adventurer Standing
 -   `Adventurer Standing` is a tavern-facing relationship value that measures how trusted and well-known the forge is among adventurers who gather there.

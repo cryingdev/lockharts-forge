@@ -138,6 +138,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     answerNamedConversationPrompt: (mercenaryId: string, promptId: string, optionId: string) =>
         dispatch({ type: 'ANSWER_NAMED_CONVERSATION_PROMPT', payload: { mercenaryId, promptId, optionId } }),
     buyDrink: (mercenaryId: string) => dispatch({ type: 'BUY_DRINK', payload: { mercenaryId } }),
+    expandTavernLodging: () => dispatch({ type: 'EXPAND_TAVERN_LODGING' }),
     talkGarrick: () => dispatch({ type: 'TALK_GARRICK' }),
     giftGarrick: (payload: { itemId: string }) => dispatch({ type: 'GIFT_GARRICK', payload }),
     researchCombination: (items: { id: string; count: number }[]) => dispatch({ type: 'RESEARCH_COMBINATION', payload: { items } }),

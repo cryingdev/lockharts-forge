@@ -8,7 +8,7 @@ import { CommissionDetailModal } from './ui/CommissionDetailModal';
 import { CommissionRewardModal } from './ui/CommissionRewardModal';
 import { MercenaryInviteModal } from '../../modals/MercenaryInviteModal';
 import { SfxButton } from '../../common/ui/SfxButton';
-import { ArrowLeft, PlusCircle, Star } from 'lucide-react';
+import { ArrowLeft, PlusCircle } from 'lucide-react';
 import { t } from '../../../utils/i18n';
 
 interface TavernTabProps {
@@ -31,6 +31,10 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
         setIsDetailOpen,
         invitingMercenary,
         inviteCost,
+        lodgingCapacity,
+        nextLodgingCapacity,
+        lodgingUpgradeCost,
+        isLodgingMaxed,
         handlers 
     } = tavern;
 
@@ -86,13 +90,6 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
 
                     {!selectedMercenary && (
                         <div className="flex items-center gap-2 pointer-events-auto">
-                            <div className="flex min-h-[44px] items-center gap-2 px-3.5 py-2 bg-stone-900/80 text-stone-300 rounded-xl border border-stone-700 backdrop-blur-md shadow-2xl">
-                                <Star className="w-4 h-4 text-amber-400" />
-                                <div className="flex flex-col leading-none">
-                                    <span className="text-[9px] font-black uppercase tracking-[0.14em] text-stone-500">{t(language, 'tavern.standing')}</span>
-                                    <span className="text-sm font-black text-amber-300">{state.tavern.reputation}</span>
-                                </div>
-                            </div>
                             <SfxButton 
                                 sfx="switch"
                                 onClick={handlers.handleInvite}
@@ -127,6 +124,12 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                     onSelectContract={(id) => setSelectedContractId(id)}
                     inviteCost={inviteCost}
                     readyContractsCount={readyContracts.length}
+                    reputation={state.tavern.reputation}
+                    lodgingCapacity={lodgingCapacity}
+                    nextLodgingCapacity={nextLodgingCapacity}
+                    lodgingUpgradeCost={lodgingUpgradeCost}
+                    isLodgingMaxed={isLodgingMaxed}
+                    onExpandLodging={handlers.handleExpandLodging}
                 />
             )}
 

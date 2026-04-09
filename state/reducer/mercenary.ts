@@ -11,6 +11,7 @@ import { t } from '../../utils/i18n';
 import { getLocalizedItemName } from '../../utils/itemText';
 import { rng } from '../../utils/random';
 import { JobClass } from '../../models/JobClass';
+import { getTavernLodgingCapacity } from '../../config/tavern-config';
 
 const getNamedConversationRewardTemplateId = (mercenary: Mercenary): string => {
     switch (mercenary.id) {
@@ -131,6 +132,15 @@ export const handleHireMercenary = (state: GameState, payload: { mercenaryId: st
     const { mercenaryId, cost } = payload;
     if (state.stats.gold < cost) return state;
     const language = state.settings.language;
+    const hiredCount = state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status)).length;
+    const lodgingCapacity = getTavernLodgingCapacity(state.tavern.lodgingLevel);
+
+    if (hiredCount >= lodgingCapacity) {
+        return {
+            ...state,
+            logs: [t(language, 'tavern.lodging_full_log', { capacity: lodgingCapacity }), ...state.logs]
+        };
+    }
 
     const targetMercenary = state.knownMercenaries.find(m => m.id === mercenaryId);
     if (!targetMercenary) return state;

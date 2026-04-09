@@ -9,6 +9,7 @@ import { handleAcquireItem, handlePayCost, handleBuyMarketItems, handleInstallFu
 import { handleStartCrafting, handleCancelCrafting, handleFinishCrafting, handleSetCrafting, handleUpdateForgeStatus } from './reducer/crafting';
 import { handleToggleShop, handleEnqueueCustomer, handleNextCustomer, handleDismissCustomer, handleRefuseCustomer } from './reducer/shop';
 import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, handleFireMercenary, handleAllocateStat, handleUpdateMercenaryStats, handleGiveGift, handleTalkMercenary, handleAnswerNamedConversationPrompt, handleBuyDrink } from './reducer/mercenary';
+import { handleExpandTavernLodging } from './reducer/tavern';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual } from './reducer/manualDungeon';
@@ -72,6 +73,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'TALK_MERCENARY': return handleTalkMercenary(state, action.payload);
     case 'ANSWER_NAMED_CONVERSATION_PROMPT': return handleAnswerNamedConversationPrompt(state, action.payload);
     case 'BUY_DRINK': return handleBuyDrink(state, action.payload);
+    case 'EXPAND_TAVERN_LODGING': return handleExpandTavernLodging(state);
     case 'ALLOCATE_STAT': return handleAllocateStat(state, action.payload);
     case 'UPDATE_MERCENARY_STATS': return handleUpdateMercenaryStats(state, action.payload);
 

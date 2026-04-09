@@ -121,6 +121,7 @@ export const createInitialGameState = (): GameState => {
             reputation: 0,
             lastInviteDay: 0,
             inviteCountToday: 0,
+            lodgingLevel: 0,
         },
 
         // Market Initial Stock

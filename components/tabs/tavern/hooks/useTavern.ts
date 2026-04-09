@@ -5,14 +5,21 @@ import { isNamedMercenaryEligible } from '../../../../state/reducer/commission';
 import { NAMED_CONTRACT_REGISTRY } from '../../../../data/contracts/namedContracts';
 import { NAMED_MERCENARIES } from '../../../../data/mercenaries';
 import { rng } from '../../../../utils/random';
+import { getNextTavernLodgingCapacity, getTavernLodgingCapacity, getTavernLodgingUpgradeCost, isTavernLodgingMaxed } from '../../../../config/tavern-config';
+import { t } from '../../../../utils/i18n';
 
 export const useTavern = () => {
     const { state, actions } = useGame();
+    const language = state.settings.language;
     const [selectedMercId, setSelectedMercId] = useState<string | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [invitingMercenary, setInvitingMercenary] = useState<any | null>(null);
 
     const inviteCost = useMemo(() => 50 * Math.pow(2, state.stats.inviteCount), [state.stats.inviteCount]);
+    const lodgingCapacity = useMemo(() => getTavernLodgingCapacity(state.tavern.lodgingLevel), [state.tavern.lodgingLevel]);
+    const nextLodgingCapacity = useMemo(() => getNextTavernLodgingCapacity(state.tavern.lodgingLevel), [state.tavern.lodgingLevel]);
+    const lodgingUpgradeCost = useMemo(() => getTavernLodgingUpgradeCost(state.tavern.lodgingLevel), [state.tavern.lodgingLevel]);
+    const isLodgingMaxed = useMemo(() => isTavernLodgingMaxed(state.tavern.lodgingLevel), [state.tavern.lodgingLevel]);
 
     const handleInvite = useCallback(() => {
         if (state.stats.gold < inviteCost) {
@@ -72,7 +79,6 @@ export const useTavern = () => {
             setInvitingMercenary(null);
             setSelectedMercId(mercId); // Automatically select the new mercenary
             setIsDetailOpen(false); // Ensure detail is closed
-            actions.showToast(`${invitingMercenary.name} has arrived at the tavern!`);
         }
     }, [invitingMercenary, inviteCost, actions]);
 
@@ -101,6 +107,18 @@ export const useTavern = () => {
         setIsDetailOpen(false);
     }, []);
 
+    const handleExpandLodging = useCallback(() => {
+        if (isLodgingMaxed) {
+            actions.showToast(t(language, 'tavern.lodging_already_maxed'));
+            return;
+        }
+        if (lodgingUpgradeCost !== null && state.stats.gold < lodgingUpgradeCost) {
+            actions.showToast(t(language, 'tavern.lodging_not_enough_gold', { cost: lodgingUpgradeCost }));
+            return;
+        }
+        actions.expandTavernLodging();
+    }, [actions, isLodgingMaxed, language, lodgingUpgradeCost, state.stats.gold]);
+
     return {
         state,
         actions,
@@ -112,12 +130,17 @@ export const useTavern = () => {
         setIsDetailOpen,
         invitingMercenary,
         inviteCost,
+        lodgingCapacity,
+        nextLodgingCapacity,
+        lodgingUpgradeCost,
+        isLodgingMaxed,
         handlers: {
             handleInvite,
             confirmInvite,
             cancelInvite,
             handleSelectMercenary,
-            handleCloseInteraction
+            handleCloseInteraction,
+            handleExpandLodging
         }
     };
 };
