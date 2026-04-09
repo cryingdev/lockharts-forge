@@ -9,6 +9,7 @@ import { getNextNamedConversationPrompt } from '../../../../state/helpers/namedC
 import { t } from '../../../../utils/i18n';
 import { NamedConversationPrompt } from '../../../../types/game-state';
 import { getPlayerName } from '../../../../utils/gameText';
+import { getTavernLodgingCapacity } from '../../../../config/tavern-config';
 
 export interface FloatingHeart {
     id: number;
@@ -35,6 +36,12 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
     const hiringCost = useMemo(() => calculateHiringCost(mercenary.level, mercenary.job), [mercenary]);
     const canAfford = state.stats.gold >= hiringCost;
     const hasAffinity = (mercenary.affinity || 0) >= CONTRACT_CONFIG.HIRE_AFFINITY_THRESHOLD;
+    const hiredCount = useMemo(
+        () => state.knownMercenaries.filter(m => ['HIRED', 'ON_EXPEDITION', 'INJURED'].includes(m.status)).length,
+        [state.knownMercenaries]
+    );
+    const lodgingCapacity = useMemo(() => getTavernLodgingCapacity(state.tavern.lodgingLevel), [state.tavern.lodgingLevel]);
+    const hasLodgingSpace = hiredCount < lodgingCapacity;
 
     const spawnHearts = useCallback(() => {
         const newHearts = Array.from({ length: 5 }).map((_, i) => ({
@@ -132,13 +139,17 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
             setDialogue(t(language, 'tavern.hire_not_enough_affinity'));
             return;
         }
+        if (!hasLodgingSpace) {
+            setDialogue(t(language, 'tavern.hire_not_enough_lodging', { capacity: lodgingCapacity }));
+            return;
+        }
         if (!canAfford) {
             setDialogue(t(language, 'tavern.hire_not_enough_gold', { cost: hiringCost }));
             return;
         }
         setStep('CONFIRM_HIRE');
         setDialogue(t(language, 'tavern.hire_confirm', { cost: hiringCost }));
-    }, [language, hasAffinity, canAfford, hiringCost]);
+    }, [canAfford, hasAffinity, hasLodgingSpace, hiringCost, language, lodgingCapacity]);
 
     const handleConfirmHire = useCallback(() => {
         actions.hireMercenary(mercenary.id, hiringCost);
@@ -192,6 +203,8 @@ export const useTavernInteraction = (mercenary: Mercenary) => {
         hiringCost,
         canAfford,
         hasAffinity,
+        hasLodgingSpace,
+        lodgingCapacity,
         handlers: {
             handleTalk,
             handleNamedPromptOption,

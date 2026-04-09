@@ -21,6 +21,6 @@ export const SHOP_CONFIG = {
     QUEUE_PROCESS_DELAY_MS: 1000,   // 카운터가 비었을 때 대기열의 다음 손님이 이동할 때까지의 시간
 
     // 주점 퇴거 확률
-    TAVERN_DEPARTURE_CHANCE: 0.7,   // 하루가 끝날 때 고용되지 않은 방문자가 떠날 확률 (70%)
-    TAVERN_RETURN_CHANCE: 0.2       // 하루가 시작될 때 떠났던 방문자가 다시 돌아올 확률 (20%)
-};
+    TAVERN_DEPARTURE_CHANCE: 0.5,   // 하루가 끝날 때 고용되지 않은 방문자가 떠날 확률 (50%)
+    TAVERN_RETURN_CHANCE: 0.35      // 하루가 시작될 때 떠났던 방문자가 다시 돌아올 확률 (35%)
+}; 

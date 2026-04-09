@@ -5,6 +5,8 @@ import { Mercenary } from '../../models/Mercenary';
 import { getAssetUrl } from '../../utils';
 import { SfxButton } from '../common/ui/SfxButton';
 import { AnimatedMercenary } from '../common/ui/AnimatedMercenary';
+import { useGame } from '../../context/GameContext';
+import { t } from '../../utils/i18n';
 
 interface MercenaryInviteModalProps {
     mercenary: Mercenary | null;
@@ -13,6 +15,8 @@ interface MercenaryInviteModalProps {
 }
 
 export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ mercenary, onConfirm, onClose }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
     const [revealStage, setRevealStage] = useState<'hidden' | 'scanning' | 'revealed'>('hidden');
     const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50 });
     const skipRef = useRef(false);
@@ -77,7 +81,7 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
                     <div className="p-4 border-b border-stone-800 flex items-center justify-between bg-stone-950/50">
                         <div className="flex items-center gap-2">
                             <UserPlus className="w-4 h-4 text-amber-500" />
-                            <h2 className="text-xs font-black uppercase tracking-widest font-serif italic text-stone-300">New Visitor Approaching</h2>
+                            <h2 className="text-xs font-black uppercase tracking-widest font-serif italic text-stone-300">{t(language, 'tavern.new_visitor_approaching')}</h2>
                         </div>
                     </div>
 
@@ -150,7 +154,7 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
                             }`}
                         >
                             <Check className="w-4 h-4" />
-                            Welcome to the Town
+                            {t(language, 'tavern.welcome_to_town')}
                         </SfxButton>
                     </div>
                 </motion.div>

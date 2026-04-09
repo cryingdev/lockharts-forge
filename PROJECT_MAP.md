@@ -31,6 +31,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `config/dungeon-config.ts`: Expedition energy and recovery constants.
 - `config/derived-stats-config.ts`: Combat formulas and attribute scaling weights.
 - `config/shop-config.ts`: Customer arrival intervals and patience timers.
+- `config/tavern-config.ts`: Tavern lodging base capacity, expansion thresholds, and upgrade costs.
 
 ---
 
@@ -44,7 +45,7 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Reducer Modules (`state/reducer/`)
 - `state/reducer/crafting.ts`: Start/Finish crafting, exp gain, and mastery tracking.
 - `state/reducer/inventory.ts`: Item acquisition, consumption, selling, locking, and **Skill Application**.
-- `state/reducer/mercenary.ts`: Scouting, hiring, stat allocation, gifting, named conversation answers, and relationship-based tavern progression.
+- `state/reducer/mercenary.ts`: Scouting, hiring, lodging-cap checks, stat allocation, gifting, named conversation answers, and relationship-based tavern progression.
 - `state/reducer/expedition.ts`: Auto-expedition lifecycle and reward claiming.
 - `state/reducer/manualDungeon.ts`: Grid movement, floor transitions, and **Immersive Narrative Logic**.
 - `state/reducer/shop.ts`: Shop open/close, queue management, and customer refusal.
@@ -53,6 +54,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `state/reducer/research.ts`: Research combination logic for discovering blueprints.
 - `state/reducer/market-affinity.ts`: Garrick relationship tracking.
 - `state/reducer/repair.ts`: Forge facility restoration logic.
+- `state/reducer/tavern.ts`: Tavern lodging expansion and Tavern-specific upgrade handling.
 - `state/reducer/sleep.ts`: End-of-day cleanup, recovery, and daily financials.
 - `state/reducer/events.ts`: Global event trigger and journal toggling.
 

@@ -324,6 +324,7 @@ export interface TavernState {
   reputation: number;
   lastInviteDay: number;
   inviteCountToday: number;
+  lodgingLevel: number;
 }
 
 export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED' | 'MARKET' | 'SMITHING';

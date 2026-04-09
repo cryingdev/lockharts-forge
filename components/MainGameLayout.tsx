@@ -222,7 +222,9 @@ const TutorialOverlay = ({ step }: { step: string }) => {
                 <div key={config.targetId} className="absolute animate-in fade-in zoom-in-95 duration-300" style={pointerStyles}>
                     <div className={`flex items-center ${containerLayout} ${animationClass}`}>
                         <Pointer className="w-8 h-8 md:w-12 md:h-12 text-amber-400 fill-amber-500/20 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ transform: iconRotation }} />
-                        <div className={`${labelMargin} px-4 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase rounded-full shadow-2xl border-2 border-amber-400`}>{t(language, config.labelKey, { forgeName: getForgeName(state) })}</div>
+                        <div className={`${labelMargin} min-w-max whitespace-nowrap px-5 py-1.5 bg-amber-600 text-white text-[10px] md:text-xs font-black uppercase rounded-full shadow-2xl border-2 border-amber-400`}>
+                            {t(language, config.labelKey, { forgeName: getForgeName(state) })}
+                        </div>
                     </div>
                 </div>
             )}

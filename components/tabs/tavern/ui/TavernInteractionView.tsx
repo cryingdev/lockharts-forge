@@ -28,7 +28,7 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
     const inter = useTavernInteraction(mercenary);
     const { 
         state, actions, dialogue, followupText, activeNamedPrompt, showGiftMenu, setShowGiftMenu,
-        pendingGiftItem, floatingHearts, step, hiringCost, canAfford, hasAffinity, handlers 
+        pendingGiftItem, floatingHearts, step, hiringCost, canAfford, hasAffinity, hasLodgingSpace, lodgingCapacity, handlers 
     } = inter;
     const language = state.settings.language;
 
@@ -134,12 +134,13 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                                 <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">{t(language, 'tavern.action_fire')}</span>
                             </SfxButton>
                         ) : (
-                            <SfxButton onClick={handlers.handleRecruitInit} disabled={!canAfford || !hasAffinity || !canHireNamed} className={`${btnBaseClass} ${(!canAfford || !hasAffinity || !canHireNamed) ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'}`}>
+                            <SfxButton onClick={handlers.handleRecruitInit} disabled={!canAfford || !hasAffinity || !canHireNamed || !hasLodgingSpace} className={`${btnBaseClass} ${(!canAfford || !hasAffinity || !canHireNamed || !hasLodgingSpace) ? 'bg-stone-950/80 border-stone-800 text-stone-600 grayscale cursor-not-allowed' : 'bg-amber-900/65 hover:bg-amber-800 border-amber-500 text-white'}`}>
                                 <UserPlus className="w-3.5 h-3.5 md:w-5 md:h-5" />
                                 <div className="flex flex-col items-center leading-none">
                                     <span className="font-black text-[8px] md:text-xs uppercase tracking-widest">{t(language, 'tavern.action_hire')}</span>
-                                    {hasAffinity && canHireNamed && <span className="text-[6px] md:text-[8px] font-mono opacity-80 mt-0.5">{hiringCost}G</span>}
+                                    {hasAffinity && canHireNamed && hasLodgingSpace && <span className="text-[6px] md:text-[8px] font-mono opacity-80 mt-0.5">{hiringCost}G</span>}
                                     {isNamed && !canHireNamed && <span className="text-[6px] md:text-[8px] font-mono text-red-500 mt-0.5">{t(language, 'tavern.locked')}</span>}
+                                    {canHireNamed && !hasLodgingSpace && <span className="text-[6px] md:text-[8px] font-mono text-red-400 mt-0.5">{t(language, 'tavern.lodging_full_short', { capacity: lodgingCapacity })}</span>}
                                 </div>
                             </SfxButton>
                         )}

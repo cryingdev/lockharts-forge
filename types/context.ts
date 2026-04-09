@@ -50,6 +50,7 @@ export interface GameContextType {
     talkMercenary: (mercenaryId: string) => void;
     answerNamedConversationPrompt: (mercenaryId: string, promptId: string, optionId: string) => void;
     buyDrink: (mercenaryId: string) => void;
+    expandTavernLodging: () => void;
     talkGarrick: () => void;
     giftGarrick: (payload: { itemId: string }) => void;
     // Added researchCombination to actions interface to fix TS error in useResearch.ts
