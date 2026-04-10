@@ -779,6 +779,16 @@ export const handleFailContract = (state: GameState, contractId: string): GameSt
     };
 };
 
+export const handleDismissExpiredContract = (state: GameState, contractId: string): GameState => {
+    return {
+        ...state,
+        commission: {
+            ...state.commission,
+            expiredContracts: state.commission.expiredContracts.filter(c => c.id !== contractId)
+        }
+    };
+};
+
 export const handleUpdateContractObjectiveProgress = (
     state: GameState, 
     payload: { contractId: string; objectiveId: string; amount: number }

@@ -176,6 +176,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
         dispatch({ type: 'UPDATE_CONTRACT_OBJECTIVE_PROGRESS', payload: { contractId, objectiveId, amount } }),
     claimObjectiveContract: (contractId: string) => dispatch({ type: 'CLAIM_OBJECTIVE_CONTRACT', payload: { contractId } }),
     failContract: (contractId: string) => dispatch({ type: 'FAIL_CONTRACT', payload: { contractId } }),
+    dismissExpiredContract: (contractId: string) => dispatch({ type: 'DISMISS_EXPIRED_CONTRACT', payload: { contractId } }),
     refreshCommissions: () => dispatch({ type: 'REFRESH_COMMISSIONS' }),
     generateTavernMinorContract: (mercenaryId: string, templateId: string) => dispatch({ type: 'GENERATE_TAVERN_MINOR_CONTRACT', payload: { mercenaryId, templateId } }),
     unlockNamedEncounter: (mercenaryId: string) => dispatch({ type: 'UNLOCK_NAMED_ENCOUNTER', payload: { mercenaryId } }),

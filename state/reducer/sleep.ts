@@ -144,15 +144,15 @@ export const handleConfirmSleep = (state: GameState): GameState => {
     // --- Commission System Updates ---
     const decrementedContracts = state.commission.activeContracts
         .map(c => ({ ...c, daysRemaining: (c.daysRemaining || 0) - 1 }));
-    const expiredContracts = decrementedContracts
-        .filter(c => (c.daysRemaining || 0) <= 0)
-        .map(c => ({ ...c, status: 'EXPIRED' as const }));
+    const expiredAcceptedContracts = decrementedContracts
+        .filter(c => c.status === 'ACTIVE' && (c.daysRemaining || 0) <= 0)
+        .map(c => ({ ...c, status: 'FAILED' as const }));
     const updatedActiveContracts = decrementedContracts
         .filter(c => (c.daysRemaining || 0) > 0);
     
-    const expiredCount = expiredContracts.length;
+    const expiredCount = expiredAcceptedContracts.length;
     if (expiredCount > 0) {
-        recoveryLogs.push(`${expiredCount} commission(s) have expired.`);
+        recoveryLogs.push(`${expiredCount} accepted commission(s) expired before completion.`);
     }
 
     const updatedNamedEncounters = { ...state.commission.namedEncounters };
@@ -190,7 +190,7 @@ export const handleConfirmSleep = (state: GameState): GameState => {
         commission: {
             ...state.commission,
             activeContracts: updatedActiveContracts,
-            expiredContracts: [...expiredContracts, ...state.commission.expiredContracts],
+            expiredContracts: [...expiredAcceptedContracts, ...state.commission.expiredContracts],
             namedEncounters: updatedNamedEncounters
         },
         knownMercenaries: updatedMercenaries,

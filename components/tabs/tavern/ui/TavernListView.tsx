@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BedDouble, PlusCircle, Star, Users, UserRound, ShieldAlert, ClipboardList, Coins, Clock, Sword, Hammer, Package, Trophy } from 'lucide-react';
 import { MercenaryCard } from './MercenaryCard';
 import { SfxButton } from '../../../common/ui/SfxButton';
@@ -48,6 +48,8 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
     const { state, actions } = useGame();
     const language = state.settings.language;
     const commissionScrollRef = useRef<HTMLDivElement>(null);
+    const contractCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const [focusedContractId, setFocusedContractId] = useState<string | null>(null);
     const allContracts = [...availableContracts, ...acceptedContracts].sort((a, b) => {
         const getPriority = (contract: ContractDefinition) => {
             if (contract.status === 'ACTIVE' && isContractReady(state, contract)) return 0;
@@ -60,10 +62,43 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
         return (a.daysRemaining || 99) - (b.daysRemaining || 99);
     });
 
+    const firstReadyContract = useMemo(
+        () => allContracts.find(contract => contract.status === 'ACTIVE' && isContractReady(state, contract)) || null,
+        [allContracts, state]
+    );
+
     useEffect(() => {
-        if (!commissionScrollRef.current) return;
-        commissionScrollRef.current.scrollTo({ left: 0, behavior: 'auto' });
-    }, []);
+        const targetId = firstReadyContract?.id;
+
+        if (!targetId) {
+            if (commissionScrollRef.current) {
+                commissionScrollRef.current.scrollTo({ left: 0, behavior: 'auto' });
+            }
+            setFocusedContractId(null);
+            return;
+        }
+
+        const targetCard = contractCardRefs.current[targetId];
+        if (!targetCard) return;
+
+        const timer = window.setTimeout(() => {
+            targetCard.scrollIntoView({
+                behavior: 'smooth',
+                inline: 'start',
+                block: 'nearest'
+            });
+            setFocusedContractId(targetId);
+        }, 80);
+
+        return () => window.clearTimeout(timer);
+    }, [firstReadyContract, allContracts.length]);
+
+    useEffect(() => {
+        if (!focusedContractId) return;
+        const timer = window.setTimeout(() => setFocusedContractId(null), 2200);
+        return () => window.clearTimeout(timer);
+    }, [focusedContractId]);
+
 
     const getKindIcon = (kind?: string) => {
         switch (kind) {
@@ -167,10 +202,14 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
                             allContracts.map(contract => {
                                 const isAccepted = contract.status === 'ACTIVE';
                                 const isReady = isAccepted && isContractReady(state, contract);
+                                const isFocusedReady = focusedContractId === contract.id;
 
                                 return (
                                     <div 
                                         key={contract.id}
+                                        ref={(node) => {
+                                            contractCardRefs.current[contract.id] = node;
+                                        }}
                                         onClick={() => onSelectContract(contract.id)}
                                         className={`flex-shrink-0 w-64 bg-stone-900/80 border rounded-xl p-3 flex flex-col gap-2 cursor-pointer transition-all snap-start active:scale-[0.98] relative overflow-hidden ${
                                             isReady 
@@ -178,7 +217,7 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
                                             : isAccepted 
                                             ? 'border-stone-800 opacity-60 grayscale-[0.5]' 
                                             : 'border-stone-800 hover:border-amber-900/50 hover:bg-stone-800/90'
-                                        }`}
+                                        } ${isFocusedReady ? 'ring-2 ring-emerald-400/70 shadow-[0_0_24px_rgba(52,211,153,0.28)]' : ''}`}
                                     >
                                         {isReady && (
                                             <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[7px] font-black px-1.5 py-0.5 uppercase tracking-tighter rounded-bl-lg shadow-lg z-10">

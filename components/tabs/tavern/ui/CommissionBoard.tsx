@@ -9,6 +9,8 @@ import {
     Shield,
     Flame,
     HelpCircle,
+    ChevronDown,
+    ChevronUp,
     X,
     ClipboardList
 } from 'lucide-react';
@@ -34,6 +36,7 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
     const { state, actions } = useGame();
     const [activeTab, setActiveTab] = useState<Tab>('available');
     const [openIssuerHelp, setOpenIssuerHelp] = useState<BoardIssuerId | null>(null);
+    const [isIssuerFavorExpanded, setIsIssuerFavorExpanded] = useState(false);
     const language = state.settings.language;
 
     const available = selectAvailableContracts(state);
@@ -75,28 +78,46 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
         return t(language, `commission.affinity_desc_${getIssuerAffinityTier(affinity)}`);
     };
 
+    const getIssuerLabel = (issuerId: BoardIssuerId, fallback: string) => {
+        switch (issuerId) {
+            case 'TOWN_GUARD':
+                return t(language, 'commission.issuer_town_guard');
+            case 'ASHFIELD_TRADERS':
+                return t(language, 'commission.issuer_ashfield_traders');
+            case 'CHAPEL_OF_EMBER':
+                return t(language, 'commission.issuer_chapel_of_ember');
+            case 'ADVENTURERS_GUILD':
+                return t(language, 'commission.issuer_adventurers_guild');
+            default:
+                return fallback;
+        }
+    };
+
     return (
-        <div className="flex flex-col h-full bg-stone-950/40 backdrop-blur-md border border-stone-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="relative flex flex-col h-full bg-gradient-to-b from-[#4a3527] via-[#35261c] to-[#251a13] border border-[#6a4d35] rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+            <div className="pointer-events-none absolute inset-[1px] rounded-[inherit] border border-[#8c6747]/30" />
+            <div className="pointer-events-none absolute inset-0 opacity-34 [background-image:linear-gradient(180deg,rgba(255,255,255,0.04),transparent_18%,transparent_82%,rgba(0,0,0,0.12)),repeating-linear-gradient(8deg,rgba(120,82,54,0.18)_0px,rgba(120,82,54,0.18)_4px,rgba(74,52,37,0.08)_4px,rgba(74,52,37,0.08)_14px)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#745239]/18 to-transparent" />
             {/* Header */}
-            <div className="p-4 border-b border-stone-800 bg-stone-900/60 flex justify-between items-center">
+            <div className="relative p-4 border-b border-[#6a4d35] bg-gradient-to-b from-[#5f4432] to-[#443023] flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-900/30 rounded-lg border border-amber-700/50">
+                    <div className="p-2 bg-amber-900/35 rounded-lg border border-amber-700/50">
                         <ClipboardList className="w-5 h-5 text-amber-500" />
                     </div>
                     <div>
                         <h2 className="text-lg font-black text-stone-100 uppercase tracking-tighter">{t(language, 'commission.board_title')}</h2>
-                        <p className="text-[10px] text-stone-500 uppercase tracking-widest font-bold">{t(language, 'commission.board_subtitle')}</p>
+                        <p className="text-[10px] text-stone-400 uppercase tracking-widest font-bold">{t(language, 'commission.board_subtitle')}</p>
                     </div>
                 </div>
                 {onClose && (
-                    <SfxButton sfx="switch" onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 transition-colors">
+                    <SfxButton sfx="switch" onClick={onClose} className="p-2 hover:bg-[#4b3729] rounded-full text-stone-400 transition-colors">
                         <X className="w-5 h-5" />
                     </SfxButton>
                 )}
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-stone-800 bg-stone-950/40 p-1 gap-1">
+            <div className="relative flex border-b border-[#6a4d35] bg-[#32241b] p-1 gap-1">
                 {(['available', 'accepted', 'ready', 'expired'] as Tab[]).map((tab) => {
                     const count = tab === 'available' ? available.length :
                                   tab === 'accepted' ? accepted.length :
@@ -113,12 +134,12 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                             className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                                 isActive 
                                 ? 'bg-amber-600 text-stone-950 shadow-lg' 
-                                : 'text-stone-500 hover:bg-stone-800/50'
+                                : 'text-stone-400 hover:bg-[#4b3729]/60'
                             }`}
                         >
                             {t(language, `commission.${tab}`)}
                             {count > 0 && (
-                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${isActive ? 'bg-stone-950 text-amber-500' : 'bg-stone-800 text-stone-400'}`}>
+                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${isActive ? 'bg-[#2a1f18] text-amber-500' : 'bg-[#433126] text-stone-300'}`}>
                                     {count}
                                 </span>
                             )}
@@ -127,79 +148,91 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                 })}
             </div>
 
-            <div className="border-b border-stone-800 bg-stone-950/50 p-3">
-                <div className="flex items-center gap-2 mb-3">
+            <div className="relative border-b border-[#6a4d35] bg-[#31231a] p-3">
+                <SfxButton
+                    sfx="switch"
+                    onClick={() => setIsIssuerFavorExpanded(prev => !prev)}
+                    className="flex w-full items-center gap-2 rounded-xl border border-[#5b4330] bg-[#37281f] px-3 py-2.5 text-left transition-colors hover:bg-[#433126]"
+                >
                     <Heart className="w-4 h-4 text-sky-400" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                         <h3 className="text-[11px] font-black uppercase tracking-widest text-stone-200">
                             {t(language, 'commission.issuer_favor_title')}
                         </h3>
-                        <p className="text-[9px] uppercase tracking-widest font-bold text-stone-500">
+                        <p className="text-[9px] uppercase tracking-widest font-bold text-stone-400">
                             {t(language, 'commission.issuer_favor_subtitle')}
                         </p>
                     </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {BOARD_ISSUER_PROFILES.map((issuer) => {
-                        const affinity = state.commission.issuerAffinity[issuer.id] || 0;
-                        const isHelpOpen = openIssuerHelp === issuer.id;
+                    {isIssuerFavorExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-stone-400" />
+                    ) : (
+                        <ChevronDown className="w-4 h-4 text-stone-400" />
+                    )}
+                </SfxButton>
+                {isIssuerFavorExpanded && (
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {BOARD_ISSUER_PROFILES.map((issuer) => {
+                            const affinity = state.commission.issuerAffinity[issuer.id] || 0;
+                            const isHelpOpen = openIssuerHelp === issuer.id;
 
-                        return (
-                            <div
-                                key={issuer.id}
-                                className="rounded-xl border border-stone-800 bg-stone-900/70 px-3 py-2"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <div className="p-1.5 rounded-md bg-stone-950/70 text-stone-300 border border-stone-800">
-                                            {getIssuerIcon(issuer.id)}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="text-[11px] font-bold text-stone-200 truncate">{issuer.displayName}</div>
-                                                <SfxButton
-                                                    sfx="switch"
-                                                    onClick={() => setOpenIssuerHelp(isHelpOpen ? null : issuer.id)}
-                                                    className={`shrink-0 p-1 rounded-full border transition-colors ${
-                                                        isHelpOpen
-                                                            ? 'border-sky-500/40 bg-sky-950/30 text-sky-300'
-                                                            : 'border-stone-800 bg-stone-950/60 text-stone-500 hover:text-stone-300'
-                                                    }`}
-                                                    title={t(language, 'commission.issuer_favor_help')}
-                                                >
-                                                    <HelpCircle className="w-3 h-3" />
-                                                </SfxButton>
+                            return (
+                                <div
+                                    key={issuer.id}
+                                    className="rounded-xl border border-[#6a4d35] bg-[#3b2a1f] px-3 py-2"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className="p-1.5 rounded-md bg-[#251a13] text-stone-300 border border-[#5c422d]">
+                                                {getIssuerIcon(issuer.id)}
                                             </div>
-                                            <div className="text-[9px] uppercase tracking-widest font-black text-stone-500">
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="text-[11px] font-bold text-stone-200 truncate">{getIssuerLabel(issuer.id, issuer.displayName)}</div>
+                                                    <SfxButton
+                                                        sfx="switch"
+                                                        onClick={() => setOpenIssuerHelp(isHelpOpen ? null : issuer.id)}
+                                                        className={`shrink-0 p-1 rounded-full border transition-colors ${
+                                                            isHelpOpen
+                                                                ? 'border-sky-500/40 bg-sky-950/30 text-sky-300'
+                                                                : 'border-[#5c422d] bg-[#251a13] text-stone-500 hover:text-stone-300'
+                                                        }`}
+                                                        title={t(language, 'commission.issuer_favor_help')}
+                                                    >
+                                                        <HelpCircle className="w-3 h-3" />
+                                                    </SfxButton>
+                                                </div>
+                                                <div className="text-[9px] uppercase tracking-widest font-black text-stone-500">
+                                                    {t(language, `commission.affinity_tier_${getIssuerAffinityTier(affinity)}`)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-black text-sky-300">{affinity}</div>
+                                            <div className="text-[9px] uppercase tracking-widest font-bold text-stone-600">
+                                                {t(language, 'commission.issuer_favor_label')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {isHelpOpen && (
+                                        <div className="mt-2 rounded-lg border border-sky-500/20 bg-sky-950/20 px-3 py-2">
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">
                                                 {t(language, `commission.affinity_tier_${getIssuerAffinityTier(affinity)}`)}
                                             </div>
+                                            <div className="mt-1 text-[11px] leading-relaxed text-stone-300">
+                                                {getIssuerTierDescription(affinity)}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-sm font-black text-sky-300">{affinity}</div>
-                                        <div className="text-[9px] uppercase tracking-widest font-bold text-stone-600">
-                                            {t(language, 'commission.issuer_favor_label')}
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
-                                {isHelpOpen && (
-                                    <div className="mt-2 rounded-lg border border-sky-500/20 bg-sky-950/20 px-3 py-2">
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">
-                                            {t(language, `commission.affinity_tier_${getIssuerAffinityTier(affinity)}`)}
-                                        </div>
-                                        <div className="mt-1 text-[11px] leading-relaxed text-stone-300">
-                                            {getIssuerTierDescription(affinity)}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            <div className="relative flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gradient-to-b from-[#2f2119] via-[#2a1e17] to-[#241912]">
+                <div className="pointer-events-none absolute inset-x-4 top-[11.4rem] bottom-4 rounded-[1.2rem] border border-[#6a4d35]/55 shadow-[inset_0_1px_0_rgba(255,238,210,0.04)]" />
                 {currentContracts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 text-stone-600">
                         <Package className="w-12 h-12 mb-4 opacity-20" />
@@ -209,7 +242,7 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                 ) : (
                     <>
                         {bossContracts.length > 0 && (
-                            <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-950/20 via-stone-900/70 to-stone-950/80 p-3 shadow-[0_0_28px_rgba(245,158,11,0.08)]">
+                            <div className="rounded-2xl border border-[#8a6539] bg-gradient-to-br from-[#473225] via-[#34261d] to-[#271c15] p-3 shadow-[inset_0_1px_0_rgba(255,244,212,0.06)]">
                                 <div className="flex items-center gap-2 mb-3">
                                     <div className="p-2 rounded-lg border border-amber-500/30 bg-amber-950/30">
                                         <Trophy className="w-4 h-4 text-amber-400" />
@@ -229,6 +262,7 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                                             key={contract.id}
                                             contract={contract}
                                             activeTab={activeTab}
+                                            visualStyle="parchment"
                                         />
                                     ))}
                                 </div>
@@ -240,6 +274,7 @@ export const CommissionBoard: React.FC<CommissionBoardProps> = ({ onClose }) => 
                                 key={contract.id} 
                                 contract={contract} 
                                 activeTab={activeTab} 
+                                visualStyle="parchment"
                             />
                         ))}
                     </>

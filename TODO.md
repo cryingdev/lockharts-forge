@@ -258,4 +258,49 @@
 - `/Users/cryingdev/GitHub/lockharts-forge/data/materials.ts`
 - `/Users/cryingdev/GitHub/lockharts-forge/data/market/market-catalog.ts`
 - `/Users/cryingdev/GitHub/lockharts-forge/GAME_DESIGN.md`
+
+## Commission Board Material / Interaction Follow-Up
+
+### Context
+- The Tavern commission board now has a wood-shell and parchment-card visual direction.
+- The current look is intentionally a CSS-first stopgap and is good enough for now, but it still relies on gradients and overlays instead of final prop-style art and tactile interaction.
+
+### Deferred Feature 1
+- Add a reusable blank parchment background asset for commission cards and parchment-like contract surfaces.
+- Prefer a neutral parchment that can support:
+  - normal commission cards
+  - named/personal request variants
+  - future journal / notice / letter reuse if needed
+
+### Design Notes To Revisit
+- The parchment should feel like a pinned notice rather than a glowing modal card.
+- Keep edge wear, slight discoloration, and paper grain subtle enough for long-form text readability.
+- Decide whether the parchment asset should support:
+  - baked torn / singed edges,
+  - separate overlay layers for stains and folds,
+  - or a cleaner single-image background for easier theming.
+
+### Deferred Feature 2
+- Replace the plain `Accept Contract` button interaction with a more tactile contract-confirmation action.
+- Candidate directions:
+  - press a wax seal / stamp onto the parchment
+  - sign the contract by dragging or tapping a signature mark
+  - stamp an approval insignia with a short SFX + animation
+
+### Interaction Questions To Revisit
+- Should acceptance be:
+  - a one-tap flourish,
+  - a short hold interaction,
+  - or a tiny contextual minigame?
+- Should the action change visually depending on contract source or issuer?
+- Should the board show a post-acceptance mark such as:
+  - sealed,
+  - signed,
+  - or archived?
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/components/tabs/tavern/ui/CommissionBoard.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/components/tabs/tavern/ui/CommissionCard.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/components/common/ui/SfxButton.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/GAME_DESIGN.md`
 - `/Users/cryingdev/GitHub/lockharts-forge/TECH_DESIGN.md`

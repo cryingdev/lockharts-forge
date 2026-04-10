@@ -141,7 +141,7 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
 
             {/* Commission Board Modal */}
             {showCommissionBoard && (
-                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-stone-950/42 backdrop-blur-[2px] p-4">
                     <div className="w-full max-w-2xl h-[80vh] animate-in zoom-in-95">
                         <CommissionBoard onClose={() => setShowCommissionBoard(false)} />
                     </div>

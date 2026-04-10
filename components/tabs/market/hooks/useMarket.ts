@@ -9,6 +9,30 @@ import { getPlayerName } from '../../../../utils/gameText';
 import { EquipmentRarity } from '../../../../models/Equipment';
 import { getLocalizedItemName } from '../../../../utils/itemText';
 
+const MARKET_COLLAPSED_SECTIONS_COOKIE = 'market_collapsed_sections_v1';
+
+const readMarketCollapsedSectionsCookie = (): string[] => {
+    if (typeof document === 'undefined') return [];
+    const cookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith(`${MARKET_COLLAPSED_SECTIONS_COOKIE}=`));
+
+    if (!cookie) return [];
+
+    try {
+        const rawValue = decodeURIComponent(cookie.split('=').slice(1).join('='));
+        const parsed = JSON.parse(rawValue);
+        return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
+    } catch {
+        return [];
+    }
+};
+
+const writeMarketCollapsedSectionsCookie = (collapsedSections: string[]) => {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${MARKET_COLLAPSED_SECTIONS_COOKIE}=${encodeURIComponent(JSON.stringify(collapsedSections))}; path=/; max-age=31536000; samesite=lax`;
+};
+
 export type MarketViewMode = 'INTERACTION' | 'CATALOG';
 
 export interface FloatingHeart {
@@ -31,7 +55,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     const [showGiftModal, setShowGiftModal] = useState(false);
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
-    const [collapsedSections, setCollapsedSections] = useState<string[]>([]);
+    const [collapsedSections, setCollapsedSections] = useState<string[]>(() => readMarketCollapsedSectionsCookie());
 
     const { hasFurnace, hasWorkbench } = state.forge;
     const currentTier = state.stats.tierLevel;
@@ -118,6 +142,17 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
             { id: 'fac', nameKey: 'market.section_facilities', items: groups.fac },
         ].filter(g => g.items.length > 0);
     }, [hasFurnace, hasWorkbench, currentTier, state.tutorialStep]);
+
+    useEffect(() => {
+        setCollapsedSections(prev => {
+            const visibleIds = categorizedMarketItems.map(group => group.id);
+            return prev.filter(id => visibleIds.includes(id));
+        });
+    }, [categorizedMarketItems]);
+
+    useEffect(() => {
+        writeMarketCollapsedSectionsCookie(collapsedSections);
+    }, [collapsedSections]);
 
     const addToCart = (itemId: string, amount: number = 1) => {
         if (itemId === 'scroll_t2' && state.garrickAffinity < 20) {
