@@ -80,7 +80,33 @@ The commission system is split into repeatable economy contracts and named recru
 -   **Special Contracts**:
     -   Spawn only after explicit progression conditions are met.
     -   Use controlled encounter windows instead of pure tavern-invite randomness.
-    -   Completing the contract unlocks the named mercenary as recruitable.
+-   Completing the contract unlocks the named mercenary as recruitable.
+
+### 4.5 Manual Dungeon Camp Tile
+-   `manualDungeon` should reserve a dedicated room/tile type for `CAMP`.
+-   Current intended rules:
+    -   spawn chance target: `5%`
+    -   manual interaction only; no automatic trigger on enter
+    -   entering the tile opens a discovery dialogue instead
+    -   the player can choose to use the camp immediately or leave it unused for now
+    -   if left unused, the tile remains interactable until the player leaves the floor
+    -   once the player ascends, that floor and its unused camp are permanently inaccessible
+    -   using the camp consumes it permanently
+-   Recovery behavior:
+    -   apply per-mercenary recovery equal to `floor(maxHp * 0.5)` and `floor(maxMp * 0.5)`
+    -   add the recovered amount to current HP / MP
+    -   clamp the result to max HP / MP
+-   Recommended implementation shape:
+    -   `models/Dungeon.ts` / manual dungeon grid should support a `CAMP` tile marker
+    -   `state/reducer/manualDungeon.ts` should:
+        -   recognize camp discovery on movement
+        -   store whether the current camp has been discovered and whether it has been consumed
+        -   expose `USE_CAMP` / `LEAVE_CAMP` style actions
+    -   `components/tabs/dungeon/AssaultNavigator.tsx` should render the discovery dialogue and choices
+-   Important UX note:
+    -   the camp discovery dialogue is not the same as using the camp
+    -   choosing `Move On` must not consume the tile
+    -   later return on the same floor must still allow usage
 
 #### 4.4.1 Data Modeling (`types/`)
 The recommended addition is a contract-focused slice in `/types/game-state.ts`.

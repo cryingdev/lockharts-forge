@@ -216,6 +216,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
             let maxHp = merc.maxHp;
             let maxMp = merc.maxMp;
             let currentHp = merc.currentHp;
+            const wasDowned = currentHp < 1;
             
             let bonusStatPoints = merc.bonusStatPoints || 0;
             if (level > levelBefore) {
@@ -229,8 +230,9 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
             let nextStatus: MercenaryStatus = 'HIRED';
             let recoveryUntilDay: number | undefined = undefined;
 
-            if (currentHp < 1) {
+            if (wasDowned) {
                 nextStatus = 'INJURED' as const;
+                currentHp = 1;
                 recoveryUntilDay = stateWithProgress.stats.day + Math.floor(rng.standard(1, 2, 0)) + 1;
             }
 
@@ -243,7 +245,7 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
                 xpGained: xpToAdd,
                 currentXp: currentXp,
                 xpToNext: xpToNext,
-                statusChange: currentHp < 1 ? 'INJURED' : 'NONE'
+                statusChange: wasDowned ? 'INJURED' : 'NONE'
             });
 
             return {

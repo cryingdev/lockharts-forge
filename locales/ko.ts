@@ -103,6 +103,7 @@ const ko = {
     overwrite_progress: '진행 상황을 덮어쓸까요?',
     overwrite_progress_desc: '불러오기를 하면 저장되지 않은 진행 상황이 사라집니다.',
     load_failed_version_mismatch: '불러오기에 실패했습니다: 버전이 맞지 않습니다.',
+    load_failed_migration: '불러오기에 실패했습니다: 세이브 마이그레이션에 실패했습니다.',
   },
   save: {
     day_label: '{day}일차',
@@ -138,6 +139,8 @@ const ko = {
     assets_desc: '픽셀 아트 및 아이콘: AI / 오픈소스 활용',
     tech_stack: 'React, Phaser, TypeScript로 제작',
     version_mismatch: '불러올 수 없습니다: 버전이 맞지 않습니다.\n\n세이브: v{saveVersion}\n앱: v{appVersion}',
+    save_migration_failed_title: '세이브 마이그레이션 실패',
+    save_migration_failed_message: '기존 세이브를 현재 버전으로 변환하지 못했습니다.\n\n세이브: v{saveVersion}\n앱: v{appVersion}\n\n세이브 구조 확인 후 마이그레이션 규칙을 다시 점검해야 합니다.',
   },
   languages: {
     en: 'English',
@@ -233,6 +236,11 @@ const ko = {
     salvaged_resource: '쓸 만한 것을 건졌다. {item} x{count}.',
     recovered_materials: '유적에서 귀중한 재료를 회수했다.',
     trap_triggered: '발밑에서 철컥 소리가 났다. 함정이 분대를 덮친다!',
+    camp_discovered: '희미한 불씨가 남은 야영지다. 여기서 잠시 숨을 고를 수 있을 것 같다.',
+    camp_rest_complete: '모닥불 곁에서 전열을 가다듬었다. 아직 더 나아갈 수 있다.',
+    camp_saved_for_later: '일단 지나친다. 필요하면 같은 층에서 다시 돌아와 쉬어도 된다.',
+    camp_exhausted: '불씨는 이미 식었다. 이 야영지는 더 이상 쓸 수 없다.',
+    camp_rest_log: '분대가 야영지에서 잠시 쉬며 체력과 마나를 회복했다.',
     key_obtained: '철 열쇠를 손에 넣었다.',
     key_hint: '철 열쇠다... 이 구역의 주인을 향한 길에 쓰일 듯하다.',
     enemy_detected: '앞에서 움직임이 포착됐다. 무기를 들어라.',
@@ -332,6 +340,8 @@ const ko = {
     stay_in_sector: '이곳에 남는다',
     resume_search: '수색을 이어간다',
     end_mission: '원정을 끝낸다',
+    use_camp: '야영지를 사용한다',
+    move_on: '그냥 진행한다',
     abort_title: '원정을 중단할까요?',
     abort_message: '철수하면 분대는 안전하게 돌아오지만, 이번 탐사 보상은 회수하지 못합니다.',
   },
@@ -414,6 +424,9 @@ const ko = {
     abort_message: '지금 분대를 불러들이면 탐사는 끝나고 전리품도 모두 포기하게 됩니다. 계속할까요?',
     abort_confirm: '분대를 불러들인다',
     abort_cancel: '계속 버틴다',
+    shop_open_entry_title: '상점이 아직 영업 중입니다',
+    shop_open_entry_message: '상점이 영업 중인 상태에서 던전에 들어가면, 당신이 자리를 비운 동안에도 손님들은 계속 찾아옵니다.\n그래도 지금 바로 던전에 진입하시겠습니까?',
+    shop_open_entry_confirm: '진입',
   },
   dungeons: {
     dungeon_t1_sewers: {

@@ -332,6 +332,31 @@ Dungeons provide the rare materials needed for higher-tier equipment.
 -   **Loot**: Monster drops are the only way to get items like *Wolf Fangs* or *Acidic Slime Cores*.
 -   **Energy**: Mercenaries have a limited "Expedition Energy" (max 100) that recovers slowly over days.
 
+#### 3.4.3 Camp Tiles
+-   **Spawn Rate**: Camp tiles are rare. Each eligible manual-dungeon tile roll should treat `CAMP` as roughly a `5%` outcome.
+-   **Discovery Flow**:
+    -   Entering a camp tile does **not** trigger recovery immediately.
+    -   The player first gets a short discovery dialogue explaining that a usable camp has been found.
+    -   The dialogue presents two choices:
+        -   **Use Camp**
+        -   **Move On**
+-   **Deferred Use Is Allowed**:
+    -   If the player chooses `Move On`, the camp remains available.
+    -   The player may return later and use it, as long as they have not already climbed to the next floor.
+    -   Because the current manual dungeon flow does not allow descending back to a previous floor, skipping a camp before ascending can permanently waste that opportunity.
+    -   This is intentional. Camp value is partly about timing and route commitment.
+-   **One-Time Use**:
+    -   A camp tile can only be used once.
+    -   After use, it becomes exhausted and no longer grants recovery.
+-   **Recovery Amount**:
+    -   On use, each party member recovers `50%` of their own maximum HP and `50%` of their own maximum MP.
+    -   Example: a mercenary with `maxHp = 100` and `currentHp = 20` recovers `50`, ending at `70`.
+    -   Recovery should still clamp to each character's maximum HP/MP.
+-   **Design Intent**:
+    -   Camps are not a full reset.
+    -   They are rare mid-run stabilizers that reward risk assessment and floor planning.
+    -   They should create meaningful tension around whether to press deeper immediately or preserve the camp until after the next major encounter.
+
 ---
 
 ## 4. Economy & Progression

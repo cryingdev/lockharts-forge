@@ -103,6 +103,7 @@ const en = {
     overwrite_progress: 'Overwrite Progress?',
     overwrite_progress_desc: 'Loading will discard unsaved progress.',
     load_failed_version_mismatch: 'Load failed: version mismatch.',
+    load_failed_migration: 'Load failed: save migration failed.',
   },
   save: {
     day_label: 'Day {day}',
@@ -138,6 +139,8 @@ const en = {
     assets_desc: 'Pixel Art & Icons via AI/Open Source',
     tech_stack: 'Built with React, Phaser & TypeScript',
     version_mismatch: 'Cannot load: Version mismatch.\n\nSave: v{saveVersion}\nApp: v{appVersion}',
+    save_migration_failed_title: 'Save Migration Failed',
+    save_migration_failed_message: 'The existing save could not be migrated to the current version.\n\nSave: v{saveVersion}\nApp: v{appVersion}\n\nWe need to review the save structure and implement the missing migration rules.',
   },
   languages: {
     en: 'English',
@@ -233,6 +236,11 @@ const en = {
     salvaged_resource: 'Useful salvage found: {item} x{count}.',
     recovered_materials: 'Recovered valuable materials from the ruins.',
     trap_triggered: 'A click underfoot. The trap snaps shut on the squad!',
+    camp_discovered: 'A dim camp still holds a little warmth. We could catch our breath here.',
+    camp_rest_complete: 'The squad regroups beside the fire. We can keep pushing.',
+    camp_saved_for_later: 'We move on for now. If needed, we can return and use it later on this floor.',
+    camp_exhausted: 'The embers are cold. This camp has nothing left to give.',
+    camp_rest_log: 'The squad rested at the camp and recovered health and mana.',
     key_obtained: 'The iron key is ours now.',
     key_hint: "An iron key... likely meant for this sector's master.",
     enemy_detected: 'Movement ahead. Weapons ready.',
@@ -332,6 +340,8 @@ const en = {
     stay_in_sector: 'STAY HERE',
     resume_search: 'RESUME THE SEARCH',
     end_mission: 'END THE MISSION',
+    use_camp: 'USE THE CAMP',
+    move_on: 'MOVE ON',
     abort_title: 'Abort Mission?',
     abort_message: 'Extraction will return the squad to safety. No rewards will be collected.',
   },
@@ -414,6 +424,9 @@ const en = {
     abort_message: 'Calling the squad back now will abandon the delve and all spoils. Proceed?',
     abort_confirm: 'Recall the Squad',
     abort_cancel: 'Hold the Line',
+    shop_open_entry_title: 'The Shop Is Still Open',
+    shop_open_entry_message: 'If you enter the dungeon while the shop is still open, customers may continue to arrive while you are away.\nDo you still want to enter the dungeon now?',
+    shop_open_entry_confirm: 'Enter Anyway',
   },
   dungeons: {
     dungeon_t1_sewers: {

@@ -154,8 +154,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     applySkillScroll: (scrollItemId: string, targetEquipmentId: string) => dispatch({ type: 'APPLY_SKILL_SCROLL', payload: { scrollItemId, targetEquipmentId } }),
     toggleLockItem: (itemId: string) => dispatch({ type: 'TOGGLE_LOCK_ITEM', payload: { itemId } }),
     allocateStat: (mercenaryId: string, stat: keyof PrimaryStats) => dispatch({ type: 'ALLOCATE_STAT', payload: { mercenaryId, stat } }),
-    startManualAssault: (dungeonId: string, partyIds: string[], startFloor?: number) => 
-        dispatch({ type: 'START_MANUAL_DUNGEON', payload: { dungeonId, partyIds, startFloor } }),
+    startManualAssault: (dungeonId: string, partyIds: string[], startFloor?: number, force?: boolean) => 
+        dispatch({ type: 'START_MANUAL_DUNGEON', payload: { dungeonId, partyIds, startFloor, force } }),
     moveInManualDungeon: (dx: number, dy: number) => 
         dispatch({ type: 'MOVE_MANUAL_DUNGEON', payload: { x: dx, y: dy } }),
     finishManualAssault: () => dispatch({ type: 'FINISH_MANUAL_DUNGEON' }),
@@ -166,6 +166,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     resolveCombatManual: (win: boolean, flee: boolean, finalParty: any[]) => 
         dispatch({ type: 'RESOLVE_COMBAT_MANUAL', payload: { win, flee, finalParty } }),
     proceedToNextFloorManual: () => dispatch({ type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' }),
+    useCampManualDungeon: () => dispatch({ type: 'USE_CAMP_MANUAL_DUNGEON' }),
+    leaveCampManualDungeon: () => dispatch({ type: 'LEAVE_CAMP_MANUAL_DUNGEON' }),
     triggerNamedEncounterCheck: (location: string) => dispatch({ type: 'TRIGGER_NAMED_ENCOUNTER_CHECK', payload: { location } }),
     acceptContract: (contractId: string) => dispatch({ type: 'ACCEPT_CONTRACT', payload: { contractId } }),
     declineContract: (payload: { contractId?: string; mercenaryId?: string }) => dispatch({ type: 'DECLINE_CONTRACT', payload }),

@@ -98,6 +98,57 @@ export const migrateSaveData = (loadedData: any, initialState: GameState): GameS
     return migrated;
 };
 
+export interface SaveMigrationResult {
+    success: boolean;
+    data: GameState;
+    saveVersion: string;
+    error?: string;
+}
+
+/**
+ * Placeholder interface for explicit save-version migrations.
+ * Real per-version migration rules should be implemented here later.
+ */
+export const runVersionMigration = (
+    _savedVersion: string,
+    _targetVersion: string,
+    _migratedState: GameState
+): boolean => {
+    return true;
+};
+
+export const tryMigrateSaveData = (loadedData: any, initialState: GameState): SaveMigrationResult => {
+    const saveVersion = loadedData?.version || '0.0.0';
+
+    try {
+        const migrated = migrateSaveData(loadedData, initialState);
+        const migrationSucceeded = runVersionMigration(saveVersion, APP_VERSION, migrated);
+
+        if (!migrationSucceeded) {
+            return {
+                success: false,
+                data: initialState,
+                saveVersion,
+                error: 'Version migration failed'
+            };
+        }
+
+        return {
+            success: true,
+            data: migrated,
+            saveVersion
+        };
+    } catch (error) {
+        console.error('Failed to migrate save data:', error);
+        return {
+            success: false,
+            data: initialState,
+            saveVersion,
+            error: error instanceof Error ? error.message : 'Unknown migration error'
+        };
+    }
+};
+
 export interface SaveMetadata {
     index: number;
     timestamp: number;
@@ -107,6 +158,13 @@ export interface SaveMetadata {
     version: string;
     playerName?: string;
     forgeName?: string;
+}
+
+export interface LoadFromSlotResult {
+    success: boolean;
+    data: (GameState & { version?: string }) | null;
+    version?: string;
+    error?: string;
 }
 
 /**
@@ -204,25 +262,48 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
 };
 
 export const loadFromSlot = (slotIndex: number, initialState?: GameState): (GameState & { version?: string }) | null => {
+    const result = loadFromSlotWithStatus(slotIndex, initialState);
+    return result.success ? result.data : null;
+};
+
+export const loadFromSlotWithStatus = (slotIndex: number, initialState?: GameState): LoadFromSlotResult => {
     try {
         const data = localStorage.getItem(`${SAVE_PREFIX}${slotIndex}`);
-        if (!data) return null;
+        if (!data) return { success: false, data: null, error: 'Save slot is empty' };
         const parsed = JSON.parse(data);
         if (initialState) {
-            return migrateSaveData(parsed, initialState);
+            const migrationResult = tryMigrateSaveData(parsed, initialState);
+            return {
+                success: migrationResult.success,
+                data: migrationResult.success ? migrationResult.data : null,
+                version: migrationResult.saveVersion,
+                error: migrationResult.error
+            };
         }
-        return parsed;
+        return {
+            success: true,
+            data: parsed,
+            version: parsed.version
+        };
     } catch {
-        return null;
+        return { success: false, data: null, error: 'Failed to load save data' };
     }
 };
 
 export const getLatestSaveInfo = (initialState?: GameState): { data: GameState & { version?: string }, index: number } | null => {
+    const info = getLatestSaveInfoWithStatus(initialState);
+    return info?.success && info.data ? { data: info.data, index: info.index } : null;
+};
+
+export const getLatestSaveInfoWithStatus = (initialState?: GameState): ({ success: boolean; data: (GameState & { version?: string }) | null; index: number; version?: string; error?: string }) | null => {
     const meta = getSaveMetadataList();
     if (meta.length === 0) return null;
     const index = meta[0].index;
-    const data = loadFromSlot(index, initialState);
-    return data ? { data, index } : null;
+    const result = loadFromSlotWithStatus(index, initialState);
+    return {
+        ...result,
+        index
+    };
 };
 
 export const getDisplayForgeNameFromMetadata = (

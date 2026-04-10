@@ -297,6 +297,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
     const isBattle = session?.encounterStatus === 'BATTLE';
     const isStairs = session?.encounterStatus === 'STAIRS';
     const isVictory = session?.encounterStatus === 'VICTORY';
+    const isCamp = session?.encounterStatus === 'CAMP';
     const currentRoom = session ? session.grid[session.playerPos.y][session.playerPos.x] : null;
 
     useEffect(() => {
@@ -349,7 +350,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
     }, [currentRoom, session?.npcFound, rescueTarget, language]);
 
     const handleDpadMove = (dx: number, dy: number) => {
-        if (isEncountered || isBattle || isStairs) return;
+        if (isEncountered || isBattle || isStairs || isCamp) return;
         const scene = gameRef.current?.scene.getScene('DungeonScene') as DungeonScene;
         if (scene) scene.move(dx, dy);
     };
@@ -488,6 +489,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
         if (isEncountered) {
             return { speaker: t(language, 'assault.inner_voice'), text: session.lastActionMessage || lastMsg };
         }
+        if (isCamp) return { speaker: t(language, 'assault.exploration_log'), text: session.lastActionMessage || lastMsg };
         if (isVictory) return { speaker: t(language, 'assault.frontline_shout'), text: session.lastActionMessage || t(language, 'assault.area_clear') };
         if (isStairs) return { speaker: t(language, 'assault.path_ahead'), text: lastMsg };
         return { speaker: t(language, 'assault.exploration_log'), text: lastMsg };
@@ -673,6 +675,9 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
                                 ] : currentRoom === 'BOSS' && session.isBossDefeated ? [
                                     { label: t(language, 'assault.claim_loot_leave'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
                                     { label: t(language, 'assault.continue_exploring'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+                                ] : isCamp ? [
+                                    { label: t(language, 'assault.use_camp'), action: () => actions.useCampManualDungeon(), variant: 'primary' as const },
+                                    { label: t(language, 'assault.move_on'), action: () => actions.leaveCampManualDungeon(), variant: 'neutral' as const }
                                 ] : isStairs ? [
                                     { label: t(language, 'assault.into_the_abyss', { floor: session.currentFloor + 1 }), action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
                                     { label: t(language, 'assault.reach_surface'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
