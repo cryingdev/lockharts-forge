@@ -8,6 +8,7 @@ import { ArrowLeft, Gift, X } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { t } from '../../../utils/i18n';
+import { getPlayerName } from '../../../utils/gameText';
 
 interface MarketTabProps {
     onNavigate: (tab: any) => void;
@@ -22,6 +23,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
         collapsedSections, setCollapsedSections 
     } = market;
     const language = state.settings.language;
+    const playerName = getPlayerName(state);
 
     useEffect(() => {
         actions.triggerNamedEncounterCheck('MARKET');
@@ -38,7 +40,14 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
     // 튜토리얼 오버레이가 대화를 담당하는 단계인지 판단
     const isTutorialDialogueActive = isLocalTutorial && currentMarketStep && 
         ['BROWSE_GOODS_GUIDE', 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE', 'GARRICK_EXIT_DIALOG_GUIDE'].includes(currentMarketStep);
-    const shouldHideLobbyDialogue = isLocalTutorial && currentMarketStep === 'LEAVE_MARKET_GUIDE';
+    const shouldHideLobbyDialogue = false;
+    const lobbyDialogue =
+        isLocalTutorial && currentMarketStep === 'LEAVE_MARKET_GUIDE'
+            ? t(language, 'marketTutorial.dialogue.exit_square', { playerName })
+            : dialogue;
+    const resolvedLobbyDialogue = lobbyDialogue.trim().length > 0
+        ? lobbyDialogue
+        : t(language, 'market.garrick_intro', { playerName });
 
     return (
         <div className="fixed inset-0 z-[1000] bg-stone-950 overflow-hidden flex flex-col items-center justify-center px-safe">
@@ -62,7 +71,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
 
             {viewMode === 'INTERACTION' ? (
                 <MarketLobbyView 
-                    dialogue={dialogue}
+                    dialogue={resolvedLobbyDialogue}
                     garrickAffinity={state.garrickAffinity}
                     talkedToday={state.talkedToGarrickToday}
                     floatingHearts={floatingHearts}

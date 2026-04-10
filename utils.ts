@@ -22,6 +22,7 @@ export const AUDIO_MANIFEST = {
         'tab_switch.wav',
         'click_light.wav',
         'click_medium.wav',
+        'gathering_gold.wav',
         // Dungeon
         'trap_triggered.mp3',
         'get_coin.mp3',

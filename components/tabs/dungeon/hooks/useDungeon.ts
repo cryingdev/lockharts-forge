@@ -5,10 +5,12 @@ import { calculatePartyPower } from '../../../../utils/combatLogic';
 import { formatDuration, getAssetUrl } from '../../../../utils';
 import { MONSTER_DROPS } from '../../../../data/monster-drops';
 import { materials } from '../../../../data/materials';
+import { t } from '../../../../utils/i18n';
 
 export const useDungeon = () => {
     const { state, actions } = useGame();
     const { activeExpeditions, knownMercenaries, dungeonClearCounts, maxFloorReached, activeManualDungeon } = state;
+    const { language } = state.settings;
 
     const [view, setView] = useState<'LIST' | 'DETAIL'>('LIST');
     const [selectedDungeonId, setSelectedDungeonId] = useState<string | null>(null);
@@ -185,9 +187,13 @@ export const useDungeon = () => {
 
     const handleStartManualAssault = useCallback(() => {
         if (isOngoingManual) { actions.toggleManualDungeonOverlay(true); return; }
+        if (state.forge.isShopOpen) {
+            actions.showToast(t(language, 'manualDungeon.shop_open_blocked'));
+            return;
+        }
         if (!validateEntry()) return;
         actions.startManualAssault(selectedDungeon.id, party, selectedFloor);
-    }, [isOngoingManual, validateEntry, actions, selectedDungeon.id, party, selectedFloor]);
+    }, [isOngoingManual, state.forge.isShopOpen, validateEntry, actions, selectedDungeon.id, party, selectedFloor, language]);
 
     return {
         state, actions, view, setView, selectedDungeon, selectedFloor, setSelectedFloor,

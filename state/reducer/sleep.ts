@@ -7,6 +7,24 @@ import { handleRefreshCommissions, isNamedMercenaryEligible } from './commission
 import { SHOP_CONFIG } from '../../config/shop-config';
 import { rng } from '../../utils/random';
 
+const clampChance = (value: number) => Math.max(0, Math.min(1, value));
+
+const getAffinityWeightedTavernDepartureChance = (affinity: number) => {
+    const affinityRatio = Math.max(0, Math.min(100, affinity || 0)) / 100;
+    return clampChance(
+        SHOP_CONFIG.TAVERN_DEPARTURE_CHANCE -
+        SHOP_CONFIG.TAVERN_AFFINITY_DEPARTURE_REDUCTION_MAX * affinityRatio
+    );
+};
+
+const getAffinityWeightedTavernReturnChance = (affinity: number) => {
+    const affinityRatio = Math.max(0, Math.min(100, affinity || 0)) / 100;
+    return clampChance(
+        SHOP_CONFIG.TAVERN_RETURN_CHANCE +
+        SHOP_CONFIG.TAVERN_AFFINITY_RETURN_BONUS_MAX * affinityRatio
+    );
+};
+
 export const handleSleep = (state: GameState): GameState => {
     if (state.activeManualDungeon) {
         return { ...state, logs: ["You cannot sleep while exploring a dungeon!", ...state.logs] };
@@ -38,14 +56,14 @@ export const handleConfirmSleep = (state: GameState): GameState => {
 
         // Tavern Departure Logic: Unhired visitors have a chance to leave
         if (status === 'VISITOR') {
-            const leaves = rng.chance(SHOP_CONFIG.TAVERN_DEPARTURE_CHANCE);
+            const leaves = rng.chance(getAffinityWeightedTavernDepartureChance(merc.affinity || 0));
             if (leaves) {
                 departedCount++;
                 status = 'DEPARTED';
             }
         } else if (status === 'DEPARTED') {
             // Tavern Return Logic: Departed visitors have a chance to return
-            const returns = rng.chance(SHOP_CONFIG.TAVERN_RETURN_CHANCE);
+            const returns = rng.chance(getAffinityWeightedTavernReturnChance(merc.affinity || 0));
             if (returns) {
                 returnedCount++;
                 status = 'VISITOR';

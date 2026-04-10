@@ -350,11 +350,6 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
                         action: handleSellClick, 
                         variant: 'primary' as const,
                         disabled: !inventoryMatch
-                    },
-                    { 
-                        label: t(language, 'shop.option_wait_more'), 
-                        action: handleRefuse, 
-                        variant: 'danger' as const 
                     }
                 ]
             };

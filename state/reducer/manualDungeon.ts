@@ -127,8 +127,9 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
 
     const startFloor = payload.startFloor || 1;
     const party = state.knownMercenaries.filter(m => payload.partyIds.includes(m.id));
+    const entryEnergyCost = dungeon.energyCost + (startFloor - 1) * 5;
     
-    if (party.some(m => (m.expeditionEnergy || 0) < dungeon.energyCost)) {
+    if (party.some(m => (m.expeditionEnergy || 0) < entryEnergyCost)) {
         return { ...state, logs: [t(language, 'manualDungeon.too_exhausted', { dungeon: dungeon.name }), ...state.logs] };
     }
 
@@ -141,7 +142,7 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         if (payload.partyIds.includes(m.id)) {
             return { 
                 ...m, 
-                expeditionEnergy: Math.max(0, (m.expeditionEnergy || 0) - dungeon.energyCost), 
+                expeditionEnergy: Math.max(0, (m.expeditionEnergy || 0) - entryEnergyCost), 
                 status: 'ON_EXPEDITION' as const 
             };
         }

@@ -307,20 +307,20 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
       {tooltipElement}
 
       <div 
-        className="w-full h-[24dvh] min-h-[150px] md:h-[29vh] md:min-h-[180px] bg-stone-900/92 backdrop-blur-3xl border-[2px] md:border-[3px] border-stone-500/45 rounded-2xl md:rounded-3xl shadow-[0_28px_80px_rgba(0,0,0,0.82),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.45)] overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/8"
+        className="w-full h-[24dvh] min-h-[158px] md:h-[29vh] md:min-h-[188px] bg-stone-900/92 backdrop-blur-3xl border-[2px] md:border-[3px] border-stone-500/45 rounded-2xl md:rounded-3xl shadow-[0_28px_80px_rgba(0,0,0,0.82),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.45)] overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/8"
       >
         <div 
-          className="h-full px-5 py-4 md:px-9 md:py-7 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent cursor-pointer after:absolute after:inset-0 after:rounded-2xl md:after:rounded-3xl after:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.35)] after:pointer-events-none"
+          className="h-full px-5 py-4.5 md:px-9 md:py-7.5 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent cursor-pointer after:absolute after:inset-0 after:rounded-2xl md:after:rounded-3xl after:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.35)] after:pointer-events-none"
           onClick={handleSkipTyping}
         >
           <div 
             ref={textContainerRef}
-            className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 md:pr-2 mb-2 md:mb-3 min-h-0 ${isTyping ? 'typing-active' : ''}`}
+            className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 md:pr-2 py-2 mb-2 md:mb-3 min-h-0 ${isTyping ? 'typing-active' : ''}`}
             style={{ scrollBehavior: isTyping ? 'auto' : 'smooth' }}
           >
             <div 
               className="text-stone-50 leading-[1.55] md:leading-[1.68] font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-opacity duration-300 break-words whitespace-pre-wrap"
-              style={{ fontSize: 'clamp(1.04rem, 2.7dvh, 1.6rem)' }}
+              style={{ fontSize: 'clamp(1.12rem, 2.9dvh, 1.72rem)' }}
             >
               {renderFormattedText()}
             </div>
@@ -340,7 +340,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
                     }
                   }}
                   disabled={option.disabled}
-                  className={`px-5 md:px-9 py-2.5 md:py-3.5 rounded-xl md:rounded-xl font-black text-[12px] md:text-sm flex items-center gap-1.5 md:gap-3 transition-all transform active:scale-95 border shadow-2xl min-h-[46px] md:min-h-[54px] ${
+                  className={`px-6 md:px-10 py-3 md:py-4 rounded-xl md:rounded-xl font-black text-[13px] md:text-[15px] flex items-center gap-2 md:gap-3 transition-all transform active:scale-95 border shadow-2xl min-h-[50px] md:min-h-[58px] ${
                     option.disabled 
                       ? 'bg-stone-800/40 text-stone-600 border-stone-700/30 cursor-not-allowed'
                       : option.variant === 'danger'
@@ -351,7 +351,7 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
                   }`}
                 >
                   <span className="whitespace-nowrap">{option.label}</span>
-                  {!option.disabled && <ChevronRight className="hidden xs:block w-2.5 md:w-5 h-2.5 md:h-5 opacity-70 group-hover:translate-x-1 transition-transform" />}
+                  {!option.disabled && <ChevronRight className="hidden xs:block w-3 md:w-5.5 h-3 md:h-5.5 opacity-70 group-hover:translate-x-1 transition-transform" />}
                 </SfxButton>
               ))}
             </div>
