@@ -182,6 +182,14 @@ This document provides a comprehensive structural map of the project, detailing 
     *   The smithing onboarding now flows through `START_FORGING_GUIDE -> SMITHING_INTRO_DIALOG_GUIDE -> SMITHING_TOUCH_TO_START_GUIDE -> FIRST_HIT_DIALOG_GUIDE -> SMITHING_MINIGAME_HIT_GUIDE` instead of replaying separate `HEAT` and `PUMP` instruction dialogue inside the minigame.
     *   Normal smithing now separates timed misses from strike faults: untouched rings resolve as `MISS` and advance immediately, while bad swings force a `TONGS -> HAMMER` realignment loop before rings resume.
     *   The first Pip order now happens before smithing through the shop loop, and the crafted-delivery step later uses a separate return-dialog stage before the actual sale interaction.
+    *   Pip's tutorial return-to-shop sale no longer offers a "wait more" branch; once Pip returns, the tutorial expects the sale to resolve directly.
+    *   Market tutorial exit now keeps Garrick's farewell dialogue visible into the leave step while the back button is highlighted.
     *   The tutorial-complete modal still pauses further shop queue progression until dismissed.
+*   **Tavern Recruitment & Retention**:
+    *   Tavern lodging expansion now acts as a soft quality gate for newly invited recruits alongside Adventurer Standing.
+    *   `Invite` now always generates a new generic recruit candidate when no eligible named arrival takes priority.
+    *   Returning Tavern visitors now use affinity-biased departure/return rolls so familiar mercenaries feel more persistent.
+*   **Commission Reward Feedback**:
+    *   Reward settlement now records explicit payout logs and plays a dedicated gold-gathering SFX when gold is awarded.
 *   **Skill Knowledge**:
     *   Skill Manuals and Scrolls fully integrated into the economic and crafting cycles.

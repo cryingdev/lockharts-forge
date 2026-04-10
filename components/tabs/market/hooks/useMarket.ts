@@ -22,8 +22,9 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
     const { state, actions } = useGame();
     const language = state.settings.language;
     const playerName = getPlayerName(state);
+    const introDialogue = t(language, 'market.garrick_intro', { playerName });
     const [viewMode, setViewMode] = useState<MarketViewMode>('INTERACTION');
-    const [dialogue, setDialogue] = useState(t(language, 'market.garrick_intro', { playerName }));
+    const [dialogue, setDialogue] = useState(introDialogue);
     const [cart, setCart] = useState<Record<string, number>>({});
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [itemMultipliers, setItemMultipliers] = useState<Record<string, number>>({});
@@ -37,11 +38,11 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
 
     useEffect(() => {
         setDialogue(prev =>
-            prev === '' || prev === t(language, 'market.garrick_intro', { playerName })
-                ? t(language, 'market.garrick_intro', { playerName })
+            prev.trim() === '' || prev === introDialogue
+                ? introDialogue
                 : prev
         );
-    }, [language, playerName]);
+    }, [introDialogue]);
 
     // Tutorial Sync
     useEffect(() => {
@@ -201,8 +202,10 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         cartItemCount, totalCost, categorizedMarketItems,
         handlers: {
             handleTalk: () => {
+                const nextDialogue = t(language, getGarrickTalkKey(), { playerName });
+                setPendingGiftItem(null);
+                setDialogue(nextDialogue);
                 if (!state.talkedToGarrickToday) actions.talkGarrick();
-                setDialogue(t(language, getGarrickTalkKey(), { playerName }));
             },
             handleGiftInit: (item: InventoryItem) => {
                 if (item.isLocked) return actions.showToast(t(language, 'market.locked_item'));

@@ -110,8 +110,13 @@ Mercenaries are the player's primary agents in the world.
     -   Adventurer Standing now appears directly in the Tavern UI.
     -   It currently increases through Tavern-centered social actions such as `Invite`, `Talk`, `Buy Drink`, and receiving Tavern personal requests.
     -   It currently biases `Talk` outcomes away from pure flavor and toward `RUMOR`, `MINOR_CONTRACT`, and rare `OPPORTUNITY` results as reputation rises.
+    -   `Invite` now always means "bring in a new candidate" rather than re-summoning a previously departed visitor.
+    -   The maximum level of newly invited random candidates is currently gated by the better of:
+        -   Tavern lodging expansion progress, or
+        -   Adventurer Standing band.
     -   If too many Tavern-origin contracts are already active, the system shifts back toward `FLAVOR` and `RUMOR` to avoid overloading the player with personal requests.
     -   Tavern `Talk` dialogue now also varies by mercenary temperament, speaking voice, and broad campaign progress stage so repeated conversations feel less interchangeable.
+    -   Existing non-hired visitors still use daily stay/return rolls, and those rolls are now lightly biased by the mercenary's personal Affinity so familiar faces linger longer and come back more often.
 
 ##### 3.3.3.1 Suggested Adventurer Standing Bands
 | Adventurer Standing | Recruit Level Band | Recruit Pool Bias | Encounter Support |

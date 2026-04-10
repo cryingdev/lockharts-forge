@@ -1,5 +1,39 @@
 # TODO
 
+## Dungeon Entry UX Follow-Up
+
+### Context
+- Manual dungeon entry is currently blocked while the Shop is open.
+- The game now surfaces a visible toast when the player presses the manual entry button in that blocked state.
+- We still need to decide the final UX rule for how Shop state and Dungeon entry should interact.
+
+### Open Design Question
+- When the player attempts to start a manual dungeon while the Shop is open, should the game:
+  - keep the current explicit block and ask the player to close the Shop first, or
+  - automatically close the Shop, then continue into dungeon entry?
+
+### Current Recommendation
+- Prefer the explicit block plus toast flow.
+- Why:
+  - auto-closing the Shop is convenient, but it is also stateful and easy to make surprising
+  - the player may have intentionally left the Shop open for a reason
+  - closing the Shop can have side effects on customer state and expectations
+- If we revisit this later, we should first document the exact side effects of auto-closing the Shop during dungeon entry.
+
+### Deferred Review Task
+- Re-evaluate manual dungeon entry UX after testing the current toast-based block in real play sessions.
+- If auto-closing is reconsidered, define:
+  - whether active customers are dismissed, paused, or preserved
+  - whether queued customers are cleared or restored
+  - whether tutorial/shop-state rules need special exceptions
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/components/tabs/dungeon/hooks/useDungeon.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/state/reducer/manualDungeon.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/state/reducer/shop.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/GAME_DESIGN.md`
+- `/Users/cryingdev/GitHub/lockharts-forge/TECH_DESIGN.md`
+
 ## Korean Typography Follow-Up
 
 ### Context

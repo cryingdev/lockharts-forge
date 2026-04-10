@@ -667,10 +667,16 @@ Current implementation status:
 -   `state/reducer/mercenary.ts` now blocks hires when the current Tavern lodging cap is full.
 -   Tavern interaction hooks and UI also surface the cap before reducer-level rejection so the player gets immediate feedback.
 -   `Invite`, `Talk`, `Buy Drink`, and Tavern-origin personal-request generation currently provide small Adventurer Standing gains.
+-   `components/tabs/tavern/hooks/useTavern.ts` now treats `Invite` as a new-candidate action only:
+    -   named Tavern candidates may still pre-empt if eligible,
+    -   but generic `DEPARTED` mercenaries are no longer re-summoned by the button.
 -   `state/helpers/tavernTalkHelpers.ts` now uses Adventurer Standing and current active Tavern contract count to bias `Talk` outcomes.
 -   `state/helpers/tavernTalkHelpers.ts` also resolves Tavern dialogue against mercenary temperament, speaking voice, and a coarse progress-stage helper so content can scale with campaign state without hardcoding dialogue in UI hooks.
 -   Higher reputation modestly increases the weight of `RUMOR`, `MINOR_CONTRACT`, and `OPPORTUNITY`.
 -   A high number of active Tavern contracts suppresses new personal requests and pushes the system back toward `FLAVOR` and `RUMOR`.
+-   `state/reducer/sleep.ts` now applies light mercenary-affinity weighting to visitor turnover:
+    -   higher Affinity slightly lowers the daily departure chance for `VISITOR`,
+    -   and slightly raises the daily return chance for `DEPARTED`.
 
 #### 4.5.2 Recruit Quality Effects
 Adventurer Standing should drive recruit generation through weighted bounds rather than direct stat gifts.
@@ -687,7 +693,8 @@ Adventurer Standing should drive recruit generation through weighted bounds rath
 
 #### 4.5.3 Integration Points
 -   `utils/mercenaryGenerator.ts`
-    -   Accept Adventurer Standing as an input when generating Tavern invite candidates.
+    -   Accept Adventurer Standing and Tavern lodging progression as inputs when generating Tavern invite candidates.
+    -   Derive the maximum recruit level from the better of the current reputation band or lodging-expansion band.
     -   Derive recruit level band and class weights from reputation buckets.
 -   `state/reducer/tavern.ts`
     -   Handles Tavern lodging expansion and related Tavern upgrade logging.
@@ -699,6 +706,13 @@ Adventurer Standing should drive recruit generation through weighted bounds rath
     -   Show Adventurer Standing and a lightweight explanation of what higher reputation improves.
     -   The first-pass implementation now displays the current reputation value in the Tavern header area.
     -   It also displays current lodging capacity and the next lodging expansion purchase when available.
+
+#### 4.5.6 Commission Reward Feedback
+-   `state/reducer/commission.ts` now appends explicit payout logs when contract rewards are actually granted.
+-   Reward preview remains modal-driven, but:
+    -   gold rewards write a runtime log with both delta and resulting total,
+    -   issuer-affinity and affinity rewards also log their applied changes.
+-   `components/tabs/tavern/ui/CommissionRewardModal.tsx` now plays `gathering_gold.wav` when the preview includes a gold payout.
 
 #### 4.5.4 Suggested Reputation Buckets
 | Reputation | Recruit Level Effect | Class Pool Effect | Named Encounter Effect |

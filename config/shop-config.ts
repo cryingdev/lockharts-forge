@@ -22,5 +22,10 @@ export const SHOP_CONFIG = {
 
     // 주점 퇴거 확률
     TAVERN_DEPARTURE_CHANCE: 0.5,   // 하루가 끝날 때 고용되지 않은 방문자가 떠날 확률 (50%)
-    TAVERN_RETURN_CHANCE: 0.35      // 하루가 시작될 때 떠났던 방문자가 다시 돌아올 확률 (35%)
+    TAVERN_RETURN_CHANCE: 0.35,     // 하루가 시작될 때 떠났던 방문자가 다시 돌아올 확률 (35%)
+
+    // 호감도 기반 주점 체류/재방문 보정
+    // affinity 100일 때 departure는 최대 15%p 감소, return은 최대 20%p 증가
+    TAVERN_AFFINITY_DEPARTURE_REDUCTION_MAX: 0.15,
+    TAVERN_AFFINITY_RETURN_BONUS_MAX: 0.2
 }; 

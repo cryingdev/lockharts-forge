@@ -5,7 +5,7 @@ import { isNamedMercenaryEligible } from '../../../../state/reducer/commission';
 import { NAMED_CONTRACT_REGISTRY } from '../../../../data/contracts/namedContracts';
 import { NAMED_MERCENARIES } from '../../../../data/mercenaries';
 import { rng } from '../../../../utils/random';
-import { getNextTavernLodgingCapacity, getTavernLodgingCapacity, getTavernLodgingUpgradeCost, isTavernLodgingMaxed } from '../../../../config/tavern-config';
+import { getNextTavernLodgingCapacity, getTavernInviteMaxLevel, getTavernLodgingCapacity, getTavernLodgingUpgradeCost, isTavernLodgingMaxed } from '../../../../config/tavern-config';
 import { t } from '../../../../utils/i18n';
 
 export const useTavern = () => {
@@ -20,6 +20,10 @@ export const useTavern = () => {
     const nextLodgingCapacity = useMemo(() => getNextTavernLodgingCapacity(state.tavern.lodgingLevel), [state.tavern.lodgingLevel]);
     const lodgingUpgradeCost = useMemo(() => getTavernLodgingUpgradeCost(state.tavern.lodgingLevel), [state.tavern.lodgingLevel]);
     const isLodgingMaxed = useMemo(() => isTavernLodgingMaxed(state.tavern.lodgingLevel), [state.tavern.lodgingLevel]);
+    const inviteMaxLevel = useMemo(
+        () => getTavernInviteMaxLevel(state.tavern.lodgingLevel, state.tavern.reputation),
+        [state.tavern.lodgingLevel, state.tavern.reputation]
+    );
 
     const handleInvite = useCallback(() => {
         if (state.stats.gold < inviteCost) {
@@ -59,18 +63,13 @@ export const useTavern = () => {
             }
         }
 
-        // 3. Fallback to a random mercenary or a departed one
+        // 3. Fallback to a brand-new random mercenary candidate
         if (!newMerc) {
-            const departedMercs = state.knownMercenaries.filter(m => m.status === 'DEPARTED' && !m.isUnique);
-            if (departedMercs.length > 0 && rng.chance(0.5)) {
-                newMerc = rng.pick(departedMercs);
-            } else {
-                newMerc = createRandomMercenary(state.stats.day, state.knownMercenaries);
-            }
+            newMerc = createRandomMercenary(state.stats.day, state.knownMercenaries, inviteMaxLevel);
         }
 
         setInvitingMercenary(newMerc);
-    }, [state.stats.gold, inviteCost, state.stats.day, state.knownMercenaries, state.commission.namedEncounters, actions]);
+    }, [state.stats.gold, inviteCost, state.stats.day, state.knownMercenaries, state.commission.namedEncounters, state.tavern.lodgingLevel, state.tavern.reputation, actions, inviteMaxLevel]);
 
     const confirmInvite = useCallback(() => {
         if (invitingMercenary) {

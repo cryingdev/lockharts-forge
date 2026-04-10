@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Coins, Heart, CheckCircle2, X } from 'lucide-react';
 import { useGame } from '../../../../context/GameContext';
 import { SfxButton } from '../../../common/ui/SfxButton';
 import { t } from '../../../../utils/i18n';
+import { useAudio } from '../../../../hooks/useAudio';
 
 export const CommissionRewardModal: React.FC = () => {
     const { state, actions } = useGame();
+    const { playSfx } = useAudio();
     const language = state.settings.language;
     const preview = state.commissionRewardPreview;
+    const lastPreviewRef = useRef<typeof preview>(null);
+
+    useEffect(() => {
+        if (!preview || lastPreviewRef.current === preview) return;
+        lastPreviewRef.current = preview;
+
+        if (preview.lines.some(line => line.type === 'GOLD')) {
+            playSfx('gathering_gold.wav');
+        }
+    }, [playSfx, preview]);
 
     if (!preview) return null;
 
@@ -79,4 +91,3 @@ export const CommissionRewardModal: React.FC = () => {
         </div>
     );
 };
-

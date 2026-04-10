@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BedDouble, PlusCircle, Star, Users, UserRound, ShieldAlert, ClipboardList, Coins, Clock, Sword, Hammer, Package, Trophy } from 'lucide-react';
 import { MercenaryCard } from './MercenaryCard';
 import { SfxButton } from '../../../common/ui/SfxButton';
@@ -47,6 +47,7 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
 }) => {
     const { state, actions } = useGame();
     const language = state.settings.language;
+    const commissionScrollRef = useRef<HTMLDivElement>(null);
     const allContracts = [...availableContracts, ...acceptedContracts].sort((a, b) => {
         const getPriority = (contract: ContractDefinition) => {
             if (contract.status === 'ACTIVE' && isContractReady(state, contract)) return 0;
@@ -58,6 +59,11 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
         if (priorityDelta !== 0) return priorityDelta;
         return (a.daysRemaining || 99) - (b.daysRemaining || 99);
     });
+
+    useEffect(() => {
+        if (!commissionScrollRef.current) return;
+        commissionScrollRef.current.scrollTo({ left: 0, behavior: 'auto' });
+    }, []);
 
     const getKindIcon = (kind?: string) => {
         switch (kind) {
@@ -148,7 +154,10 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
                         </SfxButton>
                     </div>
 
-                    <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar-horizontal -mx-1 px-1 snap-x">
+                    <div
+                        ref={commissionScrollRef}
+                        className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar-horizontal -mx-1 px-1 snap-x"
+                    >
                         {allContracts.length === 0 ? (
                             <div className="w-full py-6 bg-stone-900/40 border border-stone-800/50 rounded-xl flex flex-col items-center justify-center text-stone-600 gap-1">
                                 <ClipboardList className="w-5 h-5 opacity-20" />

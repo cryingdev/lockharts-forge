@@ -92,15 +92,22 @@ const calculateLevelDataFromTotalXp = (totalXp: number) => {
     };
 };
 
-export const createRandomMercenary = (currentDay: number, knownMercenaries: Mercenary[] = []): Mercenary => {
+export const createRandomMercenary = (currentDay: number, knownMercenaries: Mercenary[] = [], maxLevel?: number): Mercenary => {
     const jobKeys = Object.values(JobClass);
     const job = rng.pick(jobKeys);
     const gender: Gender = rng.chance(0.5) ? 'Male' : 'Female';
     
-    const randomFactor = rng.standard(0, 1, 4); 
-    const totalXp = Math.floor(Math.pow(randomFactor, 2) * 2500); 
-
-    const { level, currentXp, xpToNextLevel } = calculateLevelDataFromTotalXp(totalXp);
+    const randomFactor = rng.standard(0, 1, 4);
+    const levelCap = maxLevel ? Math.max(1, maxLevel) : null;
+    const totalXp = Math.floor(Math.pow(randomFactor, 2) * 2500);
+    const derivedLevelData = calculateLevelDataFromTotalXp(totalXp);
+    const level = levelCap
+        ? Math.max(1, Math.min(levelCap, 1 + Math.floor(Math.pow(randomFactor, 2) * levelCap)))
+        : derivedLevelData.level;
+    const xpToNextLevel = levelCap ? level * 100 : derivedLevelData.xpToNextLevel;
+    const currentXp = levelCap
+        ? rng.rangeInt(0, Math.max(0, xpToNextLevel - 1))
+        : derivedLevelData.currentXp;
     const baseStats = generateBaseStats(job);
     
     const merged = mergePrimaryStats(baseStats, { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });

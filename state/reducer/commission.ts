@@ -219,11 +219,13 @@ const getIssuerContractModifiers = (affinity: number) => {
 
 type RewardApplicationResult = {
     gold: number;
+    goldGain: number;
     knownMercenaries: GameState['knownMercenaries'];
     namedEncounters: GameState['commission']['namedEncounters'];
     issuerAffinity: GameState['commission']['issuerAffinity'];
     dialogue: GameState['activeDialogue'];
     rewardPreview: GameState['commissionRewardPreview'];
+    rewardLogs: string[];
 };
 
 const mergeGoldReward = (rewards: ContractDefinition['rewards'], bonusGold: number): ContractDefinition['rewards'] => {
@@ -243,11 +245,13 @@ const mergeGoldReward = (rewards: ContractDefinition['rewards'], bonusGold: numb
 
 const applyContractRewards = (state: GameState, contract: ContractDefinition): RewardApplicationResult => {
     let gold = state.stats.gold;
+    let goldGain = 0;
     let knownMercenaries = [...state.knownMercenaries];
     let namedEncounters = { ...state.commission.namedEncounters };
     let issuerAffinity = { ...state.commission.issuerAffinity };
     let dialogue = null as GameState['activeDialogue'];
     const rewardPreviewLines: NonNullable<GameState['commissionRewardPreview']>['lines'] = [];
+    const rewardLogs: string[] = [];
 
     contract.rewards.forEach(reward => {
         if (reward.type === 'GOLD' && reward.gold) {
@@ -259,7 +263,12 @@ const applyContractRewards = (state: GameState, contract: ContractDefinition): R
                 afterText: `${nextGold}G`,
                 deltaText: `(+${reward.gold})`,
             });
+            rewardLogs.push(getCommissionText(state, 'commission.reward_log_gold', {
+                amount: reward.gold,
+                total: nextGold,
+            }));
             gold += reward.gold;
+            goldGain += reward.gold;
         }
 
         if (reward.type === 'UNLOCK_RECRUIT' && reward.mercenaryId) {
@@ -304,6 +313,11 @@ const applyContractRewards = (state: GameState, contract: ContractDefinition): R
                 afterText: `${afterAffinity}`,
                 deltaText: `(+${reward.affinity})`,
             });
+            rewardLogs.push(getCommissionText(state, 'commission.reward_log_affinity', {
+                name: targetMercenary?.name || reward.mercenaryId,
+                amount: reward.affinity,
+                total: afterAffinity,
+            }));
         }
 
         if (reward.type === 'ISSUER_AFFINITY' && reward.issuerAffinity && contract.issuerId) {
@@ -318,6 +332,11 @@ const applyContractRewards = (state: GameState, contract: ContractDefinition): R
                 afterText: `${afterIssuerAffinity}`,
                 deltaText: `(+${reward.issuerAffinity})`,
             });
+            rewardLogs.push(getCommissionText(state, 'commission.reward_log_issuer_affinity', {
+                issuer: issuerName,
+                amount: reward.issuerAffinity,
+                total: afterIssuerAffinity,
+            }));
         }
     });
 
@@ -331,6 +350,7 @@ const applyContractRewards = (state: GameState, contract: ContractDefinition): R
 
     return {
         gold,
+        goldGain,
         knownMercenaries,
         namedEncounters,
         issuerAffinity,
@@ -340,7 +360,8 @@ const applyContractRewards = (state: GameState, contract: ContractDefinition): R
                 contractTitle: contract.title,
                 lines: rewardPreviewLines
             }
-            : null
+            : null,
+        rewardLogs,
     };
 };
 
@@ -732,7 +753,11 @@ export const handleSubmitContract = (state: GameState, contractId: string): Game
         },
         activeDialogue: namedRequestDialogue || rewardResult.dialogue,
         commissionRewardPreview: rewardResult.rewardPreview,
-        logs: [...state.logs, getCommissionText(state, 'logs.completed_contract', { title: contract.title })]
+        logs: [
+            ...state.logs,
+            getCommissionText(state, 'logs.completed_contract', { title: contract.title }),
+            ...rewardResult.rewardLogs
+        ]
     };
 };
 
@@ -852,7 +877,11 @@ export const handleClaimObjectiveContract = (state: GameState, contractId: strin
         },
         activeDialogue: namedRequestDialogue || rewardResult.dialogue,
         commissionRewardPreview: rewardResult.rewardPreview,
-        logs: [...state.logs, getCommissionText(state, 'logs.claimed_contract', { title: contract.title })]
+        logs: [
+            ...state.logs,
+            getCommissionText(state, 'logs.claimed_contract', { title: contract.title }),
+            ...rewardResult.rewardLogs
+        ]
     };
 };
 
@@ -1101,12 +1130,15 @@ const createHuntBoardContract = (
     const weightedMonsters = monsterOptions
         .filter(monster => (MONSTERS[monster.id]?.level || 1) >= modifiers.huntTargetLevelFloor);
     const selectedMonster = rng.pick(weightedMonsters.length > 0 ? weightedMonsters : monsterOptions);
+    const monsterLevel = Math.max(1, MONSTERS[selectedMonster.id]?.level || 1);
     const count = Math.max(2, rng.rangeInt(3, 6) + (modifiers.tier === 'ELITE' ? -1 : 0));
 
     const urgency = getUrgencyFromBias(issuer.urgencyBias);
     let daysRemaining = rng.rangeInt(3, 5);
     if (urgency === 'HIGH') daysRemaining = Math.max(1, daysRemaining - 1);
     if (urgency === 'URGENT') daysRemaining = 1;
+    const urgencyBonus = urgency === 'URGENT' ? 180 : urgency === 'HIGH' ? 90 : 0;
+    const goldReward = Math.floor((180 + (count * 55) + (monsterLevel * 35) + urgencyBonus) * modifiers.rewardMultiplier);
 
     return {
         id: `contract_board_${state.stats.day}_${index}_hunt`,
@@ -1131,7 +1163,7 @@ const createHuntBoardContract = (
             }
         ],
         rewards: [
-            { type: 'GOLD', gold: Math.floor((100 + (count * 30)) * modifiers.rewardMultiplier) }
+            { type: 'GOLD', gold: goldReward }
         ],
         deadlineDay: state.stats.day + daysRemaining,
         daysRemaining,

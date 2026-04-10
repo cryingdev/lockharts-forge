@@ -76,10 +76,9 @@
     6.  `CRAFT_RESULT_DIALOG`: 제작 완료 후 결과창(품질/숙련도) 확인 다이얼로그.
     7.  `FINALIZE_FORGE_GUIDE`: 'Finalize Forge' 버튼 스포트라이트.
     8.  `PIP_RETURN_DIALOG_GUIDE`: 상점으로 돌아가면 Pip이 재방문하여 주문한 검을 먼저 점검합니다.
-    9.  `PIP_RETURN_GUIDE`: 그 다음 실제 판매 선택지가 열립니다.
-    10. `PIP_PRAISE_DIALOG`: Pip의 품질 칭찬 다이얼로그.
-    11. `DRAGON_TALK_DIALOG`: 드래곤에 대한 공감대 형성 다이얼로그.
-    12. `TUTORIAL_END_DIALOG`: 플레이어의 최종 결의 다이얼로그. 종료 시 모든 시스템 해금.
+    9.  `PIP_RETURN_GUIDE`: 그 다음 실제 판매가 열리며, 이 단계에서는 더 이상 "조금만 더 기다려 줘" 같은 보류 선택지가 없습니다.
+    10. `PIP_PRAISE_DIALOG_GUIDE`: Pip의 감사 다이얼로그.
+    11. `TUTORIAL_FINISH_DIALOG_GUIDE`: 플레이어의 최종 결의 다이얼로그. 종료 시 모든 시스템 해금.
     *   Pip의 작별 인사가 먼저 끝난 뒤 튜토리얼 완료 팝업이 노출됩니다.
     *   튜토리얼 완료 팝업이 열려 있는 동안에는 일반 손님 큐잉이 진행되지 않습니다.
 

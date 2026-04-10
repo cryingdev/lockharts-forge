@@ -38,7 +38,6 @@ const SCRIPTS: Partial<Record<SequenceStep, { speaker: string; textKey: string }
     PAY_NOW_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.finalize_purchase" },
     GARRICK_AFTER_PURCHASE_DIALOG_GUIDE: { speaker: "PLAYER", textKey: "marketTutorial.dialogue.talk_to_garrick" },
     GARRICK_EXIT_DIALOG_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.exit_square" },
-    LEAVE_MARKET_GUIDE: { speaker: "Garrick", textKey: "marketTutorial.dialogue.exit_square" },
 };
 
 export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
@@ -130,8 +129,7 @@ export const MarketTutorialOverlay = ({ step }: { step: SequenceStep }) => {
     const isDialogueStep =
         step === 'BROWSE_GOODS_GUIDE' ||
         step === 'GARRICK_AFTER_PURCHASE_DIALOG_GUIDE' ||
-        step === 'GARRICK_EXIT_DIALOG_GUIDE' ||
-        step === 'LEAVE_MARKET_GUIDE';
+        step === 'GARRICK_EXIT_DIALOG_GUIDE';
 
     return (
         <div className="fixed inset-0 z-[4000] pointer-events-none overflow-hidden">
