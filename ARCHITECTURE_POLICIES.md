@@ -88,3 +88,20 @@ Primary floating back buttons should follow one shared spec across major tabs (`
 
 ### Exception
 - Icon-only close/back buttons (for dense modal headers such as `Research`) should still preserve the same touch target size (`52px` / `58px`) even when the text label is omitted.
+
+---
+
+## 5. Modal Overlay Standard
+
+Shared popup overlays should dim the game scene without fully burying it. The default intent is to keep the active scene readable through the veil so modal interactions still feel anchored to the game world.
+
+### Overlay Spec
+- Shared class source: `UI_MODAL_LAYOUT.OVERLAY`
+- Backdrop tone: `stone-950` at roughly `40-45%` opacity
+- Blur: very light (`~2px`) so the scene softens but remains recognizable
+- Layout: full-screen center alignment with safe viewport padding
+- Use shared overlay styling by default instead of per-modal one-off backgrounds
+
+### Exceptions
+- Highly dramatic or end-of-day moments such as `SleepModal` may intentionally use a darker overlay than the shared default.
+- If a modal needs stronger isolation for readability, prefer increasing the modal container contrast first before darkening the global overlay.

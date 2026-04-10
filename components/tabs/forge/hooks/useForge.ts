@@ -11,25 +11,112 @@ import { getAssetUrl } from '../../../../utils';
 import { GAME_CONFIG } from '../../../../config/game-config';
 import { t } from '../../../../utils/i18n';
 
+const FORGE_EXPANDED_SUBCATS_COOKIE = 'forge_expanded_subcats_v1';
+const FORGE_ACTIVE_CATEGORY_COOKIE = 'forge_active_category_v1';
+const FORGE_FAVORITES_EXPANDED_COOKIE = 'forge_favorites_expanded_v1';
+
+type ExpandedSubCatState = Record<EquipmentCategory, string[]>;
+type ExpandedSubCatSavedState = Record<EquipmentCategory, boolean>;
+
+const readCookieValue = (key: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const cookie = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(`${key}=`));
+
+  if (!cookie) return null;
+  return decodeURIComponent(cookie.split('=').slice(1).join('='));
+};
+
+const readExpandedSubCatsCookie = (): { state: ExpandedSubCatState; saved: ExpandedSubCatSavedState } => {
+  const emptyState: ExpandedSubCatState = {
+    WEAPON: [],
+    ARMOR: [],
+    ACCESSORY: [],
+  };
+  const emptySaved: ExpandedSubCatSavedState = {
+    WEAPON: false,
+    ARMOR: false,
+    ACCESSORY: false,
+  };
+
+  try {
+    const rawValue = readCookieValue(FORGE_EXPANDED_SUBCATS_COOKIE);
+    if (!rawValue) return { state: emptyState, saved: emptySaved };
+    const parsed = JSON.parse(rawValue);
+
+    if (!parsed || typeof parsed !== 'object') return { state: emptyState, saved: emptySaved };
+
+    return {
+      state: {
+        WEAPON: Array.isArray(parsed.WEAPON) ? parsed.WEAPON.filter((value: unknown): value is string => typeof value === 'string') : [],
+        ARMOR: Array.isArray(parsed.ARMOR) ? parsed.ARMOR.filter((value: unknown): value is string => typeof value === 'string') : [],
+        ACCESSORY: Array.isArray(parsed.ACCESSORY) ? parsed.ACCESSORY.filter((value: unknown): value is string => typeof value === 'string') : [],
+      },
+      saved: {
+        WEAPON: Array.isArray(parsed.WEAPON),
+        ARMOR: Array.isArray(parsed.ARMOR),
+        ACCESSORY: Array.isArray(parsed.ACCESSORY),
+      }
+    };
+  } catch {
+    return { state: emptyState, saved: emptySaved };
+  }
+};
+
+const writeCookieValue = (key: string, value: string) => {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${key}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
+};
+
+const writeExpandedSubCatsCookie = (expandedSubCats: ExpandedSubCatState) => {
+  writeCookieValue(FORGE_EXPANDED_SUBCATS_COOKIE, JSON.stringify(expandedSubCats));
+};
+
+const readForgeActiveCategoryCookie = (): EquipmentCategory => {
+  const rawValue = readCookieValue(FORGE_ACTIVE_CATEGORY_COOKIE);
+  return rawValue === 'ARMOR' ? 'ARMOR' : 'WEAPON';
+};
+
+const writeForgeActiveCategoryCookie = (category: EquipmentCategory) => {
+  writeCookieValue(FORGE_ACTIVE_CATEGORY_COOKIE, category);
+};
+
+const readForgeFavoritesExpandedCookie = (): boolean => {
+  const rawValue = readCookieValue(FORGE_FAVORITES_EXPANDED_COOKIE);
+  return rawValue === null ? true : rawValue === 'true';
+};
+
+const writeForgeFavoritesExpandedCookie = (isExpanded: boolean) => {
+  writeCookieValue(FORGE_FAVORITES_EXPANDED_COOKIE, String(isExpanded));
+};
+
 export const useForge = (onNavigate: (tab: any) => void) => {
   const { state, actions } = useGame();
   const { inventory, stats, isCrafting, craftingMastery, unlockedRecipes, tutorialStep, forgeTemperature, lastForgeTime } = state;
   const { hasFurnace, hasWorkbench, hasResearchTable } = state.forge;
   const language = state.settings.language;
 
-  const [activeCategory, setActiveCategory] = useState<EquipmentCategory>('WEAPON');
+  const [activeCategory, setActiveCategory] = useState<EquipmentCategory>(() => readForgeActiveCategoryCookie());
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isSkillsExpanded, setIsSkillsExpanded] = useState(false);
-  const [expandedSubCat, setExpandedSubCat] = useState<string | null>('SWORD');
+  const expandedSubCatCookie = useMemo(() => readExpandedSubCatsCookie(), []);
+  const [expandedSubCatsByCategory, setExpandedSubCatsByCategory] = useState<ExpandedSubCatState>(() => expandedSubCatCookie.state);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [isFavExpanded, setIsFavExpanded] = useState(true);
+  const [isFavExpanded, setIsFavExpanded] = useState<boolean>(() => readForgeFavoritesExpandedCookie());
   const [hoveredItem, setHoveredItem] = useState<EquipmentItem | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [quickCraftProgress, setQuickCraftProgress] = useState<number | null>(null);
 
   // Timer ref for auto-hiding the tooltip
   const tooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initializedExpandedCategoriesRef = useRef<ExpandedSubCatSavedState>(expandedSubCatCookie.saved);
+
+  const expandedSubCats = useMemo(
+    () => expandedSubCatsByCategory[activeCategory] || [],
+    [expandedSubCatsByCategory, activeCategory]
+  );
 
   const smithingLevel = getSmithingLevel(stats.smithingExp);
   const workbenchLevel = getSmithingLevel(stats.workbenchExp);
@@ -113,6 +200,34 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       sc.categoryId === activeCategory && (groupedItems[sc.id]?.length || 0) > 0
     );
   }, [activeCategory, groupedItems]);
+
+  useEffect(() => {
+    setExpandedSubCatsByCategory(prev => {
+      if (initializedExpandedCategoriesRef.current[activeCategory]) {
+        return prev;
+      }
+
+      const visibleIds = visibleSubCats.map(subCat => subCat.id);
+      initializedExpandedCategoriesRef.current[activeCategory] = true;
+
+      return {
+        ...prev,
+        [activeCategory]: visibleIds,
+      };
+    });
+  }, [visibleSubCats, activeCategory]);
+
+  useEffect(() => {
+    writeExpandedSubCatsCookie(expandedSubCatsByCategory);
+  }, [expandedSubCatsByCategory]);
+
+  useEffect(() => {
+    writeForgeActiveCategoryCookie(activeCategory);
+  }, [activeCategory]);
+
+  useEffect(() => {
+    writeForgeFavoritesExpandedCookie(isFavExpanded);
+  }, [isFavExpanded]);
 
   const masteryInfo = useMemo(() => {
     if (!selectedItem) return null;
@@ -333,7 +448,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     selectedItem,
     isPanelOpen,
     isSkillsExpanded,
-    expandedSubCat,
+    expandedSubCats,
     favorites,
     isFavExpanded,
     hoveredItem,
@@ -360,7 +475,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       setSelectedItem,
       setIsPanelOpen,
       setIsSkillsExpanded,
-      setExpandedSubCat,
+      setExpandedSubCatsByCategory,
       setFavorites,
       setIsFavExpanded,
       setHoveredItem,
@@ -374,7 +489,15 @@ export const useForge = (onNavigate: (tab: any) => void) => {
       handleMouseEnter,
       handleMouseMove,
       handleMouseLeave,
-      toggleSubCategory: (id: string) => setExpandedSubCat(prev => prev === id ? null : id),
+      toggleSubCategory: (id: string) => setExpandedSubCatsByCategory(prev => {
+        const currentExpanded = prev[activeCategory] || [];
+        return {
+          ...prev,
+          [activeCategory]: currentExpanded.includes(id)
+            ? currentExpanded.filter(subCatId => subCatId !== id)
+            : [...currentExpanded, id]
+        };
+      }),
       toggleFavorite: (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);

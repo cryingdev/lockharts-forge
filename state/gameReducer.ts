@@ -15,7 +15,7 @@ import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual, handleUseCampManualDungeon, handleLeaveCampManualDungeon } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 import { handleResearchCombination } from './reducer/research';
-import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleRefreshCommissions, handleUpdateContractObjectiveProgress, handleClaimObjectiveContract, handleGenerateTavernMinorContract, handleUnlockNamedEncounter } from './reducer/commission';
+import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleDismissExpiredContract, handleRefreshCommissions, handleUpdateContractObjectiveProgress, handleClaimObjectiveContract, handleGenerateTavernMinorContract, handleUnlockNamedEncounter } from './reducer/commission';
 import { t } from '../utils/i18n';
 import { getForgeName } from '../utils/gameText';
 
@@ -92,6 +92,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'UPDATE_CONTRACT_OBJECTIVE_PROGRESS': return handleUpdateContractObjectiveProgress(state, action.payload);
     case 'CLAIM_OBJECTIVE_CONTRACT': return handleClaimObjectiveContract(state, action.payload.contractId);
     case 'FAIL_CONTRACT': return handleFailContract(state, action.payload.contractId);
+    case 'DISMISS_EXPIRED_CONTRACT': return handleDismissExpiredContract(state, action.payload.contractId);
     case 'REFRESH_COMMISSIONS': return handleRefreshCommissions(state);
     case 'GENERATE_TAVERN_MINOR_CONTRACT': return handleGenerateTavernMinorContract(state, action.payload);
     case 'UNLOCK_NAMED_ENCOUNTER': return handleUnlockNamedEncounter(state, action.payload.mercenaryId);

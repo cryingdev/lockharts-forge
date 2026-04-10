@@ -41,7 +41,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
   const forge = useForge(onNavigate);
   const { 
     state, handlers, actions, isCrafting, selectedItem, isPanelOpen, 
-    activeCategory, expandedSubCat, favoriteItems, isFavExpanded, visibleSubCats, 
+    activeCategory, expandedSubCats, favoriteItems, isFavExpanded, visibleSubCats, 
     groupedItems, hoveredItem, tooltipPos, quickCraftProgress, masteryInfo, 
     isFuelShortage, isQuickFuelShortage, isEnergyShortage, requiredEnergy, extraQuickFuel, smithingLevel, workbenchLevel 
   } = forge;
@@ -277,7 +277,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                     <div className="flex-1 overflow-hidden bg-stone-950/20">
                         <ForgeListView 
                             activeCategory={activeCategory}
-                            expandedSubCat={expandedSubCat}
+                            expandedSubCats={expandedSubCats}
                             favoriteItems={favoriteItems}
                             isFavExpanded={isFavExpanded}
                             visibleSubCats={visibleSubCats}

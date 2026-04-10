@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { getAssetUrl } from '../utils';
+import { MASTERY_THRESHOLDS } from '../config/mastery-config';
 
 interface Point {
   x: number;
@@ -81,6 +82,7 @@ export default class WorkbenchScene extends Phaser.Scene {
   private cursorSpeed = 0.00012; 
   private confirmedProgress = 0;
   private currentQuality = 100;
+  private qualityCap = 100;
   private combo = 0;
   private enhancementCount = 0; 
   private isFinished = false;
@@ -117,7 +119,8 @@ export default class WorkbenchScene extends Phaser.Scene {
     this.isTransitioning = false; 
     this.cursorProgress = 0; 
     this.confirmedProgress = 0; 
-    this.currentQuality = 100; 
+    this.currentQuality = this.getInitialQuality();
+    this.qualityCap = this.getQualityCap();
     this.combo = 0; 
     this.enhancementCount = 0; 
     this.currentPhase = 1; 
@@ -200,7 +203,7 @@ export default class WorkbenchScene extends Phaser.Scene {
     
     this.progBg = this.add.rectangle(0, 0, 300, 16, 0x000000, 0.5).setStrokeStyle(2, 0x57534e);
     this.progressBar = this.add.rectangle(0, 0, 0.1, 12, 0x10b981).setOrigin(0, 0.5);
-    this.qualityText = this.add.text(0, 0, 'PRISTINE', { fontFamily: 'Grenze Gotisch', fontSize: '20px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5);
+    this.qualityText = this.add.text(0, 0, this.getQualityLabel(this.currentQuality), { fontFamily: 'Grenze Gotisch', fontSize: '20px', color: this.getLabelColor(this.currentQuality), fontStyle: 'bold' }).setOrigin(0.5);
     this.root.add([this.progBg, this.progressBar, this.qualityText]);
 
     this.infoText = this.add.text(0, 0, 'TOUCH TO START', { 
@@ -586,7 +589,7 @@ export default class WorkbenchScene extends Phaser.Scene {
             const ratio = obj.dragSuccessTicks / obj.totalTicksInRange;
             if (ratio > 0.92 && obj.startHitPerfect && !obj.missedStart) { 
                 obj.hit = true; 
-                this.currentQuality = Math.min(120, this.currentQuality + 1.0); 
+                this.currentQuality = Math.min(this.qualityCap, this.currentQuality + 1.0); 
                 this.showFeedback('PERFECT!', 0xfbbf24, this.cursor.x, this.cursor.y); 
                 this.createSparks(this.cursor.x, this.cursor.y, 0xfbbf24, 15); 
             }
@@ -610,7 +613,7 @@ export default class WorkbenchScene extends Phaser.Scene {
       
       if (isPerfect) { 
           this.combo++; 
-          this.currentQuality = Math.min(120, this.currentQuality + 1.0); 
+          this.currentQuality = Math.min(this.qualityCap, this.currentQuality + 1.0); 
           this.showFeedback('PERFECT!', 0xfbbf24, pos.x, pos.y); 
           this.createSparks(pos.x, pos.y, 0xfbbf24, 15); 
           if (this.combo >= 8) this.handleEnhancement(pos.x, pos.y); 
@@ -673,6 +676,18 @@ export default class WorkbenchScene extends Phaser.Scene {
   }
 
   public getQualityLabel(q: number): string { if (q >= 110) return 'MASTERWORK'; if (q >= 100) return 'PRISTINE'; if (q >= 90) return 'SUPERIOR'; if (q >= 80) return 'FINE'; if (q >= 70) return 'STANDARD'; if (q >= 60) return 'RUSTIC'; return 'CRUDE'; }
+
+  private getInitialQuality() {
+    if (this.masteryCount >= MASTERY_THRESHOLDS.ARTISAN) return 88;
+    if (this.masteryCount >= MASTERY_THRESHOLDS.ADEPT) return 80;
+    return 72;
+  }
+
+  private getQualityCap() {
+    if (this.masteryCount >= MASTERY_THRESHOLDS.ARTISAN) return 120;
+    if (this.masteryCount >= MASTERY_THRESHOLDS.ADEPT) return 108;
+    return 98;
+  }
   private getLabelColor(q: number): string { if (q >= 110) return '#f59e0b'; if (q >= 100) return '#fbbf24'; if (q >= 90) return '#10b981'; if (q >= 80) return '#3b82f6'; if (q >= 70) return '#a8a29e'; if (q >= 60) return '#d97706'; return '#ef4444'; }
 
   private win() {

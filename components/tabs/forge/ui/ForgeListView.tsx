@@ -5,7 +5,7 @@ import { EquipmentCategory, EquipmentItem } from '../../../../types';
 
 interface ForgeListViewProps {
     activeCategory: EquipmentCategory;
-    expandedSubCat: string | null;
+    expandedSubCats: string[];
     favoriteItems: EquipmentItem[];
     isFavExpanded: boolean;
     visibleSubCats: any[];
@@ -25,7 +25,7 @@ interface ForgeListViewProps {
 }
 
 export const ForgeListView: React.FC<ForgeListViewProps> = ({
-    activeCategory, expandedSubCat, favoriteItems, isFavExpanded, visibleSubCats, groupedItems,
+    activeCategory, expandedSubCats, favoriteItems, isFavExpanded, visibleSubCats, groupedItems,
     selectedItem, favorites, getInventoryCount, getItemImageUrl,
     onCategoryChange, onToggleSubCategory, onToggleFavExpanded, onSelectItem, onToggleFavorite,
     onMouseEnter, onMouseMove, onMouseLeave
@@ -84,15 +84,15 @@ export const ForgeListView: React.FC<ForgeListViewProps> = ({
                 
                 {visibleSubCats.map((subCat, idx) => (
                     <div key={subCat.id} className="space-y-3 animate-in fade-in slide-in-from-left-2 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
-                        <button 
-                            onClick={() => onToggleSubCategory(subCat.id)} 
+                        <button
+                            onClick={() => onToggleSubCategory(subCat.id)}
                             className="w-full flex items-center justify-between px-4 py-2.5 bg-stone-800/40 border border-stone-700/30 rounded-xl group transition-all hover:bg-stone-800/60"
                         >
                             <span className="text-[11px] md:text-xs font-black uppercase text-stone-400 group-hover:text-amber-500 transition-colors tracking-widest">{subCat.name}</span>
                             <div className="flex-1 h-px bg-stone-800 mx-4 opacity-50"></div>
-                            {expandedSubCat === subCat.id ? <ChevronDown className="w-4 h-4 text-stone-600" /> : <ChevronRight className="w-4 h-4 text-stone-600" />}
+                            {expandedSubCats.includes(subCat.id) ? <ChevronDown className="w-4 h-4 text-stone-600" /> : <ChevronRight className="w-4 h-4 text-stone-600" />}
                         </button>
-                        {expandedSubCat === subCat.id && (
+                        {expandedSubCats.includes(subCat.id) && (
                             <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                                 {groupedItems[subCat.id]?.map(item => (
                                     <RecipeCard 

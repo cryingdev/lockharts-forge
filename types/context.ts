@@ -102,7 +102,8 @@ export interface GameContextType {
     submitContract: (contractId: string) => void;
     updateContractObjectiveProgress: (contractId: string, objectiveId: string, amount: number) => void;
     claimObjectiveContract: (contractId: string) => void;
-    failContract: (contractId: string) => void;
+  failContract: (contractId: string) => void;
+  dismissExpiredContract: (contractId: string) => void;
     refreshCommissions: () => void;
     generateTavernMinorContract: (mercenaryId: string, templateId: string) => void;
     unlockNamedEncounter: (mercenaryId: string) => void;
