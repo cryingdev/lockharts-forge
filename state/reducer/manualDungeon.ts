@@ -62,9 +62,10 @@ const generateManualGrid = (width: number, height: number, dungeonId: string, fl
                 if (r < 0.18) grid[y][x] = 'ENEMY'; 
                 else if (r < 0.33) grid[y][x] = 'RESOURCE'; 
                 else if (r < 0.38) grid[y][x] = 'GOLD';
-                else if (r < 0.45) grid[y][x] = 'TRAP';
+                else if (r < 0.43) grid[y][x] = 'TRAP';
+                else if (r < 0.48) grid[y][x] = 'CAMP';
                 // GATED: Only spawn NPC if allowed and not already placed
-                else if (canSpawnNPC && r < 0.47 && !npcPlaced) {
+                else if (canSpawnNPC && r < 0.50 && !npcPlaced) {
                     grid[y][x] = 'NPC';
                     npcPlaced = true;
                 }
@@ -117,9 +118,9 @@ const generateEnemiesForSession = (dungeonId: string, currentFloor: number, isBo
     return monsters;
 };
 
-export const handleStartManualDungeon = (state: GameState, payload: { dungeonId: string; partyIds: string[]; startFloor?: number }): GameState => {
+export const handleStartManualDungeon = (state: GameState, payload: { dungeonId: string; partyIds: string[]; startFloor?: number; force?: boolean }): GameState => {
     const language = state.settings.language;
-    if (state.forge.isShopOpen) {
+    if (state.forge.isShopOpen && !payload.force) {
         return { ...state, logs: [t(language, 'manualDungeon.shop_open_blocked'), ...state.logs] };
     }
     const dungeon = DUNGEONS.find(d => d.id === payload.dungeonId);
@@ -170,7 +171,8 @@ export const handleStartManualDungeon = (state: GameState, payload: { dungeonId:
         lastActionMessage: t(language, 'manualDungeon.enter_sector', { floor: startFloor }),
         currentFloor: startFloor,
         maxFloors: dungeon.maxFloors,
-        floorBoost: 1.0 // Start with base (0% boost)
+        floorBoost: 1.0, // Start with base (0% boost)
+        consumedCampKeys: []
     };
 
     return {
@@ -205,7 +207,7 @@ const updateObjectives = (state: GameState, type: 'HUNT', targetId: string, amou
 
 export const handleMoveManualDungeon = (state: GameState, payload: { x: number, y: number }): GameState => {
     const session = state.activeManualDungeon;
-    if (!session || session.encounterStatus === 'ENCOUNTERED' || session.encounterStatus === 'BATTLE') return state;
+    if (!session || session.encounterStatus === 'ENCOUNTERED' || session.encounterStatus === 'BATTLE' || session.encounterStatus === 'CAMP') return state;
     const language = state.settings.language;
 
     const dungeon = DUNGEONS.find(d => d.id === session.dungeonId);
@@ -249,6 +251,8 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
     let actionMsg = isAlreadyVisited ? t(language, 'manualDungeon.backtracking') : t(language, 'manualDungeon.advancing');
     let encounterStatus: ManualDungeonSession['encounterStatus'] = 'NONE';
     let newMaxFloorReached = { ...state.maxFloorReached };
+    const campKey = `${session.currentFloor}:${newX},${newY}`;
+    const isCampConsumed = (session.consumedCampKeys || []).includes(campKey);
 
     if (targetRoom === 'GOLD' && !isAlreadyVisited) {
         extraGold = (dungeon.tier || 1) * 30;
@@ -274,6 +278,9 @@ export const handleMoveManualDungeon = (state: GameState, payload: { x: number, 
         logMsg = t(language, 'manualDungeon.recovered_materials');
     } else if (targetRoom === 'TRAP' && !isAlreadyVisited) {
         actionMsg = t(language, 'manualDungeon.trap_triggered');
+    } else if (targetRoom === 'CAMP' && !isCampConsumed) {
+        encounterStatus = 'CAMP';
+        actionMsg = t(language, 'manualDungeon.camp_discovered');
     } else if (targetRoom === 'KEY' && !isAlreadyVisited) {
         logMsg = t(language, 'manualDungeon.key_obtained');
         actionMsg = t(language, 'manualDungeon.key_hint');
@@ -367,6 +374,63 @@ export const handleStartCombatManual = (state: GameState): GameState => {
             ...session,
             encounterStatus: 'BATTLE',
             enemies: enemies
+        }
+    };
+};
+
+export const handleUseCampManualDungeon = (state: GameState): GameState => {
+    const session = state.activeManualDungeon;
+    if (!session || session.encounterStatus !== 'CAMP') return state;
+    const language = state.settings.language;
+    const currentRoom = session.grid[session.playerPos.y][session.playerPos.x];
+    if (currentRoom !== 'CAMP') return state;
+
+    const campKey = `${session.currentFloor}:${session.playerPos.x},${session.playerPos.y}`;
+    if ((session.consumedCampKeys || []).includes(campKey)) {
+        return {
+            ...state,
+            activeManualDungeon: {
+                ...session,
+                encounterStatus: 'NONE',
+                lastActionMessage: t(language, 'manualDungeon.camp_exhausted')
+            }
+        };
+    }
+
+    const updatedMercs = state.knownMercenaries.map((merc) => {
+        if (!session.partyIds.includes(merc.id)) return merc;
+        const hpRecovery = Math.floor(merc.maxHp * 0.5);
+        const mpRecovery = Math.floor((merc.maxMp || 0) * 0.5);
+        return {
+            ...merc,
+            currentHp: Math.min(merc.maxHp, merc.currentHp + hpRecovery),
+            currentMp: Math.min(merc.maxMp || 0, (merc.currentMp || 0) + mpRecovery)
+        };
+    });
+
+    return {
+        ...state,
+        knownMercenaries: updatedMercs,
+        activeManualDungeon: {
+            ...session,
+            consumedCampKeys: [...(session.consumedCampKeys || []), campKey],
+            encounterStatus: 'NONE',
+            lastActionMessage: t(language, 'manualDungeon.camp_rest_complete')
+        },
+        logs: [t(language, 'manualDungeon.camp_rest_log'), ...state.logs]
+    };
+};
+
+export const handleLeaveCampManualDungeon = (state: GameState): GameState => {
+    const session = state.activeManualDungeon;
+    if (!session || session.encounterStatus !== 'CAMP') return state;
+    const language = state.settings.language;
+    return {
+        ...state,
+        activeManualDungeon: {
+            ...session,
+            encounterStatus: 'NONE',
+            lastActionMessage: t(language, 'manualDungeon.camp_saved_for_later')
         }
     };
 };
@@ -546,17 +610,25 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
         if (session.partyIds.includes(m.id)) {
             let nextStatus: any = 'HIRED';
             let statusChange: 'NONE' | 'INJURED' | 'DEAD' = 'NONE';
+            let nextCurrentHp = m.currentHp;
+            let nextRecoveryUntilDay = m.recoveryUntilDay;
             
             if (isDefeat) {
                 const roll = rng.standard(0, 1, 4);
-                if (roll < 0.1) { nextStatus = 'DEAD'; statusChange = 'DEAD'; }
+                if (roll < 0.1) {
+                    nextStatus = 'DEAD';
+                    statusChange = 'DEAD';
+                    nextCurrentHp = 0;
+                }
                 else { 
                     nextStatus = 'INJURED'; statusChange = 'INJURED'; 
-                    m.recoveryUntilDay = state.stats.day + 2; 
+                    nextCurrentHp = 1;
+                    nextRecoveryUntilDay = state.stats.day + 2;
                 }
             } else if (m.currentHp <= 0) {
                 nextStatus = 'INJURED'; statusChange = 'INJURED';
-                m.recoveryUntilDay = state.stats.day + 1;
+                nextCurrentHp = 1;
+                nextRecoveryUntilDay = state.stats.day + 1;
             }
 
             mercResults.push({
@@ -565,7 +637,13 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
                 currentXp: m.currentXp, xpToNext: m.xpToNextLevel, statusChange
             });
 
-            return { ...m, status: nextStatus, assignedExpeditionId: undefined };
+            return {
+                ...m,
+                currentHp: nextCurrentHp,
+                status: nextStatus,
+                recoveryUntilDay: nextRecoveryUntilDay,
+                assignedExpeditionId: undefined
+            };
         }
         return m;
     });

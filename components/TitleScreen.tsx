@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Anvil, Play, Upload, User, FastForward, X, Settings, Zap, BookOpen, Globe, ChevronDown, Check } from 'lucide-react';
 import { getAssetUrl } from '../utils';
-import { getDisplayForgeNameFromMetadata, getLatestSaveInfo, getSaveMetadataList, loadFromSlot } from '../utils/saveSystem';
+import { getDisplayForgeNameFromMetadata, getLatestSaveInfoWithStatus, getSaveMetadataList, loadFromSlotWithStatus } from '../utils/saveSystem';
 import SaveLoadModal from './modals/SaveLoadModal';
 const SettingsModal = React.lazy(() => import('./modals/SettingsModal'));
 const ConfirmationModal = React.lazy(() => import('./modals/ConfirmationModal'));
@@ -28,6 +28,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     const [showNameConfirmModal, setShowNameConfirmModal] = useState(false);
     const [showNewGameModal, setShowNewGameModal] = useState(false);
     const [showLanguageList, setShowLanguageList] = useState(false);
+    const [migrationFailure, setMigrationFailure] = useState<{ isOpen: boolean; saveVersion?: string }>({ isOpen: false });
     const [hasSaves, setHasSaves] = useState(false);
     const [playerNameInput, setPlayerNameInput] = useState(getDefaultPlayerName(language));
     const [latestSaveForgeName, setLatestSaveForgeName] = useState<string | null>(null);
@@ -66,13 +67,10 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     };
 
     const handleContinue = () => {
-        const info = getLatestSaveInfo(createInitialGameState());
+        const info = getLatestSaveInfoWithStatus(createInitialGameState());
         if (info) {
-            if (info.data.version !== APP_VERSION) {
-                alert(t(language, 'title.version_mismatch', {
-                    saveVersion: info.data.version || '0.1.36',
-                    appVersion: APP_VERSION
-                }));
+            if (!info.success || !info.data) {
+                setMigrationFailure({ isOpen: true, saveVersion: info.version });
                 return;
             }
             onLoadGame(info.data, info.index);
@@ -80,18 +78,14 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
     };
 
     const handleLoadFromSlot = (index: number) => {
-        const data = loadFromSlot(index, createInitialGameState());
-        if (data) {
-            if (data.version !== APP_VERSION) {
-                alert(t(language, 'title.version_mismatch', {
-                    saveVersion: data.version || '0.1.36',
-                    appVersion: APP_VERSION
-                }));
-                return;
-            }
-            onLoadGame(data, index);
+        const result = loadFromSlotWithStatus(index, createInitialGameState());
+        if (result.success && result.data) {
+            onLoadGame(result.data, index);
             setShowLoadModal(false);
+            return;
         }
+
+        setMigrationFailure({ isOpen: true, saveVersion: result.version });
     };
 
     return (
@@ -324,6 +318,18 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                             setShowNewGameModal(true);
                         }}
                         onCancel={() => setShowNameConfirmModal(false)}
+                    />
+                    <ConfirmationModal
+                        isOpen={migrationFailure.isOpen}
+                        title={t(language, 'title.save_migration_failed_title')}
+                        message={t(language, 'title.save_migration_failed_message', {
+                            saveVersion: migrationFailure.saveVersion || '0.0.0',
+                            appVersion: APP_VERSION
+                        })}
+                        confirmLabel={t(language, 'common.accept')}
+                        cancelLabel={t(language, 'common.accept')}
+                        onConfirm={() => setMigrationFailure({ isOpen: false })}
+                        onCancel={() => setMigrationFailure({ isOpen: false })}
                     />
                 </React.Suspense>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Save, Upload, Volume2, VolumeX, LogOut, X, Settings, Layout, Check, Music, Zap, ChevronDown, Globe } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
 const SaveLoadModal = React.lazy(() => import('./SaveLoadModal'));
-import { loadFromSlot } from '../../utils/saveSystem';
+import { loadFromSlotWithStatus } from '../../utils/saveSystem';
 const ConfirmationModal = React.lazy(() => import('./ConfirmationModal'));
 import { SfxButton } from '../common/ui/SfxButton';
 import { CustomSlider } from '../common/ui/CustomSlider';
@@ -48,6 +48,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         data: null,
         index: null
     });
+    const [migrationFailure, setMigrationFailure] = useState<{ isOpen: boolean; saveVersion?: string }>({
+        isOpen: false
+    });
 
     if (!isOpen) return null;
 
@@ -58,14 +61,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
         if (slModal.mode === 'SAVE') {
             actions.saveGame(slotIndex);
         } else {
-            const data = loadFromSlot(slotIndex, createInitialGameState());
-            if (data) {
-                if (data.version !== APP_VERSION) {
-                    actions.showToast(t(language, 'settings.load_failed_version_mismatch'));
-                    return;
-                }
-                setLoadConfirm({ isOpen: true, data, index: slotIndex });
+            const result = loadFromSlotWithStatus(slotIndex, createInitialGameState());
+            if (!result.success || !result.data) {
+                setMigrationFailure({ isOpen: true, saveVersion: result.version });
+                return;
             }
+            setLoadConfirm({ isOpen: true, data: result.data, index: slotIndex });
         }
     };
 
@@ -199,6 +200,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                     message={t(language, 'settings.overwrite_progress_desc')} 
                     onConfirm={() => { setLoadConfirm({ ...loadConfirm, isOpen: false }); setSlModal({ ...slModal, isOpen: false }); onClose(); if(onLoadRequest) onLoadRequest(loadConfirm.data, loadConfirm.index!); }} 
                     onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })} 
+                />
+                <ConfirmationModal
+                    isOpen={migrationFailure.isOpen}
+                    title={t(language, 'title.save_migration_failed_title')}
+                    message={t(language, 'title.save_migration_failed_message', {
+                        saveVersion: migrationFailure.saveVersion || '0.0.0',
+                        appVersion: APP_VERSION
+                    })}
+                    confirmLabel={t(language, 'common.accept')}
+                    cancelLabel={t(language, 'common.accept')}
+                    onConfirm={() => setMigrationFailure({ isOpen: false })}
+                    onCancel={() => setMigrationFailure({ isOpen: false })}
                 />
             </React.Suspense>
         </>

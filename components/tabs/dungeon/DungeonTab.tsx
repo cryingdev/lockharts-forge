@@ -33,6 +33,7 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
         party, hiredMercs, availableCandidates, potentialRewards, isFloorCleared,
         requiredPowerForFloor, staminaCostForFloor, currentPartyPower, timeLeft,
         failedMercs, lowHpMercs, failedPowerHighlight, showRecallConfirm, setShowRecallConfirm,
+        showShopOpenConfirm, setShowShopOpenConfirm,
         isPickerOpen, setIsPickerOpen, currentExpedition, hasActiveMission, isOngoingManual,
         inspectedMercId, setInspectedMercId,
         handlers
@@ -146,6 +147,15 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
                         setShowRecallConfirm(null); 
                     }} 
                     onCancel={() => setShowRecallConfirm(null)} 
+                />
+                <ConfirmationModal
+                    isOpen={showShopOpenConfirm}
+                    title={t(language, 'dungeonTab.shop_open_entry_title')}
+                    message={t(language, 'dungeonTab.shop_open_entry_message')}
+                    confirmLabel={t(language, 'dungeonTab.shop_open_entry_confirm')}
+                    cancelLabel={t(language, 'common.cancel')}
+                    onConfirm={handlers.handleConfirmManualAssaultWithOpenShop}
+                    onCancel={() => setShowShopOpenConfirm(false)}
                 />
             </React.Suspense>
         </div>

@@ -200,3 +200,62 @@
 - `/Users/cryingdev/GitHub/lockharts-forge/components/TitleScreen.tsx`
 - `/Users/cryingdev/GitHub/lockharts-forge/locales/en.ts`
 - `/Users/cryingdev/GitHub/lockharts-forge/locales/ko.ts`
+
+## Save Migration Follow-Up
+
+### Context
+- Save loading now prefers a migration-first flow instead of hard-blocking at the title screen when save and app versions differ.
+- `/Users/cryingdev/GitHub/lockharts-forge/utils/saveSystem.ts` now exposes a migration interface via `runVersionMigration(...)`.
+- That migration hook is intentionally a placeholder for now and currently returns `true`.
+
+### Why This Follow-Up Exists
+- We want old saves to attempt migration automatically on update.
+- Right now the interface exists, but there are no real version-specific migration rules or validation checks behind it yet.
+- This means the UX flow is in place, but the actual migration safety still needs to be designed and tested.
+
+### Deferred Review Task
+- Revisit save migration before future schema changes stack up.
+- Implement real version-to-version migration rules in `runVersionMigration(...)`.
+- Add validation coverage for:
+  - removed / renamed fields
+  - nested state shape changes
+  - tutorial / tavern / commission state compatibility
+  - future version upgrades that alter reducer expectations
+- Confirm behavior for:
+  - title-screen continue
+  - slot-based load from the title
+  - load from in-game settings
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/utils/saveSystem.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/components/TitleScreen.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/components/modals/SettingsModal.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/GAME_DESIGN.md`
+- `/Users/cryingdev/GitHub/lockharts-forge/TECH_DESIGN.md`
+
+## Manual Dungeon Camping Gear Follow-Up
+
+### Context
+- Camp tiles are being framed as rare manual-dungeon recovery points.
+- A later expansion should let the player bring their own lightweight camp option instead of depending only on naturally generated camp tiles.
+
+### Deferred Feature
+- Add a portable camping item / utility gear that can set up a simple field camp during manual dungeon exploration.
+- The item should eventually be purchasable from the Market / Shop flow after the base camp-tile system is stable.
+
+### Design Notes To Revisit
+- Decide whether portable camps:
+  - create a temporary `CAMP` tile,
+  - trigger a one-off recovery action without a tile,
+  - or consume a dedicated dungeon utility slot.
+- Define whether portable camp recovery is weaker than natural camps.
+- Decide whether camp gear is single-use per run, per floor, or inventory-consumable.
+- Confirm whether using a portable camp should be blocked in boss rooms or combat-adjacent spaces.
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/state/reducer/manualDungeon.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/components/tabs/dungeon/AssaultNavigator.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/data/materials.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/data/market/market-catalog.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/GAME_DESIGN.md`
+- `/Users/cryingdev/GitHub/lockharts-forge/TECH_DESIGN.md`

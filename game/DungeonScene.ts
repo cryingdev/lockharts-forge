@@ -43,7 +43,7 @@ export default class DungeonScene extends Phaser.Scene {
     private playerVisual!: Phaser.GameObjects.Container;
     
     private revealedTiles: Set<string> = new Set();
-    private contentByCoord: Map<string, Phaser.GameObjects.Text> = new Map();
+    private contentByCoord: Map<string, Phaser.GameObjects.GameObject> = new Map();
     
     private sprayEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
     private vignette!: Phaser.GameObjects.Graphics;
@@ -76,6 +76,7 @@ export default class DungeonScene extends Phaser.Scene {
     preload() {
         this.load.image('sparkle', getAssetUrl('particle_spark1.png'));
         this.load.image('red_mist', getAssetUrl('particle_spark2.png'));
+        this.load.image('dungeon_tile_campfire', getAssetUrl('dungeon_tile_campfire.png', 'dungeon'));
     }
 
     create() {
@@ -145,7 +146,7 @@ export default class DungeonScene extends Phaser.Scene {
         const { width, height } = this.scale;
         this.redFocusOverlay.clear();
         
-        const isFocusNeeded = this.session.encounterStatus === 'ENCOUNTERED' || this.session.encounterStatus === 'BATTLE';
+        const isFocusNeeded = this.session.encounterStatus === 'ENCOUNTERED' || this.session.encounterStatus === 'BATTLE' || this.session.encounterStatus === 'CAMP';
         if (!isFocusNeeded) return;
 
         this.redFocusOverlay.setScale(1);
@@ -334,7 +335,7 @@ export default class DungeonScene extends Phaser.Scene {
 
     private setupDragControls() {
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            if (this.session.encounterStatus === 'BATTLE' || this.session.encounterStatus === 'ENCOUNTERED') return;
+            if (this.session.encounterStatus === 'BATTLE' || this.session.encounterStatus === 'ENCOUNTERED' || this.session.encounterStatus === 'CAMP') return;
             this.isDragging = true;
             this.dragStartX = pointer.x - this.root.x;
             this.dragStartY = pointer.y - this.root.y;
@@ -390,22 +391,25 @@ export default class DungeonScene extends Phaser.Scene {
             this.revealedTiles.add(key);
         }
         
-        const content = this.createRoomContents(type, tx, ty);
+        const content = this.createRoomContents(type, x, y, tx, ty);
         if (content) {
             this.contentByCoord.set(key, content);
             if (animate) {
-                content.setAlpha(0).setScale(0.5);
-                this.tweens.add({ targets: content, alpha: 1, scale: 1, duration: 500, delay: 200, ease: 'Cubic.easeOut' });
+                const animatedContent = content as Phaser.GameObjects.Text | Phaser.GameObjects.Image;
+                animatedContent.setAlpha(0).setScale(0.5);
+                this.tweens.add({ targets: animatedContent, alpha: 1, scale: 1, duration: 500, delay: 200, ease: 'Cubic.easeOut' });
             }
         }
     }
 
-    private createRoomContents(type: RoomType, x: number, y: number) {
-        let content: Phaser.GameObjects.Text | null = null;
+    private createRoomContents(type: RoomType, gridX: number, gridY: number, x: number, y: number) {
+        let content: Phaser.GameObjects.GameObject | null = null;
+        const campKey = `${this.session.currentFloor}:${gridX},${gridY}`;
+        const isConsumedCamp = (this.session.consumedCampKeys || []).includes(campKey);
         switch (type) {
             case 'BOSS':
                 content = this.add.text(x, y, '💀', { fontSize: '32px' }).setOrigin(0.5);
-                if (this.session.isBossLocked && !this.session.hasKey) content.setAlpha(0.3);
+                if (this.session.isBossLocked && !this.session.hasKey) (content as Phaser.GameObjects.Text).setAlpha(0.3);
                 break;
             case 'ENEMY':
                 content = this.add.text(x, y, '⚔️', { fontSize: '28px' }).setOrigin(0.5);
@@ -420,6 +424,22 @@ export default class DungeonScene extends Phaser.Scene {
             case 'ENTRANCE': content = this.add.text(x, y, '🚪', { fontSize: '28px' }).setOrigin(0.5); break;
             case 'GOLD': content = this.add.text(x, y, '💰', { fontSize: '28px' }).setOrigin(0.5); break;
             case 'TRAP': content = this.add.text(x, y, '🕸️', { fontSize: '28px' }).setOrigin(0.5); break;
+            case 'CAMP':
+                if (this.textures.exists('dungeon_tile_campfire')) {
+                    const campSize = this.tileWidth * 0.8;
+                    const campImage = this.add.image(x, y, 'dungeon_tile_campfire').setDisplaySize(campSize, campSize).setOrigin(0.5);
+                    if (isConsumedCamp) {
+                        campImage.setTint(0x7a7a7a).setAlpha(0.78);
+                    }
+                    content = campImage;
+                } else {
+                    const campEmoji = this.add.text(x, y, '🔥', { fontSize: '30px' }).setOrigin(0.5);
+                    if (isConsumedCamp) {
+                        campEmoji.setTint(0x9a9a9a).setAlpha(0.7);
+                    }
+                    content = campEmoji;
+                }
+                break;
             case 'NPC':
                 if (this.session.npcFound) return null;
                 content = this.add.text(x, y, '👤', { fontSize: '30px' }).setOrigin(0.5);

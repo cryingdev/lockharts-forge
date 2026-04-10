@@ -5,7 +5,7 @@ import { Mercenary, MercenaryTemperament, MercenaryVoice } from '../models/Merce
 import { Expedition } from '../models/Dungeon';
 import { Monster } from '../models/Monster';
 
-export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP' | 'STAIRS' | 'ENEMY' | 'RESOURCE';
+export type RoomType = 'EMPTY' | 'ENTRANCE' | 'BOSS' | 'KEY' | 'WALL' | 'NPC' | 'GOLD' | 'TRAP' | 'STAIRS' | 'ENEMY' | 'RESOURCE' | 'CAMP';
 
 export type ContractType = 'GENERAL' | 'SPECIAL';
 export type GeneralContractKind = 'CRAFT' | 'TURN_IN' | 'HUNT' | 'EXPLORE' | 'BOSS';
@@ -229,12 +229,13 @@ export interface ManualDungeonSession {
     goldCollected: number; 
     collectedLoot: { id: string; count: number; name: string }[]; // New: Real-time loot tracking
     sessionXp: Record<string, number>; // New: Track XP gained during this session for result screen
-    encounterStatus: 'NONE' | 'ENCOUNTERED' | 'BATTLE' | 'VICTORY' | 'DEFEAT' | 'STAIRS';
+    encounterStatus: 'NONE' | 'ENCOUNTERED' | 'BATTLE' | 'VICTORY' | 'DEFEAT' | 'STAIRS' | 'CAMP';
     currentEnemyHp?: number;
     lastActionMessage?: string; 
     currentFloor: number;
     maxFloors: number;
     floorBoost: number; // New: 5% stackable boost per consecutive floor
+    consumedCampKeys?: string[];
 }
 
 export interface DailyFinancials {

@@ -12,7 +12,7 @@ import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, han
 import { handleExpandTavernLodging } from './reducer/tavern';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
-import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual } from './reducer/manualDungeon';
+import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual, handleUseCampManualDungeon, handleLeaveCampManualDungeon } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 import { handleResearchCombination } from './reducer/research';
 import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleRefreshCommissions, handleUpdateContractObjectiveProgress, handleClaimObjectiveContract, handleGenerateTavernMinorContract, handleUnlockNamedEncounter } from './reducer/commission';
@@ -116,6 +116,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'START_COMBAT_MANUAL': return handleStartCombatManual(state);
     case 'RESOLVE_COMBAT_MANUAL': return handleResolveCombatManual(state, action.payload);
     case 'PROCEED_TO_NEXT_FLOOR_MANUAL': return handleProceedToNextFloorManual(state);
+    case 'USE_CAMP_MANUAL_DUNGEON': return handleUseCampManualDungeon(state);
+    case 'LEAVE_CAMP_MANUAL_DUNGEON': return handleLeaveCampManualDungeon(state);
 
     // Tutorial & Prologue
     case 'SET_TUTORIAL_STEP': return { ...state, tutorialStep: action.payload };

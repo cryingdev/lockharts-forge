@@ -20,6 +20,7 @@ export const useDungeon = () => {
     const [lowHpMercs, setLowHpMercs] = useState<string[]>([]);
     const [failedPowerHighlight, setFailedPowerHighlight] = useState(false);
     const [showRecallConfirm, setShowRecallConfirm] = useState<'AUTO' | 'MANUAL' | null>(null);
+    const [showShopOpenConfirm, setShowShopOpenConfirm] = useState(false);
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [inspectedMercId, setInspectedMercId] = useState<string | null>(null);
 
@@ -188,18 +189,28 @@ export const useDungeon = () => {
     const handleStartManualAssault = useCallback(() => {
         if (isOngoingManual) { actions.toggleManualDungeonOverlay(true); return; }
         if (state.forge.isShopOpen) {
-            actions.showToast(t(language, 'manualDungeon.shop_open_blocked'));
+            setShowShopOpenConfirm(true);
             return;
         }
         if (!validateEntry()) return;
         actions.startManualAssault(selectedDungeon.id, party, selectedFloor);
     }, [isOngoingManual, state.forge.isShopOpen, validateEntry, actions, selectedDungeon.id, party, selectedFloor, language]);
 
+    const handleConfirmManualAssaultWithOpenShop = useCallback(() => {
+        if (!validateEntry()) {
+            setShowShopOpenConfirm(false);
+            return;
+        }
+        actions.startManualAssault(selectedDungeon.id, party, selectedFloor, true);
+        setShowShopOpenConfirm(false);
+    }, [validateEntry, actions, selectedDungeon.id, party, selectedFloor]);
+
     return {
         state, actions, view, setView, selectedDungeon, selectedFloor, setSelectedFloor,
         party, hiredMercs, availableCandidates, potentialRewards, isFloorCleared,
         requiredPowerForFloor, staminaCostForFloor, currentPartyPower, timeLeft,
         failedMercs, lowHpMercs, failedPowerHighlight, showRecallConfirm, setShowRecallConfirm,
+        showShopOpenConfirm, setShowShopOpenConfirm,
         isPickerOpen, setIsPickerOpen, currentExpedition, hasActiveMission, isOngoingManual,
         inspectedMercId, setInspectedMercId,
         handlers: {
@@ -217,7 +228,8 @@ export const useDungeon = () => {
             },
             toggleMercenary,
             handleStartAutoExpedition,
-            handleStartManualAssault
+            handleStartManualAssault,
+            handleConfirmManualAssaultWithOpenShop
         }
     };
 };

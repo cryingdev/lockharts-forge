@@ -85,7 +85,7 @@ export interface GameContextType {
     updateSettings: (settings: Partial<GameSettings>) => void;
 
     // Manual Dungeon Actions
-    startManualAssault: (dungeonId: string, partyIds: string[], startFloor?: number) => void;
+    startManualAssault: (dungeonId: string, partyIds: string[], startFloor?: number, force?: boolean) => void;
     moveInManualDungeon: (dx: number, dy: number) => void;
     finishManualAssault: () => void;
     retreatFromManualDungeon: () => void;
@@ -94,6 +94,8 @@ export interface GameContextType {
     startCombatManual: () => void;
     resolveCombatManual: (win: boolean, flee: boolean, finalParty: any[]) => void;
     proceedToNextFloorManual: () => void;
+    useCampManualDungeon: () => void;
+    leaveCampManualDungeon: () => void;
     triggerNamedEncounterCheck: (location: string) => void;
     acceptContract: (contractId: string) => void;
     declineContract: (payload: { contractId?: string; mercenaryId?: string }) => void;
