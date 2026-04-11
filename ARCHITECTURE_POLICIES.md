@@ -105,3 +105,25 @@ Shared popup overlays should dim the game scene without fully burying it. The de
 ### Exceptions
 - Highly dramatic or end-of-day moments such as `SleepModal` may intentionally use a darker overlay than the shared default.
 - If a modal needs stronger isolation for readability, prefer increasing the modal container contrast first before darkening the global overlay.
+
+---
+
+## 6. Side Transfer Handle Standard
+
+Side transfer buttons used to move between paired workspaces such as `Shop <-> Forge` should read as persistent scene handles rather than generic chevron tabs.
+
+### Side Handle Spec
+- Placement: vertically centered on the outer screen edge
+- Shape: narrow vertical handle with a rounded inside edge (`rounded-l-2xl` / `rounded-r-2xl`)
+- Width: approximately `48px`
+- Height: approximately `112px`
+- Surface: dark translucent stone base with a light glossy band across the top third
+- Border: amber-tinted edge line, thicker than default utility buttons (`2px` on the exposed edges)
+- Icon: single centered destination icon only (`Hammer` for Forge, `Store` for Shop)
+- Icon size: approximately `24px`
+- Interaction feedback: keep `active` feedback; avoid sticky hover-driven amber state on mobile
+- Intent: opening the paired scene should feel like pulling a tool drawer or side handle, not paging a carousel
+
+### Notes
+- Avoid combining a chevron and a destination icon once the icon alone is readable enough.
+- Prefer icon placement toward the visual center or slightly low, rather than above the directional affordance area.

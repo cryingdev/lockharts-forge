@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { Store, Heart, ArrowLeft, ChevronLeft, ScrollText } from 'lucide-react';
+import { Store, Heart, ArrowLeft, ChevronLeft, ScrollText, Hammer } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { useShop } from './hooks/useShop';
 import { DialogueOption } from '../../../types/game-state';
@@ -74,9 +74,11 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
                     onNavigate('FORGE');
                 }} 
                 data-tutorial-id="NAV_TO_FORGE"
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-[1050] w-8 h-24 bg-stone-900/60 hover:bg-amber-600/40 text-amber-500 rounded-l-2xl border-y border-l border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-95 group flex items-center justify-center"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-[1050] w-12 h-28 overflow-hidden rounded-l-2xl border-y-2 border-l-2 border-amber-700/55 bg-stone-900/72 text-amber-500 shadow-2xl backdrop-blur-md transition-all active:scale-95 active:bg-amber-700/25 group flex items-center justify-center"
             >
-                <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/18 via-white/7 to-transparent" />
+                <div className="pointer-events-none absolute inset-y-3 left-0 w-px bg-white/10" />
+                <Hammer className="h-6 w-6 text-amber-400/90 group-hover:scale-110 transition-transform" />
             </SfxButton>
         )}
 
