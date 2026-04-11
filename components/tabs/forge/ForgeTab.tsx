@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap, Users } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap, Users, Store } from 'lucide-react';
 import { useForge } from './hooks/useForge';
 import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
@@ -130,9 +130,11 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                     onNavigate('SHOP');
                 }} 
                 data-tutorial-id="NAV_TO_SHOP"
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-[1050] w-8 h-24 bg-stone-900/60 hover:bg-amber-600/40 text-amber-500 rounded-r-2xl border-y border-r border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-95 group flex items-center justify-center"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-[1050] w-12 h-28 overflow-hidden rounded-r-2xl border-y-2 border-r-2 border-amber-700/55 bg-stone-900/72 text-amber-500 shadow-2xl backdrop-blur-md transition-all active:scale-95 active:bg-amber-700/25 group flex items-center justify-center"
             >
-                <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/18 via-white/7 to-transparent" />
+                <div className="pointer-events-none absolute inset-y-3 right-0 w-px bg-white/10" />
+                <Store className="h-6 w-6 text-amber-400/90 group-hover:scale-110 transition-transform" />
                 {state.forge.isShopOpen && totalShopVisitors > 0 && (
                     <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-lg animate-bounce z-30">
                         <Users className="w-2.5 h-2.5" />
