@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap, Users, Store } from 'lucide-react';
 import { useForge } from './hooks/useForge';
 import { getAssetUrl } from '../../../utils';
@@ -47,7 +47,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
   } = forge;
   const language = state.settings.language;
 
-  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
+  const [isPortrait, setIsPortrait] = React.useState(window.innerHeight > window.innerWidth);
 
   useEffect(() => {
     const handleResize = () => setIsPortrait(window.innerHeight > window.innerWidth);
@@ -144,33 +144,34 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
             </SfxButton>
         )}
 
-        {/* Global Skill/Research UI - Moved to Top-Right and Always Expanded */}
+        {/* Global Skill/Research UI */}
         {!isCrafting && (
             <div className={`absolute top-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2 transition-all duration-500 ${isRecipeTutorial ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-                <div className="flex flex-col gap-2">
-                    {/* Energy Widget */}
-                    <div className={`bg-stone-900/60 border border-stone-800 rounded-xl p-3 md:p-3.5 flex items-center gap-3.5 md:gap-4 shadow-inner min-w-[184px] md:min-w-[236px] backdrop-blur-sm transition-all duration-300 ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
-                        <div className="p-2 md:p-2.5 bg-stone-950 rounded-lg border border-stone-800 shadow-md flex items-center justify-center">
-                            <Zap className={`w-4.5 h-4.5 md:w-5.5 md:h-5.5 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-end mb-1.5">
-                                <span className="text-[11px] md:text-[12px] font-black uppercase text-stone-300 tracking-[0.14em]">{t(language, 'forge.energy')}</span>
-                                <span className={`font-mono text-[13px] md:text-[14px] font-bold ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-400' : 'text-stone-200'}`}>
-                                    {state.stats.energy} / {state.stats.maxEnergy}
-                                </span>
+                <div className={`grid grid-cols-3 w-[16.5rem] md:w-[18.5rem] overflow-hidden rounded-xl border border-stone-800 bg-stone-900/66 shadow-inner backdrop-blur-sm ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
+                    <div className="min-w-0 border-r border-stone-800/90 px-1.5 py-1.5">
+                        <div className="flex flex-col items-center text-center gap-1">
+                            <div className="relative w-11 h-11 rounded-lg bg-stone-950/90 border border-white/5 shadow-sm flex items-center justify-center">
+                                <Zap className={`w-5 h-5 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
                             </div>
-                            <div className="w-full h-1.5 md:h-2 bg-stone-950 rounded-full overflow-hidden border border-white/5">
-                                <div 
-                                    className={`h-full transition-all duration-700 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'bg-red-600' : 'bg-emerald-600'}`} 
+                            <div className="leading-none">
+                                <div className="text-[9px] font-black uppercase tracking-[0.04em] text-stone-200 truncate">{t(language, 'forge.energy')}</div>
+                                <div className={`mt-0.5 text-[11px] font-mono font-black ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-300' : 'text-stone-100'}`}>
+                                    {state.stats.energy}
+                                </div>
+                            </div>
+                            <div className="w-full h-1.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
+                                <div
+                                    className={`h-full transition-all duration-700 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'bg-red-600' : 'bg-emerald-600'}`}
                                     style={{ width: `${energyPercent}%` }}
-                                ></div>
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <ForgeSkillHeader exp={state.stats.smithingExp} label={t(language, 'forge.smithing')} tierLabel={t(language, 'forge.tier')} icon={Hammer} />
-                    <ForgeSkillHeader exp={state.stats.workbenchExp} label={t(language, 'forge.workbench')} tierLabel={t(language, 'forge.tier')} icon={Activity} />
+                    <div className="border-r border-stone-800/90">
+                        <ForgeSkillHeader exp={state.stats.smithingExp} label={t(language, 'forge.smithing')} tierLabel={t(language, 'forge.tier')} icon={Hammer} compact compactBare />
+                    </div>
+                    <ForgeSkillHeader exp={state.stats.workbenchExp} label={t(language, 'forge.workbench')} tierLabel={t(language, 'forge.tier')} icon={Activity} compact compactBare />
                 </div>
 
                 {state.forge.hasResearchTable && (
@@ -227,9 +228,9 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                             actions.showToast(t(language, 'forge.storage_locked'));
                         }
                     }}
-                    className={`w-[4.7rem] h-[4.7rem] md:w-[5.5rem] md:h-[5.5rem] bg-stone-800 hover:bg-stone-700 text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-2 border-stone-600 flex flex-col items-center justify-center transition-all active:scale-90 group ${isRecipeTutorial || !state.unlockedTabs.includes('INVENTORY') ? 'opacity-20 scale-90' : 'opacity-100'}`}
+                    className={`w-[5.6rem] h-[5.6rem] md:w-[6.4rem] md:h-[6.4rem] bg-stone-800 hover:bg-stone-700 text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-2 border-stone-600 flex flex-col items-center justify-center transition-all active:scale-90 group ${isRecipeTutorial || !state.unlockedTabs.includes('INVENTORY') ? 'opacity-20 scale-90' : 'opacity-100'}`}
                 >
-                    <Package className="w-8 h-8 md:w-10 md:h-10 group-hover:scale-110 transition-transform" />
+                    <Package className="w-9 h-9 md:w-11 md:h-11 group-hover:scale-110 transition-transform" />
                     <span className="text-[11px] md:text-[13px] font-black uppercase tracking-tight mt-1.5">{t(language, 'forge.storage')}</span>
                 </SfxButton>
 
