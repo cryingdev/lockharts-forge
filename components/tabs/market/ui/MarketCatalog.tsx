@@ -68,7 +68,7 @@ export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed,
     };
 
     return (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar pb-24">
+        <div className="h-full overflow-y-auto p-4 md:p-6 custom-scrollbar pb-24">
             <div className="grid gap-4 content-start grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
                 {groups.map(group => {
                     const isCollapsed = collapsed.includes(group.id);

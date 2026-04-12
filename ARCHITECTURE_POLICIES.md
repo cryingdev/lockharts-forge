@@ -127,3 +127,30 @@ Side transfer buttons used to move between paired workspaces such as `Shop <-> F
 ### Notes
 - Avoid combining a chevron and a destination icon once the icon alone is readable enough.
 - Prefer icon placement toward the visual center or slightly low, rather than above the directional affordance area.
+
+---
+
+## 7. Forge Workspace Standard
+
+The `Forge` workspace should prioritize readability and direct action. Empty states, selected-item presentation, and recipe access should all reinforce the same core loop: choose a pattern, inspect the item, and start work.
+
+### Empty State Spec
+- The central forge icon should be an actionable entry point, not decorative only.
+- Tapping the empty-state icon should open the same recipe selection flow as the dedicated `도안 / Recipes` button.
+- Empty-state copy should guide the player toward the next action rather than use purely atmospheric flavor text.
+- Preferred message style: short imperative guidance such as `도안을 선택하고 제작을 시작하세요.`
+
+### Selected Item Panel Spec
+- Selected item name, description, and stat panel should use larger text than standard list cards because they sit directly on top of a scenic background.
+- The selected item presentation should remain centered and visually dominant over the forge backdrop.
+- Recipe change should be available from a small secondary control at the top-right of the selected item display.
+- The change-item affordance should reopen the same recipe modal used by the bottom `도안 / Recipes` button.
+
+### Primary Action Controls
+- Bottom `소지품 / Storage` and `도안 / Recipes` buttons should remain large circular controls with strong icon readability.
+- These controls should sit comfortably above the bottom screen edge rather than hugging the safe area too tightly.
+- The primary work action (`작업 시작 / Start Work`) should stay visually larger and more prominent than quick or utility actions.
+
+### Language / Readability Rule
+- Forge-facing labels and helper copy should be localized and avoid leaving raw English strings in the main workspace when Korean is active.
+- If a decorative or thematic line competes with usability, prefer a direct instructional line in the main workspace.

@@ -73,6 +73,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                 setMigrationFailure({ isOpen: true, saveVersion: info.version });
                 return;
             }
+            sessionStorage.setItem('skip-title-load-rest-overlay', '1');
             onLoadGame(info.data, info.index);
         }
     };

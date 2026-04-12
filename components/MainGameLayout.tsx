@@ -45,6 +45,9 @@ const LoadingFallback = () => {
     );
 };
 
+const REST_OVERLAY_VISIBLE_MS = 3000;
+const REST_OVERLAY_FADE_MS = 1000;
+
 const DocumentLanguageSync = () => {
     const { state } = useGame();
 
@@ -254,8 +257,13 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const [isSleeping, setIsSleeping] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const shouldSkipTitleLoadRest =
+    typeof window !== 'undefined' && sessionStorage.getItem('skip-title-load-rest-overlay') === '1';
+  const [isTitleLoadFadingIn, setIsTitleLoadFadingIn] = useState(shouldSkipTitleLoadRest);
+  const [hasStartedTitleLoadFade, setHasStartedTitleLoadFade] = useState(false);
   const [zzzText, setZzzText] = useState('');
   const prevDayRef = useRef(state.stats.day);
+  const shouldSkipNextRestOverlayRef = useRef(shouldSkipTitleLoadRest);
 
   // 대장간 구역의 마지막 방문 하위 탭 기억 (기본값: SHOP)
   const [lastForgeTab, setLastForgeTab] = useState<'SHOP' | 'FORGE'>('SHOP');
@@ -271,17 +279,50 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   }, [activeTab]);
 
   useEffect(() => {
+    if (shouldSkipTitleLoadRest) {
+      setHasStartedTitleLoadFade(false);
+      sessionStorage.removeItem('skip-title-load-rest-overlay');
+
+      const startFadeTimer = window.setTimeout(() => {
+        setHasStartedTitleLoadFade(true);
+      }, 40);
+
+      const fadeTimer = window.setTimeout(() => {
+        setIsTitleLoadFadingIn(false);
+      }, 700);
+
+      return () => {
+        window.clearTimeout(startFadeTimer);
+        window.clearTimeout(fadeTimer);
+      };
+    }
+  }, [shouldSkipTitleLoadRest]);
+
+  useEffect(() => {
+    if (shouldSkipNextRestOverlayRef.current) {
+        if (state.stats.day !== prevDayRef.current) {
+            prevDayRef.current = state.stats.day;
+            shouldSkipNextRestOverlayRef.current = false;
+            return;
+        }
+
+        prevDayRef.current = state.stats.day;
+        return;
+    }
+
     if (state.stats.day > prevDayRef.current) {
         setIsSleeping(true); setIsFadingOut(false);
         const sleepTimer = setTimeout(() => {
             setIsFadingOut(true);
-            setTimeout(() => { setIsSleeping(false); setIsFadingOut(false); actions.closeRest(); }, 1000); 
-        }, 1000); 
+            setTimeout(() => { setIsSleeping(false); setIsFadingOut(false); actions.closeRest(); }, REST_OVERLAY_FADE_MS); 
+        }, REST_OVERLAY_VISIBLE_MS); 
         prevDayRef.current = state.stats.day;
         return () => clearTimeout(sleepTimer);
     }
     prevDayRef.current = state.stats.day;
   }, [state.stats.day, actions]);
+
+  const restAnimationDuration = `${REST_OVERLAY_VISIBLE_MS}ms`;
 
   const isAnyTutorialActive = !!state.tutorialStep && state.hasCompletedPrologue && !state.isCrafting;
 
@@ -323,7 +364,146 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
       )}
 
       {/* Sleeping Overlay */}
-      {isSleeping && <div className={`fixed inset-0 z-[10000] bg-black transition-opacity ${isFadingOut ? 'opacity-0 duration-[1000ms]' : 'opacity-100'}`}>{!isFadingOut && <div className="absolute inset-0 flex flex-col items-center justify-center gap-4"><span className="text-amber-50 font-serif italic text-5xl md:text-7xl">{zzzText}</span><span className="text-stone-700 font-black uppercase text-[10px]">{t(language, 'tutorial.resting')}</span></div>}</div>}
+      {isSleeping && (
+        <div
+          className={`fixed inset-0 z-[10000] bg-black transition-opacity ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}
+          style={{ transitionDuration: `${REST_OVERLAY_FADE_MS}ms` }}
+        >
+          {!isFadingOut && (
+            <>
+              <style>{`
+                @keyframes rest-dark-lift {
+                  0% { opacity: 0.5; }
+                  24% { opacity: 0.46; }
+                  58% { opacity: 0.28; }
+                  100% { opacity: 0.12; }
+                }
+                @keyframes rest-window-dawn {
+                  0% {
+                    opacity: 0.02;
+                    transform: scale(0.98);
+                    filter: blur(26px) saturate(0.9);
+                  }
+                  22% {
+                    opacity: 0.08;
+                    transform: scale(0.995);
+                    filter: blur(24px) saturate(0.95);
+                  }
+                  62% {
+                    opacity: 0.24;
+                    transform: scale(1.03);
+                    filter: blur(22px) saturate(1.02);
+                  }
+                  100% {
+                    opacity: 0.42;
+                    transform: scale(1.06);
+                    filter: blur(18px) saturate(1.08);
+                  }
+                }
+                @keyframes rest-room-wash {
+                  0% {
+                    opacity: 0;
+                    filter: blur(40px) brightness(0.96);
+                  }
+                  32% {
+                    opacity: 0.04;
+                    filter: blur(38px) brightness(0.98);
+                  }
+                  68% {
+                    opacity: 0.12;
+                    filter: blur(34px) brightness(1.02);
+                  }
+                  100% {
+                    opacity: 0.2;
+                    filter: blur(30px) brightness(1.05);
+                  }
+                }
+                @keyframes rest-ember-fade {
+                  0% {
+                    opacity: 0.28;
+                    transform: scale(1);
+                    filter: blur(24px) saturate(1.08);
+                  }
+                  45% {
+                    opacity: 0.18;
+                    transform: scale(0.98);
+                    filter: blur(20px) saturate(1.02);
+                  }
+                  100% {
+                    opacity: 0.06;
+                    transform: scale(0.94);
+                    filter: blur(16px) saturate(0.9);
+                  }
+                }
+                @keyframes rest-zzz-float {
+                  0% { transform: translateY(0); opacity: 0.92; }
+                  50% { transform: translateY(-4px); opacity: 1; }
+                  100% { transform: translateY(0); opacity: 0.92; }
+                }
+                @keyframes rest-text-pulse {
+                  0% { opacity: 0.8; }
+                  50% { opacity: 1; }
+                  100% { opacity: 0.8; }
+                }
+              `}</style>
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute inset-0 backdrop-blur-[1px]" />
+                <div
+                  className="absolute inset-0 bg-black"
+                  style={{ animation: `rest-dark-lift ${restAnimationDuration} cubic-bezier(0.4, 0, 0.2, 1) 1 forwards` }}
+                />
+                <div
+                  className="absolute inset-0 mix-blend-screen"
+                  style={{
+                    background:
+                      'radial-gradient(52% 36% at 53% 20%, rgba(166, 191, 235, 0.72) 0%, rgba(205, 217, 255, 0.26) 28%, rgba(255, 219, 173, 0.12) 54%, rgba(255,255,255,0) 82%)',
+                    animation: `rest-window-dawn ${restAnimationDuration} cubic-bezier(0.4, 0, 0.2, 1) 1 forwards`,
+                  }}
+                />
+                <div
+                  className="absolute inset-0 mix-blend-screen"
+                  style={{
+                    background:
+                      'linear-gradient(180deg, rgba(196,214,255,0) 0%, rgba(196,214,255,0.03) 36%, rgba(245,225,188,0.14) 74%, rgba(255,235,196,0.22) 100%)',
+                    animation: `rest-room-wash ${restAnimationDuration} cubic-bezier(0.4, 0, 0.2, 1) 1 forwards`,
+                  }}
+                />
+                <div
+                  className="absolute inset-0 mix-blend-screen"
+                  style={{
+                    background:
+                      'radial-gradient(28% 24% at 27% 40%, rgba(255, 168, 84, 0.55) 0%, rgba(255, 140, 60, 0.22) 32%, rgba(255, 120, 40, 0.08) 52%, rgba(255,255,255,0) 78%)',
+                    animation: `rest-ember-fade ${restAnimationDuration} cubic-bezier(0.4, 0, 0.2, 1) 1 forwards`,
+                  }}
+                />
+
+                <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-t from-black/55 via-black/12 to-transparent" />
+              </div>
+
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <span
+                  className="text-amber-50 font-serif italic text-5xl md:text-7xl drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                  style={{ animation: 'rest-zzz-float 2.8s ease-in-out infinite' }}
+                >
+                  {zzzText}
+                </span>
+                <span
+                  className="text-stone-100 font-black uppercase tracking-[0.2em] text-[18px] md:text-[22px] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
+                  style={{ animation: 'rest-text-pulse 2.6s ease-in-out infinite' }}
+                >
+                  {t(language, 'tutorial.resting')}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {isTitleLoadFadingIn && (
+        <div
+          className={`fixed inset-0 z-[9990] bg-black pointer-events-none transition-opacity duration-700 ${hasStartedTitleLoadFade ? 'opacity-0' : 'opacity-100'}`}
+        />
+      )}
       
       {/* Tutorial Skip UI */}
       {isAnyTutorialActive && (
