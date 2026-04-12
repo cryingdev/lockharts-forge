@@ -149,18 +149,18 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
             <div className={`absolute top-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2 transition-all duration-500 ${isRecipeTutorial ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
                 <div className="flex flex-col gap-2">
                     {/* Energy Widget */}
-                    <div className={`bg-stone-900/60 border border-stone-800 rounded-xl p-2 md:p-3 flex items-center gap-3 md:gap-4 shadow-inner min-w-[150px] md:min-w-[220px] backdrop-blur-sm transition-all duration-300 ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
-                        <div className="p-1.5 md:p-2 bg-stone-950 rounded-lg border border-stone-800 shadow-md flex items-center justify-center">
-                            <Zap className={`w-3.5 h-3.5 md:w-5 md:h-5 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
+                    <div className={`bg-stone-900/60 border border-stone-800 rounded-xl p-3 md:p-3.5 flex items-center gap-3.5 md:gap-4 shadow-inner min-w-[184px] md:min-w-[236px] backdrop-blur-sm transition-all duration-300 ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
+                        <div className="p-2 md:p-2.5 bg-stone-950 rounded-lg border border-stone-800 shadow-md flex items-center justify-center">
+                            <Zap className={`w-4.5 h-4.5 md:w-5.5 md:h-5.5 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-end mb-1">
-                                <span className="text-[8px] md:text-[10px] font-black uppercase text-stone-500 tracking-widest">Energy</span>
-                                <span className={`font-mono text-[10px] md:text-xs font-bold ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-400' : 'text-stone-300'}`}>
+                            <div className="flex justify-between items-end mb-1.5">
+                                <span className="text-[11px] md:text-[12px] font-black uppercase text-stone-300 tracking-[0.14em]">{t(language, 'forge.energy')}</span>
+                                <span className={`font-mono text-[13px] md:text-[14px] font-bold ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-400' : 'text-stone-200'}`}>
                                     {state.stats.energy} / {state.stats.maxEnergy}
                                 </span>
                             </div>
-                            <div className="w-full h-1 md:h-1.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
+                            <div className="w-full h-1.5 md:h-2 bg-stone-950 rounded-full overflow-hidden border border-white/5">
                                 <div 
                                     className={`h-full transition-all duration-700 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'bg-red-600' : 'bg-emerald-600'}`} 
                                     style={{ width: `${energyPercent}%` }}
@@ -169,8 +169,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                         </div>
                     </div>
 
-                    <ForgeSkillHeader exp={state.stats.smithingExp} label="Smithing" icon={Hammer} />
-                    <ForgeSkillHeader exp={state.stats.workbenchExp} label="Workbench" icon={Activity} />
+                    <ForgeSkillHeader exp={state.stats.smithingExp} label={t(language, 'forge.smithing')} tierLabel={t(language, 'forge.tier')} icon={Hammer} />
+                    <ForgeSkillHeader exp={state.stats.workbenchExp} label={t(language, 'forge.workbench')} tierLabel={t(language, 'forge.tier')} icon={Activity} />
                 </div>
 
                 {state.forge.hasResearchTable && (
@@ -183,8 +183,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                             <Library className="w-4 h-4 md:w-5 md:h-5 text-indigo-300 group-hover:scale-110 transition-transform" />
                         </div>
                         <div className="flex flex-col items-end leading-tight pl-1">
-                            <span className="text-[8px] md:text-[10px] font-black text-indigo-300 uppercase tracking-widest">Research Bench</span>
-                            <span className="text-[10px] md:text-xs font-black text-white uppercase tracking-tighter">Scholars Desk</span>
+                            <span className="text-[10px] md:text-[11px] font-black text-indigo-300 uppercase tracking-[0.14em]">{t(language, 'forge.research_bench')}</span>
+                            <span className="text-[12px] md:text-[13px] font-black text-white uppercase tracking-tight">{t(language, 'forge.scholars_desk')}</span>
                         </div>
                         <ChevronRight className="w-3 h-3 text-indigo-400 ml-auto group-hover:translate-x-0.5 transition-transform" />
                     </SfxButton>
@@ -207,6 +207,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                     extraFuelCost={extraQuickFuel}
                     onStartCrafting={handlers.startCrafting}
                     onQuickCraft={handlers.handleQuickCraft}
+                    onOpenRecipes={() => handlers.setIsPanelOpen(true)}
                 />
             </div>
         </div>
@@ -214,7 +215,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         {/* Action Button Row - Elevated during tutorial to stay above DialogueBox */}
         {!isCrafting && (
             <div 
-              className={`absolute right-6 z-[60] flex items-center gap-3 transition-all duration-500 ${isRecipeTutorial ? 'bottom-[35dvh]' : 'bottom-6'}`}
+              className={`absolute right-6 z-[60] flex items-center gap-3 transition-all duration-500 ${isRecipeTutorial ? 'bottom-[35dvh]' : 'bottom-10 md:bottom-8'}`}
             >
                 {/* Floating Toggle for Inventory Modal */}
                 <SfxButton 
@@ -223,13 +224,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                         if (state.unlockedTabs.includes('INVENTORY')) {
                             onOpenInventory();
                         } else {
-                            actions.showToast("Inventory locked.");
+                            actions.showToast(t(language, 'forge.storage_locked'));
                         }
                     }}
-                    className={`w-16 h-16 md:w-20 md:h-20 bg-stone-800 hover:bg-stone-700 text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-2 border-stone-600 flex flex-col items-center justify-center transition-all active:scale-90 group ${isRecipeTutorial || !state.unlockedTabs.includes('INVENTORY') ? 'opacity-20 scale-90' : 'opacity-100'}`}
+                    className={`w-[4.7rem] h-[4.7rem] md:w-[5.5rem] md:h-[5.5rem] bg-stone-800 hover:bg-stone-700 text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-2 border-stone-600 flex flex-col items-center justify-center transition-all active:scale-90 group ${isRecipeTutorial || !state.unlockedTabs.includes('INVENTORY') ? 'opacity-20 scale-90' : 'opacity-100'}`}
                 >
-                    <Package className="w-7 h-7 md:w-9 md:h-9 group-hover:scale-110 transition-transform" />
-                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-0.5">Storage</span>
+                    <Package className="w-8 h-8 md:w-10 md:h-10 group-hover:scale-110 transition-transform" />
+                    <span className="text-[11px] md:text-[13px] font-black uppercase tracking-tight mt-1.5">{t(language, 'forge.storage')}</span>
                 </SfxButton>
 
                 {/* Floating Toggle for Recipe Modal */}
@@ -242,10 +243,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                         handlers.setIsPanelOpen(true);
                     }}
                     data-tutorial-id="RECIPE_TOGGLE"
-                    className="w-16 h-16 md:w-20 md:h-20 bg-amber-600 hover:bg-amber-500 text-white rounded-full shadow-[0_10px_40px_rgba(180,83,9,0.5)] border-2 border-amber-400 flex flex-col items-center justify-center transition-all active:scale-90 group ring-4 ring-amber-500/20"
+                    className="w-[5.6rem] h-[5.6rem] md:w-[6.4rem] md:h-[6.4rem] bg-amber-600 hover:bg-amber-500 text-white rounded-full shadow-[0_10px_40px_rgba(180,83,9,0.5)] border-2 border-amber-400 flex flex-col items-center justify-center transition-all active:scale-90 group ring-4 ring-amber-500/20"
                 >
-                    <Book className="w-7 h-7 md:w-9 md:h-9 group-hover:rotate-12 transition-transform" />
-                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-tighter mt-0.5">Recipes</span>
+                    <Book className="w-9 h-9 md:w-11 md:h-11 group-hover:rotate-12 transition-transform" />
+                    <span className="text-[11px] md:text-[13px] font-black uppercase tracking-tight mt-1.5">{t(language, 'forge.recipes')}</span>
                 </SfxButton>
             </div>
         )}
@@ -260,8 +261,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                                 <Book className="w-6 h-6 text-amber-50" />
                             </div>
                             <div>
-                                <h3 className="text-xl md:text-2xl font-black text-stone-100 font-serif uppercase tracking-tight leading-none">Ancient Patterns</h3>
-                                <p className="text-stone-500 text-[9px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">Deciphering Ancestral Patterns</p>
+                                <h3 className="text-xl md:text-2xl font-black text-stone-100 font-serif uppercase tracking-tight leading-none">{t(language, 'forge.ancient_patterns')}</h3>
+                                <p className="text-stone-500 text-[9px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">{t(language, 'forge.ancient_patterns_subtitle')}</p>
                             </div>
                         </div>
                         <SfxButton 

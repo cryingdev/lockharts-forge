@@ -77,7 +77,7 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
                 </SfxButton>
 
                 {showsMultiplier && (
-                    <div className="absolute bottom-[0.3rem] left-1/2 z-20 flex -translate-x-1/2 gap-1 md:bottom-[0.4rem] md:gap-1.5">
+                    <div className="absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 gap-1 md:bottom-[0.1rem] md:gap-1.5">
                         {[1, 5, 10].map(v => (
                             <SfxButton 
                                 key={v} 
@@ -94,11 +94,11 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
             </div>
 
             <div className="mt-auto w-full">
-                <div className={`relative w-full px-1.5 text-center ${showsMultiplier ? 'mt-3 md:mt-3' : 'mt-1'}`}>
+                <div className={`relative w-full px-1.5 text-center ${showsMultiplier ? 'mt-2 md:mt-2' : 'mt-1'}`}>
                     <SfxButton
                         sfx="switch"
                         onClick={handleTooltipToggle}
-                        className="absolute right-1 -top-3 z-30 flex h-5 w-5 items-center justify-center rounded-full border border-stone-600 bg-stone-900/90 text-[9px] font-black leading-none text-stone-300 transition-none focus:outline-none md:h-6 md:w-6 md:text-[11px]"
+                        className="absolute right-1 -top-2 z-30 flex h-5 w-5 items-center justify-center rounded-full border border-stone-600 bg-stone-900/90 text-[9px] font-black leading-none text-stone-300 transition-none focus:outline-none md:h-6 md:w-6 md:text-[11px]"
                         aria-label={t(language, 'market.item_description')}
                         aria-expanded={isTooltipOpen}
                     >
