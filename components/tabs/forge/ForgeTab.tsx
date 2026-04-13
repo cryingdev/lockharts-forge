@@ -130,13 +130,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                     onNavigate('SHOP');
                 }} 
                 data-tutorial-id="NAV_TO_SHOP"
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-[1050] w-12 h-28 overflow-hidden rounded-r-2xl border-y-2 border-r-2 border-amber-700/55 bg-stone-900/72 text-amber-500 shadow-2xl backdrop-blur-md transition-all active:scale-95 active:bg-amber-700/25 group flex items-center justify-center"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-[1050] w-12 h-28 overflow-visible rounded-r-2xl border-y-2 border-r-2 border-amber-700/55 bg-stone-900/72 text-amber-500 shadow-2xl backdrop-blur-md transition-all active:scale-95 active:bg-amber-700/25 group flex items-center justify-center"
             >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/18 via-white/7 to-transparent" />
                 <div className="pointer-events-none absolute inset-y-3 right-0 w-px bg-white/10" />
                 <Store className="h-6 w-6 text-amber-400/90 group-hover:scale-110 transition-transform" />
                 {state.forge.isShopOpen && totalShopVisitors > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-lg animate-bounce z-30">
+                    <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-lg animate-bounce z-30">
                         <Users className="w-2.5 h-2.5" />
                         {totalShopVisitors}
                     </div>
@@ -147,19 +147,19 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         {/* Global Skill/Research UI */}
         {!isCrafting && (
             <div className={`absolute top-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2 transition-all duration-500 ${isRecipeTutorial ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-                <div className={`grid grid-cols-3 w-[16.5rem] md:w-[18.5rem] overflow-hidden rounded-xl border border-stone-800 bg-stone-900/66 shadow-inner backdrop-blur-sm ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
-                    <div className="min-w-0 border-r border-stone-800/90 px-1.5 py-1.5">
-                        <div className="flex flex-col items-center text-center gap-1">
-                            <div className="relative w-11 h-11 rounded-lg bg-stone-950/90 border border-white/5 shadow-sm flex items-center justify-center">
-                                <Zap className={`w-5 h-5 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
+                <div className={`grid grid-cols-3 w-[14.5rem] md:w-[16.25rem] overflow-hidden rounded-xl border border-stone-800 bg-stone-900/66 shadow-inner backdrop-blur-sm ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
+                    <div className="min-w-0 border-r border-stone-800/90 px-1 py-1.5">
+                        <div className="flex flex-col items-center text-center gap-0.5">
+                            <div className="relative w-9 h-9 rounded-md bg-stone-950/90 border border-white/5 shadow-sm flex items-center justify-center">
+                                <Zap className={`w-4.5 h-4.5 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`} />
                             </div>
                             <div className="leading-none">
-                                <div className="text-[9px] font-black uppercase tracking-[0.04em] text-stone-200 truncate">{t(language, 'forge.energy')}</div>
-                                <div className={`mt-0.5 text-[11px] font-mono font-black ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-300' : 'text-stone-100'}`}>
+                                <div className="text-[8px] font-black uppercase tracking-[0.02em] text-stone-200 truncate">{t(language, 'forge.energy')}</div>
+                                <div className={`mt-0.5 text-[10px] font-mono font-black ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'text-red-300' : 'text-stone-100'}`}>
                                     {state.stats.energy}
                                 </div>
                             </div>
-                            <div className="w-full h-1.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
+                            <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden border border-white/5">
                                 <div
                                     className={`h-full transition-all duration-700 ${state.stats.energy < 20 || state.uiEffects.energyHighlight ? 'bg-red-600' : 'bg-emerald-600'}`}
                                     style={{ width: `${energyPercent}%` }}
@@ -263,7 +263,6 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                             </div>
                             <div>
                                 <h3 className="text-xl md:text-2xl font-black text-stone-100 font-serif uppercase tracking-tight leading-none">{t(language, 'forge.ancient_patterns')}</h3>
-                                <p className="text-stone-500 text-[9px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">{t(language, 'forge.ancient_patterns_subtitle')}</p>
                             </div>
                         </div>
                         <SfxButton 

@@ -72,85 +72,15 @@ const migratedState = {
 
 ---
 
-## 4. UI Navigation Button Standard
+## 4. Design Rules Reference
 
-Primary floating back buttons should follow one shared spec across major tabs (`Market`, `Forge`, `Shop`, `Dungeon`, `Tavern`).
+Visual and interaction standards now live in:
 
-### Back Button Spec
-- Minimum height: `52px` on mobile, `58px` on desktop
-- Horizontal padding: `px-5`
-- Vertical padding: `py-3`
-- Icon size: `18px` mobile, `18-24px` desktop depending on visual balance
-- Radius: `rounded-2xl`
-- Style: dark translucent surface, stone border, strong shadow, red-tinted hover
-- Text: uppercase and bold (`font-black`)
-- Tracking: approximately `0.18em`
+- [`DESIGN_GUIDE.md`](/Users/cryingdev/GitHub/lockharts-forge/DESIGN_GUIDE.md)
 
-### Exception
-- Icon-only close/back buttons (for dense modal headers such as `Research`) should still preserve the same touch target size (`52px` / `58px`) even when the text label is omitted.
-
----
-
-## 5. Modal Overlay Standard
-
-Shared popup overlays should dim the game scene without fully burying it. The default intent is to keep the active scene readable through the veil so modal interactions still feel anchored to the game world.
-
-### Overlay Spec
-- Shared class source: `UI_MODAL_LAYOUT.OVERLAY`
-- Backdrop tone: `stone-950` at roughly `40-45%` opacity
-- Blur: very light (`~2px`) so the scene softens but remains recognizable
-- Layout: full-screen center alignment with safe viewport padding
-- Use shared overlay styling by default instead of per-modal one-off backgrounds
-
-### Exceptions
-- Highly dramatic or end-of-day moments such as `SleepModal` may intentionally use a darker overlay than the shared default.
-- If a modal needs stronger isolation for readability, prefer increasing the modal container contrast first before darkening the global overlay.
-
----
-
-## 6. Side Transfer Handle Standard
-
-Side transfer buttons used to move between paired workspaces such as `Shop <-> Forge` should read as persistent scene handles rather than generic chevron tabs.
-
-### Side Handle Spec
-- Placement: vertically centered on the outer screen edge
-- Shape: narrow vertical handle with a rounded inside edge (`rounded-l-2xl` / `rounded-r-2xl`)
-- Width: approximately `48px`
-- Height: approximately `112px`
-- Surface: dark translucent stone base with a light glossy band across the top third
-- Border: amber-tinted edge line, thicker than default utility buttons (`2px` on the exposed edges)
-- Icon: single centered destination icon only (`Hammer` for Forge, `Store` for Shop)
-- Icon size: approximately `24px`
-- Interaction feedback: keep `active` feedback; avoid sticky hover-driven amber state on mobile
-- Intent: opening the paired scene should feel like pulling a tool drawer or side handle, not paging a carousel
-
-### Notes
-- Avoid combining a chevron and a destination icon once the icon alone is readable enough.
-- Prefer icon placement toward the visual center or slightly low, rather than above the directional affordance area.
-
----
-
-## 7. Forge Workspace Standard
-
-The `Forge` workspace should prioritize readability and direct action. Empty states, selected-item presentation, and recipe access should all reinforce the same core loop: choose a pattern, inspect the item, and start work.
-
-### Empty State Spec
-- The central forge icon should be an actionable entry point, not decorative only.
-- Tapping the empty-state icon should open the same recipe selection flow as the dedicated `도안 / Recipes` button.
-- Empty-state copy should guide the player toward the next action rather than use purely atmospheric flavor text.
-- Preferred message style: short imperative guidance such as `도안을 선택하고 제작을 시작하세요.`
-
-### Selected Item Panel Spec
-- Selected item name, description, and stat panel should use larger text than standard list cards because they sit directly on top of a scenic background.
-- The selected item presentation should remain centered and visually dominant over the forge backdrop.
-- Recipe change should be available from a small secondary control at the top-right of the selected item display.
-- The change-item affordance should reopen the same recipe modal used by the bottom `도안 / Recipes` button.
-
-### Primary Action Controls
-- Bottom `소지품 / Storage` and `도안 / Recipes` buttons should remain large circular controls with strong icon readability.
-- These controls should sit comfortably above the bottom screen edge rather than hugging the safe area too tightly.
-- The primary work action (`작업 시작 / Start Work`) should stay visually larger and more prominent than quick or utility actions.
-
-### Language / Readability Rule
-- Forge-facing labels and helper copy should be localized and avoid leaving raw English strings in the main workspace when Korean is active.
-- If a decorative or thematic line competes with usability, prefer a direct instructional line in the main workspace.
+Use that document for:
+- shared button and overlay styling
+- workspace presentation rules
+- material language such as wood / parchment shells
+- compact HUD layout rules
+- common component intent and sizing guidance

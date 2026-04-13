@@ -754,8 +754,8 @@ const ko = {
     storage: '소지품',
     recipes: '도안',
     storage_locked: '소지품이 아직 잠겨 있습니다.',
-    ancient_patterns: '고대 도안',
-    ancient_patterns_subtitle: '가문의 도안을 되살린다',
+    ancient_patterns: '도안 목록',
+    ancient_patterns_subtitle: '현재 제작 가능한 도안',
   },
   dungeon: {
     loading: '위험 지역 진입 중...',
