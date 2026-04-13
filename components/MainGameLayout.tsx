@@ -257,13 +257,13 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const [isSleeping, setIsSleeping] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
-  const shouldSkipTitleLoadRest =
+  const initialShouldSkipTitleLoadRest =
     typeof window !== 'undefined' && sessionStorage.getItem('skip-title-load-rest-overlay') === '1';
-  const [isTitleLoadFadingIn, setIsTitleLoadFadingIn] = useState(shouldSkipTitleLoadRest);
+  const [isTitleLoadFadingIn, setIsTitleLoadFadingIn] = useState(initialShouldSkipTitleLoadRest);
   const [hasStartedTitleLoadFade, setHasStartedTitleLoadFade] = useState(false);
   const [zzzText, setZzzText] = useState('');
   const prevDayRef = useRef(state.stats.day);
-  const shouldSkipNextRestOverlayRef = useRef(shouldSkipTitleLoadRest);
+  const shouldSkipNextRestOverlayRef = useRef(initialShouldSkipTitleLoadRest);
 
   // 대장간 구역의 마지막 방문 하위 탭 기억 (기본값: SHOP)
   const [lastForgeTab, setLastForgeTab] = useState<'SHOP' | 'FORGE'>('SHOP');
@@ -279,7 +279,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   }, [activeTab]);
 
   useEffect(() => {
-    if (shouldSkipTitleLoadRest) {
+    if (initialShouldSkipTitleLoadRest) {
       setHasStartedTitleLoadFade(false);
       sessionStorage.removeItem('skip-title-load-rest-overlay');
 
@@ -296,7 +296,7 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         window.clearTimeout(fadeTimer);
       };
     }
-  }, [shouldSkipTitleLoadRest]);
+  }, [initialShouldSkipTitleLoadRest]);
 
   useEffect(() => {
     if (shouldSkipNextRestOverlayRef.current) {

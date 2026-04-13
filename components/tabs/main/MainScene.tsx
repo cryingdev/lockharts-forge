@@ -102,9 +102,9 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                     <span className={hudDividerClass} aria-hidden="true" />
 
                     <div className="min-w-0 flex flex-1 items-center gap-2 md:gap-3">
-                        <div className={`min-w-0 flex flex-1 items-center gap-2 md:gap-2.5 ${uiEffects.energyHighlight ? 'animate-shake-hard' : ''}`}>
+                        <div className={`shrink-0 flex w-[60px] md:w-[68px] items-center gap-1.5 md:gap-2 ${uiEffects.energyHighlight ? 'animate-shake-hard' : ''}`}>
                             <Zap className={`w-4 h-4 md:w-5 md:h-5 shrink-0 ${uiEffects.energyHighlight ? 'text-emerald-300' : 'text-emerald-500'}`} />
-                            <div className="relative min-w-0 flex-1 max-w-[180px] md:max-w-[210px]">
+                            <div className="relative min-w-0 flex-1">
                                 <div className="w-full bg-black/45 rounded-full h-3 md:h-3.5 border border-white/10 overflow-hidden shadow-[inset_0_1px_2px_rgba(255,255,255,0.08)]">
                                     <div className={`h-full rounded-full transition-all duration-700 ${energy < 20 ? 'bg-red-500' : 'bg-emerald-600'}`} style={{ width: `${(energy / maxEnergy) * 100}%` }} />
                                 </div>
@@ -114,9 +114,9 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                             </div>
                         </div>
                         <span className={hudDividerClass} aria-hidden="true" />
-                        <div className="min-w-0 flex items-center gap-1.5 md:gap-2 shrink-0">
+                        <div className="min-w-0 flex flex-1 items-center justify-end gap-1.5 md:gap-2">
                             <Coins className="w-4 h-4 md:w-[18px] md:h-[18px] text-amber-500 shrink-0" />
-                            <div className="text-base md:text-xl font-mono font-black tracking-tight text-amber-400 truncate">
+                            <div className="min-w-0 text-right text-base md:text-xl font-mono font-black tracking-tight text-amber-400 truncate">
                                 {gold >= 10000 ? `${(gold/1000).toFixed(1)}k` : gold.toLocaleString()}
                             </div>
                             <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.08em] text-amber-300 shrink-0">

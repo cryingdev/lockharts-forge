@@ -41,19 +41,19 @@ const ForgeSkillHeader: React.FC<ForgeSkillHeaderProps> = ({ exp, label, tierLab
 
     if (compact) {
         return (
-            <div className={`${compactBare ? 'bg-transparent border-0 rounded-none shadow-none backdrop-blur-0' : 'bg-stone-900/66 border border-stone-800 rounded-xl shadow-inner backdrop-blur-sm'} px-1.5 py-1.5 min-w-0`}>
-                <div className="flex flex-col items-center text-center gap-1">
-                    <div className={`relative w-11 h-11 ${compactBare ? 'rounded-lg bg-stone-950/90 border border-white/5 shadow-sm' : 'rounded-xl bg-stone-950 border border-stone-800 shadow-md'} flex items-center justify-center`}>
-                        <Icon className={`w-5 h-5 ${tierAccentClass}`} />
-                        <span className={`absolute right-1 top-1 rounded-md px-1 py-[1px] text-[7px] font-black uppercase leading-none ${tierBadgeClass}`}>
+            <div className={`${compactBare ? 'bg-transparent border-0 rounded-none shadow-none backdrop-blur-0' : 'bg-stone-900/66 border border-stone-800 rounded-xl shadow-inner backdrop-blur-sm'} px-1 py-1.5 min-w-0`}>
+                <div className="flex flex-col items-center text-center gap-0.5">
+                    <div className={`relative w-9 h-9 ${compactBare ? 'rounded-md bg-stone-950/90 border border-white/5 shadow-sm' : 'rounded-xl bg-stone-950 border border-stone-800 shadow-md'} flex items-center justify-center`}>
+                        <Icon className={`w-4.5 h-4.5 ${tierAccentClass}`} />
+                        <span className={`absolute right-0.5 top-0.5 rounded px-1 py-0 text-[6px] font-black uppercase leading-none ${tierBadgeClass}`}>
                             T{tier}
                         </span>
                     </div>
                     <div className="leading-none">
-                        <div className="text-[9px] font-black uppercase tracking-[0.04em] text-stone-200 truncate">{label}</div>
-                        <div className="mt-0.5 text-[11px] font-mono font-black text-stone-100">LV.{level}</div>
+                        <div className="text-[8px] font-black uppercase tracking-[0.02em] text-stone-200 truncate">{label}</div>
+                        <div className="mt-0.5 text-[10px] font-mono font-black text-stone-100">LV.{level}</div>
                     </div>
-                    <div className="w-full h-1.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
+                    <div className="w-full h-1 bg-stone-950 rounded-full overflow-hidden border border-white/5">
                         <div className="h-full bg-amber-600 transition-all duration-700" style={{ width: `${progress}%` }} />
                     </div>
                 </div>

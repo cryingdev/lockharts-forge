@@ -753,8 +753,8 @@ const en = {
     storage: 'Storage',
     recipes: 'Recipes',
     storage_locked: 'Storage is still locked.',
-    ancient_patterns: 'Ancient Patterns',
-    ancient_patterns_subtitle: 'Deciphering Ancestral Patterns',
+    ancient_patterns: 'Available Recipes',
+    ancient_patterns_subtitle: 'Currently craftable patterns',
   },
   dungeon: {
     loading: 'Entering Danger Zone...',
