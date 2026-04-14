@@ -95,46 +95,43 @@ const SaveLoadModal: React.FC<SaveLoadModalProps> = ({ isOpen, mode, onClose, on
                                             : 'bg-stone-950 border-stone-900 text-stone-600 cursor-not-allowed opacity-60'
                                     }`}
                                 >
-                                    <div className="flex justify-between items-center w-full gap-4">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <span className="font-black text-[10px] uppercase tracking-widest text-stone-500 group-hover:text-amber-500">Slot {index + 1}</span>
-                                            {meta?.version && (
-                                                <span className="px-1.5 py-0.5 bg-stone-950 rounded text-[7px] font-mono font-bold text-stone-600 border border-stone-800 group-hover:border-amber-900/50 group-hover:text-amber-700 transition-colors">
-                                                    v{meta.version}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {meta && (
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <div className="flex items-center gap-1 text-[9px] text-stone-500 font-mono">
-                                                    <Clock className="w-2.5 h-2.5" /> {formatDate(meta.timestamp)}
+                                    {meta ? (
+                                        <>
+                                            <div className="flex items-center justify-between w-full gap-3">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    {meta.version && (
+                                                        <span className="px-1.5 py-0.5 bg-stone-950 rounded text-[7px] font-mono font-bold text-stone-600 border border-stone-800 group-hover:border-amber-900/50 group-hover:text-amber-700 transition-colors shrink-0">
+                                                            v{meta.version}
+                                                        </span>
+                                                    )}
+                                                    <div className="flex items-center gap-1 text-[9px] text-stone-500 font-mono min-w-0 truncate">
+                                                        <Clock className="w-2.5 h-2.5 shrink-0" /> {formatDate(meta.timestamp)}
+                                                    </div>
                                                 </div>
-                                                <button onClick={(e) => requestDelete(e, index)} className="p-1 hover:text-red-500 transition-colors">
+                                                <button onClick={(e) => requestDelete(e, index)} className="p-1 hover:text-red-500 transition-colors shrink-0">
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
                                             </div>
-                                        )}
-                                    </div>
 
-                                    {meta ? (
-                                        <div className="flex items-center justify-between w-full gap-4">
-                                            <div className="flex flex-col items-start gap-1 min-w-0">
-                                                <div className="text-[11px] md:text-xs font-black text-amber-100 font-serif truncate max-w-[180px] md:max-w-[220px]">
-                                                    {getDisplayForgeNameFromMetadata(meta, state.settings)}
-                                                </div>
-                                                <div className="flex items-center gap-4 flex-wrap">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Calendar className="w-3.5 h-3.5 text-stone-500" />
-                                                        <span className="text-xs md:text-sm font-bold text-stone-200">{t(language, 'save.day_label', { day: meta.day })}</span>
+                                            <div className="flex items-center justify-between w-full gap-4">
+                                                <div className="flex flex-col items-start gap-1 min-w-0">
+                                                    <div className="text-[11px] md:text-xs font-black text-amber-100 font-serif truncate max-w-[180px] md:max-w-[220px]">
+                                                        {getDisplayForgeNameFromMetadata(meta, state.settings)}
                                                     </div>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Coins className="w-3.5 h-3.5 text-amber-500" />
-                                                        <span className="text-xs md:text-sm font-bold text-amber-400 font-mono">{meta.gold}G</span>
+                                                    <div className="flex items-center gap-4 min-w-0 flex-wrap">
+                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                            <Calendar className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                                                            <span className="text-xs md:text-sm font-bold text-stone-200 whitespace-nowrap">{t(language, 'save.day_label', { day: meta.day })}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                            <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                                            <span className="text-xs md:text-sm font-bold text-amber-400 font-mono whitespace-nowrap">{meta.gold}G</span>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <ChevronRight className="w-5 h-5 text-stone-600 group-hover:text-amber-500 group-hover:translate-x-1 transition-all shrink-0" />
                                             </div>
-                                            <ChevronRight className="w-5 h-5 text-stone-600 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" />
-                                        </div>
+                                        </>
                                     ) : (
                                         <div className="w-full py-0.5">
                                             <div className="text-center text-[10px] font-black uppercase tracking-[0.2em] italic opacity-70">

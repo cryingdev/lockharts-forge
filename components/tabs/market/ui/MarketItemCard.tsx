@@ -17,6 +17,7 @@ interface MarketItemCardProps {
     item: any;
     stock: number;
     inventoryCount: number;
+    cartCount: number;
     multiplier: number;
     isLocked: boolean;
     gold: number;
@@ -26,7 +27,7 @@ interface MarketItemCardProps {
     onToggleTooltip: (itemId: string, anchorRect: DOMRect, description: string) => void;
 }
 
-export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inventoryCount, multiplier, isLocked, gold, onAdd, onSetMultiplier, isTooltipOpen, onToggleTooltip }) => {
+export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inventoryCount, cartCount, multiplier, isLocked, gold, onAdd, onSetMultiplier, isTooltipOpen, onToggleTooltip }) => {
     const { state } = useGame();
     const language = state.settings.language;
     const isSoldOut = stock <= 0;
@@ -70,7 +71,17 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
                     disabled={isSoldOut || isLocked || !canAfford}
                     className={`relative mt-0 flex w-full flex-1 min-h-0 items-start justify-center overflow-hidden p-[5%] transition-all ${isSoldOut || isLocked || !canAfford ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-stone-800/50 active:scale-95'}`}
                 >
-                    {inventoryCount > 0 && <div className="absolute left-1 top-1 z-20 flex items-center gap-1 rounded-md border border-slate-600 bg-slate-950/88 px-1.5 py-0.5 text-[14px] font-black uppercase leading-none text-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.35)] md:text-[12px]"><Package className="h-3.5 w-3.5 md:h-3.5 md:w-3.5" />{inventoryCount}</div>}
+                    {(inventoryCount > 0 || cartCount > 0) && (
+                        <div className="absolute left-1 top-1 z-20 flex items-center gap-1 rounded-md border border-slate-600 bg-slate-950/88 px-1.5 py-0.5 text-[14px] font-black uppercase leading-none text-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.35)] md:text-[12px]">
+                            <Package className="h-3.5 w-3.5 md:h-3.5 md:w-3.5" />
+                            <span>{inventoryCount}</span>
+                            {cartCount > 0 && (
+                                <span className="text-emerald-400">
+                                    +{cartCount}
+                                </span>
+                            )}
+                        </div>
+                    )}
                     <div className={`absolute right-1 top-1 z-20 rounded-md border px-1.5 py-0.5 text-[14px] font-black leading-none tracking-tight shadow-[0_4px_10px_rgba(0,0,0,0.35)] md:text-[12px] ${stock > 0 ? 'border-emerald-500/40 bg-emerald-950/60 text-emerald-400' : 'border-red-500/40 bg-red-950/60 text-red-500'}`}>{isSoldOut ? 'X' : stock}</div>
                     <img src={imgSrc} onError={handleImgError} className="h-full w-full object-contain drop-shadow-md" />
                     <RomanTierOverlay id={item.id} />

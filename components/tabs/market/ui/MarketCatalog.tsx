@@ -62,6 +62,7 @@ export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed,
                                     item={item} 
                                     stock={(stock[item.id] || 0) - (cart[item.id] || 0)} 
                                     inventoryCount={inventory.find(i => i.id === item.id)?.quantity || 0} 
+                                    cartCount={cart[item.id] || 0}
                                     multiplier={multipliers[item.id] || 1} 
                                     isLocked={(item.id === 'scroll_t2' && affinity < 20) || (item.id === 'scroll_t3' && affinity < 40)} 
                                     gold={gold}

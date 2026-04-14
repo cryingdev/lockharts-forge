@@ -8,6 +8,7 @@ const ko = {
     back: '뒤로',
     continue: '계속',
     confirm: '확인',
+    insufficient_materials: '재료부족',
     close: '닫기',
     cancel: '취소',
     accept: '수락',

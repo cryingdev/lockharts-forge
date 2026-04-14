@@ -68,7 +68,8 @@ export const ForgeListView: React.FC<ForgeListViewProps> = ({
                                         item={item} 
                                         isSelected={selectedItem?.id === item.id} 
                                         isFav={true} 
-                                        inventoryCount={getInventoryCount(item.id)} 
+                                        inventoryCount={getInventoryCount(item.id)}
+                                        canCraft={item.requirements.every(req => getInventoryCount(req.id) >= req.count)}
                                         onSelect={onSelectItem} 
                                         onToggleFavorite={onToggleFavorite} 
                                         onMouseEnter={onMouseEnter} 
@@ -100,7 +101,8 @@ export const ForgeListView: React.FC<ForgeListViewProps> = ({
                                         item={item} 
                                         isSelected={selectedItem?.id === item.id} 
                                         isFav={favorites.includes(item.id)} 
-                                        inventoryCount={getInventoryCount(item.id)} 
+                                        inventoryCount={getInventoryCount(item.id)}
+                                        canCraft={item.requirements.every(req => getInventoryCount(req.id) >= req.count)}
                                         onSelect={onSelectItem} 
                                         onToggleFavorite={onToggleFavorite} 
                                         onMouseEnter={onMouseEnter} 
