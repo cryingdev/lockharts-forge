@@ -49,12 +49,13 @@ When forging, players engage in a precision-based mini-game:
 The Shop is where the player interacts with the world's inhabitants.
 
 #### 3.2.1 Customer Behavior
--   **Arrival**: Mercenaries arrive randomly (every 5-25 seconds) while the shop is open.
+-   **Arrival**: Mercenaries arrive randomly (every 5-20 seconds) while the shop is open.
 -   **Daily Limit**: The maximum number of visitors per day is capped at `ceil(knownMercenaries.length * 1.1)`.
 -   **Arrival Chance**: When the arrival timer fires, there is an 80% chance a customer actually appears.
 -   **Selection Logic**: If a customer appears, there is a 10% chance it is a newly generated mercenary and a 90% chance it is an existing known mercenary (who hasn't visited today).
 -   **Requests**: Customers seek specific items based on their class and level.
 -   **Patience**: Customers will wait for approximately 45 seconds before leaving in disappointment.
+-   **Queue Advance Delay**: If the counter becomes empty while the queue still has visitors waiting, the next customer steps forward after 1 second.
 -   **Pricing**: Items are sold at a markup (typically 125% of base value). High-quality items can be sold for even more.
 
 #### 3.2.2 Affinity System
