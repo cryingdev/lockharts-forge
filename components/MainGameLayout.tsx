@@ -257,8 +257,9 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const [isSleeping, setIsSleeping] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
-  const initialShouldSkipTitleLoadRest =
-    typeof window !== 'undefined' && sessionStorage.getItem('skip-title-load-rest-overlay') === '1';
+  const [initialShouldSkipTitleLoadRest] = useState(
+    () => typeof window !== 'undefined' && sessionStorage.getItem('skip-title-load-rest-overlay') === '1'
+  );
   const [isTitleLoadFadingIn, setIsTitleLoadFadingIn] = useState(initialShouldSkipTitleLoadRest);
   const [hasStartedTitleLoadFade, setHasStartedTitleLoadFade] = useState(false);
   const [zzzText, setZzzText] = useState('');
@@ -503,6 +504,15 @@ const MainGameLayout: React.FC<MainGameLayoutProps> = ({ onQuit, onLoadFromSetti
         <div
           className={`fixed inset-0 z-[9990] bg-black pointer-events-none transition-opacity duration-700 ${hasStartedTitleLoadFade ? 'opacity-0' : 'opacity-100'}`}
         />
+      )}
+      {isTitleLoadFadingIn && (
+        <div className={`fixed inset-0 z-[9991] pointer-events-none flex items-center justify-center transition-opacity duration-700 ${hasStartedTitleLoadFade ? 'opacity-0' : 'opacity-100'}`}>
+          <div className="flex items-center justify-center -translate-y-[6vh]">
+            <span className="text-stone-100 font-serif font-black text-5xl md:text-7xl tracking-[0.08em] drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">
+              {t(language, 'header.day', { day: state.stats.day })}
+            </span>
+          </div>
+        </div>
       )}
       
       {/* Tutorial Skip UI */}

@@ -80,6 +80,21 @@ Guidelines:
 - Increase panel contrast before darkening the whole scene further.
 - Board-style popups may use more material-like shells when the fantasy framing matters.
 
+### Modal Confirm Buttons
+Purpose:
+- Keep the primary confirmation action immediately legible and comfortably tappable on mobile.
+
+Guidelines:
+- Primary confirm buttons inside modals should be visibly larger than secondary or dismissive actions.
+- Default mobile target:
+  - minimum height: `72px`
+  - radius: `rounded-xl`
+  - font size: around `14px-16px`
+  - font weight: heavy / black
+  - tracking: slightly expanded, but less aggressive than tiny utility labels
+- Confirmation buttons should favor generous vertical space before increasing width or adding extra ornament.
+- Leading icons are allowed when they reinforce the action, but the label must remain the dominant visual element.
+
 ### Compact HUD Cards
 Purpose:
 - Compress status into a lightweight always-visible strip without overwhelming the scene.

@@ -198,7 +198,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
                     isOpen={loadConfirm.isOpen} 
                     title={t(language, 'settings.overwrite_progress')} 
                     message={t(language, 'settings.overwrite_progress_desc')} 
-                    onConfirm={() => { setLoadConfirm({ ...loadConfirm, isOpen: false }); setSlModal({ ...slModal, isOpen: false }); onClose(); if(onLoadRequest) onLoadRequest(loadConfirm.data, loadConfirm.index!); }} 
+                    onConfirm={() => {
+                        sessionStorage.setItem('skip-title-load-rest-overlay', '1');
+                        setLoadConfirm({ ...loadConfirm, isOpen: false });
+                        setSlModal({ ...slModal, isOpen: false });
+                        onClose();
+                        if (onLoadRequest) onLoadRequest(loadConfirm.data, loadConfirm.index!);
+                    }} 
                     onCancel={() => setLoadConfirm({ ...loadConfirm, isOpen: false })} 
                 />
                 <ConfirmationModal

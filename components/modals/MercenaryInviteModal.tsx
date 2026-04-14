@@ -143,17 +143,17 @@ export const MercenaryInviteModal: React.FC<MercenaryInviteModalProps> = ({ merc
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="p-4 bg-stone-950/80 flex gap-3">
+                    <div className="p-5 bg-stone-950/80 flex gap-3">
                         <SfxButton 
                             onClick={onConfirm}
                             disabled={revealStage !== 'revealed'}
-                            className={`flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all ${
+                            className={`flex-1 min-h-[4.5rem] py-4 rounded-xl font-black uppercase tracking-[0.16em] text-[14px] md:text-[16px] flex items-center justify-center gap-2.5 transition-all ${
                                 revealStage === 'revealed' 
                                 ? 'bg-amber-600 text-white hover:bg-amber-500 shadow-lg shadow-amber-900/20' 
                                 : 'bg-stone-800 text-stone-600 cursor-not-allowed'
                             }`}
                         >
-                            <Check className="w-4 h-4" />
+                            <Check className="w-5 h-5" />
                             {t(language, 'tavern.welcome_to_town')}
                         </SfxButton>
                     </div>

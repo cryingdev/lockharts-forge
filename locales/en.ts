@@ -8,6 +8,7 @@ const en = {
     back: 'Back',
     continue: 'Continue',
     confirm: 'Confirm',
+    insufficient_materials: 'Insufficient',
     close: 'Close',
     cancel: 'Cancel',
     accept: 'Accept',
