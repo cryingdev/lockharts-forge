@@ -90,7 +90,7 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
             {/* Floating HUD */}
             <div className="absolute top-3 inset-x-3 md:top-6 md:inset-x-8 z-[60] flex flex-col gap-2.5 md:gap-3 pointer-events-none">
                 <div className={`${hudShellClass} pointer-events-auto flex h-[52px] md:h-[58px] items-center gap-2 md:gap-3 px-3 md:px-4 w-full`}>
-                    <div className="flex min-w-[68px] md:min-w-[82px] items-center gap-2">
+                    <div className="flex min-w-[48px] md:min-w-[58px] items-center gap-1">
                         <div className="flex h-7.5 w-7.5 md:h-8.5 md:w-8.5 shrink-0 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/8">
                             <Calendar className="w-4.5 h-4.5 md:w-5.5 md:h-5.5 text-amber-500 shrink-0" />
                         </div>

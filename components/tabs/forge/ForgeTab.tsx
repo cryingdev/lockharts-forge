@@ -6,6 +6,8 @@ import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { t } from '../../../utils/i18n';
 import { useGame } from '../../../context/GameContext';
+import FloatingTooltip from '../../common/ui/FloatingTooltip';
+import { useTimedTooltip } from '../../../hooks/useTimedTooltip';
 
 // Sub-components
 import ForgeSkillHeader from './ui/ForgeSkillHeader';
@@ -48,6 +50,10 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
   const language = state.settings.language;
 
   const [isPortrait, setIsPortrait] = React.useState(window.innerHeight > window.innerWidth);
+  const { tooltip: hudTooltip, openTooltip: openHudTooltip, closeTooltip: closeHudTooltip } = useTimedTooltip<{
+    title: string;
+    description: string;
+  }>(1000);
 
   useEffect(() => {
     const handleResize = () => setIsPortrait(window.innerHeight > window.innerWidth);
@@ -59,6 +65,20 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
   const energyPercent = (state.stats.energy / state.stats.maxEnergy) * 100;
 
   const totalShopVisitors = (state.activeCustomer ? 1 : 0) + state.shopQueue.length;
+  const showHudTooltip = (type: 'smithing' | 'workbench', anchorRect: DOMRect) => {
+    openHudTooltip({
+      id: type,
+      anchorRect,
+      data: {
+        title: t(language, type === 'smithing' ? 'forge.smithing_tier_guide_title' : 'forge.workbench_tier_guide_title'),
+        description: t(language, type === 'smithing' ? 'forge.smithing_tier_guide_desc' : 'forge.workbench_tier_guide_desc'),
+      },
+      width: window.innerWidth < 768 ? 152 : 168,
+      placement: 'below',
+      align: type === 'smithing' ? 'center' : 'end',
+      offset: 8,
+    });
+  };
 
   // Reposition logic for tutorial: move buttons up if OPEN_RECIPE_GUIDE is active
   const isRecipeTutorial = state.tutorialStep === 'OPEN_RECIPE_GUIDE';
@@ -147,7 +167,8 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         {/* Global Skill/Research UI */}
         {!isCrafting && (
             <div className={`absolute top-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2 transition-all duration-500 ${isRecipeTutorial ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-                <div className={`grid grid-cols-3 w-[14.5rem] md:w-[16.25rem] overflow-hidden rounded-xl border border-stone-800 bg-stone-900/66 shadow-inner backdrop-blur-sm ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
+                <div className="relative w-[14.5rem] md:w-[16.25rem]">
+                    <div className={`grid grid-cols-3 w-full overflow-hidden rounded-xl border border-stone-800 bg-stone-900/66 shadow-inner backdrop-blur-sm ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
                     <div className="min-w-0 border-r border-stone-800/90 px-1 py-1.5">
                         <div className="flex flex-col items-center text-center gap-0.5">
                             <div className="relative w-9 h-9 rounded-md bg-stone-950/90 border border-white/5 shadow-sm flex items-center justify-center">
@@ -168,11 +189,45 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
                         </div>
                     </div>
 
-                    <div className="border-r border-stone-800/90">
+                    <button
+                        type="button"
+                        onClick={(event) => showHudTooltip('smithing', event.currentTarget.getBoundingClientRect())}
+                        className="border-r border-stone-800/90 text-left transition-colors hover:bg-white/5 active:bg-white/10"
+                    >
                         <ForgeSkillHeader exp={state.stats.smithingExp} label={t(language, 'forge.smithing')} tierLabel={t(language, 'forge.tier')} icon={Hammer} compact compactBare />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={(event) => showHudTooltip('workbench', event.currentTarget.getBoundingClientRect())}
+                        className="text-left transition-colors hover:bg-white/5 active:bg-white/10"
+                    >
+                        <ForgeSkillHeader exp={state.stats.workbenchExp} label={t(language, 'forge.workbench')} tierLabel={t(language, 'forge.tier')} icon={Activity} compact compactBare />
+                    </button>
                     </div>
-                    <ForgeSkillHeader exp={state.stats.workbenchExp} label={t(language, 'forge.workbench')} tierLabel={t(language, 'forge.tier')} icon={Activity} compact compactBare />
                 </div>
+                <FloatingTooltip
+                    tooltip={hudTooltip}
+                    onClose={closeHudTooltip}
+                    widthClassName="w-[9.5rem] md:w-[10.5rem]"
+                    className="text-left not-italic"
+                >
+                    {data => (
+                        <>
+                            <div className="text-[10px] font-black tracking-[0.08em] uppercase text-amber-300">
+                                {data.title}
+                            </div>
+                            <div className="mt-1 space-y-0.5 text-[10px] leading-snug text-stone-200">
+                                <div>{t(language, 'forge.tier_guide_row_1')}</div>
+                                <div>{t(language, 'forge.tier_guide_row_2')}</div>
+                                <div>{t(language, 'forge.tier_guide_row_3')}</div>
+                                <div>{t(language, 'forge.tier_guide_row_4')}</div>
+                            </div>
+                            <div className="mt-1.5 text-[9px] leading-snug text-stone-400">
+                                {data.description}
+                            </div>
+                        </>
+                    )}
+                </FloatingTooltip>
 
                 {state.forge.hasResearchTable && (
                     <SfxButton 
