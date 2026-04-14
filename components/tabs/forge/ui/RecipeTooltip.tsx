@@ -24,7 +24,7 @@ const RecipeTooltip: React.FC<RecipeTooltipProps> = ({ item, pos, getInventoryCo
                 transform: 'none' // Explicitly disable any default centering or translation
             }}
         >
-            <h4 className="text-[10px] md:text-sm font-black text-amber-50 uppercase font-serif mb-2">{item.name}</h4>
+            <h4 className="text-[10px] md:text-sm font-black text-amber-50 uppercase font-serif mb-2">{getLocalizedItemName(language, item)}</h4>
             <div className="space-y-2">
                 <h5 className="text-[7px] md:text-[9px] font-black text-stone-500 uppercase tracking-widest border-b border-white/5 pb-1">{t(language, 'recipeTooltip.required_materials')}</h5>
                 <div className="grid gap-1">

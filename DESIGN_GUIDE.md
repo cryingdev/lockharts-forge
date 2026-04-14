@@ -90,6 +90,23 @@ Guidelines:
 - Use thin dividers rather than repeating full card borders.
 - Show the minimum useful numeric state only.
 
+### Floating Tooltip
+Purpose:
+- Reuse one lightweight tooltip pattern across HUD hints, item help affordances, and catalog detail popups.
+
+Guidelines:
+- Use the shared `FloatingTooltip` container together with `useTimedTooltip` instead of building one-off tooltip shells per screen.
+- Tooltips should feel ephemeral and assistive, not modal.
+- Default behavior should support:
+  - one visible tooltip at a time
+  - tap again to close
+  - tap tooltip body to close
+  - short auto-dismiss timing when the tooltip is informational only
+- Use fixed-position rendering so tooltips are not clipped by drawers, cards, or scroll containers.
+- Clamp tooltip position to the viewport instead of shrinking the content to fit.
+- Favor short explanatory content and a narrow width before creating larger floating panels.
+- HUD and card-level tooltips should usually appear above the anchor unless the screen edge or surrounding layout makes a below placement easier to read.
+
 ---
 
 ## 4. Modal Overlay Standard
