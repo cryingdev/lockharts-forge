@@ -47,6 +47,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     saveGlobalSettings(state.settings);
   }, [state.settings]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.lang = state.settings.language;
+    root.classList.toggle('lang-ko', state.settings.language === 'ko');
+  }, [state.settings.language]);
+
   // Debug: Tutorial Step Logging
   useEffect(() => {
       const scene = state.activeTutorialScene || 'NONE';
