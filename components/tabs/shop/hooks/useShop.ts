@@ -39,6 +39,18 @@ export const useShop = (onNavigate?: (tab: string) => void) => {
         }
     }, [activeCustomer]);
 
+    useEffect(() => {
+        if (!activeCustomer || !refusalReaction) return;
+
+        const timer = window.setTimeout(() => {
+            setSaleCompleted(false);
+            setRefusalReaction(null);
+            actions.dismissCustomer();
+        }, 3000);
+
+        return () => window.clearTimeout(timer);
+    }, [activeCustomer, refusalReaction, actions]);
+
     const spawnHearts = useCallback((count: number) => {
         const newHearts = Array.from({ length: count }).map((_, i) => {
             // 캐릭터 중앙(50%)을 피해 좌우로 분산 생성

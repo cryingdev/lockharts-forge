@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BedDouble, PlusCircle, Star, Users, UserRound, ShieldAlert, ClipboardList, Coins, Clock, Sword, Hammer, Package, Trophy } from 'lucide-react';
 import { MercenaryCard } from './MercenaryCard';
 import { SfxButton } from '../../../common/ui/SfxButton';
+import { AutoFitText } from '../../../common/ui/AutoFitText';
 import { getAssetUrl } from '../../../../utils';
 import { ContractDefinition } from '../../../../types/game-state';
 import { useGame } from '../../../../context/GameContext';
@@ -118,22 +119,40 @@ export const TavernListView: React.FC<TavernListViewProps> = ({
                 <section className="animate-in fade-in slide-in-from-top-2 duration-500">
                     <div className="rounded-2xl border border-stone-700/70 bg-stone-900/75 backdrop-blur-md shadow-2xl overflow-hidden">
                         <div className="grid grid-cols-[1fr_1fr_auto] items-stretch">
-                            <div className="flex min-h-[68px] items-center gap-3 px-4 py-3">
+                            <div className="flex min-h-[68px] min-w-0 items-center gap-3 px-4 py-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-900/30 border border-amber-700/40">
                                     <Star className="w-4.5 h-4.5 text-amber-400" />
                                 </div>
-                                <div className="flex flex-col leading-none">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">{t(language, 'tavern.standing')}</span>
+                                <div className="flex min-w-0 flex-col leading-none">
+                                    <AutoFitText
+                                        className="min-w-0 truncate whitespace-nowrap font-black uppercase text-stone-500"
+                                        minFontSize={7}
+                                        maxFontSize={10}
+                                        step={0.5}
+                                        letterSpacingEm={0.12}
+                                        title={t(language, 'tavern.standing')}
+                                    >
+                                        {t(language, 'tavern.standing')}
+                                    </AutoFitText>
                                     <span className="mt-1 text-lg font-black text-amber-300">{reputation}</span>
                                 </div>
                             </div>
 
-                            <div className="flex min-h-[68px] items-center gap-3 border-l border-stone-700/70 px-4 py-3">
+                            <div className="flex min-h-[68px] min-w-0 items-center gap-3 border-l border-stone-700/70 px-4 py-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-900/30 border border-amber-700/40">
                                     <BedDouble className="w-4.5 h-4.5 text-amber-400" />
                                 </div>
-                                <div className="flex flex-col leading-none">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">{t(language, 'tavern.lodging')}</span>
+                                <div className="flex min-w-0 flex-col leading-none">
+                                    <AutoFitText
+                                        className="min-w-0 truncate whitespace-nowrap font-black uppercase text-stone-500"
+                                        minFontSize={7}
+                                        maxFontSize={10}
+                                        step={0.5}
+                                        letterSpacingEm={0.12}
+                                        title={t(language, 'tavern.lodging')}
+                                    >
+                                        {t(language, 'tavern.lodging')}
+                                    </AutoFitText>
                                     <span className="mt-1 text-lg font-black text-stone-100">
                                         {lodgingCapacity}
                                         {!isLodgingMaxed && nextLodgingCapacity !== null && (

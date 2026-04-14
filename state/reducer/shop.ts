@@ -49,7 +49,10 @@ export const handleNextCustomer = (state: GameState): GameState => {
 };
 
 export const handleDismissCustomer = (state: GameState): GameState => {
-    const logEntry = state.activeCustomer ? [`${state.activeCustomer.mercenary.name} left the shop.`] : [];
+    const language = state.settings.language;
+    const logEntry = state.activeCustomer
+        ? [t(language, 'logs.customer_left_shop', { name: state.activeCustomer.mercenary.name })]
+        : [];
     return {
         ...state,
         activeCustomer: null,
@@ -59,6 +62,7 @@ export const handleDismissCustomer = (state: GameState): GameState => {
 
 export const handleRefuseCustomer = (state: GameState, payload: { mercenaryId: string; affinityLoss: number }): GameState => {
     const { mercenaryId, affinityLoss } = payload;
+    const language = state.settings.language;
     
     let newKnownMercenaries = [...state.knownMercenaries];
     let newActiveCustomer = state.activeCustomer;
@@ -78,9 +82,14 @@ export const handleRefuseCustomer = (state: GameState, payload: { mercenaryId: s
         }
     }
 
-    const logMessage = affinityLoss > 0 
-        ? `${newKnownMercenaries[mercIdx]?.name} was disappointed. Affinity dropped by ${affinityLoss}.`
-        : `${newKnownMercenaries[mercIdx]?.name} accepted the refusal politely.`;
+    const logMessage = affinityLoss > 0
+        ? t(language, 'logs.customer_refused_angry', {
+            name: newKnownMercenaries[mercIdx]?.name || mercenaryId,
+            affinityLoss
+        })
+        : t(language, 'logs.customer_refused_polite', {
+            name: newKnownMercenaries[mercIdx]?.name || mercenaryId
+        });
 
     return {
         ...state,

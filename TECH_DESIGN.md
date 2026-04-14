@@ -31,6 +31,25 @@ Background logic that runs independently of the UI is handled in custom hooks/se
 -   `AudioManager`: A headless Web Audio API controller for BGM and SFX.
 -   `AssetManager`: Handles preloading and memory caching of critical assets.
 
+#### 2.3.1 Shop Visit Timing Policy
+-   Shop visitor timing is configured in `/config/shop-config.ts`.
+-   Current timing rules:
+    -   Arrival timer window: `5s ~ 20s`
+        -   `MIN_INTERVAL_MS = 5000`
+        -   `VARIANCE_MS = 15000`
+    -   Arrival success chance per timer fire: `80%`
+    -   New mercenary chance on successful arrival: `10%`
+    -   Customer patience before leaving: `45s`
+    -   Queue advance delay when the counter becomes empty: `1s`
+-   Queue handling implementation:
+    -   `state/reducer/shop.ts`
+        -   `handleEnqueueCustomer`: adds a customer to `shopQueue`
+        -   `handleNextCustomer`: promotes the next queued customer to `activeCustomer`
+    -   `utils/shopUtils.ts`
+        -   `generateShopRequest(...)` creates the request payload and stores `entryTime`
+-   Design note:
+    -   These timing values are pacing policy, not flavor text. If the desired shop tempo changes, update both `/config/shop-config.ts` and this section together.
+
 ## 3. Game Engine Integration (Phaser)
 While the UI is React-based, core gameplay scenes are powered by **Phaser 3**:
 -   **SmithingScene**: Handles the physics and timing of the forging mini-game.

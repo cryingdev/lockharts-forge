@@ -4,6 +4,7 @@ import { MessageSquare, Gift, ShoppingBag, Heart } from 'lucide-react';
 import { GarrickSprite } from './GarrickSprite';
 import DialogueBox from '../../../DialogueBox';
 import { SfxButton } from '../../../common/ui/SfxButton';
+import { AutoFitText } from '../../../common/ui/AutoFitText';
 import { useGame } from '../../../../context/GameContext';
 import { t } from '../../../../utils/i18n';
 
@@ -37,8 +38,17 @@ export const MarketLobbyView: React.FC<MarketLobbyViewProps> = ({
                     <div className="absolute top-[12dvh] md:top-32 right-[max(0.75rem,env(safe-area-inset-right))] md:right-8 z-[1050] pointer-events-auto">
                         <div className="max-w-[calc(100vw-1.5rem)] min-w-[118px] md:min-w-[138px] bg-stone-900/85 border-2 border-stone-700 px-3 py-2 md:px-5 md:py-2.5 rounded-2xl backdrop-blur-md shadow-2xl flex items-center gap-2 md:gap-3">
                             <Heart className="w-5 h-5 md:w-6 md:h-6 text-pink-500 fill-pink-500" />
-                            <div className="flex flex-col leading-none">
-                                <span className="whitespace-nowrap text-[8px] md:text-[10px] text-stone-400 font-black uppercase tracking-[0.08em]">{t(language, 'market.garricks_trust')}</span>
+                            <div className="flex min-w-0 flex-col leading-none">
+                                <AutoFitText
+                                    className="min-w-0 truncate whitespace-nowrap text-stone-400 font-black uppercase"
+                                    minFontSize={7}
+                                    maxFontSize={10}
+                                    step={0.5}
+                                    letterSpacingEm={0.08}
+                                    title={t(language, 'market.garricks_trust')}
+                                >
+                                    {t(language, 'market.garricks_trust')}
+                                </AutoFitText>
                                 <span className="text-[18px] md:text-[22px] font-black font-mono text-pink-400 mt-1">{garrickAffinity}</span>
                             </div>
                         </div>
