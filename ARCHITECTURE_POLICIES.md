@@ -84,3 +84,24 @@ Use that document for:
 - material language such as wood / parchment shells
 - compact HUD layout rules
 - common component intent and sizing guidance
+
+---
+
+## 5. Survey Prompt Interaction Policy
+
+Named-conversation prompts that behave like interview or survey questions should be treated as a distinct interaction mode rather than ordinary bottom-stacked dialogue choices.
+
+### Interaction Rules
+- If a survey prompt is active, it becomes the primary interaction state for that mercenary view.
+- The survey response panel should close immediately when:
+  - the player selects an answer
+  - the player leaves the current mercenary interaction view
+  - the player switches to a different mercenary
+  - the view enters another mutually exclusive interaction state such as hire/fire confirmation or gift selection
+- Prefer disabling competing action buttons while the survey prompt is active instead of letting several interaction modes overlap.
+- If one non-survey action is intentionally allowed during survey mode, it should explicitly dismiss the survey panel first.
+
+### State Ownership
+- The prompt text still belongs to the active dialogue state.
+- The separated response panel is a rendering choice, but its visibility and teardown rules are state policy.
+- Survey prompt dismissal should not depend on layout accidents such as dialogue overflow or screen height.

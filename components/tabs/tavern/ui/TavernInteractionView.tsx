@@ -39,6 +39,8 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
     const isNamed = mercenary.isUnique;
     const namedState = isNamed ? state.commission.namedEncounters[mercenary.id] : null;
     const canHireNamed = !isNamed || (namedState ? namedState.recruitUnlocked : true);
+    const isSurveyMode = !!activeNamedPrompt;
+    const shouldShowSurveyPanel = !!activeNamedPrompt && !pendingGiftItem && step === 'IDLE' && !isDetailOpen;
 
     const btnBaseClass = "w-full h-12 md:h-16 flex items-center justify-center gap-1 md:gap-2 px-1 rounded-xl backdrop-blur-md transition-all shadow-xl group shrink-0 relative border";
 
@@ -106,9 +108,34 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                 </div>
             </div>
 
+            {shouldShowSurveyPanel && (
+                <div className="absolute right-4 top-[31dvh] z-[45] w-[40vw] max-w-[280px] min-w-[220px] pointer-events-auto animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="rounded-2xl border border-amber-700/40 bg-stone-950/88 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.52)] overflow-hidden">
+                        <div className="px-3 py-2 border-b border-white/8 bg-gradient-to-r from-amber-950/50 to-transparent">
+                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/85">
+                                {t(language, 'tavern.interview_choices')}
+                            </span>
+                        </div>
+                        <div className="p-3 flex flex-col gap-2">
+                            {activeNamedPrompt.options.map(option => (
+                                <SfxButton
+                                    key={option.id}
+                                    onClick={() => handlers.handleNamedPromptOption(option.id)}
+                                    className="w-full rounded-xl border border-amber-500/35 bg-amber-900/78 px-4 py-3 text-left text-stone-50 shadow-lg transition-all active:scale-[0.98] hover:bg-amber-800/88"
+                                >
+                                    <span className="block text-[12px] md:text-[13px] leading-[1.42] font-black break-words">
+                                        {t(language, option.textKey)}
+                                    </span>
+                                </SfxButton>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Control Bar & Dialogue */}
             <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 flex flex-col items-center gap-[10px] pointer-events-none">
-                <div className={`w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE') ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
+                <div className={`w-full px-4 py-2 pointer-events-auto transition-opacity duration-500 ${(pendingGiftItem || step !== 'IDLE' || isSurveyMode) ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
                     <div className="grid grid-cols-5 gap-1.5 md:gap-3 w-full max-w-3xl mx-auto">
                         <SfxButton onClick={handlers.handleTalk} className={`${btnBaseClass} bg-stone-900/85 hover:bg-stone-800 border-stone-700 ${state.talkedToToday.includes(mercenary.id) ? 'opacity-50' : ''}`}>
                             <MessageSquare className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-500" />
@@ -157,11 +184,6 @@ export const TavernInteractionView: React.FC<TavernInteractionViewProps> = ({
                     speaker={mercenary.name} 
                     text={dialogue} 
                     options={
-                        activeNamedPrompt ? activeNamedPrompt.options.map(option => ({
-                            label: t(language, option.textKey),
-                            action: () => handlers.handleNamedPromptOption(option.id),
-                            variant: 'primary' as const
-                        })) :
                         followupText ? [{ label: t(language, 'common.continue'), action: handlers.handleContinue, variant: 'primary' }] :
                         pendingGiftItem ? [{ label: t(language, 'tavern.give_item', { item: pendingGiftItem.name }), action: handlers.handleConfirmGift, variant: 'primary' }, { label: t(language, 'common.cancel'), action: handlers.handleCancelGift, variant: 'neutral' }] : 
                         step === 'CONFIRM_HIRE' ? [{ label: t(language, 'tavern.sign_contract', { cost: hiringCost }), action: handlers.handleConfirmHire, variant: 'primary' }, { label: t(language, 'tavern.think_again'), action: handlers.handleCancelStep, variant: 'neutral' }] : 

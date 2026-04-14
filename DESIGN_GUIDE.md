@@ -107,6 +107,21 @@ Guidelines:
 - Favor short explanatory content and a narrow width before creating larger floating panels.
 - HUD and card-level tooltips should usually appear above the anchor unless the screen edge or surrounding layout makes a below placement easier to read.
 
+### `AutoFitText`
+Purpose:
+- Keep short HUD and card labels on one line when localization length is unstable but truncation alone would damage clarity.
+
+Guidelines:
+- Use `AutoFitText` for compact labels such as standing, lodging, trust, or other HUD metadata where the container width is fixed and the text must stay inline.
+- Prefer `AutoFitText` only for short labels. It is not a substitute for good copy shortening on large paragraphs or button text.
+- Set a clear `maxFontSize` that matches the intended design, then allow the component to reduce toward a conservative `minFontSize`.
+- Combine it with `whitespace-nowrap` and `truncate` so the fallback behavior is still controlled if the label remains too long even at the minimum size.
+- Use it sparingly. If a label repeatedly needs aggressive fitting, shorten the copy instead of relying only on auto-fit.
+- Good candidates:
+  - compact tavern and forge HUD labels
+  - trust / standing / lodging style captions
+  - short card metadata headers
+
 ---
 
 ## 4. Modal Overlay Standard
@@ -204,7 +219,23 @@ The `Forge` workspace should prioritize readability and direct action. Empty sta
 
 ---
 
-## 9. Usage Rule
+## 9. Survey Prompt Pattern
+
+Some named-conversation moments behave more like interview or survey prompts than standard dialogue choices. These should not always share the same layout as ordinary `DialogueBox` options.
+
+### Survey Prompt Spec
+- Keep the prompt text itself in the main `DialogueBox`.
+- Render the answer choices in a separate floating panel when the prompt is acting like a survey, interview, or stance check.
+- Prefer placing this answer panel near the animated mercenary, usually around the right-center zone, as long as it does not collide with the affinity card, bottom action buttons, or the main dialogue area.
+- Treat the answer panel as an extension of the dialogue state, not as a general-purpose action tray.
+
+### Intent
+- The player should read the prompt as a question and the floating panel as the response sheet.
+- This separation is preferred when standard bottom-stacked dialogue options would crowd out the prompt text or make the scene harder to read.
+
+---
+
+## 10. Usage Rule
 
 When a UI decision is primarily about:
 - spacing

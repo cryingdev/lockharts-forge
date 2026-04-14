@@ -55,6 +55,10 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   const hasTextPaging = textPages.length > 1;
   const currentText = textPages[textPage] ?? text;
   const hasMoreTextPages = textPage < textPages.length - 1;
+  const hasDenseOptions = options.length >= 3;
+  const dialogShellClass = hasDenseOptions
+    ? "w-full h-[31dvh] min-h-[248px] md:h-[34vh] md:min-h-[288px] bg-stone-900/92 backdrop-blur-3xl border-[2px] md:border-[3px] border-stone-500/45 rounded-2xl md:rounded-3xl shadow-[0_28px_80px_rgba(0,0,0,0.82),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.45)] overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/8"
+    : "w-full h-[24dvh] min-h-[158px] md:h-[29vh] md:min-h-[188px] bg-stone-900/92 backdrop-blur-3xl border-[2px] md:border-[3px] border-stone-500/45 rounded-2xl md:rounded-3xl shadow-[0_28px_80px_rgba(0,0,0,0.82),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.45)] overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/8";
 
   useEffect(() => {
     isMounted.current = true;
@@ -77,14 +81,13 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
   }, [showItemTooltip]);
 
   useEffect(() => {
-    if (textContainerRef.current) {
-      const container = textContainerRef.current;
-      const scrollHandle = requestAnimationFrame(() => {
-        container.scrollTop = container.scrollHeight;
-      });
-      return () => cancelAnimationFrame(scrollHandle);
-    }
-  }, [displayedIndex, currentText, isTyping]);
+    if (!textContainerRef.current) return;
+    const container = textContainerRef.current;
+    const scrollHandle = requestAnimationFrame(() => {
+      container.scrollTop = 0;
+    });
+    return () => cancelAnimationFrame(scrollHandle);
+  }, [currentText, textPage]);
 
   useLayoutEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -306,16 +309,14 @@ const DialogueBox: React.FC<DialogueBoxProps> = ({
     <div className={className} onClick={(e) => { if (showItemTooltip) { e.stopPropagation(); setShowItemTooltip(false); playClick(); } }}>
       {tooltipElement}
 
-      <div 
-        className="w-full h-[24dvh] min-h-[158px] md:h-[29vh] md:min-h-[188px] bg-stone-900/92 backdrop-blur-3xl border-[2px] md:border-[3px] border-stone-500/45 rounded-2xl md:rounded-3xl shadow-[0_28px_80px_rgba(0,0,0,0.82),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.45)] overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500 ring-1 ring-white/8"
-      >
+      <div className={dialogShellClass}>
         <div 
           className="h-full px-5 py-4.5 md:px-9 md:py-7.5 relative flex flex-col min-h-0 bg-gradient-to-br from-white/5 to-transparent cursor-pointer after:absolute after:inset-0 after:rounded-2xl md:after:rounded-3xl after:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.35)] after:pointer-events-none"
           onClick={handleSkipTyping}
         >
           <div 
             ref={textContainerRef}
-            className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 md:pr-2 py-2 mb-2 md:mb-3 min-h-0 ${isTyping ? 'typing-active' : ''}`}
+            className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 md:pr-2 py-2 mb-2 md:mb-3 min-h-[3.75rem] md:min-h-[4.5rem] ${isTyping ? 'typing-active' : ''}`}
             style={{ scrollBehavior: isTyping ? 'auto' : 'smooth' }}
           >
             <div 
