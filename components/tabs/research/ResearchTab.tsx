@@ -3,7 +3,7 @@ import React from 'react';
 import { useGame } from '../../../context/GameContext';
 import { Sparkles, Beaker, Microscope, Loader2, ArrowLeft, Check, AlertCircle, Trash2, Trophy, Ghost } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
-import { useResearch } from './hooks/useResearch';
+import { ResearchResult, useResearch } from './hooks/useResearch';
 import { ResearchSlots } from './ui/ResearchSlots';
 import { ResearchInventoryModal } from './ui/ResearchInventoryModal';
 import { EQUIPMENT_ITEMS } from '../../../data/equipment';
@@ -14,7 +14,33 @@ interface ResearchTabProps {
     onClose?: () => void;
 }
 
-const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: () => void }) => {
+const ResearchHintList = ({ result }: { result: ResearchResult }) => {
+    const { state } = useGame();
+    const language = state.settings.language;
+    const hints = result.correctQuantityHints ?? [];
+
+    if (hints.length === 0) return null;
+
+    return (
+        <div className="mt-4 w-full rounded-2xl border border-indigo-500/25 bg-indigo-950/20 px-4 py-3 shadow-inner">
+            <div className="mb-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.22em] text-indigo-300/80">
+                {t(language, 'research.result_correct_quantity_hint_title')}
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+                {hints.map(hint => (
+                    <div
+                        key={hint.id}
+                        className="rounded-full border border-indigo-400/30 bg-stone-950/70 px-3 py-1 text-[10px] md:text-xs font-black text-indigo-100 shadow-md"
+                    >
+                        {hint.name} <span className="font-mono text-indigo-300">x{hint.count}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const ResearchResultOverlay = ({ result, onConfirm }: { result: ResearchResult, onConfirm: () => void }) => {
     const { state } = useGame();
     const language = state.settings.language;
     const isSuccess = result.type === 'SUCCESS';
@@ -64,6 +90,7 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
                                 {t(language, 'research.result_resonate_desc')} <br/>
                                 <span className="text-indigo-300/80 font-mono text-[10px] mt-2 block">{t(language, 'research.result_resonate_hint')}</span>
                             </p>
+                            <ResearchHintList result={result} />
                         </div>
                     </div>
                 ) : (
@@ -76,6 +103,7 @@ const ResearchResultOverlay = ({ result, onConfirm }: { result: any, onConfirm: 
                             <p className="text-stone-600 text-xs font-bold uppercase tracking-widest leading-relaxed px-4">
                                 {t(language, 'research.result_fail_desc')}
                             </p>
+                            <ResearchHintList result={result} />
                         </div>
                     </div>
                 )}

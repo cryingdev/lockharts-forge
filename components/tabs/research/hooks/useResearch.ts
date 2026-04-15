@@ -2,14 +2,39 @@ import { useState, useCallback, useMemo } from 'react';
 import { useGame } from '../../../../context/GameContext';
 import { InventoryItem } from '../../../../types/inventory';
 import { EQUIPMENT_ITEMS } from '../../../../data/equipment';
+import { materials } from '../../../../data/materials';
 import { t } from '../../../../utils/i18n';
+import { getLocalizedItemName } from '../../../../utils/itemText';
 
 export type ResearchResultType = 'SUCCESS' | 'RESONATE' | 'FAIL';
 
 export interface ResearchResult {
     type: ResearchResultType;
     recipeId?: string;
+    correctQuantityHints?: ResearchCorrectQuantityHint[];
 }
+
+export interface ResearchCorrectQuantityHint {
+    id: string;
+    name: string;
+    count: number;
+}
+
+const countMatchingIngredients = (
+    recipe: typeof EQUIPMENT_ITEMS[number],
+    inputCounts: Record<string, number>
+): ResearchCorrectQuantityHint[] => {
+    return recipe.requirements
+        .filter(req => inputCounts[req.id] === req.count)
+        .map(req => {
+            const material = materials[req.id];
+            return {
+                id: req.id,
+                name: material?.name ?? req.id,
+                count: req.count,
+            };
+        });
+};
 
 export const useResearch = () => {
     const { state, actions } = useGame();
@@ -100,6 +125,10 @@ export const useResearch = () => {
 
         // Pre-calculate result logic for timing
         const inputData = itemsToProcess.map(s => ({ id: s.id, count: s.quantity }));
+        const inputCounts = inputData.reduce<Record<string, number>>((acc, item) => {
+            acc[item.id] = item.count;
+            return acc;
+        }, {});
         const inputIds = [...inputData].sort((a,b) => a.id.localeCompare(b.id)).map(i => i.id);
         const sortedInput = [...inputData].sort((a,b) => a.id.localeCompare(b.id));
 
@@ -109,27 +138,49 @@ export const useResearch = () => {
 
         let finalType: ResearchResultType = 'FAIL';
         let foundId: string | undefined = undefined;
+        let bestHintRecipe: typeof EQUIPMENT_ITEMS[number] | null = null;
+        let bestHintScore = 0;
 
         for (const recipe of lockedRecipes) {
             const sortedReqs = [...recipe.requirements].sort((a, b) => a.id.localeCompare(b.id));
             const reqIds = sortedReqs.map(r => r.id);
+            const correctQuantityScore = countMatchingIngredients(recipe, inputCounts).length;
+
+            if (finalType !== 'RESONATE' && correctQuantityScore > bestHintScore) {
+                bestHintRecipe = recipe;
+                bestHintScore = correctQuantityScore;
+            }
 
             if (JSON.stringify(inputIds) === JSON.stringify(reqIds)) {
                 const countsMatch = sortedReqs.every((req, idx) => req.count === sortedInput[idx].count);
                 if (countsMatch) {
                     finalType = 'SUCCESS';
                     foundId = recipe.id;
+                    bestHintRecipe = recipe;
                     break;
                 } else {
                     finalType = 'RESONATE';
+                    bestHintRecipe = recipe;
+                    bestHintScore = correctQuantityScore;
                 }
             }
         }
 
+        const correctQuantityHints = finalType === 'SUCCESS' || !bestHintRecipe
+            ? []
+            : countMatchingIngredients(bestHintRecipe, inputCounts)
+                .map(hint => ({
+                    ...hint,
+                    name: getLocalizedItemName(language, {
+                        id: hint.id,
+                        name: hint.name,
+                    }),
+                }));
+
         // Start Animation Flow
         setIsResearching(true);
         setIsInventoryModalOpen(false);
-        setResult({ type: finalType, recipeId: foundId }); // Set result early to trigger the correct CSS animation
+        setResult({ type: finalType, recipeId: foundId, correctQuantityHints }); // Set result early to trigger the correct CSS animation
 
         // Success/Resonate takes 5s, Fail takes 3s for "ejection" feel
         const animDuration = finalType === 'FAIL' ? 3000 : 5000;
@@ -147,7 +198,7 @@ export const useResearch = () => {
             }, animDuration > 3000 ? 500 : 300);
 
         }, animDuration);
-    }, [selectedSlots, actions, isResearching, result, state.unlockedRecipes]);
+    }, [selectedSlots, actions, isResearching, result, state.unlockedRecipes, language]);
 
     return {
         selectedSlots,

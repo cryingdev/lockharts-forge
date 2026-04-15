@@ -57,7 +57,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
     const [collapsedSections, setCollapsedSections] = useState<string[]>(() => readMarketCollapsedSectionsCookie());
 
-    const { hasFurnace, hasWorkbench } = state.forge;
+    const { hasFurnace, hasWorkbench, hasResearchTable } = state.forge;
     const currentTier = state.stats.tierLevel;
 
     useEffect(() => {
@@ -116,7 +116,10 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
         MARKET_CATALOG.forEach(config => {
             const meta = materials[config.id];
             if (!meta) return;
-            const isOwned = (config.id === 'furnace' && hasFurnace) || (config.id === 'workbench' && hasWorkbench);
+            const isOwned =
+                (config.id === 'furnace' && hasFurnace) ||
+                (config.id === 'workbench' && hasWorkbench) ||
+                (config.id === 'research_table' && hasResearchTable);
             if (config.type === 'FACILITY' && isOwned) return;
             
             // 티어 제한이 있는 아이템들 (RESOURCE, SUPPLY, TECHNIQUE, SKILL) 필터링
@@ -141,7 +144,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
             { id: 'tech', nameKey: 'market.section_techniques', items: groups.tech },
             { id: 'fac', nameKey: 'market.section_facilities', items: groups.fac },
         ].filter(g => g.items.length > 0);
-    }, [hasFurnace, hasWorkbench, currentTier, state.tutorialStep]);
+    }, [hasFurnace, hasWorkbench, hasResearchTable, currentTier, state.tutorialStep]);
 
     useEffect(() => {
         setCollapsedSections(prev => {

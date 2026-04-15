@@ -301,6 +301,7 @@ const en = {
     result_resonate_title: 'Unstable Resonance',
     result_resonate_desc: 'The materials pulse with energy, but the proportions are incorrect.',
     result_resonate_hint: '(Ingredients match, but quantities vary!)',
+    result_correct_quantity_hint_title: 'Correct Quantity',
     result_fail_title: 'Ashen Failure',
     result_fail_desc: 'The catalyst has failed. The materials turned to cold grey ash without a sound.',
     toast_slot_max: 'Maximum inventory reached in research slots.',

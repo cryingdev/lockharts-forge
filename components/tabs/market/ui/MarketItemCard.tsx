@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Package, Coins, Lock } from 'lucide-react';
 import { getAssetUrl } from '../../../../utils';
 import { SfxButton } from '../../../common/ui/SfxButton';
@@ -43,6 +43,10 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
     
     // 1순위: ID 기반 파일명 우선 시도
     const [imgSrc, setImgSrc] = useState(getAssetUrl(`${item.id}.png`, folder));
+
+    useEffect(() => {
+        setImgSrc(getAssetUrl(`${item.id}.png`, folder));
+    }, [item.id, folder]);
 
     // 이미지 로드 실패 시 폴백 처리
     const handleImgError = () => {

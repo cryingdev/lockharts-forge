@@ -32,7 +32,7 @@ export const ResearchSlots: React.FC<ResearchSlotsProps> = ({ slots, onOpenInven
                         {item ? (
                             <>
                                 <img 
-                                    src={getAssetUrl(`${item.id}.png`)} 
+                                    src={getAssetUrl(item.image || `${item.id}.png`, 'materials')} 
                                     className={`w-16 h-16 md:w-28 md:h-28 object-contain transition-all duration-300 ${disabled ? 'scale-75 opacity-50 blur-[1px]' : 'drop-shadow-lg'}`} 
                                     alt={item.name} 
                                 />

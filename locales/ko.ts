@@ -301,6 +301,7 @@ const ko = {
     result_resonate_title: '불안정한 공명',
     result_resonate_desc: '재료가 강하게 반응하지만, 비율이 맞지 않습니다.',
     result_resonate_hint: '(재료 종류는 맞지만 수량이 다릅니다!)',
+    result_correct_quantity_hint_title: '수량이 맞은 재료',
     result_fail_title: '잿빛 실패',
     result_fail_desc: '촉매 반응이 무너졌다. 재료는 소리 없이 차가운 재로 변해 흩어졌다.',
     toast_slot_max: '연구 슬롯에 넣을 수 있는 최대 수량입니다.',
