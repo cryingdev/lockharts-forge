@@ -58,7 +58,7 @@ While the UI is React-based, core gameplay scenes are powered by **Phaser 3**:
 
 ## 4. Data Modeling
 Core entities are defined as TypeScript interfaces in `/models/`:
--   `Mercenary`: Stats, equipment, affinity, and status.
+-   `Mercenary`: Stats, equipment, affinity, status, and temporary injury metadata.
 -   `Equipment`: Rarity, quality, and base stats.
 -   `Dungeon`: Floor data, monster encounters, and loot tables.
 
@@ -126,6 +126,42 @@ The commission system is split into repeatable economy contracts and named recru
     -   the camp discovery dialogue is not the same as using the camp
     -   choosing `Move On` must not consume the tile
     -   later return on the same floor must still allow usage
+
+### 4.6 Manual Dungeon Injury Resolution
+-   Purpose:
+    -   A mercenary who is reduced to `0 HP` during a manual-dungeon fight should not wait until dungeon exit to become injured.
+    -   If at least one party member survives and the encounter is won, retired party members are resolved immediately after combat.
+-   Runtime state:
+    -   `models/Mercenary.ts`
+        -   `injurySeverity?: 'MINOR' | 'MODERATE' | 'SEVERE'`
+        -   `injuryPenaltyPercent?: number`
+        -   `recoveryUntilDay?: number`
+    -   A non-dead retired mercenary is stored as:
+        -   `status = 'INJURED'`
+        -   `currentHp = 1`
+        -   `recoveryUntilDay = currentDay + severityRecoveryDays`
+-   Severity table:
+    -   `MINOR`: `-15%` to all primary stats, `1` day recovery
+    -   `MODERATE`: `-25%` to all primary stats, `2` days recovery
+    -   `SEVERE`: `-35%` to all primary stats, `3` days recovery
+-   Reducer responsibilities:
+    -   `state/reducer/manualDungeon.ts`
+        -   rolls injury severity in `handleResolveCombatManual` when `payload.win === true` and a combatant returns with `currentHp <= 0`
+        -   preserves that `INJURED` state through manual dungeon finish/retreat instead of overwriting it back to `HIRED`
+        -   full-party defeat may still roll death before applying injury fallback
+    -   `state/reducer/expedition.ts`
+        -   must preserve an existing manual-dungeon injury when manual assault rewards are claimed through the temporary expedition path
+    -   `state/reducer/sleep.ts`
+        -   clears `injurySeverity` and `injuryPenaltyPercent` when the injured mercenary recovers
+-   Stat calculation responsibilities:
+    -   `models/Stats.ts`
+        -   exposes `applyPrimaryStatPenalty(...)`
+        -   clamps penalty percent defensively and keeps each primary stat at a minimum of `1`
+    -   Combat and detail views should apply the penalty after base + allocated + equipment primary stats are merged, before derived combat stats are calculated.
+    -   Current call sites include:
+        -   `utils/combatLogic.ts`
+        -   `components/tabs/dungeon/hooks/useDungeonCombat.ts`
+        -   `hooks/useMercenaryDetail.ts`
 
 #### 4.4.1 Data Modeling (`types/`)
 The recommended addition is a contract-focused slice in `/types/game-state.ts`.

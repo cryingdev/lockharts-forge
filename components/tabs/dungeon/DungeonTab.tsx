@@ -39,6 +39,7 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
         handlers
     } = dungeon;
     const language = state.settings.language;
+    const isManualOverlayActive = !!state.activeManualDungeon && state.showManualDungeonOverlay;
 
     const handleBack = () => {
         // If mercenary inspection is open, close it first
@@ -57,7 +58,7 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
     return (
         <div className="fixed inset-0 z-[50] bg-stone-950 overflow-hidden flex flex-col px-safe">
             {/* Unified Immersive Back Button Overlay - Always Floating, Hidden during slot selection */}
-            {onNavigate && !isPickerOpen && (
+            {onNavigate && !isPickerOpen && !isManualOverlayActive && (
                 <SfxButton 
                     sfx="switch" 
                     onClick={handleBack} 
@@ -77,7 +78,7 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
                 />
             ) : (
                 <div className="h-full w-full bg-stone-950 text-stone-200 overflow-hidden font-sans relative flex flex-col sm:flex-row">
-                    {(!!state.activeManualDungeon && state.showManualDungeonOverlay) && (
+                    {isManualOverlayActive && (
                         <Suspense fallback={<NavigatorLoading />}>
                             <AssaultNavigator 
                                 inspectedMercId={inspectedMercId}

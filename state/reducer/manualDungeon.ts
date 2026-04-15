@@ -5,10 +5,35 @@ import { MONSTERS } from '../../data/monsters';
 import { materials } from '../../data/materials';
 import { calculateMaxHp, calculateMaxMp, mergePrimaryStats } from '../../models/Stats';
 import { Monster } from '../../models/Monster';
+import { InjurySeverity } from '../../models/Mercenary';
 import { MONSTER_DROPS } from '../../data/monster-drops';
 import { t } from '../../utils/i18n';
 import { getLocalizedItemName } from '../../utils/itemText';
 import { rng } from '../../utils/random';
+
+const MANUAL_DUNGEON_INJURY_TABLE: Array<{
+    severity: InjurySeverity;
+    penaltyPercent: number;
+    recoveryDays: number;
+    threshold: number;
+}> = [
+    { severity: 'MINOR', penaltyPercent: 15, recoveryDays: 1, threshold: 0.55 },
+    { severity: 'MODERATE', penaltyPercent: 25, recoveryDays: 2, threshold: 0.85 },
+    { severity: 'SEVERE', penaltyPercent: 35, recoveryDays: 3, threshold: 1 },
+];
+
+const rollManualDungeonInjury = (currentDay: number) => {
+    const roll = rng.standard(0, 1, 4);
+    const injury = MANUAL_DUNGEON_INJURY_TABLE.find(entry => roll <= entry.threshold) || MANUAL_DUNGEON_INJURY_TABLE[0];
+
+    return {
+        status: 'INJURED' as const,
+        currentHp: 1,
+        recoveryUntilDay: currentDay + injury.recoveryDays,
+        injurySeverity: injury.severity,
+        injuryPenaltyPercent: injury.penaltyPercent,
+    };
+};
 
 /**
  * 랜덤한 입구와 그에 따른 가장 먼 출구를 포함한 그리드를 생성합니다.
@@ -484,6 +509,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
     }
 
     const nextSessionXp = { ...session.sessionXp };
+    const injuryLogs: string[] = [];
 
     let stateWithProgress = state;
     if (payload.win && session.enemies) {
@@ -502,6 +528,23 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
             let nextMaxMp = m.maxMp;
             let nextCurrentHp = combatant.currentHp;
             let bonusStatPoints = m.bonusStatPoints || 0;
+            let nextStatus = m.status;
+            let nextRecoveryUntilDay = m.recoveryUntilDay;
+            let nextInjurySeverity = m.injurySeverity;
+            let nextInjuryPenaltyPercent = m.injuryPenaltyPercent;
+
+            if (payload.win && combatant.currentHp <= 0) {
+                const injury = rollManualDungeonInjury(stateWithProgress.stats.day);
+                nextStatus = injury.status;
+                nextCurrentHp = injury.currentHp;
+                nextRecoveryUntilDay = injury.recoveryUntilDay;
+                nextInjurySeverity = injury.injurySeverity;
+                nextInjuryPenaltyPercent = injury.injuryPenaltyPercent;
+                injuryLogs.push(t(language, 'manualDungeon.member_retired_injured', {
+                    name: m.name,
+                    penalty: injury.injuryPenaltyPercent
+                }));
+            }
 
             if (payload.win && combatant.currentHp > 0) {
                 const levelDiff = Math.max(0, m.level - Math.floor(avgEnemyLevel));
@@ -520,7 +563,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
                     const merged = mergePrimaryStats(m.stats, m.allocatedStats);
                     nextMaxHp = calculateMaxHp(merged, nextLevel);
                     nextMaxMp = calculateMaxMp(merged, nextLevel);
-                    nextCurrentHp = nextMaxHp;
+                    nextCurrentHp = Math.min(nextCurrentHp, nextMaxHp);
                     bonusStatPoints += 3;
                 }
             }
@@ -534,7 +577,11 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
                 bonusStatPoints,
                 maxHp: nextMaxHp,
                 maxMp: nextMaxMp,
-                xpToNextLevel: xpToNext
+                xpToNextLevel: xpToNext,
+                status: nextStatus,
+                recoveryUntilDay: nextRecoveryUntilDay,
+                injurySeverity: nextInjurySeverity,
+                injuryPenaltyPercent: nextInjuryPenaltyPercent
             };
         }
         return m;
@@ -591,7 +638,7 @@ export const handleResolveCombatManual = (state: GameState, payload: { win: bool
                 ? `${t(language, 'manualDungeon.area_neutralized')}${lootSummary}`
                 : (payload.flee ? t(language, 'manualDungeon.fled') : t(language, 'manualDungeon.everything_wrong'))
         },
-        logs: logMsg ? [logMsg, ...stateWithProgress.logs] : stateWithProgress.logs
+        logs: [...injuryLogs, ...(logMsg ? [logMsg] : []), ...stateWithProgress.logs]
     };
 };
 
@@ -608,10 +655,12 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
 
     const updatedMercs = state.knownMercenaries.map(m => {
         if (session.partyIds.includes(m.id)) {
-            let nextStatus: any = 'HIRED';
+            let nextStatus: any = m.status === 'INJURED' ? 'INJURED' : 'HIRED';
             let statusChange: 'NONE' | 'INJURED' | 'DEAD' = 'NONE';
             let nextCurrentHp = m.currentHp;
             let nextRecoveryUntilDay = m.recoveryUntilDay;
+            let nextInjurySeverity = m.injurySeverity;
+            let nextInjuryPenaltyPercent = m.injuryPenaltyPercent;
             
             if (isDefeat) {
                 const roll = rng.standard(0, 1, 4);
@@ -619,16 +668,25 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
                     nextStatus = 'DEAD';
                     statusChange = 'DEAD';
                     nextCurrentHp = 0;
+                    nextRecoveryUntilDay = undefined;
+                    nextInjurySeverity = undefined;
+                    nextInjuryPenaltyPercent = undefined;
                 }
                 else { 
-                    nextStatus = 'INJURED'; statusChange = 'INJURED'; 
-                    nextCurrentHp = 1;
-                    nextRecoveryUntilDay = state.stats.day + 2;
+                    const injury = rollManualDungeonInjury(state.stats.day);
+                    nextStatus = injury.status; statusChange = 'INJURED'; 
+                    nextCurrentHp = injury.currentHp;
+                    nextRecoveryUntilDay = injury.recoveryUntilDay;
+                    nextInjurySeverity = injury.injurySeverity;
+                    nextInjuryPenaltyPercent = injury.injuryPenaltyPercent;
                 }
             } else if (m.currentHp <= 0) {
-                nextStatus = 'INJURED'; statusChange = 'INJURED';
-                nextCurrentHp = 1;
-                nextRecoveryUntilDay = state.stats.day + 1;
+                const injury = rollManualDungeonInjury(state.stats.day);
+                nextStatus = injury.status; statusChange = 'INJURED';
+                nextCurrentHp = injury.currentHp;
+                nextRecoveryUntilDay = injury.recoveryUntilDay;
+                nextInjurySeverity = injury.injurySeverity;
+                nextInjuryPenaltyPercent = injury.injuryPenaltyPercent;
             }
 
             mercResults.push({
@@ -642,6 +700,8 @@ export const handleRetreatManualDungeon = (state: GameState): GameState => {
                 currentHp: nextCurrentHp,
                 status: nextStatus,
                 recoveryUntilDay: nextRecoveryUntilDay,
+                injurySeverity: nextInjurySeverity,
+                injuryPenaltyPercent: nextInjuryPenaltyPercent,
                 assignedExpeditionId: undefined
             };
         }

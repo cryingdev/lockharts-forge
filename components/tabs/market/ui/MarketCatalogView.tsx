@@ -13,7 +13,7 @@ interface MarketCatalogViewProps {
     marketStock: Record<string, number>;
     cart: Record<string, number>;
     inventory: any[];
-    itemMultipliers: Record<string, number>;
+    catalogMultiplier: number;
     garrickAffinity: number;
     gold: number;
     totalCost: number;
@@ -21,7 +21,7 @@ interface MarketCatalogViewProps {
     onBack: () => void;
     onToggleSection: (id: string) => void;
     onAddToCart: (id: string, count: number) => void;
-    onSetMultiplier: (id: string, val: number) => void;
+    onSetMultiplier: (val: number) => void;
     onToggleCart: () => void;
     onRemoveFromCart: (id: string) => void;
     onDeleteFromCart: (id: string) => void;
@@ -29,7 +29,7 @@ interface MarketCatalogViewProps {
 }
 
 export const MarketCatalogView: React.FC<MarketCatalogViewProps> = ({
-    categorizedMarketItems, collapsedSections, marketStock, cart, inventory, itemMultipliers,
+    categorizedMarketItems, collapsedSections, marketStock, cart, inventory, catalogMultiplier,
     garrickAffinity, gold, totalCost, isCartOpen,
     onBack, onToggleSection, onAddToCart, onSetMultiplier, onToggleCart, onRemoveFromCart, onDeleteFromCart, onBuy
 }) => {
@@ -51,9 +51,27 @@ export const MarketCatalogView: React.FC<MarketCatalogViewProps> = ({
                             <h2 className="truncate text-[1.5rem] leading-none font-black text-stone-100 font-serif uppercase tracking-tight md:text-[1.8rem]">
                                 {t(language, 'market.catalog_title')}
                             </h2>
-                            <div className="mt-1.5 inline-flex max-w-full items-center gap-2 rounded-lg border border-white/5 bg-stone-950 px-2.5 py-1">
-                                <Coins className="h-4 w-4 shrink-0 text-amber-50 md:h-4.5 md:w-4.5" />
-                                <span className="truncate text-[13px] font-mono font-black text-stone-300 md:text-[14px]">{gold.toLocaleString()} G</span>
+                            <div className="mt-1.5 flex max-w-full flex-wrap items-center gap-2">
+                                <div className="inline-flex max-w-full items-center gap-2 rounded-lg border border-white/5 bg-stone-950 px-2.5 py-1">
+                                    <Coins className="h-4 w-4 shrink-0 text-amber-50 md:h-4.5 md:w-4.5" />
+                                    <span className="truncate text-[13px] font-mono font-black text-stone-300 md:text-[14px]">{gold.toLocaleString()} G</span>
+                                </div>
+                                <div className="inline-flex items-center gap-1 rounded-xl border border-stone-700 bg-stone-950/90 p-1">
+                                    {[1, 5, 10].map(v => (
+                                        <SfxButton
+                                            key={v}
+                                            sfx="switch"
+                                            onClick={() => onSetMultiplier(v)}
+                                            className={`h-8 min-w-[2.1rem] rounded-lg px-2 text-[13px] font-black leading-none transition-all md:h-8 md:min-w-[2.35rem] md:text-[13px] ${
+                                                catalogMultiplier === v
+                                                    ? 'bg-amber-600 text-white'
+                                                    : 'bg-stone-900 text-stone-400 hover:text-stone-200 active:bg-stone-800'
+                                            }`}
+                                        >
+                                            {v}
+                                        </SfxButton>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -90,7 +108,7 @@ export const MarketCatalogView: React.FC<MarketCatalogViewProps> = ({
                         stock={marketStock} 
                         cart={cart} 
                         inventory={inventory} 
-                        multipliers={itemMultipliers} 
+                        multiplier={catalogMultiplier} 
                         affinity={garrickAffinity} 
                         gold={gold}
                         onAdd={onAddToCart} 

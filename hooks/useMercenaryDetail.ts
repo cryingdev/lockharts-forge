@@ -5,6 +5,7 @@ import { EquipmentSlotType } from '../types/inventory';
 import {
   calculateDerivedStats,
   applyEquipmentBonuses,
+  applyPrimaryStatPenalty,
   DerivedStats,
   PrimaryStats,
   mergePrimaryStats,
@@ -103,7 +104,10 @@ export const useMercenaryDetail = (mercenary: Mercenary | null): MercenaryDetail
 
   const currentStats = useMemo(() => {
     if (!mercenary) return null;
-    const mergedPrimary = mergePrimaryStats(mercenary.stats, pendingAllocated, currentEqPrimaryStats);
+    const mergedPrimary = applyPrimaryStatPenalty(
+      mergePrimaryStats(mercenary.stats, pendingAllocated, currentEqPrimaryStats),
+      mercenary.injuryPenaltyPercent
+    );
     const baseDerived = calculateDerivedStats(mergedPrimary, mercenary.level);
     const currentEquipmentStatsList = (Object.values(mercenary.equipment) as (Equipment | null)[]).map((eq) => eq?.stats).filter(Boolean);
     return applyEquipmentBonuses(baseDerived, currentEquipmentStatsList as any);
@@ -111,7 +115,10 @@ export const useMercenaryDetail = (mercenary: Mercenary | null): MercenaryDetail
 
   const currentCombatPower = useMemo(() => {
       if (!mercenary || !currentStats) return 0;
-      const mergedPrimary = mergePrimaryStats(mercenary.stats, pendingAllocated, currentEqPrimaryStats);
+      const mergedPrimary = applyPrimaryStatPenalty(
+        mergePrimaryStats(mercenary.stats, pendingAllocated, currentEqPrimaryStats),
+        mercenary.injuryPenaltyPercent
+      );
       const currentAttackType = mergedPrimary.int > mergedPrimary.str ? 'MAGICAL' : 'PHYSICAL';
       return calculateCombatPower(currentStats, mercenary.job, currentAttackType);
   }, [mercenary, currentStats, pendingAllocated, currentEqPrimaryStats]);
@@ -138,7 +145,10 @@ export const useMercenaryDetail = (mercenary: Mercenary | null): MercenaryDetail
       { str: 0, vit: 0, dex: 0, int: 0, luk: 0 }
     );
 
-    const previewMerged = mergePrimaryStats(mercenary.stats, pendingAllocated, previewEqPrimaryStats);
+    const previewMerged = applyPrimaryStatPenalty(
+      mergePrimaryStats(mercenary.stats, pendingAllocated, previewEqPrimaryStats),
+      mercenary.injuryPenaltyPercent
+    );
     const previewBase = calculateDerivedStats(previewMerged, mercenary.level);
     const previewStats = applyEquipmentBonuses(
       previewBase,

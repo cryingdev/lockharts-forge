@@ -51,7 +51,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
     const [dialogue, setDialogue] = useState(introDialogue);
     const [cart, setCart] = useState<Record<string, number>>({});
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const [itemMultipliers, setItemMultipliers] = useState<Record<string, number>>({});
+    const [catalogMultiplier, setCatalogMultiplier] = useState<number>(1);
     const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
     const [showGiftModal, setShowGiftModal] = useState(false);
     const [pendingGiftItem, setPendingGiftItem] = useState<InventoryItem | null>(null);
@@ -232,7 +232,7 @@ export const useMarket = (onNavigate: (tab: any) => void) => {
 
     return {
         state, actions, viewMode, setViewMode, dialogue, setDialogue, cart, isCartOpen, setIsCartOpen,
-        itemMultipliers, setItemMultipliers, floatingHearts, showGiftModal, setShowGiftModal,
+        catalogMultiplier, setCatalogMultiplier, floatingHearts, showGiftModal, setShowGiftModal,
         pendingGiftItem, setPendingGiftItem, collapsedSections, setCollapsedSections,
         cartItemCount, totalCost, categorizedMarketItems,
         handlers: {

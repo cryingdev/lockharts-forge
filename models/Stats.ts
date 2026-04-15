@@ -45,6 +45,23 @@ export const mergePrimaryStats = (
   luk: base.luk + allocated.luk + (bonus?.luk ?? 0),
 });
 
+export const applyPrimaryStatPenalty = (
+  stats: PrimaryStats,
+  penaltyPercent: number = 0
+): PrimaryStats => {
+  const penalty = clamp(penaltyPercent, 0, 90) / 100;
+  if (penalty <= 0) return stats;
+
+  const multiplier = 1 - penalty;
+  return {
+    str: Math.max(1, Math.floor(stats.str * multiplier)),
+    vit: Math.max(1, Math.floor(stats.vit * multiplier)),
+    dex: Math.max(1, Math.floor(stats.dex * multiplier)),
+    int: Math.max(1, Math.floor(stats.int * multiplier)),
+    luk: Math.max(1, Math.floor(stats.luk * multiplier)),
+  };
+};
+
 /**
  * Calculates detailed combat stats based on attributes and level.
  */

@@ -76,7 +76,7 @@ export default class DungeonScene extends Phaser.Scene {
     preload() {
         this.load.image('sparkle', getAssetUrl('particle_spark1.png'));
         this.load.image('red_mist', getAssetUrl('particle_spark2.png'));
-        this.load.image('dungeon_tile_campfire', getAssetUrl('dungeon_tile_campfire.png', 'dungeon'));
+        this.load.image('dungeon_tile_campfire', getAssetUrl('dungeon_tile_campfire.png', 'dungeons'));
     }
 
     create() {

@@ -6,6 +6,7 @@ import { ItemSelectorList } from '../../../ItemSelectorList';
 import { getAssetUrl } from '../../../../utils';
 import { useGame } from '../../../../context/GameContext';
 import { getLocalizedItemName } from '../../../../utils/itemText';
+import { t } from '../../../../utils/i18n';
 
 interface InstanceSelectorPopupProps {
     show: boolean;
@@ -26,13 +27,23 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
     if (!show) return null;
 
     const getQualityLabel = (q: number): string => {
-        if (q >= 110) return 'MASTERWORK';
-        if (q >= 100) return 'PRISTINE';
-        if (q >= 90) return 'SUPERIOR';
-        if (q >= 80) return 'FINE';
-        if (q >= 70) return 'STANDARD';
-        if (q >= 60) return 'RUSTIC';
-        return 'CRUDE';
+        if (q >= 110) return t(language, 'shop.instance_selector.quality_masterwork');
+        if (q >= 100) return t(language, 'shop.instance_selector.quality_pristine');
+        if (q >= 90) return t(language, 'shop.instance_selector.quality_superior');
+        if (q >= 80) return t(language, 'shop.instance_selector.quality_fine');
+        if (q >= 70) return t(language, 'shop.instance_selector.quality_standard');
+        if (q >= 60) return t(language, 'shop.instance_selector.quality_rustic');
+        return t(language, 'shop.instance_selector.quality_crude');
+    };
+
+    const getRarityLabel = (rarity?: string) => {
+        switch (rarity) {
+            case 'Legendary': return t(language, 'shop.instance_selector.rarity_legendary');
+            case 'Epic': return t(language, 'shop.instance_selector.rarity_epic');
+            case 'Rare': return t(language, 'shop.instance_selector.rarity_rare');
+            case 'Uncommon': return t(language, 'shop.instance_selector.rarity_uncommon');
+            default: return t(language, 'shop.instance_selector.rarity_common');
+        }
     };
 
     const getRarityColor = (rarity?: string) => {
@@ -61,8 +72,8 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
                 <div className="flex-1 flex flex-col border-r border-stone-800 bg-stone-925/50 overflow-hidden">
                     <div className="p-4 md:p-6 border-b border-stone-800 flex justify-between items-center bg-stone-900 shrink-0">
                         <div>
-                            <h3 className="font-serif font-black text-xl text-stone-100 uppercase tracking-tighter">Select Instance</h3>
-                            <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest mt-0.5">Which one will you part with?</p>
+                            <h3 className="font-serif font-black text-xl text-stone-100 uppercase tracking-tighter">{t(language, 'shop.instance_selector.title')}</h3>
+                            <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest mt-0.5">{t(language, 'shop.instance_selector.subtitle')}</p>
                         </div>
                         <button onClick={onClose} className="p-2 hover:bg-stone-800 rounded-full text-stone-500 transition-colors"><X className="w-5 h-5" /></button>
                     </div>
@@ -78,14 +89,14 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
                             onClick={onClose}
                             className="px-6 py-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-400 font-black uppercase text-xs transition-all flex items-center gap-2"
                         >
-                            <X className="w-4 h-4" /> Cancel
+                            <X className="w-4 h-4" /> {t(language, 'common.cancel')}
                         </button>
                         <button 
                             onClick={() => selectedInstance && onSell(selectedInstance)}
                             disabled={!selectedInstance || selectedInstance.isLocked}
                             className={`px-10 py-3 rounded-xl font-black uppercase text-xs transition-all flex items-center gap-2 border-b-4 ${(!selectedInstance || selectedInstance.isLocked) ? 'bg-stone-800 text-stone-600 border-stone-950 grayscale cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800 shadow-xl active:scale-95'}`}
                         >
-                            <Check className="w-4 h-4" /> Select & Sell
+                            <Check className="w-4 h-4" /> {t(language, 'shop.instance_selector.propose')}
                         </button>
                     </div>
                 </div>
@@ -93,7 +104,7 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
                 <div className="hidden md:flex w-72 lg:w-96 flex-col bg-stone-900 overflow-hidden">
                     <div className="p-6 border-b border-stone-800 flex items-center gap-3 shrink-0">
                         <div className="text-stone-500"><Info className="w-5 h-5" /></div>
-                        <h3 className="font-bold text-stone-400 uppercase tracking-widest text-sm">Item Inspection</h3>
+                        <h3 className="font-bold text-stone-400 uppercase tracking-widest text-sm">{t(language, 'shop.instance_selector.inspection')}</h3>
                     </div>
                     <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col min-h-0">
                         {selectedInstance ? (
@@ -110,10 +121,10 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
                                     <h4 className="text-xl font-bold text-amber-500 font-serif leading-none">{getLocalizedItemName(language, selectedInstance)}</h4>
                                     <div className="flex flex-col items-center gap-1.5 mt-2.5">
                                         <div className={`px-3 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm ${getRarityColor(selectedInstance.equipmentData?.rarity)}`}>
-                                            {selectedInstance.equipmentData?.rarity}
+                                            {getRarityLabel(selectedInstance.equipmentData?.rarity)}
                                         </div>
                                         <div className={`px-2 py-0.5 rounded border border-stone-800 bg-stone-950 text-[8px] font-bold uppercase flex items-center gap-1 ${selectedInstance.equipmentData?.quality && selectedInstance.equipmentData.quality >= 100 ? 'text-amber-400' : 'text-stone-500'}`}>
-                                            <Sparkles className="w-2.5 h-2.5 fill-current" /> {getQualityLabel(selectedInstance.equipmentData?.quality || 100)} Grade
+                                            <Sparkles className="w-2.5 h-2.5 fill-current" /> {getQualityLabel(selectedInstance.equipmentData?.quality || 100)} {t(language, 'shop.instance_selector.grade')}
                                         </div>
                                     </div>
                                 </div>
@@ -139,7 +150,7 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
 
                                 <div className="mt-auto pt-6">
                                     <div className="flex justify-between items-center px-1 mb-2">
-                                        <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Offered Price</span>
+                                        <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t(language, 'shop.instance_selector.offered_price')}</span>
                                         <span className={`text-2xl font-mono font-black ${selectedInstance.isLocked ? 'text-stone-600' : 'text-emerald-400'}`}>{Math.ceil(selectedInstance.baseValue * customerMarkup)} G</span>
                                     </div>
                                 </div>
@@ -147,7 +158,7 @@ export const InstanceSelectorPopup: React.FC<InstanceSelectorPopupProps> = ({
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-stone-700 italic text-center p-8 gap-4 opacity-50">
                                 <Search className="w-12 h-12" />
-                                <p className="text-sm">Select an item to inspect its quality and stats before finalizing the contract.</p>
+                                <p className="text-sm">{t(language, 'shop.instance_selector.empty_state')}</p>
                             </div>
                         )}
                     </div>

@@ -53,6 +53,8 @@ export const handleConfirmSleep = (state: GameState): GameState => {
     const updatedMercenaries = state.knownMercenaries.map(merc => {
         let status = merc.status;
         let recoveryUntilDay = merc.recoveryUntilDay;
+        let injurySeverity = merc.injurySeverity;
+        let injuryPenaltyPercent = merc.injuryPenaltyPercent;
 
         // Tavern Departure Logic: Unhired visitors have a chance to leave
         if (status === 'VISITOR') {
@@ -84,11 +86,18 @@ export const handleConfirmSleep = (state: GameState): GameState => {
             if (nextHp > 0) {
                 status = 'HIRED';
                 recoveryUntilDay = undefined;
+                injurySeverity = undefined;
+                injuryPenaltyPercent = undefined;
                 recoveryLogs.push(`${merc.name} has fully recovered from their injuries.`);
             } else {
                 status = 'HIRED';
                 recoveryUntilDay = undefined;
+                injurySeverity = undefined;
+                injuryPenaltyPercent = undefined;
             }
+        } else if (status !== 'INJURED') {
+            injurySeverity = undefined;
+            injuryPenaltyPercent = undefined;
         }
 
         // Recover energy for mercenaries not on expedition
@@ -99,11 +108,13 @@ export const handleConfirmSleep = (state: GameState): GameState => {
                 currentHp: nextHp,
                 currentMp: nextMp,
                 recoveryUntilDay,
+                injurySeverity,
+                injuryPenaltyPercent,
                 expeditionEnergy: Math.min(DUNGEON_CONFIG.MAX_EXPEDITION_ENERGY, (merc.expeditionEnergy || 0) + DUNGEON_CONFIG.DAILY_ENERGY_RECOVERY)
             };
         }
         
-        return { ...merc, status, currentHp: nextHp, currentMp: nextMp, recoveryUntilDay };
+        return { ...merc, status, currentHp: nextHp, currentMp: nextMp, recoveryUntilDay, injurySeverity, injuryPenaltyPercent };
     });
 
     // --- Market Restock Logic ---

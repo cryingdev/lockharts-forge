@@ -13,11 +13,11 @@ interface MarketCatalogProps {
     stock: Record<string, number>;
     cart: Record<string, number>;
     inventory: any[];
-    multipliers: Record<string, number>;
+    multiplier: number;
     affinity: number;
     gold: number;
     onAdd: (id: string, count: number) => void;
-    onSetMultiplier: (id: string, val: number) => void;
+    onSetMultiplier: (val: number) => void;
 }
 
 const ICONS: Record<string, any> = {
@@ -26,7 +26,7 @@ const ICONS: Record<string, any> = {
     skill: <Sparkles className="w-3 h-3"/>
 };
 
-export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed, onToggle, stock, cart, inventory, multipliers, affinity, gold, onAdd, onSetMultiplier }) => {
+export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed, onToggle, stock, cart, inventory, multiplier, affinity, gold, onAdd, onSetMultiplier }) => {
     const { state } = useGame();
     const language = state.settings.language;
     const { tooltip, openTooltip, closeTooltip, isTooltipOpen } = useTimedTooltip<{ description: string }>(2000);
@@ -63,7 +63,7 @@ export const MarketCatalog: React.FC<MarketCatalogProps> = ({ groups, collapsed,
                                     stock={(stock[item.id] || 0) - (cart[item.id] || 0)} 
                                     inventoryCount={inventory.find(i => i.id === item.id)?.quantity || 0} 
                                     cartCount={cart[item.id] || 0}
-                                    multiplier={multipliers[item.id] || 1} 
+                                    multiplier={multiplier} 
                                     isLocked={(item.id === 'scroll_t2' && affinity < 20) || (item.id === 'scroll_t3' && affinity < 40)} 
                                     gold={gold}
                                     onAdd={onAdd} 

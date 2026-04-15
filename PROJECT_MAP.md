@@ -11,7 +11,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.46b`).
+- `metadata.json`: App metadata and versioning (`0.1.48c`).
 - `GAME_DESIGN.md`: Comprehensive game design document covering mechanics and world-building.
 - `TECH_DESIGN.md`: Technical architecture and implementation details.
 - `COMBAT_FORMULA.md`: Official combat calculation sequence and formulas.
@@ -46,8 +46,8 @@ This document provides a comprehensive structural map of the project, detailing 
 - `state/reducer/crafting.ts`: Start/Finish crafting, exp gain, and mastery tracking.
 - `state/reducer/inventory.ts`: Item acquisition, consumption, selling, locking, and **Skill Application**.
 - `state/reducer/mercenary.ts`: Scouting, hiring, lodging-cap checks, stat allocation, gifting, named conversation answers, and relationship-based tavern progression.
-- `state/reducer/expedition.ts`: Auto-expedition lifecycle and reward claiming.
-- `state/reducer/manualDungeon.ts`: Grid movement, floor transitions, and **Immersive Narrative Logic**.
+- `state/reducer/expedition.ts`: Auto-expedition lifecycle, reward claiming, and manual-assault temporary claim preservation.
+- `state/reducer/manualDungeon.ts`: Grid movement, floor transitions, combat-result injury resolution, and **Immersive Narrative Logic**.
 - `state/reducer/shop.ts`: Shop open/close, queue management, and customer refusal.
 - `state/reducer/commission.ts`: Named recruitment contracts, board commissions, tavern minor contracts, named personal requests, boss trophy contracts, and reward application.
 - `state/reducer/equipment.ts`: Equip/Unequip logic and level requirement checks.
@@ -55,7 +55,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `state/reducer/market-affinity.ts`: Garrick relationship tracking.
 - `state/reducer/repair.ts`: Forge facility restoration logic.
 - `state/reducer/tavern.ts`: Tavern lodging expansion and Tavern-specific upgrade handling.
-- `state/reducer/sleep.ts`: End-of-day cleanup, recovery, and daily financials.
+- `state/reducer/sleep.ts`: End-of-day cleanup, injury recovery, stamina recovery, and daily financials.
 - `state/reducer/events.ts`: Global event trigger and journal toggling.
 
 ---
@@ -145,6 +145,8 @@ This document provides a comprehensive structural map of the project, detailing 
 - `utils/dropLogic.ts`: Standardized loot calculation engine.
 - `utils/cacheManager.ts`: Automated web cache maintenance and version markers.
 - `utils/i18n.ts`: Localization lookup utility with key-based translation, parameter interpolation, and translation existence checks.
+- `utils/storage.ts`: Safe browser storage helpers for local/session string, number, JSON read/write, and removal with SSR/error fallbacks.
+- `models/Stats.ts`: Primary/derived stat calculation helpers, including temporary injury penalty application.
 - `state/helpers/tavernTalkHelpers.ts`: Tavern talk selection, weighting, and progress-stage filtering.
 - `state/helpers/namedConversationHelpers.ts`: Named prompt selection and non-repeating conversation gating.
 

@@ -19,6 +19,7 @@ import { MercenaryPortrait } from '../../common/ui/MercenaryPortrait';
 import { SPECIAL_RECRUITS_REGISTRY } from '../../../data/mercenaries';
 import { MercenaryDetailModal } from '../../modals/MercenaryDetailModal';
 import { EquipmentSlotType } from '../../../types/inventory';
+import { DialogueOption } from '../../../types/game-state';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { materials } from '../../../data/materials';
 import { t } from '../../../utils/i18n';
@@ -175,6 +176,67 @@ const LootOverlay = ({ loot, gold, onClose }: { loot: any[], gold: number, onClo
                 </div>
                 <div className="p-4 bg-stone-950 text-center border-t border-stone-800">
                     <SfxButton onClick={onClose} className="w-full py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all">{t(language, 'common.close')}</SfxButton>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const DecisionOverlay = ({ speaker, text, speakerAvatar, options }: { speaker: string; text: string; speakerAvatar?: string; options: DialogueOption[] }) => {
+    if (options.length === 0) return null;
+
+    return (
+        <div className="fixed inset-0 z-[240] pointer-events-auto flex items-center justify-center p-4 bg-black/58 backdrop-blur-[2px] animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl rounded-[1.75rem] border-2 border-stone-600/60 bg-stone-950/94 shadow-[0_28px_90px_rgba(0,0,0,0.9)] ring-1 ring-amber-500/15 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-250">
+                <div className="px-5 py-4 md:px-7 md:py-5 border-b border-white/10 bg-gradient-to-r from-white/8 via-white/4 to-transparent">
+                    <div className="flex items-center gap-3">
+                        {speakerAvatar && (
+                            <img
+                                src={speakerAvatar}
+                                alt=""
+                                className="w-11 h-11 md:w-14 md:h-14 rounded-xl border border-white/15 object-cover bg-stone-900 shrink-0"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                        )}
+                        <div className="min-w-0">
+                            <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.28em] text-amber-400/90 truncate">
+                                {speaker}
+                            </div>
+                            <div className="mt-1 h-px w-20 bg-amber-500/40" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="px-5 py-5 md:px-7 md:py-7">
+                    <p className="max-h-[34dvh] overflow-y-auto custom-scrollbar pr-1 whitespace-pre-wrap break-words text-stone-50 font-medium leading-[1.55] md:leading-[1.7] text-[1.28rem] md:text-[1.65rem] drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
+                        {text}
+                    </p>
+                </div>
+
+                <div className={`grid gap-2.5 p-4 md:p-5 border-t border-white/10 bg-black/28 ${options.length >= 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 xs:grid-cols-2'}`}>
+                    {options.map((option, idx) => (
+                        <SfxButton
+                            key={`${option.label}-${idx}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (option.disabled || !option.action) return;
+                                if (typeof option.action === 'function') option.action();
+                            }}
+                            disabled={option.disabled}
+                            className={`min-h-[58px] md:min-h-[66px] rounded-2xl border px-4 py-3 text-[14px] md:text-[16px] font-black tracking-wide transition-all active:scale-[0.97] flex items-center justify-center gap-2 text-center ${
+                                option.disabled
+                                    ? 'bg-stone-900/70 text-stone-600 border-stone-700/40 cursor-not-allowed'
+                                    : option.variant === 'danger'
+                                        ? 'bg-red-950/75 text-red-50 border-red-700/60 hover:bg-red-800'
+                                        : option.variant === 'neutral' || option.variant === 'secondary'
+                                            ? 'bg-stone-900/85 text-stone-100 border-stone-600 hover:bg-stone-800'
+                                            : 'bg-amber-700/90 text-white border-amber-400 hover:bg-amber-600 shadow-[0_0_28px_rgba(180,83,9,0.22)]'
+                            }`}
+                        >
+                            <span className="leading-tight">{option.label}</span>
+                            {!option.disabled && <ChevronRight className="w-4 h-4 opacity-70 shrink-0" />}
+                        </SfxButton>
+                    ))}
                 </div>
             </div>
         </div>
@@ -496,6 +558,32 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
     };
 
     const { speaker, text: dialogueText } = getDialogue();
+    const decisionOptions: DialogueOption[] = isOnNPCTile && !hasInteractedWithNpc ? [
+        { label: t(language, 'assault.get_them_to_safety'), action: () => { 
+            if (dungeon?.rescueMercenaryId) {
+                actions.rescueMercenary(dungeon.rescueMercenaryId); 
+                actions.showToast(t(language, 'assault.survivor_secured_toast', { name: rescueTarget?.name || t(language, 'assault.survivor') })); 
+            }
+        }, variant: 'primary' as const },
+        { label: t(language, 'assault.return_for_you'), action: () => {
+            setLastMsg(t(language, 'assault.marked_spot'));
+            setHasInteractedWithNpc(true);
+        }, variant: 'neutral' as const }
+    ] : currentRoom === 'BOSS' && session.isBossDefeated ? [
+        { label: t(language, 'assault.claim_loot_leave'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
+        { label: t(language, 'assault.continue_exploring'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+    ] : isCamp ? [
+        { label: t(language, 'assault.use_camp'), action: () => actions.useCampManualDungeon(), variant: 'primary' as const },
+        { label: t(language, 'assault.move_on'), action: () => actions.leaveCampManualDungeon(), variant: 'neutral' as const }
+    ] : isStairs ? [
+        { label: t(language, 'assault.into_the_abyss', { floor: session.currentFloor + 1 }), action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
+        { label: t(language, 'assault.reach_surface'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
+        { label: t(language, 'assault.stay_in_sector'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+    ] : isVictory ? [
+        { label: t(language, 'assault.resume_search'), action: () => actions.resolveCombatManual(false, true, party), variant: 'primary' as const }
+    ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
+        { label: t(language, 'assault.end_mission'), action: () => actions.finishManualAssault(), variant: 'primary' as const }
+    ] : [];
 
     const isEncounterAnimationActive = isEncountered && currentRoom && (currentRoom === 'ENEMY' || (currentRoom === 'BOSS' && !session.isBossDefeated));
 
@@ -584,7 +672,7 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
             {!isBattle && (
                 <>
                     {/* Draggable D-pad Container */}
-                    {(!isOnNPCTile || hasInteractedWithNpc) && (
+                    {decisionOptions.length === 0 && (!isOnNPCTile || hasInteractedWithNpc) && (
                         <div 
                             className={`pointer-events-auto transition-all z-[200] select-none ${isDraggingDpad ? 'shadow-glow-amber cursor-grabbing' : 'cursor-default'} ${isEncounterAnimationActive ? 'opacity-0 scale-95' : 'opacity-100'}`}
                             style={{
@@ -655,42 +743,27 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
                     )}
 
                     {/* Bottom dialogue box container - Unified 규격 적용 */}
-                    <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 pointer-events-none">
-                        <div className={`flex flex-col items-end gap-4 relative transition-all duration-500 ${isEncounterAnimationActive ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
-                            <DialogueBox 
-                                speaker={speaker}
-                                speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.portraitImage || 'default.png', 'mercenaries') : undefined}
-                                text={dialogueText}
-                                options={isOnNPCTile ? [
-                                    { label: t(language, 'assault.get_them_to_safety'), action: () => { 
-                                        if (dungeon?.rescueMercenaryId) {
-                                            actions.rescueMercenary(dungeon.rescueMercenaryId); 
-                                            actions.showToast(t(language, 'assault.survivor_secured_toast', { name: rescueTarget?.name || t(language, 'assault.survivor') })); 
-                                        }
-                                    }, variant: 'primary' as const },
-                                    { label: t(language, 'assault.return_for_you'), action: () => {
-                                        setLastMsg(t(language, 'assault.marked_spot'));
-                                        setHasInteractedWithNpc(true);
-                                    }, variant: 'neutral' as const }
-                                ] : currentRoom === 'BOSS' && session.isBossDefeated ? [
-                                    { label: t(language, 'assault.claim_loot_leave'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
-                                    { label: t(language, 'assault.continue_exploring'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
-                                ] : isCamp ? [
-                                    { label: t(language, 'assault.use_camp'), action: () => actions.useCampManualDungeon(), variant: 'primary' as const },
-                                    { label: t(language, 'assault.move_on'), action: () => actions.leaveCampManualDungeon(), variant: 'neutral' as const }
-                                ] : isStairs ? [
-                                    { label: t(language, 'assault.into_the_abyss', { floor: session.currentFloor + 1 }), action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
-                                    { label: t(language, 'assault.reach_surface'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
-                                    { label: t(language, 'assault.stay_in_sector'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
-                                ] : isVictory ? [
-                                    { label: t(language, 'assault.resume_search'), action: () => actions.resolveCombatManual(false, true, party), variant: 'primary' as const }
-                                ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
-                                    { label: t(language, 'assault.end_mission'), action: () => actions.finishManualAssault(), variant: 'primary' as const }
-                                ] : []}
-                                className="w-full pointer-events-auto"
-                            />
+                    {decisionOptions.length === 0 && (
+                        <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-[92vw] md:w-[85vw] max-w-5xl z-50 pointer-events-none">
+                            <div className={`flex flex-col items-end gap-4 relative transition-all duration-500 ${isEncounterAnimationActive ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
+                                <DialogueBox 
+                                    speaker={speaker}
+                                    speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.portraitImage || 'default.png', 'mercenaries') : undefined}
+                                    text={dialogueText}
+                                    className="w-full pointer-events-auto"
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {!isEncounterAnimationActive && (
+                        <DecisionOverlay
+                            speaker={speaker}
+                            speakerAvatar={isOnNPCTile ? getAssetUrl(rescueTarget?.portraitImage || 'default.png', 'mercenaries') : undefined}
+                            text={dialogueText}
+                            options={decisionOptions}
+                        />
+                    )}
                 </>
             )}
 

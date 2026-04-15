@@ -6,6 +6,24 @@ import { formatDuration, getAssetUrl } from '../../../../utils';
 import { MONSTER_DROPS } from '../../../../data/monster-drops';
 import { materials } from '../../../../data/materials';
 import { t } from '../../../../utils/i18n';
+import { readStorageJson, writeStorageJson } from '../../../../utils/storage';
+
+const DUNGEON_LAST_FLOOR_STORAGE_KEY = 'lockharts_dungeon_last_floor_by_id';
+
+const readLastDungeonFloors = (): Record<string, number> => {
+    const parsed = readStorageJson<Record<string, unknown>>(DUNGEON_LAST_FLOOR_STORAGE_KEY, {});
+    return Object.fromEntries(
+        Object.entries(parsed).filter((entry): entry is [string, number] => typeof entry[1] === 'number' && Number.isFinite(entry[1]))
+    );
+};
+
+const writeLastDungeonFloor = (dungeonId: string, floor: number) => {
+    const current = readLastDungeonFloors();
+    writeStorageJson(DUNGEON_LAST_FLOOR_STORAGE_KEY, {
+        ...current,
+        [dungeonId]: floor
+    });
+};
 
 export const useDungeon = () => {
     const { state, actions } = useGame();
@@ -45,6 +63,11 @@ export const useDungeon = () => {
             }
         }
     }, [knownMercenaries, party]);
+
+    useEffect(() => {
+        if (!selectedDungeonId) return;
+        writeLastDungeonFloor(selectedDungeonId, selectedFloor);
+    }, [selectedDungeonId, selectedFloor]);
 
     const potentialRewards = useMemo(() => {
         if (!selectedDungeon) return [];
@@ -118,11 +141,15 @@ export const useDungeon = () => {
             actions.showToast("This area is currently inaccessible.");
             return;
         }
+        const lastFloors = readLastDungeonFloors();
+        const maxReached = maxFloorReached[id] || 1;
+        const savedFloor = lastFloors[id] || 1;
+        const restoredFloor = Math.max(1, Math.min(savedFloor, dungeon.maxFloors, maxReached));
         setSelectedDungeonId(id);
-        setSelectedFloor(1);
+        setSelectedFloor(restoredFloor);
         setParty([]);
         setView('DETAIL');
-    }, [state.stats.tierLevel, actions]);
+    }, [state.stats.tierLevel, actions, maxFloorReached]);
 
     const toggleMercenary = useCallback((mercId: string) => {
         const merc = hiredMercs.find(m => m.id === mercId);

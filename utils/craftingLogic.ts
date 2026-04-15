@@ -45,6 +45,17 @@ export function getUnlockedTier(level: number): number {
   return 1;
 }
 
+export const getMasteryQualityCap = (masteryCount: number): number => {
+  if (masteryCount >= MASTERY_THRESHOLDS.ARTISAN) return 120;
+  if (masteryCount >= MASTERY_THRESHOLDS.ADEPT) return 108;
+  return 98;
+};
+
+export const getQuickCraftQuality = (masteryCount: number): number => {
+  const QUICK_CRAFT_QUALITY_DROP = 35;
+  return Math.max(50, getMasteryQualityCap(masteryCount) - QUICK_CRAFT_QUALITY_DROP);
+};
+
 export function calcCraftExp(args: {
   tier: number;
   quality01: number;      // 0~1 (Internal multiplier, will use quality value instead)

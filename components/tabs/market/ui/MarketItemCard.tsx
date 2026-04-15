@@ -22,7 +22,7 @@ interface MarketItemCardProps {
     isLocked: boolean;
     gold: number;
     onAdd: (id: string, count: number) => void;
-    onSetMultiplier: (id: string, val: number) => void;
+    onSetMultiplier: (val: number) => void;
     isTooltipOpen: boolean;
     onToggleTooltip: (itemId: string, anchorRect: DOMRect, description: string) => void;
 }
@@ -32,12 +32,13 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
     const language = state.settings.language;
     const isSoldOut = stock <= 0;
     const meta = item.meta;
+    const showsMultiplier = !isSoldOut && meta.type !== 'KEY_ITEM' && meta.type !== 'SCROLL';
+    const purchaseAmount = showsMultiplier ? multiplier : 1;
     const localizedName = getLocalizedItemName(language, meta);
     const localizedDescription = getLocalizedItemDescription(language, meta);
-    const currentPrice = meta.baseValue * multiplier;
+    const currentPrice = meta.baseValue * purchaseAmount;
     const canAfford = gold >= currentPrice;
     const isSkillItem = meta.type === 'SKILL_BOOK' || meta.type === 'SKILL_SCROLL';
-    const showsMultiplier = !isSoldOut && meta.type !== 'KEY_ITEM' && meta.type !== 'SCROLL';
     const folder = isSkillItem ? 'skills' : 'materials';
     
     // 1순위: ID 기반 파일명 우선 시도
@@ -53,7 +54,7 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
 
     const handleQuickBuy = () => {
         if (isSoldOut || isLocked || !canAfford) return;
-        onAdd(item.id, multiplier);
+        onAdd(item.id, purchaseAmount);
     };
 
     const handleTooltipToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -87,25 +88,10 @@ export const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, stock, inv
                     <RomanTierOverlay id={item.id} />
                 </SfxButton>
 
-                {showsMultiplier && (
-                    <div className="absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 gap-1 md:bottom-[0.1rem] md:gap-1.5">
-                        {[1, 5, 10].map(v => (
-                            <SfxButton 
-                                key={v} 
-                                sfx="switch"
-                                disabled={stock < v} 
-                                onClick={() => onSetMultiplier(item.id, v)} 
-                                className={`h-8 w-8 rounded-full border text-[14px] font-black leading-none transition-all md:h-8 md:w-8 md:text-[12px] ${multiplier === v ? 'border-amber-400 bg-amber-600 text-white' : 'border-stone-700 bg-stone-900 text-stone-500 hover:text-stone-300'}`}
-                            >
-                                {v}
-                            </SfxButton>
-                        ))}
-                    </div>
-                )}
             </div>
 
             <div className="mt-auto w-full">
-                <div className={`relative w-full px-1.5 text-center ${showsMultiplier ? 'mt-2 md:mt-2' : 'mt-1'}`}>
+                <div className="relative mt-1 w-full px-1.5 text-center">
                     <SfxButton
                         sfx="switch"
                         onClick={handleTooltipToggle}

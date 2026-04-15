@@ -3,7 +3,7 @@ import { Mercenary } from '../../../../models/Mercenary';
 import { Monster } from '../../../../models/Monster';
 import { ManualDungeonSession } from '../../../../types/game-state';
 import { calculateCombatResult } from '../../../../utils/combatLogic';
-import { calculateDerivedStats, applyEquipmentBonuses, mergePrimaryStats } from '../../../../models/Stats';
+import { calculateDerivedStats, applyEquipmentBonuses, mergePrimaryStats, applyPrimaryStatPenalty } from '../../../../models/Stats';
 import { useGame } from '../../../../context/GameContext';
 import { SKILLS } from '../../../../data/skills';
 import { JobClass } from '../../../../models/JobClass';
@@ -50,7 +50,10 @@ export const useDungeonCombat = (
     
     // Units State
     const [partyState, setPartyState] = useState(party.map(m => {
-        const primary = mergePrimaryStats(m.stats, m.allocatedStats);
+        const primary = applyPrimaryStatPenalty(
+            mergePrimaryStats(m.stats, m.allocatedStats),
+            m.injuryPenaltyPercent
+        );
         const derived = applyEquipmentBonuses(calculateDerivedStats(primary, m.level), (Object.values(m.equipment) as any[]).map(e=>e?.stats).filter(Boolean) as any);
         return { ...m, derived, currentHp: m.currentHp, currentMp: m.currentMp, gauge: 0, lastDamaged: false, lastHealed: false, lastBuffed: false, lastDebuffed: false, statusAilments: [] as string[] };
     }));

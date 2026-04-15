@@ -91,7 +91,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     marketStock={state.marketStock}
                     cart={cart}
                     inventory={state.inventory}
-                    itemMultipliers={market.itemMultipliers}
+                    catalogMultiplier={market.catalogMultiplier}
                     garrickAffinity={state.garrickAffinity}
                     gold={state.stats.gold}
                     totalCost={totalCost}
@@ -99,7 +99,7 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
                     onBack={() => setViewMode('INTERACTION')}
                     onToggleSection={(id) => setCollapsedSections(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id])}
                     onAddToCart={handlers.addToCart}
-                    onSetMultiplier={(id, v) => market.setItemMultipliers(p => ({ ...p, [id]: v }))}
+                    onSetMultiplier={market.setCatalogMultiplier}
                     onToggleCart={() => {
                         setIsCartOpen(!isCartOpen);
                     }}

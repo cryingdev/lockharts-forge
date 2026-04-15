@@ -223,17 +223,21 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
                 const merged = mergePrimaryStats(merc.stats, merc.allocatedStats);
                 maxHp = calculateMaxHp(merged, level);
                 maxMp = calculateMaxMp(merged, level);
-                currentHp = maxHp;
+                currentHp = Math.min(currentHp, maxHp);
                 bonusStatPoints += (level - levelBefore) * 3;
             }
 
-            let nextStatus: MercenaryStatus = 'HIRED';
-            let recoveryUntilDay: number | undefined = undefined;
+            let nextStatus: MercenaryStatus = merc.status === 'INJURED' ? 'INJURED' : 'HIRED';
+            let recoveryUntilDay: number | undefined = merc.status === 'INJURED' ? merc.recoveryUntilDay : undefined;
+            let injurySeverity = merc.status === 'INJURED' ? merc.injurySeverity : undefined;
+            let injuryPenaltyPercent = merc.status === 'INJURED' ? merc.injuryPenaltyPercent : undefined;
 
             if (wasDowned) {
                 nextStatus = 'INJURED' as const;
                 currentHp = 1;
                 recoveryUntilDay = stateWithProgress.stats.day + Math.floor(rng.standard(1, 2, 0)) + 1;
+                injurySeverity = 'MODERATE';
+                injuryPenaltyPercent = 25;
             }
 
             mercenaryResults.push({
@@ -259,6 +263,8 @@ export const handleClaimExpedition = (state: GameState, payload: { expeditionId:
                 currentHp,
                 status: nextStatus,
                 recoveryUntilDay,
+                injurySeverity,
+                injuryPenaltyPercent,
                 assignedExpeditionId: undefined
             };
         }

@@ -42,6 +42,10 @@ When forging, players engage in a precision-based mini-game:
     -   Higher mastery reduces energy costs.
     -   Provides permanent quality bonuses.
     -   Unlocks "Special Variants" of basic items.
+-   **Quick Craft Quality**: Automatic crafting is a convenience path, not the best-quality path.
+    -   Its output quality is calculated from the recipe's current mastery quality cap minus a fixed drop.
+    -   Current quick-craft quality by mastery band: Novice `63`, Adept `73`, Artisan `85`.
+    -   Direct minigame crafting can still exceed these values up to the mastery cap.
 
 ---
 
@@ -332,6 +336,12 @@ Dungeons provide the rare materials needed for higher-tier equipment.
 #### 3.4.2 Risk & Reward
 -   **Loot**: Monster drops are the only way to get items like *Wolf Fangs* or *Acidic Slime Cores*.
 -   **Energy**: Mercenaries have a limited "Expedition Energy" (max 100) that recovers slowly over days.
+-   **Level-Up Vitals**: Dungeon level-ups increase maximum HP/MP and grant stat points, but they do not heal the mercenary. Current HP must preserve the value remaining from the run, clamped only if it would exceed the new maximum.
+-   **Combat Retirement Injuries**:
+    -   If a party member is reduced to `0 HP` during a manual-dungeon fight and the remaining party wins, injury resolution happens immediately after that combat instead of waiting until dungeon exit.
+    -   A non-dead retired mercenary is set to `INJURED` with `currentHp = 1`.
+    -   Injuries apply a temporary penalty to all primary stats until recovery. Current severity bands are Minor `-15%` for `1` day, Moderate `-25%` for `2` days, and Severe `-35%` for `3` days.
+    -   Full-party defeat can still trigger death according to the defeat-resolution roll.
 
 #### 3.4.3 Camp Tiles
 -   **Spawn Rate**: Camp tiles are rare. Each eligible manual-dungeon tile roll should treat `CAMP` as roughly a `5%` outcome.

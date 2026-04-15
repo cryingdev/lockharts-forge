@@ -45,7 +45,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
     state, handlers, actions, isCrafting, selectedItem, isPanelOpen, 
     activeCategory, expandedSubCats, favoriteItems, isFavExpanded, visibleSubCats, 
     groupedItems, hoveredItem, tooltipPos, quickCraftProgress, masteryInfo, 
-    isFuelShortage, isQuickFuelShortage, isEnergyShortage, requiredEnergy, extraQuickFuel, smithingLevel, workbenchLevel 
+    isFuelShortage, isQuickFuelShortage, isEnergyShortage, requiredEnergy, extraQuickFuel, quickCraftQuality, smithingLevel, workbenchLevel 
   } = forge;
   const language = state.settings.language;
 
@@ -82,6 +82,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
 
   // Reposition logic for tutorial: move buttons up if OPEN_RECIPE_GUIDE is active
   const isRecipeTutorial = state.tutorialStep === 'OPEN_RECIPE_GUIDE';
+  const isQuickCrafting = quickCraftProgress !== null;
 
   return (
     <div className="fixed inset-0 z-[50] bg-stone-950 overflow-hidden flex flex-col px-safe">
@@ -127,11 +128,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
             <QuickCraftOverlay 
                 progress={quickCraftProgress} 
                 extraFuel={extraQuickFuel}
+                craftingType={selectedItem.craftingType}
+                quality={quickCraftQuality}
             />
         )}
 
         {/* Navigation - Return to Forge Ground */}
-        {!isCrafting && (
+        {!isCrafting && !isQuickCrafting && (
             <SfxButton 
                 sfx="switch" 
                 onClick={() => onNavigate('MAIN')} 
@@ -143,7 +146,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         )}
 
         {/* Paging Button - To Shop (좌측 중앙 배치) */}
-        {!isCrafting && (!state.tutorialStep || ['CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE', 'PIP_RETURN_DIALOG_GUIDE'].includes(state.tutorialStep)) && (
+        {!isCrafting && !isQuickCrafting && (!state.tutorialStep || ['CRAFT_FIRST_SWORD_GUIDE', 'PIP_RETURN_GUIDE', 'PIP_RETURN_DIALOG_GUIDE'].includes(state.tutorialStep)) && (
             <SfxButton 
                 sfx="switch" 
                 onClick={() => {
@@ -165,7 +168,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         )}
 
         {/* Global Skill/Research UI */}
-        {!isCrafting && (
+        {!isCrafting && !isQuickCrafting && (
             <div className={`absolute top-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2 transition-all duration-500 ${isRecipeTutorial ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
                 <div className="relative w-[14.5rem] md:w-[16.25rem]">
                     <div className={`grid grid-cols-3 w-full overflow-hidden rounded-xl border border-stone-800 bg-stone-900/66 shadow-inner backdrop-blur-sm ${state.uiEffects.energyHighlight ? 'animate-shake-soft ring-2 ring-red-500/50 bg-red-900/20' : ''}`}>
@@ -269,7 +272,7 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
         </div>
 
         {/* Action Button Row - Elevated during tutorial to stay above DialogueBox */}
-        {!isCrafting && (
+        {!isCrafting && !isQuickCrafting && (
             <div 
               className={`absolute right-6 z-[60] flex items-center gap-3 transition-all duration-500 ${isRecipeTutorial ? 'bottom-[35dvh]' : 'bottom-10 md:bottom-8'}`}
             >

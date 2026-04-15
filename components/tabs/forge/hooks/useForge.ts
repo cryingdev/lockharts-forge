@@ -6,7 +6,7 @@ import { EquipmentCategory, EquipmentItem } from '../../../../types';
 import { EQUIPMENT_SUBCATEGORIES, EQUIPMENT_ITEMS } from '../../../../data/equipment';
 import { MASTERY_THRESHOLDS } from '../../../../config/mastery-config';
 import { materials } from '../../../../data/materials';
-import { getSmithingLevel, getUnlockedTier, getEnergyCost } from '../../../../utils/craftingLogic';
+import { getSmithingLevel, getUnlockedTier, getEnergyCost, getQuickCraftQuality } from '../../../../utils/craftingLogic';
 import { getAssetUrl } from '../../../../utils';
 import { GAME_CONFIG } from '../../../../config/game-config';
 import { t } from '../../../../utils/i18n';
@@ -167,6 +167,11 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     if (!selectedItem || selectedItem.craftingType !== 'FORGE') return 0;
     return selectedItem.tier === 1 ? 3 : selectedItem.tier === 2 ? 5 : 8;
   }, [selectedItem]);
+
+  const quickCraftQuality = useMemo(() => {
+    if (!selectedItem) return 0;
+    return getQuickCraftQuality(craftingMastery[selectedItem.id] || 0);
+  }, [selectedItem, craftingMastery]);
 
   const isQuickFuelShortage = useMemo(() => {
     if (!selectedItem || selectedItem.craftingType !== 'FORGE') return false;
@@ -405,13 +410,13 @@ export const useForge = (onNavigate: (tab: any) => void) => {
             actions.consumeItem('charcoal', extraQuickFuel);
           }
           actions.startCrafting(selectedItem);
-          actions.finishCrafting(selectedItem, 80, 0, 0.7);
+          actions.finishCrafting(selectedItem, quickCraftQuality, 0, 0.7);
           return null;
         }
         return prev + step;
       });
     }, interval);
-  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery, isEnergyShortage, isQuickFuelShortage, extraQuickFuel, updateTooltipPosition, clearTooltipRef]);
+  }, [selectedItem, actions, getInventoryCount, stats.energy, craftingMastery, isEnergyShortage, isQuickFuelShortage, extraQuickFuel, quickCraftQuality, updateTooltipPosition, clearTooltipRef]);
 
   const handleSelectItem = useCallback((item: EquipmentItem) => {
       setSelectedItem(item);
@@ -455,6 +460,7 @@ export const useForge = (onNavigate: (tab: any) => void) => {
     tooltipPos,
     quickCraftProgress,
     extraQuickFuel,
+    quickCraftQuality,
     smithingLevel,
     workbenchLevel,
     unlockedSmithingTier,

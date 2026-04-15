@@ -1,4 +1,4 @@
-import { DerivedStats, mergePrimaryStats, calculateDerivedStats, applyEquipmentBonuses } from '../models/Stats';
+import { DerivedStats, mergePrimaryStats, calculateDerivedStats, applyEquipmentBonuses, applyPrimaryStatPenalty } from '../models/Stats';
 import { JobClass, JOB_EFFICIENCY } from '../models/JobClass';
 import { Mercenary } from '../models/Mercenary';
 import { Equipment } from '../models/Equipment';
@@ -141,7 +141,10 @@ export const calculateMercenaryPower = (merc: Mercenary): number => {
     }), { str: 0, vit: 0, dex: 0, int: 0, luk: 0 });
 
     // 1. Merge stats (Base + Level up points + Equipment primary bonuses)
-    const primary = mergePrimaryStats(merc.stats, merc.allocatedStats, eqPrimaryBonuses);
+    const primary = applyPrimaryStatPenalty(
+        mergePrimaryStats(merc.stats, merc.allocatedStats, eqPrimaryBonuses),
+        merc.injuryPenaltyPercent
+    );
     
     // 2. Calculate Base Derived Stats (HP, MP, Attack etc.)
     const base = calculateDerivedStats(primary, merc.level);
