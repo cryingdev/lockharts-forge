@@ -187,8 +187,8 @@ const DecisionOverlay = ({ speaker, text, speakerAvatar, options }: { speaker: s
 
     return (
         <div className="fixed inset-0 z-[240] pointer-events-auto flex items-center justify-center p-4 bg-black/58 backdrop-blur-[2px] animate-in fade-in duration-200">
-            <div className="w-full max-w-2xl rounded-[1.75rem] border-2 border-stone-600/60 bg-stone-950/94 shadow-[0_28px_90px_rgba(0,0,0,0.9)] ring-1 ring-amber-500/15 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-250">
-                <div className="px-5 py-4 md:px-7 md:py-5 border-b border-white/10 bg-gradient-to-r from-white/8 via-white/4 to-transparent">
+            <div className="w-full max-w-2xl rounded-[1.75rem] border-2 border-stone-600/70 bg-gradient-to-b from-stone-900 via-stone-950 to-black shadow-[0_28px_90px_rgba(0,0,0,0.95)] ring-1 ring-amber-500/20 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-250">
+                <div className="px-5 py-4 md:px-7 md:py-5 border-b border-white/10 bg-stone-900/95">
                     <div className="flex items-center gap-3">
                         {speakerAvatar && (
                             <img
@@ -207,13 +207,13 @@ const DecisionOverlay = ({ speaker, text, speakerAvatar, options }: { speaker: s
                     </div>
                 </div>
 
-                <div className="px-5 py-5 md:px-7 md:py-7">
+                <div className="px-5 py-5 md:px-7 md:py-7 bg-stone-950/98">
                     <p className="max-h-[34dvh] overflow-y-auto custom-scrollbar pr-1 whitespace-pre-wrap break-words text-stone-50 font-medium leading-[1.55] md:leading-[1.7] text-[1.28rem] md:text-[1.65rem] drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
                         {text}
                     </p>
                 </div>
 
-                <div className={`grid gap-2.5 p-4 md:p-5 border-t border-white/10 bg-black/28 ${options.length >= 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 xs:grid-cols-2'}`}>
+                <div className={`grid gap-2.5 p-4 md:p-5 border-t border-white/10 bg-black/80 ${options.length >= 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 xs:grid-cols-2'}`}>
                     {options.map((option, idx) => (
                         <SfxButton
                             key={`${option.label}-${idx}`}
@@ -571,16 +571,16 @@ const AssaultNavigator: React.FC<AssaultNavigatorProps> = ({ inspectedMercId, se
         }, variant: 'neutral' as const }
     ] : currentRoom === 'BOSS' && session.isBossDefeated ? [
         { label: t(language, 'assault.claim_loot_leave'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
-        { label: t(language, 'assault.continue_exploring'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+        { label: t(language, 'assault.continue_exploring'), action: () => actions.dismissManualDungeonDecision(), variant: 'neutral' as const }
     ] : isCamp ? [
         { label: t(language, 'assault.use_camp'), action: () => actions.useCampManualDungeon(), variant: 'primary' as const },
         { label: t(language, 'assault.move_on'), action: () => actions.leaveCampManualDungeon(), variant: 'neutral' as const }
     ] : isStairs ? [
         { label: t(language, 'assault.into_the_abyss', { floor: session.currentFloor + 1 }), action: () => actions.proceedToNextFloorManual(), variant: 'primary' as const },
         { label: t(language, 'assault.reach_surface'), action: () => actions.finishManualAssault(), variant: 'primary' as const },
-        { label: t(language, 'assault.stay_in_sector'), action: () => actions.resolveCombatManual(false, true, party), variant: 'neutral' as const }
+        { label: t(language, 'assault.stay_in_sector'), action: () => actions.dismissManualDungeonDecision(), variant: 'neutral' as const }
     ] : isVictory ? [
-        { label: t(language, 'assault.resume_search'), action: () => actions.resolveCombatManual(false, true, party), variant: 'primary' as const }
+        { label: t(language, 'assault.resume_search'), action: () => actions.dismissManualDungeonDecision(), variant: 'primary' as const }
     ] : currentRoom === 'ENTRANCE' && session.isBossDefeated ? [
         { label: t(language, 'assault.end_mission'), action: () => actions.finishManualAssault(), variant: 'primary' as const }
     ] : [];

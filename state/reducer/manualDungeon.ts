@@ -460,6 +460,24 @@ export const handleLeaveCampManualDungeon = (state: GameState): GameState => {
     };
 };
 
+export const handleDismissManualDungeonDecision = (state: GameState): GameState => {
+    const session = state.activeManualDungeon;
+    if (!session) return state;
+    const language = state.settings.language;
+
+    const dismissibleStatuses: ManualDungeonSession['encounterStatus'][] = ['ENCOUNTERED', 'STAIRS', 'VICTORY'];
+    if (!dismissibleStatuses.includes(session.encounterStatus)) return state;
+
+    return {
+        ...state,
+        activeManualDungeon: {
+            ...session,
+            encounterStatus: 'NONE',
+            lastActionMessage: t(language, 'manualDungeon.advancing')
+        }
+    };
+};
+
 export const handleResolveCombatManual = (state: GameState, payload: { win: boolean, flee: boolean, finalParty: any[] }): GameState => {
     const session = state.activeManualDungeon;
     if (!session) return state;

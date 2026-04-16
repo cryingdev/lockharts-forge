@@ -65,8 +65,6 @@ export const MONSTER_DROPS: Record<string, MonsterDropEntry[]> = {
     { itemId: 'trophy_rat_king', minQuantity: 1, maxQuantity: 1, chance: 1.00 },
     { itemId: 'leather_strips', minQuantity: 2, maxQuantity: 4, chance: 1.00 },
     { itemId: 'copper_ore', minQuantity: 1, maxQuantity: 3, chance: 0.40 },
-      // REPLACE molar with crown + scrap mace
-    { itemId: 'rat_king_crown_shard', minQuantity: 1, maxQuantity: 1, chance: 0.25 },
     { itemId: 'scrap_mace_head', minQuantity: 1, maxQuantity: 1, chance: 0.20 },
     { itemId: 'potion_health_medium', minQuantity: 1, maxQuantity: 1, chance: 0.10 },
   ],

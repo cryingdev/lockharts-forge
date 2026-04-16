@@ -12,7 +12,7 @@ import { handleAddKnownMercenary, handleScoutMercenary, handleHireMercenary, han
 import { handleExpandTavernLodging } from './reducer/tavern';
 import { handleStartExpedition, handleCompleteExpedition, handleClaimExpedition, handleAbortExpedition, handleDismissDungeonResult } from './reducer/expedition';
 import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
-import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual, handleUseCampManualDungeon, handleLeaveCampManualDungeon } from './reducer/manualDungeon';
+import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual, handleUseCampManualDungeon, handleLeaveCampManualDungeon, handleDismissManualDungeonDecision } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 import { handleResearchCombination } from './reducer/research';
 import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleDismissExpiredContract, handleRefreshCommissions, handleUpdateContractObjectiveProgress, handleClaimObjectiveContract, handleGenerateTavernMinorContract, handleUnlockNamedEncounter } from './reducer/commission';
@@ -119,6 +119,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'PROCEED_TO_NEXT_FLOOR_MANUAL': return handleProceedToNextFloorManual(state);
     case 'USE_CAMP_MANUAL_DUNGEON': return handleUseCampManualDungeon(state);
     case 'LEAVE_CAMP_MANUAL_DUNGEON': return handleLeaveCampManualDungeon(state);
+    case 'DISMISS_MANUAL_DUNGEON_DECISION': return handleDismissManualDungeonDecision(state);
 
     // Tutorial & Prologue
     case 'SET_TUTORIAL_STEP': return { ...state, tutorialStep: action.payload };

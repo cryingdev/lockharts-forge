@@ -174,6 +174,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children, initialSlo
     proceedToNextFloorManual: () => dispatch({ type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' }),
     useCampManualDungeon: () => dispatch({ type: 'USE_CAMP_MANUAL_DUNGEON' }),
     leaveCampManualDungeon: () => dispatch({ type: 'LEAVE_CAMP_MANUAL_DUNGEON' }),
+    dismissManualDungeonDecision: () => dispatch({ type: 'DISMISS_MANUAL_DUNGEON_DECISION' }),
     triggerNamedEncounterCheck: (location: string) => dispatch({ type: 'TRIGGER_NAMED_ENCOUNTER_CHECK', payload: { location } }),
     acceptContract: (contractId: string) => dispatch({ type: 'ACCEPT_CONTRACT', payload: { contractId } }),
     declineContract: (payload: { contractId?: string; mercenaryId?: string }) => dispatch({ type: 'DECLINE_CONTRACT', payload }),

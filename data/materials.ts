@@ -485,8 +485,9 @@ export const materials: Record<string, MaterialDefinition> = {
 
     // ===== BOSS TROPHIES =====
     trophy_rat_king: {
-        id: 'trophy_rat_king', name: "Rat King's Tail", type: 'RESOURCE', category: 'KEY_ITEM', tier: 1,
-        description: 'A thick, matted tail from the Plague Rat King. Proof of a filthy victory.', baseValue: 1200, icon: '🐀'
+        id: 'trophy_rat_king', name: "Rat King's Crown Shard", type: 'RESOURCE', category: 'KEY_ITEM', tier: 1,
+        description: 'A jagged piece of the Plague Rat King’s crude crown. Proof that the sewer tyrant has fallen.', baseValue: 1200, icon: '👑',
+        image: 'rat_king_crown_shard.png'
     },
     trophy_goblin_king: {
         id: 'trophy_goblin_king', name: "Goblin King's Scepter", type: 'RESOURCE', category: 'KEY_ITEM', tier: 2,

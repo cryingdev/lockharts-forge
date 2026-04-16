@@ -10,7 +10,7 @@ export const BOSS_TROPHIES: BossTrophyDefinition[] = [
   {
     bossId: 'plague_rat_king',
     itemId: 'trophy_rat_king',
-    trophyName: "Rat King's Tail",
+    trophyName: "Rat King's Crown Shard",
     bossName: 'Plague Rat King',
     tier: 1,
   },

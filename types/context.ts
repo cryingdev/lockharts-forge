@@ -96,6 +96,7 @@ export interface GameContextType {
     proceedToNextFloorManual: () => void;
     useCampManualDungeon: () => void;
     leaveCampManualDungeon: () => void;
+    dismissManualDungeonDecision: () => void;
     triggerNamedEncounterCheck: (location: string) => void;
     acceptContract: (contractId: string) => void;
     declineContract: (payload: { contractId?: string; mercenaryId?: string }) => void;

@@ -77,6 +77,7 @@ export type GameAction =
   | { type: 'PROCEED_TO_NEXT_FLOOR_MANUAL' }
   | { type: 'USE_CAMP_MANUAL_DUNGEON' }
   | { type: 'LEAVE_CAMP_MANUAL_DUNGEON' }
+  | { type: 'DISMISS_MANUAL_DUNGEON_DECISION' }
   | { type: 'RESEARCH_COMBINATION'; payload: { items: { id: string; count: number }[] } }
   | { type: 'TRIGGER_NAMED_ENCOUNTER_CHECK'; payload: { location: string } }
   | { type: 'ACCEPT_CONTRACT'; payload: { contractId: string } }
