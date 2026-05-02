@@ -75,6 +75,10 @@ export interface GameContextType {
     triggerEnergyHighlight: () => void;
     showToast: (message: string) => void;
     hideToast: () => void;
+    setArenaParty: (partyIds: string[]) => void;
+    applyArenaBattleResult: (pointsDelta: number) => void;
+    claimArenaMilestone: (threshold: number) => void;
+    dismissArenaRewardPreview: () => void;
 
     setTutorialStep: (step: GameState['tutorialStep']) => void;
     setTutorialScene: (mode: GameState['activeTutorialScene']) => void;

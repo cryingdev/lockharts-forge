@@ -321,11 +321,33 @@ export interface CommissionRewardPreviewState {
   lines: CommissionRewardPreviewLine[];
 }
 
+export interface ArenaRewardPreviewLine {
+  type: 'GOLD' | 'ITEM' | 'EQUIPMENT';
+  label: string;
+  quantityText?: string;
+  image?: string;
+  assetFolder?: string;
+  icon?: string;
+}
+
+export interface ArenaRewardPreviewState {
+  threshold: number;
+  rewardLabel: string;
+  lines: ArenaRewardPreviewLine[];
+}
+
 export interface TavernState {
   reputation: number;
   lastInviteDay: number;
   inviteCountToday: number;
   lodgingLevel: number;
+}
+
+export interface ArenaState {
+  rating: number;
+  peakRating: number;
+  claimedMilestoneThresholds: number[];
+  selectedPartyIds: string[];
 }
 
 export type TutorialSceneMode = 'PROLOGUE' | 'FURNACE_RESTORED' | 'MARKET' | 'SMITHING';
@@ -370,6 +392,8 @@ export interface GameState {
   marketStock: Record<string, number>; 
   garrickAffinity: number;
   talkedToGarrickToday: boolean;
+
+  arena: ArenaState;
 
   isCrafting: boolean; 
   isResearchOpen: boolean;
@@ -437,6 +461,7 @@ export interface GameState {
 
   activeDialogue: DialogueState | null;
   commissionRewardPreview: CommissionRewardPreviewState | null;
+  arenaRewardPreview: ArenaRewardPreviewState | null;
 
   uiEffects: {
     energyHighlight: boolean;

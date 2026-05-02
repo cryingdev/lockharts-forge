@@ -163,6 +163,188 @@ The commission system is split into repeatable economy contracts and named recru
         -   `components/tabs/dungeon/hooks/useDungeonCombat.ts`
         -   `hooks/useMercenaryDetail.ts`
 
+### 4.7 Arena System (Local MVP First)
+-   The Arena should be implemented as a local, save-backed system before any server dependency is introduced.
+-   MVP goal:
+    -   validate point pacing
+    -   validate reward cadence
+    -   validate team-building value of a 4-mercenary combat ladder
+-   Non-goals for the MVP:
+    -   live matchmaking
+    -   real-time PvP
+    -   cross-user ranking authority
+    -   anti-cheat enforcement
+
+#### 4.7.1 Runtime State
+-   Recommended state slice in `/types/game-state.ts`:
+
+```ts
+export interface ArenaMilestoneRewardState {
+  threshold: number;
+  claimed: boolean;
+  claimedDay?: number;
+}
+
+export interface ArenaOpponentSnapshot {
+  id: string;
+  displayName: string;
+  rating: number;
+  rankLabel: string;
+  mercenaryIds?: string[];
+  mercenaries: Mercenary[];
+  rewardPreview?: {
+    winPoints: number;
+    lossPoints: number;
+  };
+  difficultyTag?: 'LOW' | 'STANDARD' | 'HIGH' | 'ELITE';
+  source: 'DUMMY' | 'PLAYER_SNAPSHOT';
+}
+
+export interface ArenaState {
+  rating: number;
+  peakRating: number;
+  lastResult?: 'WIN' | 'LOSS';
+  lastOpponentId?: string;
+  claimedMilestones: ArenaMilestoneRewardState[];
+  availableOpponents: ArenaOpponentSnapshot[];
+  selectedPartyMercenaryIds: string[];
+  battleHistory: Array<{
+    opponentId: string;
+    result: 'WIN' | 'LOSS';
+    pointsDelta: number;
+    timestamp: number;
+  }>;
+}
+```
+
+-   Design note:
+    -   `ArenaState` should live in normal save data because the player expects ladder progress and claimed rewards to persist.
+    -   The initial source of truth is local save storage, not a remote service.
+
+#### 4.7.2 Dummy Opponent Pool
+-   Dummy Arena parties should be authored data, not generated ad hoc each match.
+-   Recommended location:
+    -   `/data/arena/opponents.ts`
+-   Each opponent snapshot should define:
+    -   stable ID
+    -   display name
+    -   rating band
+    -   party snapshot
+    -   optional behavior tags for future encounter flavor
+-   The shortlist shown to the player can be sampled from the authored pool based on current Arena rating.
+-   This keeps the first Arena release deterministic enough to balance without server complexity.
+
+#### 4.7.3 Battle Flow
+-   Arena combat should reuse existing combat systems wherever possible.
+-   Recommended flow:
+    1.  Player opens Arena screen.
+    2.  Player selects up to `4` mercenaries.
+    3.  Client loads a shortlist of dummy opponents near the player's current rating.
+    4.  Player selects an opponent.
+    5.  Arena combat runs using the normal battle pipeline.
+    6.  On result:
+        -   update `rating`
+        -   update `peakRating`
+        -   append battle history
+        -   unlock any newly reached milestone rewards
+-   MVP recommendation:
+    -   Arena should not permanently injure, kill, or consume dungeon progress.
+    -   Any temporary HP/MP loss inside Arena should be isolated to the Arena battle session.
+
+#### 4.7.4 Point Calculation Policy
+-   Point changes should be based on both result and opponent strength.
+-   Suggested local formula shape:
+    -   base win reward
+    -   base loss penalty
+    -   modifier from opponent rating difference
+    -   lower bound so weak wins still matter
+    -   upper bound so strong wins do not spike too hard
+-   Initial tuning target:
+    -   win: `+12 ~ +20`
+    -   loss: `-6 ~ -12`
+-   Keep the formula in one dedicated utility, for example:
+    -   `/utils/arena/calculateArenaPoints.ts`
+-   Design note:
+    -   point math should not be embedded inside UI components
+    -   it should be deterministic and easy to reuse later on the server
+
+#### 4.7.5 Milestone Rewards
+-   Arena milestone rewards should be data-driven.
+-   Recommended location:
+    -   `/data/arena/milestones.ts`
+-   Each milestone should define:
+    -   threshold
+    -   reward payload
+    -   optional presentation text
+-   Claim state should be persisted in `ArenaState.claimedMilestones`.
+-   Rewards should trigger only once per account/save.
+
+#### 4.7.6 Persistence
+-   Arena state should be stored in the main save payload.
+-   The player should keep:
+    -   current rating
+    -   peak rating
+    -   claimed rewards
+    -   selected Arena party preset if used
+    -   recent local battle history if retained
+-   If separate UI preferences are later added, they should remain outside save-state critical data.
+
+#### 4.7.7 Future Server Migration Path
+-   The Arena MVP should be structured so local dummy data can later be replaced by server-backed snapshots.
+-   Future server-facing model should preserve the same broad opponent shape:
+    -   opponent identity
+    -   defensive party snapshot
+    -   rating
+    -   reward or point stakes
+-   Planned future server responsibilities:
+    -   authoritative leaderboard data
+    -   defensive party snapshot storage
+    -   result validation
+    -   reward fraud prevention
+    -   season reset handling
+-   Important implementation boundary:
+    -   the client should own presentation and matchmaking UI
+    -   the eventual server should own ranking authority and validation
+-   This is why the Arena system should first be built around portable snapshot structures rather than hard-wiring directly to local mercenary instances only.
+
+#### 4.7.8 UI Composition Plan
+-   The Arena UI should be implemented as one tab workspace plus a small number of focused child surfaces.
+-   Recommended component shape:
+    -   `components/tabs/arena/ArenaTab.tsx`
+        -   top-level Arena workspace and state binding
+    -   `components/tabs/arena/ui/ArenaLobbyView.tsx`
+        -   current rating summary, milestone strip, and opponent shortlist
+    -   `components/tabs/arena/ui/ArenaPartyModal.tsx`
+        -   up to 4 mercenary selection flow
+    -   `components/tabs/arena/ui/ArenaOpponentCard.tsx`
+        -   compact rival preview used in the shortlist
+    -   `components/tabs/arena/ui/ArenaOpponentDetailModal.tsx`
+        -   pre-battle confirmation and dual-party preview
+    -   `components/tabs/arena/ui/ArenaResultModal.tsx`
+        -   point delta, rank update, and milestone unlock display
+-   Optional later additions:
+    -   `components/tabs/arena/ui/ArenaMilestoneTrack.tsx`
+    -   `components/tabs/arena/ui/ArenaRankBadge.tsx`
+
+#### 4.7.9 UI State Flow
+-   Recommended local UI state:
+    -   currently selected Arena party
+    -   currently focused opponent
+    -   whether the party modal is open
+    -   whether the opponent detail modal is open
+    -   whether the result modal is open
+-   Suggested interaction flow:
+    1.  `ArenaTab` loads `ArenaLobbyView`
+    2.  Player opens party modal if the current lineup is incomplete or needs changes
+    3.  Player selects an opponent card
+    4.  Opponent detail modal opens
+    5.  Player confirms challenge
+    6.  Combat resolves
+    7.  Result modal opens
+    8.  Any claimable milestone reward is surfaced immediately
+-   The first MVP should avoid chaining multiple opaque overlays at once.
+-   Result and reward feedback should resolve before the player returns to free lobby browsing.
+
 #### 4.4.1 Data Modeling (`types/`)
 The recommended addition is a contract-focused slice in `/types/game-state.ts`.
 

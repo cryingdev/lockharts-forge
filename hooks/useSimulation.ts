@@ -81,6 +81,7 @@ export interface SimulationHook {
     runBulkSimulation: () => void;
     runAttackCycle: () => void;
     getDerivedStats: (mercId: string | null, level: number, alloc: PrimaryStats) => DerivedStats | null;
+    loadPresetMatch: (teamA: Mercenary[], teamB: Mercenary[]) => void;
 }
 
 const createEmptyCombatant = (): CombatantInstance => ({
@@ -100,8 +101,47 @@ const createInitialStats = (): MatchStats => ({
     totalDmg: 0, crits: 0, misses: 0, attacks: 0, evasions: 0, maxDmg: 0, minDmg: 0
 });
 
-export const useSimulation = (): SimulationHook => {
+const applySimulationSkillBonuses = (stats: DerivedStats, mercenary: Mercenary): DerivedStats => {
+    const skillIds = new Set<string>([
+        ...(mercenary.skillIds ?? []),
+        ...Object.values(mercenary.equipment)
+            .map((equipment) => equipment?.socketedSkillId)
+            .filter((skillId): skillId is string => Boolean(skillId)),
+    ]);
+
+    let nextStats = { ...stats };
+
+    if (skillIds.has('endurance')) {
+        nextStats.physicalReduction = Math.min(0.9, nextStats.physicalReduction + 0.05);
+    }
+
+    if (skillIds.has('stalwart_defense')) {
+        nextStats.maxHp = Math.round(nextStats.maxHp * 1.15);
+    }
+
+    if (skillIds.has('brute_strength')) {
+        nextStats.physicalAttack = Math.round(nextStats.physicalAttack * 1.1);
+    }
+
+    if (skillIds.has('lethal_precision')) {
+        nextStats.critDamage = Math.round((nextStats.critDamage + 50) * 100) / 100;
+    }
+
+    if (skillIds.has('shadow_reflex')) {
+        nextStats.speed = Math.round(nextStats.speed * 1.1);
+        nextStats.evasion = Math.round(nextStats.evasion * 1.1);
+    }
+
+    if (skillIds.has('mana_well')) {
+        nextStats.maxMp = Math.round(nextStats.maxMp * 1.15);
+    }
+
+    return nextStats;
+};
+
+export const useSimulation = (options?: { externalMercenaries?: Mercenary[] }): SimulationHook => {
     const { state } = useGame();
+    const externalMercenaries = options?.externalMercenaries ?? [];
     
     const [battleState, setBattleState] = useState<{
         teamA: CombatantInstance[],
@@ -131,12 +171,30 @@ export const useSimulation = (): SimulationHook => {
 
     const statsCache = useRef<Map<string, { key: string, stats: DerivedStats }>>(new Map());
 
+    const mercenaryRegistry = useMemo(() => {
+        const map = new Map<string, Mercenary>();
+        state.knownMercenaries.forEach((mercenary) => map.set(mercenary.id, mercenary));
+        externalMercenaries.forEach((mercenary) => map.set(mercenary.id, mercenary));
+        return map;
+    }, [externalMercenaries, state.knownMercenaries]);
+
+    const resolveMercenary = useCallback(
+        (mercenaryId: string | null) => (mercenaryId ? mercenaryRegistry.get(mercenaryId) ?? null : null),
+        [mercenaryRegistry]
+    );
+
     useEffect(() => { battleSpeedRef.current = battleSpeed; }, [battleSpeed]);
+
+    useEffect(() => {
+        return () => {
+            if (battleInterval.current) clearInterval(battleInterval.current);
+        };
+    }, []);
 
     const getDerivedStats = useCallback((mercId: string | null, level: number, alloc: PrimaryStats) => {
         if (!mercId) return null;
         
-        const merc = state.knownMercenaries.find(m => m.id === mercId);
+        const merc = resolveMercenary(mercId);
         if (!merc) return null;
 
         const cacheKey = `${mercId}_${level}_${alloc.str}_${alloc.vit}_${alloc.dex}_${alloc.int}_${alloc.luk}`;
@@ -146,18 +204,18 @@ export const useSimulation = (): SimulationHook => {
         const primary = mergePrimaryStats(merc.stats, alloc);
         const base = calculateDerivedStats(primary, level);
         const eqStats = (Object.values(merc.equipment) as (Equipment | null)[]).map(e => e?.stats).filter(Boolean);
-        const stats = applyEquipmentBonuses(base, eqStats as any);
+        const stats = applySimulationSkillBonuses(applyEquipmentBonuses(base, eqStats as any), merc);
 
         statsCache.current.set(mercId, { key: cacheKey, stats });
         return stats;
-    }, [state.knownMercenaries]);
+    }, [resolveMercenary]);
 
     useEffect(() => {
         if (isBattleRunning) return;
         const refreshTeam = (team: CombatantInstance[]) => team.map(c => {
             if (!c.mercenaryId) return c;
             const derived = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats);
-            const merc = state.knownMercenaries.find(m => m.id === c.mercenaryId);
+            const merc = resolveMercenary(c.mercenaryId);
             if (!derived || !merc) return c;
             const isMage = derived.magicalAttack > derived.physicalAttack;
             return { ...c, dps: calculateExpectedDPS(derived, merc.job, isMage ? 'MAGICAL' : 'PHYSICAL') };
@@ -167,7 +225,7 @@ export const useSimulation = (): SimulationHook => {
             teamA: refreshTeam(prev.teamA),
             teamB: refreshTeam(prev.teamB)
         }));
-    }, [state.knownMercenaries, getDerivedStats, isBattleRunning]);
+    }, [getDerivedStats, isBattleRunning, resolveMercenary]);
 
     const addSlot = (side: 'A' | 'B') => {
         setBattleState(prev => {
@@ -192,7 +250,7 @@ export const useSimulation = (): SimulationHook => {
                 let updated = { ...item, ...data };
                 
                 if (data.mercenaryId !== undefined && data.mercenaryId !== null) {
-                    const merc = state.knownMercenaries.find(m => m.id === data.mercenaryId);
+                    const merc = resolveMercenary(data.mercenaryId);
                     if (merc) {
                         updated.level = merc.level;
                         updated.allocatedStats = { ...merc.allocatedStats };
@@ -201,7 +259,7 @@ export const useSimulation = (): SimulationHook => {
 
                 if (data.mercenaryId !== undefined || data.level !== undefined || data.allocatedStats !== undefined) {
                     const derived = getDerivedStats(updated.mercenaryId, updated.level, updated.allocatedStats);
-                    const merc = state.knownMercenaries.find(m => m.id === updated.mercenaryId);
+                    const merc = resolveMercenary(updated.mercenaryId);
                     if (derived && merc) {
                         updated.currentHp = derived.maxHp;
                         const isMage = derived.magicalAttack > derived.physicalAttack;
@@ -238,6 +296,37 @@ export const useSimulation = (): SimulationHook => {
         matchStatsRef.current = { A: createInitialStats(), B: createInitialStats(), ticks: 0 };
     }, [getDerivedStats]);
 
+    const loadPresetMatch = useCallback((teamA: Mercenary[], teamB: Mercenary[]) => {
+        if (battleInterval.current) clearInterval(battleInterval.current);
+        setIsBattleRunning(false);
+        setIsSearching(false);
+        stopSearchRef.current = true;
+        setCombatLog([]);
+        setSingleMatchReport(null);
+        setBulkReport(null);
+        setLiveStats(null);
+        matchStatsRef.current = { A: createInitialStats(), B: createInitialStats(), ticks: 0 };
+
+        const toCombatant = (mercenary: Mercenary): CombatantInstance => {
+            const derived = getDerivedStats(mercenary.id, mercenary.level, mercenary.allocatedStats);
+            const isMage = derived ? derived.magicalAttack > derived.physicalAttack : false;
+
+            return {
+                ...createEmptyCombatant(),
+                mercenaryId: mercenary.id,
+                level: mercenary.level,
+                allocatedStats: { ...mercenary.allocatedStats },
+                currentHp: derived?.maxHp ?? mercenary.maxHp,
+                dps: derived ? calculateExpectedDPS(derived, mercenary.job, isMage ? 'MAGICAL' : 'PHYSICAL') : 0,
+            };
+        };
+
+        setBattleState({
+            teamA: teamA.slice(0, MAX_SQUAD_SIZE).map(toCombatant),
+            teamB: teamB.slice(0, MAX_SQUAD_SIZE).map(toCombatant),
+        });
+    }, [getDerivedStats]);
+
     const runBulkSimulation = () => {
         if (isSearching) return;
         setBulkReport(null);
@@ -249,14 +338,14 @@ export const useSimulation = (): SimulationHook => {
 
         const teamAData = battleState.teamA.filter(c => c.mercenaryId).map(c => {
             const d = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)!;
-            const merc = state.knownMercenaries.find(m => m.id === c.mercenaryId)!;
+            const merc = resolveMercenary(c.mercenaryId)!;
             const isMage = d.magicalAttack > d.physicalAttack;
             const baseEff = isMage ? JOB_EFFICIENCY[merc.job].magical : JOB_EFFICIENCY[merc.job].physical;
             return { hp: d.maxHp, spd: d.speed, atk: isMage ? d.magicalAttack : d.physicalAttack, red: isMage ? d.magicalReduction : d.physicalReduction, crt: d.critChance, cdmg: d.critDamage, baseEff };
         });
         const teamBData = battleState.teamB.filter(c => c.mercenaryId).map(c => {
             const d = getDerivedStats(c.mercenaryId, c.level, c.allocatedStats)!;
-            const merc = state.knownMercenaries.find(m => m.id === c.mercenaryId)!;
+            const merc = resolveMercenary(c.mercenaryId)!;
             const isMage = d.magicalAttack > d.physicalAttack;
             const baseEff = isMage ? JOB_EFFICIENCY[merc.job].magical : JOB_EFFICIENCY[merc.job].physical;
             return { hp: d.maxHp, spd: d.speed, atk: isMage ? d.magicalAttack : d.physicalAttack, red: isMage ? d.magicalReduction : d.physicalReduction, crt: d.critChance, cdmg: d.critDamage, baseEff };
@@ -353,7 +442,7 @@ export const useSimulation = (): SimulationHook => {
                     const target = targets[Math.floor(Math.random() * targets.length)];
                     const attD = getDerivedStats(att.mercenaryId, att.level, att.allocatedStats)!;
                     const defD = getDerivedStats(target.mercenaryId, target.level, target.allocatedStats)!;
-                    const attMerc = state.knownMercenaries.find(m => m.id === att.mercenaryId)!;
+                    const attMerc = resolveMercenary(att.mercenaryId)!;
                     const stats = side === 'A' ? matchStatsRef.current.A : matchStatsRef.current.B;
                     const enemyStats = side === 'A' ? matchStatsRef.current.B : matchStatsRef.current.A;
                     
@@ -384,10 +473,10 @@ export const useSimulation = (): SimulationHook => {
                         target.lastDamaged = true;
                         setTimeout(() => setBattleState(curr => ({ teamA: curr.teamA.map(c => c.instanceId === target.instanceId ? { ...c, lastDamaged: false } : c), teamB: curr.teamB.map(c => c.instanceId === target.instanceId ? { ...c, lastDamaged: false } : c) })), 200);
 
-                        addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} hits for ${res.damage}${res.isCrit ? "!" : ""}`, side, res.isCrit);
+                        addLog(`${resolveMercenary(att.mercenaryId)!.name} hits for ${res.damage}${res.isCrit ? "!" : ""}`, side, res.isCrit);
                     } else {
                         stats.misses++; enemyStats.evasions++;
-                        addLog(`${state.knownMercenaries.find(m=>m.id===att.mercenaryId)!.name} missed!`, side, false, true);
+                        addLog(`${resolveMercenary(att.mercenaryId)!.name} missed!`, side, false, true);
                     }
                 };
 
@@ -419,6 +508,6 @@ export const useSimulation = (): SimulationHook => {
         teamA: battleState.teamA, teamB: battleState.teamB, addSlot, removeSlot, updateSlot,
         combatLog, clearLogs, isBattleRunning, battleSpeed, setBattleSpeed,
         singleMatchReport, liveStats, bulkReport, isSearching,
-        handleReset, runBulkSimulation, runAttackCycle, getDerivedStats
+        handleReset, runBulkSimulation, runAttackCycle, getDerivedStats, loadPresetMatch
     };
 };

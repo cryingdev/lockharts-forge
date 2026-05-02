@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAssetUrl } from '../../../utils';
-import { ChevronRight, ShieldAlert, ShoppingBag, Store, Beer, Coins, Zap, Calendar, BedDouble, BookOpen, Settings, Users } from 'lucide-react';
+import { ChevronRight, ShieldAlert, ShoppingBag, Store, Beer, Coins, Zap, Calendar, BedDouble, BookOpen, Settings, Users, Swords } from 'lucide-react';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { useGame } from '../../../context/GameContext';
 import { t } from '../../../utils/i18n';
@@ -248,6 +248,23 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                         <div className="flex flex-col items-start leading-none pr-1">
                             <span className="text-[8px] md:text-[9px] font-black text-stone-500 uppercase tracking-[0.16em]">{t(language, 'mainScene.tavern_category')}</span>
                             <span className="text-[11px] md:text-sm font-black text-stone-100 font-serif uppercase tracking-[0.12em] mt-1">{t(language, 'mainScene.tavern_label')}</span>
+                        </div>
+                    </SfxButton>
+                </div>
+
+                {/* Arena Label - Temporary lobby entry without dedicated POI art */}
+                <div className="absolute top-[78%] right-[4%] md:right-[9%] flex flex-col items-start -translate-y-1/2">
+                    <SfxButton
+                        sfx="switch"
+                        onClick={() => onNavigate('ARENA')}
+                        className="pointer-events-auto inline-flex w-max max-w-[82vw] items-center gap-2.5 px-3.5 py-1.5 md:px-4 md:py-2 bg-stone-900/72 backdrop-blur-xl border border-rose-700/35 hover:border-rose-500/55 rounded-full shadow-2xl transition-all scale-[0.9] md:scale-100"
+                    >
+                        <div className="w-7 h-7 md:w-8 md:h-8 bg-rose-950/30 border border-rose-900/20 rounded-full flex items-center justify-center shrink-0">
+                            <Swords className="w-3.5 h-3.5 md:w-4 md:h-4 text-rose-300/85" />
+                        </div>
+                        <div className="flex flex-col items-start leading-none pr-1">
+                            <span className="text-[8px] md:text-[9px] font-black text-stone-500 uppercase tracking-[0.16em]">{t(language, 'mainScene.arena_category')}</span>
+                            <span className="text-[11px] md:text-sm font-black text-stone-100 font-serif uppercase tracking-[0.12em] mt-1">{t(language, 'mainScene.arena_label')}</span>
                         </div>
                     </SfxButton>
                 </div>

@@ -45,6 +45,10 @@ export const migrateSaveData = (loadedData: any, initialState: GameState): GameS
             ...initialState.tavern,
             ...(loadedData.tavern || {})
         },
+        arena: {
+            ...initialState.arena,
+            ...(loadedData.arena || {})
+        },
         commission: {
             ...initialState.commission,
             ...loadedCommission,
@@ -93,6 +97,10 @@ export const migrateSaveData = (loadedData: any, initialState: GameState): GameS
 
     if (!migrated.settings.forgeName && loadedSettings.forgeName) {
         migrated.settings.forgeName = loadedSettings.forgeName;
+    }
+
+    if (!migrated.unlockedTabs.includes('ARENA')) {
+        migrated.unlockedTabs = [...migrated.unlockedTabs, 'ARENA'];
     }
 
     return migrated;
@@ -230,6 +238,8 @@ export const saveToSlot = (slotIndex: number, state: GameState) => {
             showTutorialCompleteModal: false,
             toast: null,
             toastQueue: [],
+            commissionRewardPreview: null,
+            arenaRewardPreview: null,
             // 수동 던전 진행 중이라면 상태 보존 (필요 시)
             // 단, 오버레이는 꺼진 상태로 로드되게 유도
             showManualDungeonOverlay: false 
