@@ -128,6 +128,12 @@ export const createInitialGameState = (): GameState => {
         marketStock: MARKET_CATALOG.reduce((acc, item) => ({ ...acc, [item.id]: item.maxStock }), {}),
         garrickAffinity: 0,
         talkedToGarrickToday: false,
+        arena: {
+            rating: 0,
+            peakRating: 0,
+            claimedMilestoneThresholds: [],
+            selectedPartyIds: [],
+        },
 
         // Game Logic State
         isCrafting: false,
@@ -141,7 +147,7 @@ export const createInitialGameState = (): GameState => {
         // Progression
         craftingMastery: {},
         unlockedRecipes: [],
-        unlockedTabs: ['MAIN', 'FORGE', 'MARKET'],
+        unlockedTabs: ['MAIN', 'FORGE', 'MARKET', 'ARENA'],
         unlockedTierPopup: null,
         tutorialStep: 'PROLOGUE_DIALOG_GUIDE',
         activeTutorialScene: 'PROLOGUE',
@@ -197,6 +203,7 @@ export const createInitialGameState = (): GameState => {
         },
         activeDialogue: null,
         commissionRewardPreview: null,
+        arenaRewardPreview: null,
 
         // UI Effects State
         uiEffects: {

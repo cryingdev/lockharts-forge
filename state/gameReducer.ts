@@ -15,6 +15,7 @@ import { handleEquipItem, handleUnequipItem } from './reducer/equipment';
 import { handleStartManualDungeon, handleMoveManualDungeon, handleFinishManualDungeon, handleRescueNPC, handleRetreatManualDungeon, handleStartCombatManual, handleResolveCombatManual, handleProceedToNextFloorManual, handleUseCampManualDungeon, handleLeaveCampManualDungeon, handleDismissManualDungeonDecision } from './reducer/manualDungeon';
 import { handleTalkGarrick, handleGiftGarrick } from './reducer/market-affinity';
 import { handleResearchCombination } from './reducer/research';
+import { handleArenaApplyBattleResult, handleArenaClaimMilestone, handleArenaSetSelectedParty } from './reducer/arena';
 import { handleTriggerNamedEncounterCheck, handleAcceptContract, handleDeclineContract, handleSubmitContract, handleFailContract, handleDismissExpiredContract, handleRefreshCommissions, handleUpdateContractObjectiveProgress, handleClaimObjectiveContract, handleGenerateTavernMinorContract, handleUnlockNamedEncounter } from './reducer/commission';
 import { t } from '../utils/i18n';
 import { getForgeName } from '../utils/gameText';
@@ -132,7 +133,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             tutorialStep: 'MARKET_POI_GUIDE' 
         };
     case 'COMPLETE_TUTORIAL':
-        const finalTabs = ['MAIN', 'FORGE', 'MARKET', 'INVENTORY', 'SHOP', 'TAVERN', 'DUNGEON', 'SIMULATION'];
+        const finalTabs = ['MAIN', 'FORGE', 'MARKET', 'INVENTORY', 'SHOP', 'TAVERN', 'DUNGEON', 'ARENA', 'SIMULATION'];
 
         return {
             ...state,
@@ -186,6 +187,12 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             ...state,
             toast: state.toast ? { ...state.toast, visible: false } : null
         };
+
+    // Arena
+    case 'ARENA_SET_SELECTED_PARTY': return handleArenaSetSelectedParty(state, action.payload);
+    case 'ARENA_APPLY_BATTLE_RESULT': return handleArenaApplyBattleResult(state, action.payload);
+    case 'ARENA_CLAIM_MILESTONE': return handleArenaClaimMilestone(state, action.payload);
+    case 'DISMISS_ARENA_REWARD_PREVIEW': return { ...state, arenaRewardPreview: null };
 
     // UI Effects
     case 'SET_UI_EFFECT':

@@ -321,6 +321,87 @@ This table is the canonical design reference for named mercenary encounter order
 -   Commission payouts should usually beat simple resale value by 10-25%, but not exceed dungeon loot spikes.
 -   Special contracts should reward access, story, and utility more than raw Gold.
 
+#### 3.3.5 Arena Ladder
+The Arena is a repeatable combat ladder that lets the player test a curated party against ranked opponents outside the dungeon economy loop.
+
+##### 3.3.5.1 Core Concept
+-   The player enters the Arena with a party of up to `4` mercenaries.
+-   Arena battles use the normal combat rules but do not consume dungeon floor progress.
+-   Winning grants Arena Points.
+-   Losing removes Arena Points.
+-   Reaching defined point milestones grants one-time rewards.
+-   The Arena should feel like a prestige progression track, not a mandatory replacement for dungeon play.
+
+##### 3.3.5.2 Local MVP Scope
+-   The first implementation should be fully client-side.
+-   Opponents should come from predefined dummy parties rather than live player data.
+-   Dummy parties should already appear inside a ranked list so the ladder feels populated from the first session.
+-   The player should be able to:
+    -   review their current Arena Points
+    -   review their highest-ever Arena Points
+    -   inspect a small set of current opponents
+    -   start a match immediately
+    -   claim point-milestone rewards once
+-   The initial Arena release should not require a server, seasons, or live matchmaking.
+
+##### 3.3.5.3 Party Rules
+-   Maximum active Arena party size: `4`.
+-   The player may enter with fewer than `4` mercenaries, but this is a self-imposed disadvantage.
+-   Arena parties should be assembled from the player's current roster rather than a separate mercenary pool.
+-   Arena battles should preserve the identity of the player's mercenaries, but the mode should not create permanent death.
+-   Arena HP/MP handling for the MVP should be isolated from dungeon persistence so the mode can be repeated without soft-locking normal progression.
+
+##### 3.3.5.4 Point Flow
+-   Arena progression is tracked by `Arena Points`.
+-   Winning should increase points.
+-   Losing should decrease points, but not so sharply that one defeat erases several victories.
+-   Point change should be influenced by opponent difficulty or rating band so that beating stronger opponents feels more meaningful.
+-   The system should encourage steady climbing rather than one-match volatility.
+-   Suggested starting balance target for MVP:
+    -   win: roughly `+12 ~ +20`
+    -   loss: roughly `-6 ~ -12`
+
+##### 3.3.5.5 Milestone Rewards
+-   Arena milestone rewards should trigger when the player reaches specific point thresholds for the first time.
+-   Each threshold reward is claimable only once.
+-   Milestone rewards should be meaningful but controlled:
+    -   Gold
+    -   upgrade materials
+    -   rare dungeon supplies
+    -   cosmetic or prestige markers in later phases
+-   Suggested early thresholds for tuning:
+    -   `100`
+    -   `250`
+    -   `500`
+    -   `800`
+    -   `1200`
+-   Design intent:
+    -   climbing should feel rewarding even before the player reaches the top of the ladder
+    -   milestone rewards should not become a daily farm loop
+
+##### 3.3.5.6 Opponent Presentation
+-   The Arena should present a shortlist of opponents rather than a single forced match.
+-   Opponent cards should show:
+    -   party leader name
+    -   team composition
+    -   current Arena Point band or rank label
+    -   estimated danger or recommended strength
+-   Dummy parties should cover:
+    -   simple early-game frontline teams
+    -   balanced mid-tier parties
+    -   specialized burst or sustain teams
+-   The ranked list should create the impression of an active circuit even before online PvP exists.
+
+##### 3.3.5.7 Long-Term Online Direction
+-   The long-term Arena plan is asynchronous player-versus-player competition backed by a server.
+-   Future online goals include:
+    -   server-hosted rankings
+    -   uploaded defensive party snapshots
+    -   battle result submission
+    -   reward validation
+    -   eventual user-versus-user duels or challenges
+-   The local MVP exists to validate pacing, reward structure, and party-building value before server rules are locked.
+
 ---
 
 ### 3.4 Dungeon Exploration

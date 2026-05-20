@@ -1,4 +1,4 @@
-# Project Map – Lockhart’s Forge (v0.1.46b)
+# Project Map – Lockhart’s Forge (v0.1.50a)
 
 This document provides a comprehensive structural map of the project, detailing the directory hierarchy and the specific responsibilities of each file.
 
@@ -11,7 +11,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `index.tsx`: React entry point. Handles font readiness and web cache initialization.
 - `App.tsx`: Central View Controller. Manages top-level state transitions (INTRO -> TITLE -> GAME).
 - `utils.ts`: Global utilities. Asset URL generation, `AssetCache` singleton, and time formatting.
-- `metadata.json`: App metadata and versioning (`0.1.49a`).
+- `metadata.json`: App metadata and versioning (`0.1.50a`).
 - `GAME_DESIGN.md`: Comprehensive game design document covering mechanics and world-building.
 - `TECH_DESIGN.md`: Technical architecture and implementation details.
 - `COMBAT_FORMULA.md`: Official combat calculation sequence and formulas.
@@ -63,12 +63,13 @@ This document provides a comprehensive structural map of the project, detailing 
 ## 🎨 3. UI Framework (`components/`)
 
 ### High-Level Layout
-- `components/Header.tsx`: HUD for Day, Gold, Energy, and Log Ticker.
-- `components/MainGameLayout.tsx`: Tab navigation, tutorial overlays, full-screen transitions, and document language sync (`lang`, `lang-ko`) for Korean typography.
+- `components/MainGameLayout.tsx`: Tab routing, tutorial overlays, full-screen transitions, and document language sync (`lang`, `lang-ko`) for Korean typography.
+- `components/tabs/main/MainHud.tsx`: Main scene HUD for Day, Energy, Gold, Rest, Settings, and Log Ticker.
 - `components/DialogueBox.tsx`: The narrative engine. Handles typing effects and item tooltips.
 
 ### Functional Tabs (`components/tabs/`)
 - **Forge Tab**: `ForgeTab.tsx`, `hooks/useForge.ts`. Featuring **floating overlay controls** and immersive background rendering.
+- **Arena Tab**: `ArenaTab.tsx`, `ui/ArenaLobbyView.tsx`, `ui/ArenaPartyModal.tsx`, `ui/ArenaOpponentCard.tsx`, `ui/ArenaOpponentDetailModal.tsx`, `ui/ArenaCombatOverlay.tsx`, `ui/ArenaResultModal.tsx`. Local ladder skeleton for 4-mercenary arena flow, live battle resolution, and milestone rewards.
 - **Inventory Tab**: `InventoryDisplay.tsx`, `ItemSelectorList.tsx`. **Enchantment Mode implemented.**
 - **Shop Tab**: `ShopTab.tsx`, `hooks/useShop.ts`. Immersive counter-view with floating 3D sign.
 - **Market Tab**: `MarketTab.tsx`, `hooks/useMarket.ts`. Interaction view with **Garrick's animated sprite** and shopping cart drawer.
@@ -122,6 +123,8 @@ This document provides a comprehensive structural map of the project, detailing 
 ### Static Data (`data/`)
 - `data/materials.ts`: The global material registry (including **Skill Manuals** and **Skill Scrolls**).
 - `data/equipment/`: Tier-based recipe files (Tier 1-4).
+- `data/arena/opponents.ts`: Authored dummy Arena parties and point stakes for the local ladder MVP.
+- `data/arena/milestones.ts`: Point-threshold reward definitions for one-time Arena milestone claims.
 - `data/monsters.ts`: Combat stat snapshots for all enemies.
 - `data/monster-drops.ts`: Loot tables for manual/auto expeditions.
 - `data/mercenaries.ts`: Named character data (Pip, Adeline, Sister Aria).
@@ -146,6 +149,7 @@ This document provides a comprehensive structural map of the project, detailing 
 - `utils/cacheManager.ts`: Automated web cache maintenance and version markers.
 - `utils/i18n.ts`: Localization lookup utility with key-based translation, parameter interpolation, and translation existence checks.
 - `utils/storage.ts`: Safe browser storage helpers for local/session string, number, JSON read/write, and removal with SSR/error fallbacks.
+- `components/tabs/arena/types.ts`: Shared Arena view-model types for the local tab scaffold.
 - `models/Stats.ts`: Primary/derived stat calculation helpers, including temporary injury penalty application.
 - `state/helpers/tavernTalkHelpers.ts`: Tavern talk selection, weighting, and progress-stage filtering.
 - `state/helpers/namedConversationHelpers.ts`: Named prompt selection and non-repeating conversation gating.

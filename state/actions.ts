@@ -59,6 +59,10 @@ export type GameAction =
   | { type: 'SHOW_TOAST'; payload: string }
   | { type: 'POP_NEXT_TOAST' }
   | { type: 'HIDE_TOAST' }
+  | { type: 'ARENA_SET_SELECTED_PARTY'; payload: { partyIds: string[] } }
+  | { type: 'ARENA_APPLY_BATTLE_RESULT'; payload: { pointsDelta: number } }
+  | { type: 'ARENA_CLAIM_MILESTONE'; payload: { threshold: number } }
+  | { type: 'DISMISS_ARENA_REWARD_PREVIEW' }
   | { type: 'LOAD_GAME'; payload: GameState }
   | { type: 'SET_TUTORIAL_STEP'; payload: GameState['tutorialStep'] }
   | { type: 'SET_ACTIVE_TUTORIAL_SCENE'; payload: TutorialSceneMode | null }

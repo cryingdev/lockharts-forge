@@ -102,6 +102,19 @@ Purpose:
 Guidelines:
 - Remove dead spacing before shrinking the icon below readability.
 - Use one outer shell when multiple compact cards belong to one HUD band.
+- Main HUD bands should use the shared copper color constant (`UI_COLORS.COPPER`, `#B87333`) for the main frame.
+- When a copper HUD frame needs dimensional weight, keep the metal gradient on explicit 2px edge strips and keep the translucent HUD panel on an inner layer; avoid mask-based frame cutouts because they can flicker during scene hover recomposition.
+- The current Main HUD inner panel should stay grayscale at roughly `20%` opacity, without backdrop blur, so the scene stays legible while the status content has a stable surface.
+- Main HUD corners should use a restrained `4px` radius with `assets/main/icon_corner.png` metal caps placed at all four corners by rotating the left-corner source asset.
+- Main HUD day progression should be shown with the `assets/main/flag_day.png` banner asset pulled slightly left of the HUD content edge, with the day label and value centered over the cloth using enough text shadow to stay legible.
+- Main HUD energy capsules should use `assets/main/icon_energy.png` for the energy symbol and the shared dark green color constant (`UI_COLORS.DARK_GREEN`, `#013220`) as the capsule base and normal fill, with a copper border matching the HUD frame; low-energy fill should use the muted red constant (`UI_COLORS.MUTED_RED`).
+- In portrait/mobile Main HUD layouts, place the energy icon inside the capsule to the left of the energy number so currency text keeps enough room.
+- Main HUD currency should use `assets/main/icon_coin.png` instead of a generic vector coin icon.
+- Main HUD journal ticker should use `assets/main/flag_journal.png` as the left banner accent instead of a generic vector book icon, with a `2px` gold border using `UI_COLORS.GOLD`.
+- Scene components should compose dedicated HUD components such as `MainHud` rather than carrying HUD layout and material styling inline.
+- POI Labels should keep their lower-left red marker hidden by default and use it as a conditional notification badge for actionable counts or new events.
+- POI Label placement is currently controlled by explicit scene-coordinate anchors per orientation; it is not automatically derived from the POI image outline.
+- POI image layers and POI Labels should share one active hover/selection state; avoid separate bottom tooltip labels that duplicate the POI title.
 - Use thin dividers rather than repeating full card borders.
 - Show the minimum useful numeric state only.
 
@@ -250,7 +263,178 @@ Some named-conversation moments behave more like interview or survey prompts tha
 
 ---
 
-## 10. Usage Rule
+## 10. Arena Screen Wire Standard
+
+The Arena should launch as a self-contained combat ladder workspace. Its first release should feel complete with local dummy rivals and milestone progression even before online play exists.
+
+### 10.1 Screen Flow
+Recommended first-release Arena flow:
+1. Arena lobby
+2. party edit sheet
+
+### 10.2 Battle Overlay
+- The Arena battle overlay should prioritize readability on mobile before dramatic symmetry.
+- Keep the header and battle-log footer visually stable while the team panels consume the scrollable center area.
+- On narrow screens, stack player team and enemy team vertically instead of forcing a three-column battlefield.
+- On wide screens, restore the centered `VS` column for stronger presentation.
+- Team cards should compress spacing before shrinking names or HP readability.
+- Default Arena autoplay speed should begin at `2x`, not `5x`, so the player can still parse target swaps, HP loss, and battle flow on a real device.
+- Result handoff should pause briefly after combat ends so the win/loss state reads before the result modal replaces the overlay.
+3. opponent shortlist
+4. pre-battle confirmation
+5. battle result
+6. milestone reward claim when applicable
+
+The Arena should avoid deeply nested modal stacks. The player should usually feel one clear next step at a time.
+
+### 10.2 Arena Lobby Wire
+Purpose:
+- establish the mode identity
+- show current progression
+- expose the current playable opponents immediately
+
+Recommended vertical structure:
+- top floating back button
+- hero header band
+- compact ladder summary
+- milestone reward strip
+- opponent shortlist
+- bottom primary action area
+
+Recommended content blocks:
+- `ArenaHeader`
+  - title
+  - short flavor subtitle or rank statement
+- `ArenaRatingCard`
+  - current Arena Points
+  - peak Arena Points
+  - current rank label
+  - next milestone progress
+- `ArenaMilestoneTrack`
+  - horizontal reward thresholds
+  - claimed / available / locked states
+- `ArenaOpponentList`
+  - 3 to 5 opponent cards
+  - one-tap open for details and battle entry
+
+### 10.3 Party Edit Sheet
+Purpose:
+- let the player choose up to 4 mercenaries without leaving the Arena context
+
+Recommended presentation:
+- bottom sheet or centered modal, depending on density
+- keep the current Arena lobby visible behind it
+
+Required zones:
+- selected party row
+  - 4 fixed slots
+  - empty slot placeholders remain visible
+- roster list
+  - scrollable mercenary cards
+  - current HP/MP are not the primary focus if Arena uses isolated battle state
+- confirm action
+  - `아레나 파티 확정 / Confirm Arena Party`
+
+Rules:
+- the selected party row should stay pinned while the roster scrolls
+- use clear remove / swap affordances
+- do not overload the first MVP with formation grids or position micromanagement unless combat already requires it
+
+### 10.4 Opponent Card Wire
+Purpose:
+- make opponent difficulty and reward potential readable at a glance
+
+Card contents:
+- rival leader name
+- rank label or point band
+- 4-slot party preview
+- difficulty tag
+- expected point swing preview
+  - win `+`
+  - loss `-`
+
+Interaction:
+- tapping a card opens `ArenaOpponentDetailModal`
+- the list should support one selected card state, but avoid sticky amber treatment after the tap state ends
+- current selection should use a structural emphasis such as border weight, glow restraint, or scale change rather than a permanent pressed color
+
+### 10.5 Opponent Detail Modal
+Purpose:
+- provide the final review screen before starting battle
+
+Required content:
+- opponent name and rank
+- full enemy party preview
+- player party preview
+- projected point outcome
+- notable reward notice if a milestone can be reached from this battle
+
+Primary actions:
+- `도전한다 / Challenge`
+- `파티 변경 / Edit Party`
+- `취소 / Cancel`
+
+Guidelines:
+- this modal should use the shared modal shell language, not a one-off battle panel
+- the confirm action should clearly dominate
+
+### 10.6 Arena Result Modal
+Purpose:
+- make point movement, milestone unlocks, and ladder motion emotionally clear
+
+Required content:
+- win / loss headline
+- points gained or lost
+- updated current rating
+- peak rating update if applicable
+- newly unlocked milestone reward summary if applicable
+
+Optional content:
+- battle MVP
+- rival defeated notice
+- small battle log summary
+
+Guidelines:
+- point delta should be the visual center of gravity
+- if a milestone reward unlocks, the reward block should appear in the same result moment rather than being hidden in a separate menu
+
+### 10.7 Milestone Reward Treatment
+Purpose:
+- make progression feel tangible before the player reaches top rank
+
+Presentation rules:
+- claimable milestones should be visible directly from the lobby
+- one reward at a time should be claimable from the main strip
+- use a compact reward card or chip rather than a large inventory-style slab
+
+If a reward is newly unlocked:
+- show it in the result modal
+- allow immediate claim there or from the lobby strip
+
+### 10.8 Visual Tone
+- The Arena should feel formal and prestigious, closer to a sanctioned proving ground than a dungeon crawl.
+- Favor dark stone, bronze, muted crimson, and restrained gold.
+- Use stronger contrast than Tavern or Market because the screen is information-heavy.
+- Opponent cards should feel like heraldic match notices rather than storefront merchandise.
+
+### 10.9 First MVP Layout Recommendation
+For the first implementation, prefer this exact scope:
+- one Arena tab entry from the main map or a dedicated building
+- one Arena lobby screen
+- one party edit modal
+- one opponent detail modal
+- one result modal
+
+Do not add yet:
+- scrolling global leaderboard pages
+- season history screens
+- defense log inboxes
+- revenge battle lists
+- asynchronous replay browser
+
+---
+
+## 11. Usage Rule
 
 When a UI decision is primarily about:
 - spacing
