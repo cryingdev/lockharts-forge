@@ -304,3 +304,17 @@
 - `/Users/cryingdev/GitHub/lockharts-forge/components/common/ui/SfxButton.tsx`
 - `/Users/cryingdev/GitHub/lockharts-forge/GAME_DESIGN.md`
 - `/Users/cryingdev/GitHub/lockharts-forge/TECH_DESIGN.md`
+
+## Main Scene POI Label Auto-Anchoring
+
+### Context
+- Main scene POI hover hit-testing already uses each POI image alpha mask.
+- POI label placement is still controlled by explicit scene-coordinate anchors per orientation.
+
+### Deferred Feature
+- Derive each POI label anchor from the POI image alpha outline.
+- Compute the opaque pixel bounding box and place the label at the bottom-center of the object with a small per-POI offset.
+- Keep manual offsets/clamps available because foliage, props, or transparent padding can make the mathematical bottom edge feel visually wrong.
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/components/tabs/main/MainScene.tsx`

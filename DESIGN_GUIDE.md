@@ -108,10 +108,13 @@ Guidelines:
 - Main HUD corners should use a restrained `4px` radius with `assets/main/icon_corner.png` metal caps placed at all four corners by rotating the left-corner source asset.
 - Main HUD day progression should be shown with the `assets/main/flag_day.png` banner asset pulled slightly left of the HUD content edge, with the day label and value centered over the cloth using enough text shadow to stay legible.
 - Main HUD energy capsules should use `assets/main/icon_energy.png` for the energy symbol and the shared dark green color constant (`UI_COLORS.DARK_GREEN`, `#013220`) as the capsule base and normal fill, with a copper border matching the HUD frame; low-energy fill should use the muted red constant (`UI_COLORS.MUTED_RED`).
+- In portrait/mobile Main HUD layouts, place the energy icon inside the capsule to the left of the energy number so currency text keeps enough room.
 - Main HUD currency should use `assets/main/icon_coin.png` instead of a generic vector coin icon.
 - Main HUD journal ticker should use `assets/main/flag_journal.png` as the left banner accent instead of a generic vector book icon, with a `2px` gold border using `UI_COLORS.GOLD`.
 - Scene components should compose dedicated HUD components such as `MainHud` rather than carrying HUD layout and material styling inline.
 - POI Labels should keep their lower-left red marker hidden by default and use it as a conditional notification badge for actionable counts or new events.
+- POI Label placement is currently controlled by explicit scene-coordinate anchors per orientation; it is not automatically derived from the POI image outline.
+- POI image layers and POI Labels should share one active hover/selection state; avoid separate bottom tooltip labels that duplicate the POI title.
 - Use thin dividers rather than repeating full card borders.
 - Show the minimum useful numeric state only.
 

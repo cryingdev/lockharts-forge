@@ -95,6 +95,24 @@ const settingsButtonStyle: React.CSSProperties = {
     background: 'linear-gradient(180deg, rgba(238, 226, 195, 0.76) 0%, rgba(213, 194, 150, 0.56) 100%)',
 };
 
+const formatHudGold = (gold: number) => {
+    const wholeGold = Math.max(0, Math.floor(gold));
+    if (wholeGold < 1000) return wholeGold.toLocaleString();
+
+    const millions = Math.floor(wholeGold / 1000000);
+    const thousands = Math.floor((wholeGold % 1000000) / 1000);
+    const remainder = wholeGold % 1000;
+
+    if (millions > 0) {
+        return [
+            `${millions}M`,
+            thousands > 0 ? `${String(thousands).padStart(3, '0')}k` : '',
+        ].join('');
+    }
+
+    return `${thousands}k${remainder > 0 ? String(remainder).padStart(3, '0') : ''}`;
+};
+
 const HudCorner = ({ className, rotation }: { className: string; rotation: string }) => (
     <img
         src={cornerIconSrc}
@@ -156,11 +174,11 @@ const MainHud: React.FC<MainHudProps> = ({
             <span className={hudDividerClass} aria-hidden="true" />
 
             <div className="relative min-w-0 flex flex-1 items-center gap-2 md:gap-3">
-                <div className={`shrink-0 flex w-[116px] md:w-[138px] items-center gap-1 md:gap-[5px] ${energyHighlighted ? 'animate-shake-hard' : ''}`}>
+                <div className={`shrink-0 flex w-[55px] md:w-[138px] items-center gap-1 md:gap-[5px] ${energyHighlighted ? 'animate-shake-hard' : ''}`}>
                     <img
                         src={energyIconSrc}
                         alt=""
-                        className={`h-14 w-auto shrink-0 select-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.65)] md:h-16 ${energyHighlighted ? 'brightness-125' : ''}`}
+                        className={`hidden h-14 w-auto shrink-0 select-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.65)] md:block md:h-16 ${energyHighlighted ? 'brightness-125' : ''}`}
                         draggable={false}
                         aria-hidden="true"
                     />
@@ -174,13 +192,20 @@ const MainHud: React.FC<MainHudProps> = ({
                                 }}
                             />
                         </div>
-                        <span className="absolute inset-0 flex items-center justify-center font-mono text-[12px] md:text-[14px] font-black tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
+                        <span className="absolute inset-0 flex items-center justify-center gap-1 font-mono text-[12px] md:text-[14px] font-black tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
+                            <img
+                                src={energyIconSrc}
+                                alt=""
+                                className="h-5 w-auto select-none md:hidden"
+                                draggable={false}
+                                aria-hidden="true"
+                            />
                             {energy}
                         </span>
                     </div>
                 </div>
                 <span className={hudDividerClass} aria-hidden="true" />
-                <div className="min-w-0 flex flex-1 items-center justify-end gap-1.5 md:gap-2">
+                <div className="min-w-[96px] flex flex-1 items-center justify-end gap-1 pr-[5px] md:gap-2">
                     <img
                         src={coinIconSrc}
                         alt=""
@@ -188,12 +213,9 @@ const MainHud: React.FC<MainHudProps> = ({
                         draggable={false}
                         aria-hidden="true"
                     />
-                    <div className="min-w-0 text-right text-xl md:text-2xl font-serif font-black tracking-wide text-black truncate drop-shadow-[0_1px_1px_rgba(255,255,255,0.75),0_2px_2px_rgba(0,0,0,0.3)]">
-                        {gold >= 10000 ? `${(gold / 1000).toFixed(1)}k` : gold.toLocaleString()}
+                    <div className="shrink-0 whitespace-nowrap text-right text-xl md:text-2xl font-serif font-black tracking-wide text-black [text-shadow:0_1px_0_rgba(255,255,255,0.78),0_2px_2px_rgba(74,42,14,0.38),0_4px_7px_rgba(0,0,0,0.28)]">
+                        {formatHudGold(gold)}
                     </div>
-                    <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.08em] text-stone-900 shrink-0 drop-shadow-[0_1px_1px_rgba(255,255,255,0.75)]">
-                        G
-                    </span>
                 </div>
             </div>
 
@@ -212,7 +234,7 @@ const MainHud: React.FC<MainHudProps> = ({
         </div>
 
         {showLogTicker && (
-            <SfxButton onClick={onToggleJournal} className="relative w-full md:w-fit md:max-w-[84%] mx-auto flex items-center gap-3 px-4 py-2 pl-[40px] md:px-5 md:py-2.5 md:pl-[40px] backdrop-blur-xl rounded-[3px] border-2 hover:brightness-105 transition-all group pointer-events-auto shadow-[0_10px_20px_rgba(0,0,0,0.22)] min-h-[44px]" style={journalSurfaceStyle}>
+            <SfxButton onClick={onToggleJournal} className="relative w-[calc(100%-16px)] md:w-fit md:max-w-[84%] ml-4 mr-0 md:mx-auto flex items-center gap-3 px-4 py-2 pl-[40px] md:px-5 md:py-2.5 md:pl-[40px] backdrop-blur-xl rounded-[3px] border-2 hover:brightness-105 transition-all group pointer-events-auto shadow-[0_10px_20px_rgba(0,0,0,0.22)] min-h-[44px]" style={journalSurfaceStyle}>
                 <img
                     src={flagJournalSrc}
                     alt=""

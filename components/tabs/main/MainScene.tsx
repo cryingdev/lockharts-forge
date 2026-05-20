@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight, ShieldAlert, ShoppingBag, Store, Beer, Swords } from 'lucide-react';
+import { ShieldAlert, ShoppingBag, Store, Beer, Swords } from 'lucide-react';
 import { SfxButton } from '../../common/ui/SfxButton';
 import { useGame } from '../../../context/GameContext';
 import { t } from '../../../utils/i18n';
@@ -78,8 +78,8 @@ const SCENE_CONFIGS: Record<SceneMode, SceneConfig> = {
         },
         labelAnchors: {
             wall: { x: 512, y: 814 },
-            market: { x: 317, y: 1044 },
-            tavern: { x: 666, y: 1137 },
+            market: { x: 317, y: 944 },
+            tavern: { x: 736, y: 937 },
             forge: { x: 307, y: 1244 },
             arena: { x: 676, y: 1336 },
             people: { x: 512, y: 1121 },
@@ -114,31 +114,31 @@ const LOCATION_TAG_STYLES: Record<LocationTagTone, {
     danger: {
         accent: 'bg-red-700/75',
         icon: 'text-red-200',
-        medallion: 'border-amber-600/34 bg-stone-950/72',
+        medallion: 'bg-stone-950/72',
         glow: 'group-hover:shadow-red-950/35',
     },
     market: {
         accent: 'bg-blue-700/75',
         icon: 'text-blue-100',
-        medallion: 'border-amber-600/34 bg-stone-950/72',
+        medallion: 'bg-stone-950/72',
         glow: 'group-hover:shadow-blue-950/35',
     },
     tavern: {
         accent: 'bg-orange-700/75',
         icon: 'text-amber-100',
-        medallion: 'border-amber-600/34 bg-stone-950/72',
+        medallion: 'bg-stone-950/72',
         glow: 'group-hover:shadow-orange-950/35',
     },
     forge: {
         accent: 'bg-amber-700/75',
         icon: 'text-amber-200',
-        medallion: 'border-amber-600/34 bg-stone-950/72',
+        medallion: 'bg-stone-950/72',
         glow: 'group-hover:shadow-amber-950/35',
     },
     arena: {
         accent: 'bg-rose-700/75',
         icon: 'text-rose-200',
-        medallion: 'border-amber-600/34 bg-stone-950/72',
+        medallion: 'bg-stone-950/72',
         glow: 'group-hover:shadow-rose-950/35',
     },
 };
@@ -159,9 +159,10 @@ const LocationTag = ({
     tone,
     onClick,
     tutorialId,
-    showChevron = true,
     badgeCount,
     showBadge = false,
+    active = false,
+    onHoverChange,
 }: {
     className: string;
     style?: React.CSSProperties;
@@ -171,23 +172,30 @@ const LocationTag = ({
     tone: LocationTagTone;
     onClick: () => void;
     tutorialId?: string;
-    showChevron?: boolean;
     badgeCount?: number;
     showBadge?: boolean;
+    active?: boolean;
+    onHoverChange?: (hovered: boolean) => void;
 }) => (
     <div className={className} style={style}>
         <SfxButton
             sfx="switch"
             onClick={onClick}
+            onPointerEnter={() => onHoverChange?.(true)}
+            onPointerLeave={() => onHoverChange?.(false)}
+            onPointerMove={(event) => event.stopPropagation()}
+            onMouseEnter={() => onHoverChange?.(true)}
+            onMouseLeave={() => onHoverChange?.(false)}
+            onMouseMove={(event) => event.stopPropagation()}
+            onFocus={() => onHoverChange?.(true)}
+            onBlur={() => onHoverChange?.(false)}
             onPointerDown={(event) => event.stopPropagation()}
             data-tutorial-id={tutorialId}
-            className={`group pointer-events-auto relative inline-flex min-h-[36px] w-max max-w-[72vw] items-center gap-2 overflow-visible rounded-[3px] border py-1.5 pl-10 pr-6 shadow-xl backdrop-blur-[2px] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-2xl active:translate-y-0 active:scale-[0.98] md:min-h-[40px] md:pl-11 md:pr-7 scale-[0.9] md:scale-100 ${LOCATION_TAG_STYLES[tone].glow}`}
+            className={`group pointer-events-auto relative inline-flex min-h-[36px] w-max max-w-[72vw] items-center gap-2 overflow-visible rounded-[3px] border py-1.5 pl-8 pr-4 shadow-xl backdrop-blur-[2px] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-2xl active:translate-y-0 active:scale-[0.98] md:min-h-[40px] md:pl-9 md:pr-5 scale-[0.9] md:scale-100 ${active ? '-translate-y-0.5 brightness-110 shadow-2xl' : ''} ${LOCATION_TAG_STYLES[tone].glow}`}
             style={locationTagSurfaceStyle}
         >
             <span className={`absolute left-0 inset-y-1 w-1 rounded-r-sm ${LOCATION_TAG_STYLES[tone].accent}`} aria-hidden="true" />
-            <span className="absolute -left-5 top-1/2 h-11 w-11 -translate-y-1/2 rounded-full border border-amber-800/55 bg-black/22 shadow-[0_0_0_1px_rgba(255,214,143,0.12),0_6px_12px_rgba(0,0,0,0.32)] md:h-12 md:w-12" aria-hidden="true" />
-            <span className={`absolute -left-3.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-amber-700/80 bg-stone-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_6px_11px_rgba(0,0,0,0.42)] md:-left-4 md:h-10 md:w-10 ${LOCATION_TAG_STYLES[tone].medallion}`}>
-                <span className="absolute inset-1 rounded-full border border-amber-200/20" aria-hidden="true" />
+            <span className={`absolute -left-3.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-stone-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_0_0_1px_rgba(181,118,42,0.66),0_6px_11px_rgba(0,0,0,0.42)] md:-left-4 md:h-10 md:w-10 ${LOCATION_TAG_STYLES[tone].medallion}`}>
                 <Icon className={`relative h-4 w-4 md:h-5 md:w-5 ${LOCATION_TAG_STYLES[tone].icon}`} />
             </span>
             {(showBadge || !!badgeCount) && (
@@ -195,8 +203,6 @@ const LocationTag = ({
                     {badgeCount ? Math.min(badgeCount, 99) : ''}
                 </span>
             )}
-            <span className="absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full border border-amber-900/50 bg-amber-300/45" aria-hidden="true" />
-            <span className="absolute right-2 bottom-1.5 h-1.5 w-1.5 rounded-full border border-black/35 bg-black/30" aria-hidden="true" />
             <span className="relative flex min-w-0 flex-col items-start leading-none">
                 <span className="max-w-[42vw] truncate text-[7px] font-black uppercase tracking-[0.16em] text-amber-100/58 md:text-[8px]">
                     {category}
@@ -205,11 +211,6 @@ const LocationTag = ({
                     {title}
                 </span>
             </span>
-            {showChevron && (
-                <span className="absolute -right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 rotate-45 items-center justify-center border-2 border-amber-700/80 bg-stone-900 shadow-[0_4px_8px_rgba(0,0,0,0.32)]">
-                    <ChevronRight className="h-3 w-3 -rotate-45 text-amber-100/52 transition-transform group-hover:translate-x-0.5 group-hover:text-amber-100/80" />
-                </span>
-            )}
         </SfxButton>
     </div>
 );
@@ -374,7 +375,7 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                             crossOrigin="anonymous"
                             src={sceneConfig.poiSources[layer.id]}
                             className={`absolute inset-0 h-full w-full select-none object-fill pointer-events-none transition-[filter] duration-150 ${
-                                activePoi?.id === layer.id ? 'brightness-110 saturate-110 drop-shadow-[0_0_18px_rgba(251,191,36,0.32)]' : ''
+                                activePoi?.id === layer.id ? 'animate-poi-highlight brightness-110 saturate-110 drop-shadow-[0_0_18px_rgba(251,191,36,0.32)]' : ''
                             }`}
                             alt=""
                             draggable={false}
@@ -393,27 +394,33 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                             Icon={ShieldAlert}
                             tone="danger"
                             onClick={() => navigateToPoi(POI_LAYERS[0], false)}
+                            active={activePoi?.id === 'wall'}
+                            onHoverChange={(isHovered) => setHoveredPoi((current) => isHovered ? POI_LAYERS[0] : current?.id === 'wall' ? null : current)}
                         />
 
                         <LocationTag
                             className="absolute -translate-x-1/2 -translate-y-1/2"
                             style={getAnchorStyle(sceneConfig, 'market')}
                             category={t(language, 'market.market_district')}
-                            title={t(language, 'market.garricks_wares')}
+                            title="Garrick's"
                             Icon={ShoppingBag}
                             tone="market"
                             onClick={() => navigateToPoi(POI_LAYERS[1], false)}
                             tutorialId="MARKET_POI"
+                            active={activePoi?.id === 'market'}
+                            onHoverChange={(isHovered) => setHoveredPoi((current) => isHovered ? POI_LAYERS[1] : current?.id === 'market' ? null : current)}
                         />
 
                         <LocationTag
                             className="absolute -translate-x-1/2 -translate-y-1/2"
                             style={getAnchorStyle(sceneConfig, 'tavern')}
                             category={t(language, 'mainScene.tavern_category')}
-                            title={t(language, 'mainScene.tavern_label')}
+                            title="Tavern"
                             Icon={Beer}
                             tone="tavern"
                             onClick={() => navigateToPoi(POI_LAYERS[2], false)}
+                            active={activePoi?.id === 'tavern'}
+                            onHoverChange={(isHovered) => setHoveredPoi((current) => isHovered ? POI_LAYERS[2] : current?.id === 'tavern' ? null : current)}
                         />
 
                         <LocationTag
@@ -424,6 +431,8 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                             Icon={Swords}
                             tone="arena"
                             onClick={() => navigateToPoi(POI_LAYERS[4], false)}
+                            active={activePoi?.id === 'arena'}
+                            onHoverChange={(isHovered) => setHoveredPoi((current) => isHovered ? POI_LAYERS[4] : current?.id === 'arena' ? null : current)}
                         />
 
                         <LocationTag
@@ -435,16 +444,11 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                             tone="forge"
                             onClick={() => navigateToPoi(POI_LAYERS[3], false)}
                             tutorialId="FORGE_POI"
-                            showChevron={false}
                             badgeCount={state.forge.isShopOpen ? totalShopVisitors : 0}
+                            active={activePoi?.id === 'forge'}
+                            onHoverChange={(isHovered) => setHoveredPoi((current) => isHovered ? POI_LAYERS[3] : current?.id === 'forge' ? null : current)}
                         />
                     </div>
-
-                    {activePoi && (
-                        <div className="absolute left-4 bottom-4 z-[55] rounded-md border border-stone-900/70 bg-stone-950/75 px-4 py-2 text-sm font-bold text-amber-100 shadow-xl backdrop-blur-sm pointer-events-none">
-                            {activePoi.title}
-                        </div>
-                    )}
                 </div>
             </div>
 

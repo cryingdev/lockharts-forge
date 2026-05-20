@@ -1,6 +1,6 @@
 # Lockhart's Forge
 
-> **Version**: 0.1.49a
+> **Version**: 0.1.50a
 > **Status**: Alpha / Active Development
 
 **Lockhart's Forge** is a casual blacksmithing simulation game where players manage a ruined forge, craft weapons and armor, and trade with wandering mercenaries.
