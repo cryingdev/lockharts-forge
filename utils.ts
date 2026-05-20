@@ -55,13 +55,25 @@ export const IMAGE_MANIFEST = {
         'sister_aria_sprite.png'
     ],
     MAIN: [
-        'bg_ground_horizontal.png',
-        'bg_ground_vertical.png',
-        'poi_wall_gate.png',
-        'poi_forge.png',
-        'poi_material_store.png',
+        'bg_ground.png',
+        'poi_wall.png',
+        'poi_market.png',
         'poi_tavern.png',
-        'poi_trees.png',
+        'poi_forge.png',
+        'poi_arena.png',
+        'poi_people.png',
+        'bg_ground_vertical.png',
+        'poi_wall_vertical.png',
+        'poi_market_vertical.png',
+        'poi_tavern_vertical.png',
+        'poi_forge_vertical.png',
+        'poi_arena_vertical.png',
+        'poi_people_vertical.png',
+        'flag_day.png',
+        'icon_energy.png',
+        'icon_corner.png',
+        'icon_coin.png',
+        'flag_journal.png',
     ],
     MISC: [
         'garrick_standing_sprite.png'
@@ -82,6 +94,13 @@ export const getAssetUrl = (filename: string, folder?: string): string => {
   }
   
   return `${baseUrl}${path}?v=${SESSION_VERSION}`;
+};
+
+/**
+ * 이미지 에셋 URL을 생성합니다.
+ */
+export const getImageUrl = (filename: string, folder?: string): string => {
+  return getAssetUrl(filename, folder);
 };
 
 /**

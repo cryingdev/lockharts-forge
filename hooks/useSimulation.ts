@@ -8,6 +8,7 @@ import { JobClass, JOB_EFFICIENCY } from '../models/JobClass';
 
 const ACTION_THRESHOLD = 1000;
 const MAX_SQUAD_SIZE = 4;
+const EMPTY_EXTERNAL_MERCENARIES: Mercenary[] = [];
 
 export interface CombatantInstance {
     instanceId: string;
@@ -141,7 +142,7 @@ const applySimulationSkillBonuses = (stats: DerivedStats, mercenary: Mercenary):
 
 export const useSimulation = (options?: { externalMercenaries?: Mercenary[] }): SimulationHook => {
     const { state } = useGame();
-    const externalMercenaries = options?.externalMercenaries ?? [];
+    const externalMercenaries = options?.externalMercenaries ?? EMPTY_EXTERNAL_MERCENARIES;
     
     const [battleState, setBattleState] = useState<{
         teamA: CombatantInstance[],

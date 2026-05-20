@@ -63,8 +63,8 @@ This document provides a comprehensive structural map of the project, detailing 
 ## 🎨 3. UI Framework (`components/`)
 
 ### High-Level Layout
-- `components/Header.tsx`: HUD for Day, Gold, Energy, and Log Ticker.
-- `components/MainGameLayout.tsx`: Tab navigation, tutorial overlays, full-screen transitions, and document language sync (`lang`, `lang-ko`) for Korean typography.
+- `components/MainGameLayout.tsx`: Tab routing, tutorial overlays, full-screen transitions, and document language sync (`lang`, `lang-ko`) for Korean typography.
+- `components/tabs/main/MainHud.tsx`: Main scene HUD for Day, Energy, Gold, Rest, Settings, and Log Ticker.
 - `components/DialogueBox.tsx`: The narrative engine. Handles typing effects and item tooltips.
 
 ### Functional Tabs (`components/tabs/`)

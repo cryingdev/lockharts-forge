@@ -18,3 +18,17 @@ export const UI_MODAL_LAYOUT = {
         CONFIRM: "z-[9000]",   // 중요 확인/삭제 팝업
     }
 };
+
+/**
+ * UI_COLORS
+ * 공통 UI 재질색을 중앙에서 관리합니다.
+ */
+export const UI_COLORS = {
+    BRASS: "#B5A642",
+    BRASS_DARK: "#A6993D",
+    COPPER: "#B87333",
+    COPPER_DARK: "#8F5528",
+    GOLD: "#D4AF37",
+    DARK_GREEN: "#013220",
+    MUTED_RED: "#8F2E24",
+} as const;

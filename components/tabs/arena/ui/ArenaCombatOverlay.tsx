@@ -11,6 +11,7 @@ import { MercenaryPortrait } from '../../../common/ui/MercenaryPortrait';
 import type { ArenaOpponentViewModel } from '../types';
 
 const DEFAULT_ARENA_BATTLE_SPEED: 1 | 2 | 5 | 10 = 2;
+const EMPTY_OPPONENT_PARTY: Mercenary[] = [];
 
 interface ArenaCombatOverlayProps {
     isOpen: boolean;
@@ -133,9 +134,10 @@ export const ArenaCombatOverlay: React.FC<ArenaCombatOverlayProps> = ({
     opponent,
     onFinish,
 }) => {
-    const sim = useSimulation({ externalMercenaries: opponent?.party ?? [] });
+    const sim = useSimulation({ externalMercenaries: opponent?.party ?? EMPTY_OPPONENT_PARTY });
     const simulationRef = useRef(sim);
     const hasSettledRef = useRef(false);
+    const wasOpenRef = useRef(false);
 
     useEffect(() => {
         simulationRef.current = sim;
@@ -190,9 +192,10 @@ export const ArenaCombatOverlay: React.FC<ArenaCombatOverlayProps> = ({
     const recentLogs = useMemo(() => sim.combatLog.slice(-8), [sim.combatLog]);
 
     useEffect(() => {
-        if (!isOpen) {
+        if (wasOpenRef.current && !isOpen) {
             sim.handleReset();
         }
+        wasOpenRef.current = isOpen;
     }, [isOpen, sim.handleReset]);
 
     useEffect(() => {
