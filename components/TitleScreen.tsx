@@ -146,25 +146,25 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                     </div>
                 </div>
 
-                <div className="relative z-10 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000 w-full h-full max-h-full overflow-hidden px-safe px-5 pt-24 pb-12 md:p-6">
-                    <div className="mb-7 md:mb-12 text-center shrink-0 w-full max-w-[26rem]">
-                        <div className="w-[clamp(88px,22vw,128px)] h-[clamp(88px,22vw,128px)] md:w-32 md:h-32 bg-amber-900/20 rounded-full flex items-center justify-center border-[3px] md:border-4 border-amber-700/50 mb-5 md:mb-6 mx-auto shadow-[0_0_50px_rgba(180,83,9,0.3)]">
+                <div className="relative z-10 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000 w-full h-full max-h-full overflow-x-hidden overflow-y-auto no-scrollbar px-safe px-5 pt-24 pb-12 md:p-6 [@media(max-height:520px)]:justify-start [@media(max-height:520px)]:pt-10 [@media(max-height:520px)]:pb-3">
+                    <div className="mb-7 md:mb-12 text-center shrink-0 w-full max-w-[min(100%,64rem)] [@media(max-height:520px)]:mb-3">
+                        <div className="w-[clamp(88px,22vw,128px)] h-[clamp(88px,22vw,128px)] md:w-32 md:h-32 bg-amber-900/20 rounded-full flex items-center justify-center border-[3px] md:border-4 border-amber-700/50 mb-5 md:mb-6 mx-auto shadow-[0_0_50px_rgba(180,83,9,0.3)] [@media(max-height:520px)]:hidden">
                             <Anvil className="w-[50%] h-[50%] text-amber-50 drop-shadow-lg" />
                         </div>
-                        <h1 className="text-[clamp(48px,13vw,92px)] md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-400 to-amber-700 font-serif tracking-tight drop-shadow-sm leading-[0.96]">
+                        <h1 className="mx-auto w-full max-w-full text-[clamp(2.45rem,min(10.5vw,15dvh),7rem)] font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-400 to-amber-700 font-serif tracking-tight drop-shadow-sm leading-[0.96]">
                             <span className="block">{titleLineOne}</span>
                             {titleLineTwo ? <span className="block">{titleLineTwo}</span> : null}
                         </h1>
-                        <div className="h-0.5 md:h-1 w-20 md:w-32 bg-amber-800 mx-auto mt-4 md:mt-4 rounded-full"></div>
-                        <p className="mt-3 md:mt-4 text-stone-500 font-sans tracking-[0.24em] text-[11px] md:text-sm uppercase font-bold">{t(language, 'title.subtitle')}</p>
-                        <p className="mt-1.5 text-stone-600 font-mono text-[10px] md:text-xs">{t(language, 'title.build', { version: APP_VERSION })}</p>
+                        <div className="h-0.5 md:h-1 w-20 md:w-32 bg-amber-800 mx-auto mt-4 md:mt-4 rounded-full [@media(max-height:520px)]:mt-2"></div>
+                        <p className="mt-3 md:mt-4 text-stone-500 font-sans tracking-[0.24em] text-[11px] md:text-sm uppercase font-bold [@media(max-height:520px)]:mt-2 [@media(max-height:520px)]:text-[10px]">{t(language, 'title.subtitle')}</p>
+                        <p className="mt-1.5 text-stone-600 font-mono text-[10px] md:text-xs [@media(max-height:520px)]:text-[9px]">{t(language, 'title.build', { version: APP_VERSION })}</p>
                     </div>
 
-                    <div className="flex flex-col gap-3 md:gap-4 w-[min(78vw,320px)] md:w-64 shrink-0">
+                    <div className="flex flex-col gap-3 md:gap-4 w-[min(78vw,320px)] md:w-64 shrink-0 [@media(max-height:520px)]:gap-2">
                         {hasSaves && (
                             <SfxButton 
                                 onClick={handleContinue}
-                                className="group relative px-5 md:px-8 py-3.5 md:py-4 bg-amber-700/20 border border-amber-500 hover:bg-amber-600 transition-all rounded-xl shadow-xl animate-pulse hover:animate-none"
+                                className="group relative px-5 md:px-8 py-3.5 md:py-4 bg-amber-700/20 border border-amber-500 hover:bg-amber-600 transition-all rounded-xl shadow-xl animate-pulse hover:animate-none [@media(max-height:520px)]:py-2.5"
                             >
                                 <div className="flex items-center justify-center gap-2 md:gap-3">
                                     <FastForward className="w-4 h-4 md:w-5 md:h-5 text-amber-400" />
@@ -175,7 +175,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
 
                         <SfxButton 
                             onClick={() => setShowNameModal(true)}
-                            className="group relative px-5 md:px-8 py-3.5 md:py-4 bg-stone-900/80 border border-stone-700 hover:border-amber-500 rounded-xl overflow-hidden transition-all hover:bg-stone-800 shadow-lg"
+                            className="group relative px-5 md:px-8 py-3.5 md:py-4 bg-stone-900/80 border border-stone-700 hover:border-amber-500 rounded-xl overflow-hidden transition-all hover:bg-stone-800 shadow-lg [@media(max-height:520px)]:py-2.5"
                         >
                             <div className="absolute inset-0 w-1 bg-amber-500 transition-all group-hover:w-full opacity-10"></div>
                             <div className="flex items-center justify-center gap-2 md:gap-3">
@@ -187,7 +187,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         <SfxButton 
                             sfx="switch"
                             onClick={() => setShowLoadModal(true)}
-                            className={`group px-5 md:px-8 py-3.5 md:py-4 border rounded-xl transition-all flex items-center justify-center gap-2 md:gap-3 bg-stone-900/80 border-stone-700 hover:border-stone-500 hover:bg-stone-800 text-stone-300`}
+                            className={`group px-5 md:px-8 py-3.5 md:py-4 border rounded-xl transition-all flex items-center justify-center gap-2 md:gap-3 bg-stone-900/80 border-stone-700 hover:border-stone-500 hover:bg-stone-800 text-stone-300 [@media(max-height:520px)]:py-2.5`}
                         >
                             <div className="flex items-center justify-center gap-2 md:gap-3">
                                 <Upload className="w-4 h-4 md:w-5 md:h-5" />
@@ -198,7 +198,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
                         <SfxButton 
                             sfx="switch"
                             onClick={() => setShowSettings(true)}
-                            className="group px-5 md:px-8 py-3.5 md:py-4 bg-stone-900/80 border border-stone-700 hover:border-stone-500 rounded-xl transition-all hover:bg-stone-800 text-stone-300 flex items-center justify-center gap-2 md:gap-3"
+                            className="group px-5 md:px-8 py-3.5 md:py-4 bg-stone-900/80 border border-stone-700 hover:border-stone-500 rounded-xl transition-all hover:bg-stone-800 text-stone-300 flex items-center justify-center gap-2 md:gap-3 [@media(max-height:520px)]:py-2.5"
                         >
                             <div className="flex items-center justify-center gap-2 md:gap-3">
                                 <Settings className="w-4 h-4 md:w-5 md:h-5" />
@@ -208,7 +208,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onNewGame, onLoadGame }) => {
 
                         <SfxButton 
                             onClick={() => setShowCredits(true)}
-                            className="px-6 py-2 md:py-2 mt-1 md:mt-4 text-stone-600 hover:text-amber-600 text-[10px] md:text-xs font-black tracking-[0.18em] transition-colors flex items-center justify-center gap-2 font-sans"
+                            className="px-6 py-2 md:py-2 mt-1 md:mt-4 text-stone-600 hover:text-amber-600 text-[10px] md:text-xs font-black tracking-[0.18em] transition-colors flex items-center justify-center gap-2 font-sans [@media(max-height:520px)]:hidden"
                         >
                             <User className="w-3.5 h-3.5 md:w-2.5 md:h-2.5" /> {t(language, 'title.credits')}
                         </SfxButton>
