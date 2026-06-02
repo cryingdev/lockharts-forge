@@ -99,18 +99,14 @@ const formatHudGold = (gold: number) => {
     const wholeGold = Math.max(0, Math.floor(gold));
     if (wholeGold < 1000) return wholeGold.toLocaleString();
 
-    const millions = Math.floor(wholeGold / 1000000);
-    const thousands = Math.floor((wholeGold % 1000000) / 1000);
-    const remainder = wholeGold % 1000;
+    const suffix = wholeGold >= 1000000 ? 'M' : 'K';
+    const divisor = wholeGold >= 1000000 ? 1000000 : 1000;
+    const compactValue = wholeGold / divisor;
+    const formatted = compactValue >= 100
+        ? Math.floor(compactValue).toString()
+        : compactValue.toFixed(1).replace(/\.0$/, '');
 
-    if (millions > 0) {
-        return [
-            `${millions}M`,
-            thousands > 0 ? `${String(thousands).padStart(3, '0')}k` : '',
-        ].join('');
-    }
-
-    return `${thousands}k${remainder > 0 ? String(remainder).padStart(3, '0') : ''}`;
+    return `${formatted}${suffix}`;
 };
 
 const HudCorner = ({ className, rotation }: { className: string; rotation: string }) => (
