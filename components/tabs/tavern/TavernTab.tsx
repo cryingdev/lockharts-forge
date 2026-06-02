@@ -8,7 +8,8 @@ import { CommissionDetailModal } from './ui/CommissionDetailModal';
 import { CommissionRewardModal } from './ui/CommissionRewardModal';
 import { MercenaryInviteModal } from '../../modals/MercenaryInviteModal';
 import { SfxButton } from '../../common/ui/SfxButton';
-import { ArrowLeft, PlusCircle } from 'lucide-react';
+import { CommonBackButton } from '../../common/ui/CommonBackButton';
+import { PlusCircle } from 'lucide-react';
 import { t } from '../../../utils/i18n';
 
 interface TavernTabProps {
@@ -77,14 +78,12 @@ const TavernTab: React.FC<TavernTabProps> = ({ onNavigate }) => {
                 <div className="absolute top-4 left-4 right-4 z-[1100] flex items-center justify-between pointer-events-none">
                     <div className="pointer-events-auto">
                         {onNavigate && (
-                            <SfxButton 
-                                sfx="switch" 
+                            <CommonBackButton
                                 onClick={handleBack}
-                                className="flex min-h-[52px] items-center gap-2.5 px-5 py-3 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-2xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
-                            >
-                                <ArrowLeft className="w-4.5 h-4.5 group-hover:-translate-x-1 transition-transform" />
-                                <span className="text-[13px] font-black uppercase tracking-[0.18em]">{t(language, 'common.back')}</span>
-                            </SfxButton>
+                                label={t(language, 'common.back')}
+                                widthClassName="w-[128px] md:w-[162px]"
+                                heightClassName="h-[52px] md:h-[66px]"
+                            />
                         )}
                     </div>
 

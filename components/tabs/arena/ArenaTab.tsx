@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Swords } from 'lucide-react';
+import { Swords } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import type { SingleMatchReport } from '../../../hooks/useSimulation';
 import type { Mercenary } from '../../../models/Mercenary';
 import { DUMMY_ARENA_OPPONENTS } from '../../../data/arena/opponents';
 import { ARENA_MILESTONE_DEFINITIONS, getArenaMilestoneRewardLabel } from '../../../data/arena/milestones';
-import { SfxButton } from '../../common/ui/SfxButton';
+import { CommonBackButton } from '../../common/ui/CommonBackButton';
 import { t } from '../../../utils/i18n';
 import type {
     ArenaBattleResultViewModel,
@@ -216,15 +216,13 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ onNavigate }) => {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(120,53,15,0.16),transparent_36%),radial-gradient(circle_at_bottom,rgba(127,29,29,0.15),transparent_32%),linear-gradient(180deg,#120f0c_0%,#0b0908_100%)]" />
 
             {onNavigate && (
-                <div className="absolute left-4 top-4 z-[1100]">
-                    <SfxButton
-                        sfx="switch"
+                <div className="absolute left-3 top-3 z-[1100] md:left-4 md:top-4">
+                    <CommonBackButton
                         onClick={() => onNavigate('MAIN')}
-                        className="flex min-h-[52px] items-center gap-2.5 rounded-2xl border border-stone-700 bg-stone-900/80 px-5 py-3 text-stone-300 shadow-2xl backdrop-blur-md transition-all hover:bg-red-900/60 active:scale-90"
-                    >
-                        <ArrowLeft className="h-4.5 w-4.5" />
-                        <span className="text-[13px] font-black uppercase tracking-[0.18em]">{t(language, 'common.back')}</span>
-                    </SfxButton>
+                        label={t(language, 'common.back')}
+                        widthClassName="w-[128px] md:w-[162px]"
+                        heightClassName="h-[52px] md:h-[66px]"
+                    />
                 </div>
             )}
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../../context/GameContext';
 import DialogueBox from '../../DialogueBox';
-import { Store, Heart, ArrowLeft, ChevronLeft, ScrollText, Hammer } from 'lucide-react';
+import { Store, Heart, ChevronLeft, ScrollText, Hammer } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { useShop } from './hooks/useShop';
 import { DialogueOption } from '../../../types/game-state';
@@ -14,6 +14,7 @@ import { ShopQueueBadge } from './ui/ShopQueueBadge';
 import { ShopClosedOverlay } from './ui/ShopClosedOverlay';
 import { InstanceSelectorPopup } from './ui/InstanceSelectorPopup';
 import { SfxButton } from '../../common/ui/SfxButton';
+import { CommonBackButton } from '../../common/ui/CommonBackButton';
 import { t } from '../../../utils/i18n';
 
 interface ShopTabProps {
@@ -58,9 +59,13 @@ const ShopTab: React.FC<ShopTabProps> = ({ onNavigate }) => {
 
         {/* Back Button - Immersive navigation */}
         {!shop.isTutorialActive && (
-            <SfxButton sfx="switch" onClick={() => onNavigate('MAIN')} className="absolute top-4 left-4 z-[1050] flex min-h-[52px] items-center gap-2.5 px-5 py-3 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-2xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group">
-                <ArrowLeft className="w-4.5 h-4.5 group-hover:-translate-x-1 transition-transform" /> <span className="text-[13px] font-black uppercase tracking-[0.18em]">{t(language, 'common.back')}</span>
-            </SfxButton>
+            <CommonBackButton
+                onClick={() => onNavigate('MAIN')}
+                label={t(language, 'common.back')}
+                className="absolute left-3 top-3 z-[1050] md:left-4 md:top-4"
+                widthClassName="w-[128px] md:w-[162px]"
+                heightClassName="h-[52px] md:h-[66px]"
+            />
         )}
 
         {/* Paging Button - To Forge (오른쪽 중앙 배치) */}
