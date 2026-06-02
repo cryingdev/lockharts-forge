@@ -4,9 +4,10 @@ import { MarketLobbyView } from './ui/MarketLobbyView';
 import { MarketCatalogView } from './ui/MarketCatalogView';
 import { MarketTutorialOverlay, SequenceStep } from './ui/MarketTutorialOverlay';
 import { ItemSelectorList } from '../../ItemSelectorList';
-import { ArrowLeft, Gift, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
+import { CommonBackButton } from '../../common/ui/CommonBackButton';
 import { t } from '../../../utils/i18n';
 import { getPlayerName } from '../../../utils/gameText';
 
@@ -64,9 +65,14 @@ const MarketTab: React.FC<MarketTabProps> = ({ onNavigate }) => {
             {isLocalTutorial && currentMarketStep && <MarketTutorialOverlay step={currentMarketStep} />}
 
             {(!isLocalTutorial || state.tutorialStep === 'LEAVE_MARKET_GUIDE') && (
-                <SfxButton sfx="switch" onClick={handlers.handleBackToMain} data-tutorial-id="MARKET_BACK_BUTTON" className="absolute top-4 left-4 z-[1050] flex min-h-[52px] items-center gap-2.5 px-5 py-3 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-2xl border border-stone-700 shadow-2xl backdrop-blur-md transition-all active:scale-90 group">
-                    <ArrowLeft className="w-4.5 h-4.5 group-hover:-translate-x-1 transition-transform" /> <span className="text-[13px] font-black uppercase tracking-[0.18em]">{t(language, 'common.back')}</span>
-                </SfxButton>
+                <CommonBackButton
+                    onClick={handlers.handleBackToMain}
+                    data-tutorial-id="MARKET_BACK_BUTTON"
+                    label={t(language, 'common.back')}
+                    className="absolute left-3 top-3 z-[1050] md:left-4 md:top-4"
+                    widthClassName="w-[128px] md:w-[162px]"
+                    heightClassName="h-[52px] md:h-[66px]"
+                />
             )}
 
             {viewMode === 'INTERACTION' ? (

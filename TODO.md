@@ -34,6 +34,36 @@
 - `/Users/cryingdev/GitHub/lockharts-forge/GAME_DESIGN.md`
 - `/Users/cryingdev/GitHub/lockharts-forge/TECH_DESIGN.md`
 
+## Manual Dungeon Trap Variety Follow-Up
+
+### Context
+- Manual dungeon traps currently apply a simple flat HP penalty when first entered.
+- This makes traps predictable and mostly interchangeable with generic damage.
+- Trap outcomes should eventually create more varied exploration pressure and make party composition, resources, and risk management matter more.
+
+### Deferred Design Task
+- Add multiple trap outcome types instead of only flat HP damage.
+- Consider a first pass with a small, readable pool:
+  - spike trap: party or front-line HP damage
+  - mana leech: MP damage
+  - snare: expedition energy loss
+  - tripwire: ambush or next-combat disadvantage
+  - cave-in: small damage plus forced reposition/backtracking
+- Consider mitigation hooks from stats, job identity, equipment, or consumables after the base variety is working.
+
+### Implementation Notes
+- Keep trap messages specific enough that the player understands what happened.
+- Avoid making every trap purely punitive; some trap-disarm or salvage outcomes could produce materials later.
+- Make outcomes deterministic enough to feel fair, but varied enough that trap rooms do not become rote.
+
+### Likely Future Targets
+- `/Users/cryingdev/GitHub/lockharts-forge/state/reducer/manualDungeon.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/types/game-state.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/locales/en.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/locales/ko.ts`
+- `/Users/cryingdev/GitHub/lockharts-forge/components/tabs/dungeon/AssaultNavigator.tsx`
+- `/Users/cryingdev/GitHub/lockharts-forge/game/DungeonScene.ts`
+
 ## Korean Typography Follow-Up
 
 ### Context

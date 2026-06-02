@@ -1,9 +1,10 @@
 
 import React, { useEffect, lazy, Suspense } from 'react';
-import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, ArrowLeft, Home, Book, X, Package, Zap, Users, Store } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Hammer, Activity, Library, Home, Book, X, Package, Zap, Users, Store } from 'lucide-react';
 import { useForge } from './hooks/useForge';
 import { getAssetUrl } from '../../../utils';
 import { SfxButton } from '../../common/ui/SfxButton';
+import { CommonBackButton } from '../../common/ui/CommonBackButton';
 import { t } from '../../../utils/i18n';
 import { useGame } from '../../../context/GameContext';
 import FloatingTooltip from '../../common/ui/FloatingTooltip';
@@ -135,14 +136,13 @@ const ForgeTab: React.FC<ForgeTabProps> = ({ onNavigate, onOpenInventory, isActi
 
         {/* Navigation - Return to Forge Ground */}
         {!isCrafting && !isQuickCrafting && (
-            <SfxButton 
-                sfx="switch" 
-                onClick={() => onNavigate('MAIN')} 
-                className="absolute top-4 left-4 z-20 flex min-h-[52px] items-center gap-2.5 px-5 py-3 bg-stone-900/80 hover:bg-red-900/60 text-stone-300 rounded-2xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group"
-            >
-                <ArrowLeft className="w-4.5 h-4.5 group-hover:-translate-x-1 transition-transform" />
-                <span className="text-[13px] font-black uppercase tracking-[0.18em]">{t(language, 'common.back')}</span>
-            </SfxButton>
+            <CommonBackButton
+                onClick={() => onNavigate('MAIN')}
+                label={t(language, 'common.back')}
+                className="absolute left-3 top-3 z-20 md:left-4 md:top-4"
+                widthClassName="w-[128px] md:w-[162px]"
+                heightClassName="h-[52px] md:h-[66px]"
+            />
         )}
 
         {/* Paging Button - To Shop (좌측 중앙 배치) */}

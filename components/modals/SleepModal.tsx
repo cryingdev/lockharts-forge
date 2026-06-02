@@ -1,7 +1,7 @@
 
 import React, { useMemo, useRef } from 'react';
 import { useGame } from '../../context/GameContext';
-import { Moon, BedDouble, ChevronRight, X, Coins, ShoppingBag, Users, Map } from 'lucide-react';
+import { BedDouble, X, Coins, ShoppingBag, Users, Map, BookOpen, Package, Hammer, Search } from 'lucide-react';
 import { calculateDailyWage } from '../../config/contract-config';
 import { UI_MODAL_LAYOUT } from '../../config/ui-config';
 import { SfxButton } from '../common/ui/SfxButton';
@@ -29,64 +29,82 @@ const SleepModal = () => {
   const totalExpenses = dailyFinancials.expenseMarket + totalWages + dailyFinancials.expenseScout;
   const netChange = totalIncome - totalExpenses;
 
-  const FinancialRow = ({ label, value, icon: Icon, isNegative = false, isSub = false }: { label: string, value: number, icon: any, isNegative?: boolean, isSub?: boolean }) => (
-    <div className={`flex justify-between items-center gap-4 text-[9px] md:text-sm ${isSub ? 'pl-4 md:pl-6 border-l border-indigo-900/30 ml-1.5 md:ml-2 py-0.5' : 'py-1'}`}>
-        <span className={`flex items-center gap-1.5 md:gap-2 ${isSub ? 'text-indigo-400' : 'text-indigo-200 font-bold'}`}>
-            <Icon className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 ${isSub ? 'opacity-40' : isNegative ? 'text-red-400' : 'text-emerald-400'}`} />
-            {label}
+  const formatGold = (value: number, isExpense = false) => {
+    if (value === 0) return '0 G';
+    return `${isExpense ? '-' : '+'}${value.toLocaleString()} G`;
+  };
+
+  const FinancialRow = ({ label, value, icon: Icon, isExpense = false }: { label: string, value: number, icon: React.ElementType, isExpense?: boolean }) => (
+    <div className="flex items-center justify-between gap-3 py-1.5 text-[12px] md:text-sm">
+        <span className="flex min-w-0 items-center gap-2 font-bold text-[#3f3327]">
+            <Icon className={`h-3.5 w-3.5 shrink-0 md:h-4 md:w-4 ${isExpense ? 'text-red-800/70' : 'text-emerald-900/70'}`} />
+            <span className="truncate">{label}</span>
         </span>
-        <span className={`font-mono font-black shrink-0 ${isNegative ? 'text-red-500' : 'text-emerald-400'}`}>
-            {isNegative ? '-' : '+'}{value} G
+        <span className={`shrink-0 font-mono text-[13px] font-black md:text-base ${isExpense ? 'text-red-800' : 'text-emerald-900'}`}>
+            {formatGold(value, isExpense)}
         </span>
     </div>
   );
 
   return (
-    <div className={`${UI_MODAL_LAYOUT.OVERLAY} ${UI_MODAL_LAYOUT.Z_INDEX.SLEEP} animate-in fade-in duration-700 bg-black/95`}>
-      <div className={`${UI_MODAL_LAYOUT.CONTAINER} border-indigo-500/30 shadow-[0_0_60px_rgba(55,48,163,0.2)] transition-all duration-300 ${isTransitioning ? 'opacity-0 scale-95 pointer-events-none' : 'animate-in zoom-in-95 duration-500'}`}>
-        
-        {/* Header - Height optimized */}
-        <div className="bg-indigo-950/40 p-3 md:p-5 border-b border-indigo-500/20 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3 md:gap-4">
-                <div className="w-8 h-8 md:w-12 md:h-12 bg-indigo-900 rounded-xl flex items-center justify-center border border-indigo-500/50 shadow-lg shrink-0">
-                    <Moon className="w-4 h-4 md:w-5 md:h-5 text-indigo-300" />
-                </div>
-                <h2 className="text-base md:text-2xl font-bold text-indigo-100 font-serif tracking-wide uppercase leading-none">End of Day</h2>
-            </div>
-            <SfxButton onClick={actions.closeRest} className="p-1.5 hover:bg-indigo-900 rounded-full text-indigo-400 transition-colors ml-2"><X className="w-5 h-5 md:w-6 md:h-6" /></SfxButton>
-        </div>
+    <div className={`fixed inset-0 flex items-center justify-center overflow-hidden bg-stone-950/48 px-5 py-6 backdrop-blur-[1px] ${UI_MODAL_LAYOUT.Z_INDEX.SLEEP} animate-in fade-in duration-300`}>
+      <div className={`relative flex max-h-[88vh] w-full max-w-[410px] flex-col overflow-hidden border-2 border-[#8a633a] bg-[#ead7ad] text-stone-900 shadow-[0_22px_70px_rgba(0,0,0,0.42)] transition-all duration-300 ${isTransitioning ? 'opacity-0 scale-95 pointer-events-none' : 'animate-in zoom-in-95 duration-300'}`}>
+        <div className="pointer-events-none absolute inset-0 opacity-45 [background-image:radial-gradient(circle_at_20%_12%,rgba(255,246,213,0.7),transparent_32%),linear-gradient(180deg,rgba(255,248,220,0.42),rgba(142,96,48,0.12))]" />
+        <div className="pointer-events-none absolute inset-[7px] border border-[#9a7040]/45" />
 
-        {/* Content - Summary with scrolling */}
-        <div className="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar space-y-4 md:space-y-6">
-            <div className="bg-indigo-950/40 border border-indigo-800/50 rounded-2xl p-4 md:p-6 space-y-3 md:space-y-4 shadow-inner">
-                <div className="space-y-0.5">
-                    <h3 className="text-[7px] md:text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1.5 md:mb-2">Revenue Streams</h3>
-                    <FinancialRow label="Shop Sales" value={dailyFinancials.incomeShop} icon={Coins} isSub />
-                    <FinancialRow label="Dungeon Rewards" value={dailyFinancials.incomeDungeon} icon={Map} isSub />
+        <div className="relative flex items-start justify-between gap-3 border-b border-[#8a633a]/40 px-5 pb-4 pt-5 md:px-6 md:pt-6">
+            <div className="flex min-w-0 items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-[#684622] bg-[#3a2819] text-amber-100 shadow-[3px_3px_0_rgba(83,52,24,0.24)] md:h-11 md:w-11">
+                    <BookOpen className="h-5 w-5 md:h-5 md:w-5" />
                 </div>
-                <div className="space-y-0.5">
-                    <h3 className="text-[7px] md:text-[9px] font-black text-red-500 uppercase tracking-widest mb-1.5 md:mb-2">Daily Costs</h3>
-                    <FinancialRow label="Market Spending" value={dailyFinancials.expenseMarket} icon={ShoppingBag} isNegative isSub />
-                    <FinancialRow label="Mercenary Wages" value={totalWages} icon={Users} isNegative isSub />
-                </div>
-                <div className="pt-3 md:pt-4 border-t border-indigo-500/20 flex justify-between items-center gap-4">
-                    <span className="text-[8px] md:text-xs font-black text-indigo-200 uppercase tracking-widest">Net Profit</span>
-                    <span className={`text-base md:text-2xl font-mono font-black shrink-0 ${netChange >= 0 ? 'text-emerald-400' : 'text-red-500'}`}>
-                        {netChange > 0 ? '+' : ''}{netChange} G
-                    </span>
+                <div className="min-w-0">
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6d5539] md:text-[10px]">Forge Ledger</p>
+                    <h2 className="mt-1 font-serif text-[24px] font-black uppercase leading-none tracking-[0.02em] text-[#21170f] md:text-[28px]">End of Day</h2>
+                    <p className="mt-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[#6d5539] md:text-xs">Day {initialDayRef.current}</p>
                 </div>
             </div>
+            <SfxButton onClick={actions.closeRest} className="shrink-0 p-1.5 text-[#5d4730] transition-colors hover:bg-[#3a2819] hover:text-amber-100">
+                <X className="h-5 w-5 md:h-6 md:w-6" />
+            </SfxButton>
         </div>
 
-        {/* Footer */}
-        <div className="p-3 md:p-5 bg-indigo-950/40 border-t border-indigo-500/20 shrink-0">
+        <div className="relative flex-1 overflow-y-auto px-5 py-4 md:px-6 md:py-5">
+            <div className="border-b border-[#8a633a]/35 pb-3">
+                <p className="mb-1.5 font-serif text-base font-black uppercase tracking-[0.08em] text-emerald-950 md:text-lg">Revenue</p>
+                <FinancialRow label="Shop Sales" value={dailyFinancials.incomeShop} icon={Coins} />
+                <FinancialRow label="Inventory Sales" value={dailyFinancials.incomeInventory} icon={Package} />
+                <FinancialRow label="Dungeon Rewards" value={dailyFinancials.incomeDungeon} icon={Map} />
+                <FinancialRow label="Repair Income" value={dailyFinancials.incomeRepair} icon={Hammer} />
+            </div>
+
+            <div className="border-b border-[#8a633a]/35 py-3">
+                <p className="mb-1.5 font-serif text-base font-black uppercase tracking-[0.08em] text-red-950 md:text-lg">Costs</p>
+                <FinancialRow label="Market Spending" value={dailyFinancials.expenseMarket} icon={ShoppingBag} isExpense />
+                <FinancialRow label="Mercenary Wages" value={totalWages} icon={Users} isExpense />
+                <FinancialRow label="Scout Fees" value={dailyFinancials.expenseScout} icon={Search} isExpense />
+            </div>
+
+            <div className="flex items-end justify-between gap-4 py-4">
+                <div>
+                    <p className="font-mono text-[9px] font-black uppercase tracking-[0.18em] text-[#6d5539] md:text-[10px]">Total Income</p>
+                    <p className="mt-1 font-mono text-base font-black text-emerald-900 md:text-lg">{formatGold(totalIncome)}</p>
+                </div>
+                <div className="text-right">
+                    <p className="font-mono text-[9px] font-black uppercase tracking-[0.18em] text-[#6d5539] md:text-[10px]">Net Profit</p>
+                    <p className={`mt-1 font-mono text-2xl font-black leading-none md:text-3xl ${netChange >= 0 ? 'text-emerald-900' : 'text-red-800'}`}>
+                        {netChange === 0 ? '0' : `${netChange > 0 ? '+' : ''}${netChange.toLocaleString()}`} G
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div className="relative border-t border-[#8a633a]/40 px-5 py-4 md:px-6">
             <SfxButton 
                 onClick={actions.confirmSleep}
-                className="w-full py-2.5 md:py-4 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl md:rounded-2xl shadow-2xl transition-all flex items-center justify-center gap-2 md:gap-3 active:scale-95 border-b-4 border-amber-800 group text-[10px] md:text-base uppercase tracking-[0.2em]"
+                className="flex w-full items-center justify-center gap-2.5 border border-[#70451d] bg-[#9b541f] px-4 py-3 text-[12px] font-black uppercase tracking-[0.13em] text-amber-50 shadow-[0_3px_0_#5a2f11,0_8px_14px_rgba(83,45,18,0.18)] transition-all hover:bg-[#ab6226] active:translate-y-0.5 active:shadow-[0_1px_0_#5a2f11,0_5px_10px_rgba(83,45,18,0.16)] md:text-sm"
             >
-                <BedDouble className="w-4 h-4 md:w-6 md:h-6 text-amber-100 group-hover:animate-bounce" />
-                <span className="font-serif italic">Rest for the Day</span>
-                <ChevronRight className="w-3 h-3 md:w-5 md:h-5 opacity-50 hidden xs:block" />
+                <BedDouble className="h-5 w-5 text-amber-100 md:h-6 md:w-6" />
+                <span className="font-serif">Rest for the Day</span>
             </SfxButton>
         </div>
       </div>

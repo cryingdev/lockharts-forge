@@ -5,8 +5,7 @@ import { DungeonInfoPanel } from './ui/DungeonInfoPanel';
 import { SquadActionPanel } from './ui/SquadActionPanel';
 import { MercenaryPickerModal } from './ui/MercenaryPickerModal';
 const ConfirmationModal = React.lazy(() => import('../../modals/ConfirmationModal'));
-import { SfxButton } from '../../common/ui/SfxButton';
-import { ArrowLeft } from 'lucide-react';
+import { CommonBackButton } from '../../common/ui/CommonBackButton';
 import { useGame } from '../../../context/GameContext';
 import { t } from '../../../utils/i18n';
 
@@ -59,14 +58,13 @@ const DungeonTab: React.FC<DungeonTabProps> = ({ onNavigate }) => {
         <div className="fixed inset-0 z-[50] bg-stone-950 overflow-hidden flex flex-col px-safe">
             {/* Unified Immersive Back Button Overlay - Always Floating, Hidden during slot selection */}
             {onNavigate && !isPickerOpen && !isManualOverlayActive && (
-                <SfxButton 
-                    sfx="switch" 
-                    onClick={handleBack} 
-                    className="absolute top-4 left-4 z-[1100] flex min-h-[52px] items-center gap-2.5 px-5 py-3 bg-stone-900/60 hover:bg-red-900/60 text-stone-300 rounded-2xl border border-stone-700 backdrop-blur-md transition-all shadow-2xl active:scale-90 group animate-in fade-in duration-300"
-                >
-                    <ArrowLeft className="w-4.5 h-4.5 group-hover:-translate-x-1 transition-transform" />
-                    <span className="text-[13px] font-black uppercase tracking-[0.18em]">{t(language, 'common.back')}</span>
-                </SfxButton>
+                <CommonBackButton
+                    onClick={handleBack}
+                    label={t(language, 'common.back')}
+                    className="absolute left-3 top-3 z-[1100] animate-in fade-in duration-300 md:left-4 md:top-4"
+                    widthClassName="w-[128px] md:w-[162px]"
+                    heightClassName="h-[52px] md:h-[66px]"
+                />
             )}
 
             {view === 'LIST' ? (

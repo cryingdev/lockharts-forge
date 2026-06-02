@@ -13,12 +13,13 @@ interface MainSceneProps {
 }
 
 type PoiId = 'wall' | 'market' | 'tavern' | 'forge' | 'arena' | 'people';
+type InteractivePoiId = Exclude<PoiId, 'people'>;
 type SceneMode = 'landscape' | 'portrait';
 
 interface PoiLayer {
-    id: PoiId;
+    id: InteractivePoiId;
     title: string;
-    target: 'DUNGEON' | 'MARKET' | 'TAVERN' | 'FORGE_BUILDING' | 'ARENA' | 'SHOP';
+    target: 'DUNGEON' | 'MARKET' | 'TAVERN' | 'FORGE_BUILDING' | 'ARENA';
     lockKey?: 'DUNGEON' | 'MARKET' | 'TAVERN' | 'ARENA';
 }
 
@@ -32,6 +33,7 @@ interface SceneConfig {
 
 const ALPHA_HIT_THRESHOLD = 24;
 const getMainImageUrl = (filename: string) => getImageUrl(filename, 'main');
+const POI_IMAGE_LAYERS: PoiId[] = ['wall', 'market', 'tavern', 'forge', 'arena', 'people'];
 
 const POI_LAYERS: PoiLayer[] = [
     { id: 'wall', title: 'Sortie Gate', target: 'DUNGEON', lockKey: 'DUNGEON' },
@@ -39,7 +41,6 @@ const POI_LAYERS: PoiLayer[] = [
     { id: 'tavern', title: 'Tavern', target: 'TAVERN', lockKey: 'TAVERN' },
     { id: 'forge', title: "Lockhart's Forge", target: 'FORGE_BUILDING' },
     { id: 'arena', title: 'Arena', target: 'ARENA', lockKey: 'ARENA' },
-    { id: 'people', title: 'Shop', target: 'SHOP' },
 ];
 
 const SCENE_CONFIGS: Record<SceneMode, SceneConfig> = {
@@ -191,12 +192,12 @@ const LocationTag = ({
             onBlur={() => onHoverChange?.(false)}
             onPointerDown={(event) => event.stopPropagation()}
             data-tutorial-id={tutorialId}
-            className={`group pointer-events-auto relative inline-flex min-h-[36px] w-max max-w-[72vw] items-center gap-2 overflow-visible rounded-[3px] border py-1.5 pl-8 pr-4 shadow-xl backdrop-blur-[2px] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-2xl active:translate-y-0 active:scale-[0.98] md:min-h-[40px] md:pl-9 md:pr-5 scale-[0.9] md:scale-100 ${active ? '-translate-y-0.5 brightness-110 shadow-2xl' : ''} ${LOCATION_TAG_STYLES[tone].glow}`}
+            className={`group pointer-events-auto relative inline-flex min-h-[44px] w-max max-w-[76vw] items-center gap-2.5 overflow-visible rounded-[3px] border py-2 pl-10 pr-5 shadow-xl backdrop-blur-[2px] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-2xl active:translate-y-0 active:scale-[0.98] md:min-h-[52px] md:gap-3 md:pl-12 md:pr-6 ${active ? '-translate-y-0.5 brightness-110 shadow-2xl' : ''} ${LOCATION_TAG_STYLES[tone].glow}`}
             style={locationTagSurfaceStyle}
         >
             <span className={`absolute left-0 inset-y-1 w-1 rounded-r-sm ${LOCATION_TAG_STYLES[tone].accent}`} aria-hidden="true" />
-            <span className={`absolute -left-3.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-stone-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_0_0_1px_rgba(181,118,42,0.66),0_6px_11px_rgba(0,0,0,0.42)] md:-left-4 md:h-10 md:w-10 ${LOCATION_TAG_STYLES[tone].medallion}`}>
-                <Icon className={`relative h-4 w-4 md:h-5 md:w-5 ${LOCATION_TAG_STYLES[tone].icon}`} />
+            <span className={`absolute -left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-stone-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_0_0_1px_rgba(181,118,42,0.66),0_6px_11px_rgba(0,0,0,0.42)] md:-left-5 md:h-12 md:w-12 ${LOCATION_TAG_STYLES[tone].medallion}`}>
+                <Icon className={`relative h-5 w-5 md:h-6 md:w-6 ${LOCATION_TAG_STYLES[tone].icon}`} />
             </span>
             {(showBadge || !!badgeCount) && (
                 <span className="absolute left-5 -bottom-1 flex min-h-3 min-w-3 items-center justify-center rounded-full border border-amber-950/70 bg-red-900/90 px-1 text-[8px] font-black leading-none text-amber-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_3px_6px_rgba(0,0,0,0.34)]">
@@ -204,10 +205,10 @@ const LocationTag = ({
                 </span>
             )}
             <span className="relative flex min-w-0 flex-col items-start leading-none">
-                <span className="max-w-[42vw] truncate text-[7px] font-black uppercase tracking-[0.16em] text-amber-100/58 md:text-[8px]">
+                <span className="max-w-[44vw] truncate text-[8px] font-black uppercase tracking-[0.16em] text-amber-100/58 md:text-[10px]">
                     {category}
                 </span>
-                <span className="mt-1 max-w-[50vw] truncate font-serif text-[12px] font-black uppercase tracking-[0.08em] text-amber-50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.78)] md:text-[13px]">
+                <span className="mt-1.5 max-w-[54vw] truncate font-serif text-[15px] font-black uppercase tracking-[0.08em] text-amber-50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.78)] md:text-[18px]">
                     {title}
                 </span>
             </span>
@@ -369,13 +370,13 @@ const MainScene: React.FC<MainSceneProps> = ({ onNavigate, onSettingsClick }) =>
                         alt="Lockhart valley ground"
                         draggable={false}
                     />
-                    {POI_LAYERS.map((layer) => (
+                    {POI_IMAGE_LAYERS.map((id) => (
                         <img
-                            key={layer.id}
+                            key={id}
                             crossOrigin="anonymous"
-                            src={sceneConfig.poiSources[layer.id]}
+                            src={sceneConfig.poiSources[id]}
                             className={`absolute inset-0 h-full w-full select-none object-fill pointer-events-none transition-[filter] duration-150 ${
-                                activePoi?.id === layer.id ? 'animate-poi-highlight brightness-110 saturate-110 drop-shadow-[0_0_18px_rgba(251,191,36,0.32)]' : ''
+                                activePoi?.id === id ? 'animate-poi-highlight brightness-110 saturate-110 drop-shadow-[0_0_18px_rgba(251,191,36,0.32)]' : ''
                             }`}
                             alt=""
                             draggable={false}

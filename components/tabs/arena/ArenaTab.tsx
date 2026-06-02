@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Swords } from 'lucide-react';
 import { useGame } from '../../../context/GameContext';
 import type { SingleMatchReport } from '../../../hooks/useSimulation';
 import type { Mercenary } from '../../../models/Mercenary';
 import { DUMMY_ARENA_OPPONENTS } from '../../../data/arena/opponents';
 import { ARENA_MILESTONE_DEFINITIONS, getArenaMilestoneRewardLabel } from '../../../data/arena/milestones';
-import { SfxButton } from '../../common/ui/SfxButton';
+import { getImageUrl } from '../../../utils';
 import { t } from '../../../utils/i18n';
 import type {
     ArenaBattleResultViewModel,
@@ -24,6 +23,7 @@ interface ArenaTabProps {
 }
 
 const ARENA_RANK_THRESHOLDS = [0, 100, 300, 600, 1000];
+const ARENA_BACKGROUND_URL = getImageUrl('arena_bg.png', 'bg');
 
 const getArenaRankLabel = (language: 'en' | 'ko', rating: number) => {
     if (rating >= 1000) return t(language, 'arena.rank_champion');
@@ -42,6 +42,7 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ onNavigate }) => {
 
     const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
     const [selectedOpponent, setSelectedOpponent] = useState<ArenaOpponentViewModel | null>(null);
+    const [focusedOpponentId, setFocusedOpponentId] = useState<string | null>(DUMMY_ARENA_OPPONENTS[0]?.id ?? null);
     const [combatOpponent, setCombatOpponent] = useState<ArenaOpponentViewModel | null>(null);
     const [result, setResult] = useState<ArenaBattleResultViewModel | null>(null);
 
@@ -213,26 +214,15 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ onNavigate }) => {
 
     return (
         <div className="fixed inset-0 z-[50] overflow-hidden bg-stone-950 px-safe pt-safe pb-safe">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(120,53,15,0.16),transparent_36%),radial-gradient(circle_at_bottom,rgba(127,29,29,0.15),transparent_32%),linear-gradient(180deg,#120f0c_0%,#0b0908_100%)]" />
-
-            {onNavigate && (
-                <div className="absolute left-4 top-4 z-[1100]">
-                    <SfxButton
-                        sfx="switch"
-                        onClick={() => onNavigate('MAIN')}
-                        className="flex min-h-[52px] items-center gap-2.5 rounded-2xl border border-stone-700 bg-stone-900/80 px-5 py-3 text-stone-300 shadow-2xl backdrop-blur-md transition-all hover:bg-red-900/60 active:scale-90"
-                    >
-                        <ArrowLeft className="h-4.5 w-4.5" />
-                        <span className="text-[13px] font-black uppercase tracking-[0.18em]">{t(language, 'common.back')}</span>
-                    </SfxButton>
-                </div>
-            )}
-
-            <div className="absolute right-4 top-4 z-[1100] rounded-2xl border border-stone-700 bg-stone-900/72 px-4 py-3 shadow-xl backdrop-blur-sm">
-                <div className="flex items-center gap-2 text-rose-300">
-                    <Swords className="h-4 w-4" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">{t(language, 'arena.title')}</span>
-                </div>
+            <div className="absolute inset-0">
+                <img
+                    src={ARENA_BACKGROUND_URL}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-full w-full object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(120,53,15,0.16),transparent_36%),radial-gradient(circle_at_bottom,rgba(127,29,29,0.15),transparent_32%),linear-gradient(180deg,rgba(18,15,12,0.42)_0%,rgba(11,9,8,0.78)_100%)]" />
+                <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.72)]" />
             </div>
 
             <ArenaLobbyView
@@ -252,8 +242,14 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ onNavigate }) => {
                 nextRankLabel={nextRankLabel}
                 nextRankThreshold={nextRankThreshold}
                 nextRankRemaining={nextRankRemaining}
+                selectedOpponentId={focusedOpponentId}
+                onBack={onNavigate ? () => onNavigate('MAIN') : undefined}
                 onOpenParty={() => setIsPartyModalOpen(true)}
-                onSelectOpponent={setSelectedOpponent}
+                onSelectOpponent={(opponent) => setFocusedOpponentId(opponent.id)}
+                onChallengeOpponent={(opponent) => {
+                    setFocusedOpponentId(opponent.id);
+                    setSelectedOpponent(opponent);
+                }}
                 onClaimMilestone={handleClaimMilestone}
             />
 

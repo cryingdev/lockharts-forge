@@ -72,8 +72,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onQuit, 
 
     return (
         <>
-            <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-black/90 backdrop-blur-md px-[10%] py-[15%] animate-in fade-in duration-200 overflow-hidden">
-                <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl w-[90vw] max-w-[420px] h-fit max-h-full min-h-[200px] min-w-[280px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto text-left">
+            <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-stone-950/52 backdrop-blur-[1px] px-[10%] py-[15%] animate-in fade-in duration-200 overflow-hidden">
+                <div className="bg-stone-900 border-2 border-stone-600 rounded-3xl w-[90vw] max-w-[420px] h-fit max-h-full min-h-[200px] min-w-[280px] shadow-[0_24px_80px_rgba(0,0,0,0.48)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mx-auto text-left ring-1 ring-amber-200/10">
                     
                     <div className="flex items-center justify-between p-5 border-b border-stone-800 bg-stone-850 shrink-0">
                         <div className="flex items-center gap-3">
