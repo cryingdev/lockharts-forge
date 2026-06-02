@@ -30,6 +30,9 @@ type ArenaMercenaryProfile = {
     allocatedStats?: PrimaryStats;
     equipment?: Partial<Record<EquipmentSlotType, ArenaEquipmentSpec>>;
     skillIds?: string[];
+    spriteImage?: string;
+    portraitImage?: string;
+    fullBodyImage?: string;
     temperament?: Mercenary['temperament'];
     voice?: Mercenary['voice'];
 };
@@ -126,6 +129,9 @@ const createArenaDummyMercenary = (
         maxHp,
         currentMp: maxMp,
         maxMp,
+        ...(profile.spriteImage ? { spriteImage: profile.spriteImage } : {}),
+        ...(profile.portraitImage ? { portraitImage: profile.portraitImage } : {}),
+        ...(profile.fullBodyImage ? { fullBodyImage: profile.fullBodyImage } : {}),
         affinity: 0,
         visitCount: 0,
         isUnique: false,
@@ -140,8 +146,52 @@ const createArenaDummyMercenary = (
     };
 };
 
+const arenaVisuals = {
+    novice: {
+        spriteImage: 'pip_green_sprite.png',
+        portraitImage: 'pip_green_portrait.png',
+    },
+    fighterFrontliner: {
+        spriteImage: 'iron_garret_sprite.png',
+        portraitImage: 'iron_garret_portrait.png',
+    },
+    fighterBulwark: {
+        spriteImage: 'adeline_ashford_sprite.png',
+        portraitImage: 'adeline_ashford_portrait.png',
+    },
+    fighterRaider: {
+        spriteImage: 'ylva_ironvein_sprite.png',
+        portraitImage: 'ylva_ironvein_portrait.png',
+    },
+    rogueScout: {
+        spriteImage: 'sly_vargo_sprite.png',
+        portraitImage: 'sly_vargo_portrait.png',
+    },
+    rogueExecutioner: {
+        spriteImage: 'jade_nightbinder_sprite.png',
+        portraitImage: 'jade_nightbinder_portrait.png',
+    },
+    mageChanneler: {
+        spriteImage: 'lucian_ravenscar_sprite.png',
+        portraitImage: 'lucian_ravenscar_portrait.png',
+    },
+    mageArcanist: {
+        spriteImage: 'elara_flame_sprite.png',
+        portraitImage: 'elara_flame_portrait.png',
+    },
+    clericWarden: {
+        spriteImage: 'sister_aria_sprite.png',
+        portraitImage: 'sister_aria_portrait.png',
+    },
+    clericBastion: {
+        spriteImage: 'tilly_footloose_sprite.png',
+        portraitImage: 'tilly_footloose_portrait.png',
+    },
+} satisfies Record<string, Pick<ArenaMercenaryProfile, 'spriteImage' | 'portraitImage'>>;
+
 const arenaProfiles = {
     noviceScavenger: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.novice,
         skillIds: ['endurance'],
         equipment: {
             MAIN_HAND: { recipeId: 'sword_bronze_t1', quality: 82 },
@@ -151,6 +201,7 @@ const arenaProfiles = {
         temperament: 'cautious',
     }),
     fighterFrontliner: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.fighterFrontliner,
         equipment: {
             MAIN_HAND: { recipeId: 'sword_bronze_long_t1', quality: 88 },
             OFF_HAND: { recipeId: 'shield_wood_t1', quality: 86 },
@@ -163,6 +214,7 @@ const arenaProfiles = {
         voice: 'blunt',
     }),
     fighterBulwark: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.fighterBulwark,
         skillIds: ['stalwart_defense'],
         equipment: {
             MAIN_HAND: { recipeId: 'sword_bronze_fang_t1', quality: 94, enhancement: 1 },
@@ -177,6 +229,7 @@ const arenaProfiles = {
         voice: 'formal',
     }),
     fighterRaider: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.fighterRaider,
         skillIds: ['brute_strength'],
         equipment: {
             MAIN_HAND: { recipeId: 'axe_copper_hooked_t1', quality: 95, enhancement: 2 },
@@ -190,6 +243,7 @@ const arenaProfiles = {
         voice: 'blunt',
     }),
     rogueScout: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.rogueScout,
         equipment: {
             MAIN_HAND: { recipeId: 'dagger_copper_t1', quality: 88 },
             BODY: { recipeId: 'armor_leather_t1', quality: 84 },
@@ -202,6 +256,7 @@ const arenaProfiles = {
         voice: 'dry',
     }),
     rogueExecutioner: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.rogueExecutioner,
         skillIds: ['lethal_precision', 'shadow_reflex'],
         equipment: {
             MAIN_HAND: { recipeId: 'dagger_copper_viper_t1', quality: 98, enhancement: 2 },
@@ -216,6 +271,7 @@ const arenaProfiles = {
         voice: 'blunt',
     }),
     mageChanneler: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.mageChanneler,
         skillIds: ['mana_well'],
         equipment: {
             MAIN_HAND: { recipeId: 'staff_oak_t1', quality: 88 },
@@ -228,6 +284,7 @@ const arenaProfiles = {
         voice: 'formal',
     }),
     mageArcanist: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.mageArcanist,
         skillIds: ['mana_well'],
         equipment: {
             MAIN_HAND: { recipeId: 'staff_oak_silkbind_t1', quality: 98, enhancement: 2 },
@@ -240,6 +297,7 @@ const arenaProfiles = {
         voice: 'dry',
     }),
     clericWarden: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.clericWarden,
         equipment: {
             MAIN_HAND: { recipeId: 'mace_wood_t1', quality: 88 },
             OFF_HAND: { recipeId: 'shield_wood_t1', quality: 86 },
@@ -252,6 +310,7 @@ const arenaProfiles = {
         voice: 'formal',
     }),
     clericBastion: (): ArenaMercenaryProfile => ({
+        ...arenaVisuals.clericBastion,
         equipment: {
             MAIN_HAND: { recipeId: 'mace_wood_bonebound_t1', quality: 94, enhancement: 1 },
             OFF_HAND: { recipeId: 'shield_wood_buckled_t1', quality: 92 },
